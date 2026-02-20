@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unix Timestamp Converter — GameZipper Tools</title>
+<meta name="description" content="Free online Unix timestamp converter. Convert between timestamps and human-readable dates with live clock.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/timestamp.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.ts-live{text-align:center;padding:20px;background:var(--gz-surface,#f5f5f5);border-radius:12px;margin-bottom:16px}
+.ts-live .big{font-size:2em;font-weight:700;font-family:monospace}
+.ts-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.ts-cards{grid-template-columns:1fr}}
+.ts-card{padding:16px;background:var(--gz-surface,#f5f5f5);border-radius:8px;border:1px solid var(--gz-border,#ddd)}
+.ts-card h3{margin-bottom:8px}
+.ts-card input{width:100%;padding:8px;border:1px solid var(--gz-border,#ddd);border-radius:6px;font-family:monospace;margin-bottom:8px}
+.ts-result{padding:10px;background:#fff;border-radius:6px;font-family:monospace;font-size:.85em;white-space:pre-line;min-height:60px;border:1px solid var(--gz-border,#ddd)}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="ts-live">
+      <div>Current Unix Timestamp</div>
+      <div class="big" id="liveTs"></div>
+      <div id="liveDate" style="opacity:.7;margin-top:4px"></div>
+    </div>
+    <div class="ts-cards">
+      <div class="ts-card">
+        <h3>Timestamp → Date</h3>
+        <input type="text" id="tsInput" placeholder="e.g. 1700000000">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="gz-btn" onclick="ts2date()" style="font-size:.85em">Convert</button>
+          <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#tsResult').textContent)" style="font-size:.85em">Copy</button>
+        </div>
+        <div class="ts-result" id="tsResult"></div>
+      </div>
+      <div class="ts-card">
+        <h3>Date → Timestamp</h3>
+        <input type="text" id="dateInput">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="gz-btn" onclick="date2ts()" style="font-size:.85em">Convert</button>
+          <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#dateResult').textContent)" style="font-size:.85em">Copy</button>
+        </div>
+        <div class="ts-result" id="dateResult"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Unix Timestamp Converter',
+    toolDesc: 'Convert between Unix timestamps and human-readable dates. Live clock shows current timestamp.',
+    step1: 'View the current Unix timestamp in the live clock',
+    step2: 'Enter a timestamp to convert to date (auto-detects seconds vs milliseconds)',
+    step3: 'Enter a date string to convert to Unix timestamp',
+    step4: 'Copy results with the Copy button',
+  },
+  zh: {
+    toolTitle: 'Unix 时间戳转换',
+    toolDesc: '在 Unix 时间戳和日期之间转换。实时时钟显示当前时间戳。',
+    step1: '在实时时钟中查看当前 Unix 时间戳',
+    step2: '输入时间戳转为日期（自动检测秒/毫秒）',
+    step3: '输入日期字符串转为 Unix 时间戳',
+    step4: '点击"复制"复制结果',
+  }
+});
+
+const { $, t } = GZ;
+
+function updateLive() {
+  const n = Math.floor(Date.now() / 1000);
+  $('#liveTs').textContent = n;
+  $('#liveDate').textContent = new Date().toISOString() + ' | ' + new Date().toLocaleString();
+}
+setInterval(updateLive, 1000);
+
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 0) return Math.abs(s) < 60 ? `in ${Math.abs(s)}s` : Math.abs(s) < 3600 ? `in ${Math.floor(Math.abs(s)/60)}m` : Math.abs(s) < 86400 ? `in ${Math.floor(Math.abs(s)/3600)}h` : `in ${Math.floor(Math.abs(s)/86400)}d`;
+  if (s < 60) return s + 's ago'; if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago'; return Math.floor(s/86400) + 'd ago';
+}
+
+function ts2date() {
+  const v = $('#tsInput').value.trim(); if (!v) return;
+  const ms = v.length > 10 ? +v : v * 1000;
+  const d = new Date(ms);
+  if (isNaN(d)) { $('#tsResult').textContent = 'Invalid timestamp'; return; }
+  $('#tsResult').textContent = `ISO: ${d.toISOString()}\nUTC: ${d.toUTCString()}\nLocal: ${d.toLocaleString()}\nRelative: ${timeAgo(d)}`;
+}
+
+function date2ts() {
+  const d = new Date($('#dateInput').value);
+  if (isNaN(d)) { $('#dateResult').textContent = 'Invalid date'; return; }
+  const s = Math.floor(d.getTime() / 1000);
+  $('#dateResult').textContent = `Seconds: ${s}\nMilliseconds: ${d.getTime()}`;
+}
+
+function loadExample() {
+  $('#tsInput').value = '1700000000'; ts2date();
+  $('#dateInput').value = '2025-12-25T00:00:00'; date2ts();
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>`;
+
+$('#tsInput').addEventListener('input', ts2date);
+$('#dateInput').addEventListener('input', date2ts);
+$('#dateInput').value = new Date().toISOString().slice(0, 19);
+updateLive();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏲️', href:'/dev/cron.html', name:'Cron Expression'},
+    {icon:'🔑', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🆔', href:'/dev/uuid.html', name:'UUID Generator'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JWT Token Decoder — GameZipper Tools</title>
+<meta name="description" content="Free online JWT decoder. Decode and inspect JWT tokens — view header, payload and expiration status.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/jwt.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.jwt-section{margin:12px 0;padding:14px;background:var(--gz-surface,#f5f5f5);border:1px solid var(--gz-border,#ddd);border-radius:8px}
+.jwt-section h3{margin-bottom:8px;font-size:1em}
+.jwt-section pre{white-space:pre-wrap;word-break:break-all;font-size:.85em;line-height:1.5}
+.jwt-key{color:#e94560}.jwt-string{color:#00d672}.jwt-number{color:#61afef}.jwt-bool{color:#d19a66}.jwt-null{color:#888}
+.exp-valid{margin-top:8px;padding:6px 12px;border-radius:6px;font-size:.85em;background:#00d67222;color:#00d672}
+.exp-expired{margin-top:8px;padding:6px 12px;border-radius:6px;font-size:.85em;background:#e9456033;color:#e94560}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label>JWT Token</label>
+    <textarea id="input" spellcheck="false" style="width:100%;min-height:80px" placeholder="eyJhbGciOiJIUzI1NiIs..."></textarea>
+    <div id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JWT Token Decoder',
+    toolDesc: 'Decode and inspect JWT tokens. View header, payload, signature and expiration status. No verification — decode only.',
+    step1: 'Paste a JWT token (3 dot-separated parts)',
+    step2: 'Header and payload are decoded automatically',
+    step3: 'Expiration time (exp) is checked and displayed',
+    step4: 'Click Copy to copy decoded header or payload',
+  },
+  zh: {
+    toolTitle: 'JWT 令牌解码',
+    toolDesc: '解码和检查 JWT 令牌。查看头部、载荷、签名和过期状态。仅解码，不验证签名。',
+    step1: '粘贴 JWT 令牌（三段以点分隔）',
+    step2: '头部和载荷自动解码显示',
+    step3: '自动检查并显示过期时间（exp）',
+    step4: '点击"复制"复制解码后的头部或载荷',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function syntaxHL(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'jwt-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'jwt-key' : 'jwt-string';
+      else if (/true|false/.test(m)) c = 'jwt-bool';
+      else if (/null/.test(m)) c = 'jwt-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function b64decode(str) {
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while (str.length % 4) str += '=';
+  return decodeURIComponent(atob(str).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
+
+function doDecode() {
+  const token = $('#input').value.trim();
+  if (!token) { $('#results').innerHTML = ''; return; }
+  const parts = token.split('.');
+  if (parts.length < 2) { $('#results').innerHTML = '<p style="color:var(--gz-accent)">Invalid JWT format (expected 3 dot-separated parts)</p>'; return; }
+  try {
+    const header = JSON.parse(b64decode(parts[0]));
+    const payload = JSON.parse(b64decode(parts[1]));
+    let expHtml = '';
+    if (payload.exp) {
+      const expDate = new Date(payload.exp * 1000);
+      const now = new Date();
+      const isExpired = expDate < now;
+      const mins = Math.abs(Math.round((expDate - now) / 60000));
+      expHtml = `<div class="${isExpired ? 'exp-expired' : 'exp-valid'}">${isExpired ? '⚠️ Expired' : '✓ Valid'}: ${expDate.toLocaleString()} (${isExpired ? 'expired ' : 'expires in '}${mins} min)</div>`;
+    }
+    const headerJson = JSON.stringify(header, null, 2);
+    const payloadJson = JSON.stringify(payload, null, 2);
+    $('#results').innerHTML = `
+      <div class="jwt-section"><h3>📋 Header</h3><pre>${syntaxHL(headerJson)}</pre><button class="gz-btn" style="margin-top:8px;font-size:.8em" onclick="GZ.copyText(${JSON.stringify(headerJson).replace(/'/g,'\\\'')})">Copy Header</button></div>
+      <div class="jwt-section"><h3>📦 Payload</h3><pre>${syntaxHL(payloadJson)}</pre>${expHtml}<button class="gz-btn" style="margin-top:8px;font-size:.8em" onclick="GZ.copyText(${JSON.stringify(payloadJson).replace(/'/g,'\\\'')})">Copy Payload</button></div>
+      <div class="jwt-section"><h3>🔐 Signature</h3><pre style="opacity:.6">${parts[2] || '(none)'}</pre></div>`;
+  } catch(e) { $('#results').innerHTML = `<p style="color:var(--gz-accent)">Decode error: ${e.message}</p>`; }
+}
+
+function loadExample() {
+  $('#input').value = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkdhbWVaaXBwZXIiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTczMDAwMDAwMH0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+  doDecode();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doDecode()">${t('decode')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#results').innerHTML=''">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', doDecode);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp'},
+  ]
+});
+</script>
+</body>
+</html>

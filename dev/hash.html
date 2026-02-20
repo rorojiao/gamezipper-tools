@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hash Generator (MD5, SHA-1, SHA-256) — GameZipper Tools</title>
+<meta name="description" content="Free online hash generator. Generate MD5, SHA-1, SHA-256, SHA-512 hashes from text instantly using SubtleCrypto.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/hash.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.hash-row{display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 12px;background:var(--gz-surface,#f5f5f5);border-radius:8px}
+.hash-row strong{min-width:70px;font-size:.85em}
+.hash-row code{flex:1;word-break:break-all;font-size:.82em}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label id="lbl-in"></label>
+    <textarea id="input" spellcheck="false" style="width:100%"></textarea>
+    <div id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Hash Generator',
+    toolDesc: 'Generate MD5, SHA-1, SHA-256 and SHA-512 hashes from text. Uses SubtleCrypto API — no external dependencies.',
+    step1: 'Enter or paste text in the input area',
+    step2: 'Hashes are computed automatically as you type',
+    step3: 'Click Copy next to any hash to copy it',
+    step4: 'MD5 uses a pure JS implementation; SHA uses SubtleCrypto',
+  },
+  zh: {
+    toolTitle: '哈希生成器',
+    toolDesc: '从文本生成 MD5、SHA-1、SHA-256 和 SHA-512 哈希值。使用 SubtleCrypto API，无外部依赖。',
+    step1: '在输入区输入或粘贴文本',
+    step2: '哈希值会随输入自动计算',
+    step3: '点击任意哈希值旁的"复制"按钮复制',
+    step4: 'MD5 使用纯 JS 实现，SHA 使用 SubtleCrypto',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function hex(buf) { return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join(''); }
+
+// MD5 pure JS
+function md5(s){function L(k,d){return(k<<d)|(k>>>(32-d))}function K(G){var k="",I,d;for(I=0;I<=3;I++){d=(G>>>(I*8))&255;k+="0123456789abcdef".charAt((d>>>4)&15)+"0123456789abcdef".charAt(d&15)}return k}function W(k){var G=k.length,d=G+8,I=(d-(d%64))/64,x=(I+1)*16,i=new Array(x-1),a=0,b=0;while(b<G){var c=(b-(b%4))/4;a=(b%4)*8;i[c]=(i[c]|(k.charCodeAt(b)<<a));b++}var c=(b-(b%4))/4;a=(b%4)*8;i[c]=i[c]|(128<<a);i[x-2]=G<<3;i[x-1]=G>>>29;return i}function AA(x,k,d){return(x&k)|((~x)&d)}function BB(x,k,d){return(x&d)|(k&(~d))}function CC(x,k,d){return(x^k^d)}function DD(x,k,d){return(k^(x|(~d)))}function FF(a,b,c,d,x,s,ac){a=a+(AA(b,c,d))+x+ac;return L(a,s)+b}function GG(a,b,c,d,x,s,ac){a=a+(BB(b,c,d))+x+ac;return L(a,s)+b}function HH(a,b,c,d,x,s,ac){a=a+(CC(b,c,d))+x+ac;return L(a,s)+b}function II(a,b,c,d,x,s,ac){a=a+(DD(b,c,d))+x+ac;return L(a,s)+b}var S=unescape(encodeURIComponent(s)),x=W(S),a=1732584193,b=4023233417,c=2562383102,d=271733878;for(var e=0;e<x.length;e+=16){var o=a,p=b,q=c,r=d;a=FF(a,b,c,d,x[e],7,3614090360);d=FF(d,a,b,c,x[e+1],12,3905402710);c=FF(c,d,a,b,x[e+2],17,606105819);b=FF(b,c,d,a,x[e+3],22,3250441966);a=FF(a,b,c,d,x[e+4],7,4118548399);d=FF(d,a,b,c,x[e+5],12,1200080426);c=FF(c,d,a,b,x[e+6],17,2821735955);b=FF(b,c,d,a,x[e+7],22,4249261313);a=FF(a,b,c,d,x[e+8],7,1770035416);d=FF(d,a,b,c,x[e+9],12,2336552879);c=FF(c,d,a,b,x[e+10],17,4294925233);b=FF(b,c,d,a,x[e+11],22,2304563134);a=FF(a,b,c,d,x[e+12],7,1804603682);d=FF(d,a,b,c,x[e+13],12,4254626195);c=FF(c,d,a,b,x[e+14],17,2792965006);b=FF(b,c,d,a,x[e+15],22,1236535329);a=GG(a,b,c,d,x[e+1],5,4129170786);d=GG(d,a,b,c,x[e+6],9,3225465664);c=GG(c,d,a,b,x[e+11],14,643717713);b=GG(b,c,d,a,x[e],20,3921069994);a=GG(a,b,c,d,x[e+5],5,3593408605);d=GG(d,a,b,c,x[e+10],9,38016083);c=GG(c,d,a,b,x[e+15],14,3634488961);b=GG(b,c,d,a,x[e+4],20,3889429448);a=GG(a,b,c,d,x[e+9],5,568446438);d=GG(d,a,b,c,x[e+14],9,3275163606);c=GG(c,d,a,b,x[e+3],14,4107603335);b=GG(b,c,d,a,x[e+8],20,1163531501);a=GG(a,b,c,d,x[e+13],5,2850285829);d=GG(d,a,b,c,x[e+2],9,4243563512);c=GG(c,d,a,b,x[e+7],14,1735328473);b=GG(b,c,d,a,x[e+12],20,2368359562);a=HH(a,b,c,d,x[e+5],4,4294588738);d=HH(d,a,b,c,x[e+8],11,2272392833);c=HH(c,d,a,b,x[e+11],16,1839030562);b=HH(b,c,d,a,x[e+14],23,4259657740);a=HH(a,b,c,d,x[e+1],4,2763975236);d=HH(d,a,b,c,x[e+4],11,1272893353);c=HH(c,d,a,b,x[e+7],16,4139469664);b=HH(b,c,d,a,x[e+10],23,3200236656);a=HH(a,b,c,d,x[e+13],4,681279174);d=HH(d,a,b,c,x[e],11,3936430074);c=HH(c,d,a,b,x[e+3],16,3572445317);b=HH(b,c,d,a,x[e+6],23,76029189);a=HH(a,b,c,d,x[e+9],4,3654602809);d=HH(d,a,b,c,x[e+12],11,3873151461);c=HH(c,d,a,b,x[e+15],16,530742520);b=HH(b,c,d,a,x[e+2],23,3299628645);a=II(a,b,c,d,x[e],6,4096336452);d=II(d,a,b,c,x[e+7],10,1126891415);c=II(c,d,a,b,x[e+14],15,2878612391);b=II(b,c,d,a,x[e+5],21,4237533241);a=II(a,b,c,d,x[e+12],6,1700485571);d=II(d,a,b,c,x[e+3],10,2399980690);c=II(c,d,a,b,x[e+10],15,4293915773);b=II(b,c,d,a,x[e+1],21,2240044497);a=II(a,b,c,d,x[e+8],6,1873313359);d=II(d,a,b,c,x[e+15],10,4264355552);c=II(c,d,a,b,x[e+6],15,2734768916);b=II(b,c,d,a,x[e+13],21,1309151649);a=II(a,b,c,d,x[e+4],6,4149444226);d=II(d,a,b,c,x[e+11],10,3174756917);c=II(c,d,a,b,x[e+2],15,718787259);b=II(b,c,d,a,x[e+9],21,3951481745);a=(a+o)>>>0;b=(b+p)>>>0;c=(c+q)>>>0;d=(d+r)>>>0}return K(a)+K(b)+K(c)+K(d)}
+
+async function doHash() {
+  const text = $('#input').value;
+  if (!text) { $('#results').innerHTML = ''; return; }
+  const buf = new TextEncoder().encode(text);
+  const [s1, s256, s512] = await Promise.all([
+    crypto.subtle.digest('SHA-1', buf),
+    crypto.subtle.digest('SHA-256', buf),
+    crypto.subtle.digest('SHA-512', buf),
+  ]);
+  const hashes = [
+    ['MD5', md5(text)],
+    ['SHA-1', hex(s1)],
+    ['SHA-256', hex(s256)],
+    ['SHA-512', hex(s512)],
+  ];
+  $('#results').innerHTML = hashes.map(([name, val]) =>
+    `<div class="hash-row"><strong>${name}</strong><code>${val}</code><button class="gz-btn" onclick="copyText('${val}')" style="padding:4px 10px;font-size:.8em">${t('copy')}</button></div>`
+  ).join('');
+}
+
+function loadExample() { $('#input').value = 'Hello, World!'; doHash(); }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#results').innerHTML=''">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', doHash);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔑', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🔗', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'🆔', href:'/dev/uuid.html', name:'UUID Generator'},
+  ]
+});
+</script>
+</body>
+</html>

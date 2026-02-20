@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JSON Formatter & Validator — GameZipper Tools</title>
+<meta name="description" content="Free online JSON formatter, validator, beautifier and minifier with syntax highlighting and error location.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/json.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Formatter & Validator',
+    toolDesc: 'Format, beautify, validate and minify JSON data instantly with syntax highlighting.',
+    indent: 'spaces',
+    jsonValid: '✓ Valid JSON',
+    jsonInvalid: '✗ Invalid JSON',
+    step1: 'Paste or type your JSON in the input area',
+    step2: 'Click Format to beautify with syntax highlighting',
+    step3: 'Click Minify to compress JSON to one line',
+    step4: 'Use Copy to copy the result to clipboard',
+  },
+  zh: {
+    toolTitle: 'JSON 格式化 & 校验',
+    toolDesc: '即时格式化、美化、校验和压缩 JSON 数据，支持语法高亮。',
+    indent: '空格',
+    jsonValid: '✓ JSON 有效',
+    jsonInvalid: '✗ JSON 无效',
+    step1: '在输入区粘贴或输入 JSON',
+    step2: '点击"格式化"美化并高亮显示',
+    step3: '点击"压缩"将 JSON 压缩为一行',
+    step4: '点击"复制"将结果复制到剪贴板',
+  }
+});
+
+let indent = 2;
+const { $, copyText, t } = GZ;
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function doFormat() {
+  const inp = $('#input').value.trim(); if (!inp) return;
+  try {
+    const obj = JSON.parse(inp);
+    const formatted = JSON.stringify(obj, null, indent);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('jsonValid')}</span>`;
+  } catch(e) { showError(e); }
+}
+
+function doMinify() {
+  const inp = $('#input').value.trim(); if (!inp) return;
+  try {
+    $('#output').textContent = JSON.stringify(JSON.parse(inp));
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('jsonValid')}</span>`;
+  } catch(e) { showError(e); }
+}
+
+function showError(e) {
+  const msg = e.message;
+  const posMatch = msg.match(/position (\d+)/);
+  let info = `<span style="color:var(--gz-accent)">${t('jsonInvalid')}: ${msg}</span>`;
+  if (posMatch) {
+    const pos = parseInt(posMatch[1]);
+    const before = $('#input').value.substring(0, pos);
+    const line = before.split('\n').length;
+    const col = pos - before.lastIndexOf('\n');
+    info += ` <span style="opacity:.7">(Line ${line}, Col ${col})</span>`;
+  }
+  $('#status').innerHTML = info;
+  $('#output').innerHTML = `<span style="color:var(--gz-accent)">${msg}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({"name":"GameZipper","version":"1.0","features":["tools","games","fun"],"config":{"theme":"dark","lang":"en"},"active":true,"count":42}, null, 0);
+  doFormat();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doFormat);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="indent=+this.value;doFormat()">
+    <option value="2">2 ${t('indent')}</option>
+    <option value="4">4 ${t('indent')}</option>
+  </select>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔗', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'🪙', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'📊', href:'/dev/sql.html', name:'SQL Formatter'},
+  ]
+});
+</script>
+</body>
+</html>
