@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cron Expression Parser — GameZipper Tools</title>
+<meta name="description" content="Free online cron expression parser and generator. Understand and build cron schedules instantly.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/cron.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script><script src="/shared/common.js"></script>
+<style>
+.cron-fields{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.cron-field{text-align:center}
+.cron-field input{width:100%;text-align:center;padding:8px;font-size:1.1em;font-family:monospace;border:1px solid var(--border);border-radius:6px;background:var(--bg)}
+.cron-field label{font-size:.75em;color:var(--muted);display:block;margin-top:4px}
+.next-runs{margin-top:12px;font-family:monospace;font-size:.9em;line-height:1.8}
+.cron-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.cron-presets button{font-size:.8em}
+</style>
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="max-width:600px;margin:0 auto">
+      <div class="cron-fields" id="cron-fields">
+        <div class="cron-field"><input id="f-min" value="*"><label id="l-min"></label></div>
+        <div class="cron-field"><input id="f-hour" value="*"><label id="l-hour"></label></div>
+        <div class="cron-field"><input id="f-dom" value="*"><label id="l-dom"></label></div>
+        <div class="cron-field"><input id="f-mon" value="*"><label id="l-mon"></label></div>
+        <div class="cron-field"><input id="f-dow" value="*"><label id="l-dow"></label></div>
+      </div>
+      <div style="text-align:center;margin:8px 0">
+        <input id="cron-expr" style="font-family:monospace;font-size:1.2em;text-align:center;padding:8px 16px;width:80%;border:2px solid var(--primary);border-radius:8px" value="* * * * *">
+      </div>
+      <div class="cron-presets" id="presets"></div>
+      <div id="human-readable" style="margin:12px 0;padding:12px;background:var(--surface);border-radius:8px;font-size:1em"></div>
+      <div id="next-runs" class="next-runs"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    cronTitle:'Cron Expression Parser',cronDesc:'Parse, understand and build cron expressions with human-readable descriptions and next run times.',
+    minute:'Minute (0-59)',hour:'Hour (0-23)',dayOfMonth:'Day of Month (1-31)',month:'Month (1-12)',dayOfWeek:'Day of Week (0-6)',
+    cronHuman:'Human Readable',nextRuns:'Next 5 Runs',
+    everyMinute:'Every Minute',everyHour:'Every Hour',everyDay:'Daily at Midnight',everyWeekday:'Weekdays at 9AM',everyMonday:'Every Monday at 8AM',
+    cronStep1:'enterCronExpr',cronStep2:'seeHumanReadable',cronStep3:'checkNextRuns',cronStep4:'usePresetsOrEdit',
+    enterCronExpr:'Enter a cron expression or edit individual fields',
+    seeHumanReadable:'See the human-readable description',
+    checkNextRuns:'Check the next scheduled run times',
+    usePresetsOrEdit:'Use presets or edit fields to build your expression',
+    everyX:'every',at:'at',on:'on',
+    months:'January,February,March,April,May,June,July,August,September,October,November,December',
+    days:'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',
+  },
+  zh:{
+    cronTitle:'Cron 表达式解析器',cronDesc:'解析、理解和构建 Cron 表达式，提供人类可读描述和下次运行时间。',
+    minute:'分钟 (0-59)',hour:'小时 (0-23)',dayOfMonth:'日 (1-31)',month:'月 (1-12)',dayOfWeek:'星期 (0-6)',
+    cronHuman:'人类可读',nextRuns:'接下来5次运行',
+    everyMinute:'每分钟',everyHour:'每小时',everyDay:'每天午夜',everyWeekday:'工作日早9点',everyMonday:'每周一早8点',
+    cronStep1:'enterCronExpr',cronStep2:'seeHumanReadable',cronStep3:'checkNextRuns',cronStep4:'usePresetsOrEdit',
+    enterCronExpr:'输入 Cron 表达式或编辑各个字段',
+    seeHumanReadable:'查看人类可读的描述',
+    checkNextRuns:'检查下次计划运行时间',
+    usePresetsOrEdit:'使用预设或编辑字段来构建表达式',
+    everyX:'每',at:'在',on:'于',
+    months:'一月,二月,三月,四月,五月,六月,七月,八月,九月,十月,十一月,十二月',
+    days:'周日,周一,周二,周三,周四,周五,周六',
+  }
+});
+
+const {t,$}=GZ;
+const fields=['f-min','f-hour','f-dom','f-mon','f-dow'];
+const labels=['l-min','l-hour','l-dom','l-mon','l-dow'];
+const labelKeys=['minute','hour','dayOfMonth','month','dayOfWeek'];
+
+function syncFromFields(){
+  const expr=fields.map(f=>$(('#'+f)).value.trim()||'*').join(' ');
+  $('#cron-expr').value=expr;
+  parseCron(expr);
+}
+function syncFromExpr(){
+  const parts=$('#cron-expr').value.trim().split(/\s+/);
+  fields.forEach((f,i)=>$('#'+f).value=parts[i]||'*');
+  parseCron($('#cron-expr').value.trim());
+}
+
+function parseCron(expr){
+  const parts=expr.split(/\s+/);
+  if(parts.length!==5){$('#human-readable').textContent='Invalid: need exactly 5 fields';$('#next-runs').innerHTML='';return}
+  // Human readable
+  const desc=cronToHuman(parts);
+  $('#human-readable').innerHTML=`<strong>${t('cronHuman')}:</strong> ${desc}`;
+  // Next runs
+  try{
+    const runs=getNextRuns(parts,5);
+    $('#next-runs').innerHTML=`<strong>${t('nextRuns')}:</strong><br>`+runs.map(d=>`▸ ${d.toLocaleString()}`).join('<br>');
+  }catch(e){$('#next-runs').innerHTML=''}
+}
+
+function cronToHuman(p){
+  const[min,hr,dom,mon,dow]=p;
+  let s='';
+  if(min==='*'&&hr==='*'&&dom==='*'&&mon==='*'&&dow==='*')return t('everyMinute');
+  if(min==='0'&&hr==='*')return t('everyHour');
+  if(min!=='*'&&hr!=='*'&&dom==='*'&&mon==='*'&&dow==='*')return `${t('everyDay')} ${t('at')} ${hr}:${min.padStart(2,'0')}`;
+  return `${min} ${hr} ${dom} ${mon} ${dow}`;
+}
+
+function getNextRuns(parts,count){
+  const runs=[];
+  const now=new Date();
+  let d=new Date(now);d.setSeconds(0);d.setMilliseconds(0);d.setMinutes(d.getMinutes()+1);
+  const maxIter=525600;// 1 year of minutes
+  for(let i=0;i<maxIter&&runs.length<count;i++){
+    if(matchCron(parts,d))runs.push(new Date(d));
+    d.setMinutes(d.getMinutes()+1);
+  }
+  return runs;
+}
+
+function matchCron(parts,d){
+  const checks=[d.getMinutes(),d.getHours(),d.getDate(),d.getMonth()+1,d.getDay()];
+  return parts.every((p,i)=>matchField(p,checks[i]));
+}
+
+function matchField(field,val){
+  if(field==='*')return true;
+  return field.split(',').some(part=>{
+    if(part.includes('/')){const[r,step]=part.split('/');const s=+step;const start=r==='*'?0:+r;return val>=start&&(val-start)%s===0}
+    if(part.includes('-')){const[a,b]=part.split('-');return val>=+a&&val<=+b}
+    return +part===val;
+  });
+}
+
+function setPreset(expr){$('#cron-expr').value=expr;syncFromExpr()}
+
+// Init
+labels.forEach((l,i)=>$('#'+l).textContent=t(labelKeys[i]));
+fields.forEach(f=>$('#'+f).addEventListener('input',syncFromFields));
+$('#cron-expr').addEventListener('input',syncFromExpr);
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="setPreset('* * * * *')">${t('everyMinute')}</button>
+  <button class="gz-btn" onclick="setPreset('0 * * * *')">${t('everyHour')}</button>
+  <button class="gz-btn" onclick="setPreset('0 0 * * *')">${t('everyDay')}</button>
+  <button class="gz-btn" onclick="setPreset('0 9 * * 1-5')">${t('everyWeekday')}</button>
+  <button class="gz-btn" onclick="setPreset('0 8 * * 1')">${t('everyMonday')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="setPreset('30 2 15 * *')">${t('example')}</button>`;
+
+GZ.renderToolPage({category:'dev',titleKey:'cronTitle',descKey:'cronDesc',
+  howToSteps:['enterCronExpr','seeHumanReadable','checkNextRuns','usePresetsOrEdit'],
+  related:[
+    {icon:'⏱️',href:'/dev/timestamp.html',name:'Timestamp'},
+    {icon:'🔑',href:'/dev/uuid.html',name:'UUID Generator'},
+    {icon:'📋',href:'/dev/json.html',name:'JSON Formatter'},
+  ]
+});
+syncFromExpr();
+</script></body></html>

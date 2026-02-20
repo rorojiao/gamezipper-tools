@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SQL Formatter — GameZipper Tools</title>
+<meta name="description" content="Free online SQL formatter and beautifier. Format messy SQL queries with proper indentation instantly.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/sql.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script><script src="/shared/common.js"></script>
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    sqlTitle:'SQL Formatter',sqlDesc:'Format and beautify SQL queries with proper indentation and keyword uppercasing.',
+    sqlStep1:'Paste your SQL query in the input area',
+    sqlStep2:'Click Format to beautify the SQL',
+    sqlStep3:'Copy the formatted result',
+    upperKeywords:'Uppercase Keywords',minifySql:'Minify',
+    sqlExample:"select u.id, u.name, o.total from users u inner join orders o on u.id = o.user_id where o.total > 100 and u.status = 'active' group by u.id, u.name having count(*) > 1 order by o.total desc limit 10;",
+  },
+  zh:{
+    sqlTitle:'SQL 格式化',sqlDesc:'格式化和美化 SQL 查询，自动缩进和关键字大写。',
+    sqlStep1:'在输入区域粘贴SQL查询',
+    sqlStep2:'点击格式化美化SQL',
+    sqlStep3:'复制格式化结果',
+    upperKeywords:'关键字大写',minifySql:'压缩',
+    sqlExample:"select u.id, u.name, o.total from users u inner join orders o on u.id = o.user_id where o.total > 100 and u.status = 'active' group by u.id, u.name having count(*) > 1 order by o.total desc limit 10;",
+  }
+});
+const {t,$}=GZ;
+
+const KEYWORDS=['SELECT','FROM','WHERE','AND','OR','ORDER BY','GROUP BY','HAVING','LIMIT','OFFSET','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM','CREATE TABLE','ALTER TABLE','DROP TABLE','JOIN','INNER JOIN','LEFT JOIN','RIGHT JOIN','OUTER JOIN','CROSS JOIN','ON','AS','IN','NOT','NULL','IS','LIKE','BETWEEN','EXISTS','UNION','ALL','DISTINCT','CASE','WHEN','THEN','ELSE','END','COUNT','SUM','AVG','MIN','MAX','ASC','DESC'];
+const BREAK_BEFORE=['SELECT','FROM','WHERE','AND','OR','ORDER BY','GROUP BY','HAVING','LIMIT','OFFSET','INNER JOIN','LEFT JOIN','RIGHT JOIN','CROSS JOIN','JOIN','SET','VALUES','UNION'];
+const INDENT_AFTER=['SELECT','SET'];
+
+function formatSQL(sql){
+  // Normalize whitespace
+  let s=sql.replace(/\s+/g,' ').trim();
+  // Uppercase keywords
+  KEYWORDS.forEach(kw=>{
+    const re=new RegExp('\\b'+kw.replace(/ /g,'\\s+')+'\\b','gi');
+    s=s.replace(re,kw);
+  });
+  // Add line breaks
+  BREAK_BEFORE.forEach(kw=>{
+    const re=new RegExp('\\s+'+kw.replace(/ /g,'\\s+')+'\\b','gi');
+    s=s.replace(re,'\n'+kw);
+  });
+  // Indent after certain keywords
+  const lines=s.split('\n');
+  const result=[];
+  let indent=0;
+  for(const line of lines){
+    const trimmed=line.trim();
+    if(!trimmed)continue;
+    const isBreak=BREAK_BEFORE.some(kw=>trimmed.startsWith(kw));
+    if(isBreak&&trimmed.startsWith('AND')||trimmed.startsWith('OR'))result.push('  '+trimmed);
+    else result.push(trimmed);
+  }
+  return result.join('\n');
+}
+
+function minifySQL(sql){
+  return sql.replace(/\s+/g,' ').replace(/\s*([,;()])\s*/g,'$1').trim();
+}
+
+function doFormat(){$('#output').value=formatSQL($('#input').value)}
+function doMinify(){$('#output').value=minifySQL($('#input').value)}
+function loadExample(){$('#input').value=t('sqlExample');doFormat()}
+
+$('#lbl-in').textContent=t('input');
+$('#lbl-out').textContent=t('output');
+$('#input').addEventListener('input',doFormat);
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="doFormat()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">${t('minifySql')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').value=''">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>`;
+
+GZ.renderToolPage({category:'dev',titleKey:'sqlTitle',descKey:'sqlDesc',
+  howToSteps:['sqlStep1','sqlStep2','sqlStep3'],
+  related:[
+    {icon:'📋',href:'/dev/json.html',name:'JSON Formatter'},
+    {icon:'🔍',href:'/dev/regex.html',name:'Regex Tester'},
+    {icon:'🔗',href:'/dev/url-encode.html',name:'URL Encoder'},
+  ]
+});
+</script></body></html>
