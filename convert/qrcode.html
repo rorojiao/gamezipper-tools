@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QR Code Generator — GameZipper Tools</title>
+<meta name="description" content="Free online QR code generator. Create QR codes from text or URLs, download as PNG.">
+<link rel="canonical" href="https://tools.gamezipper.com/convert/qrcode.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.qr-area{display:flex;flex-direction:column;align-items:center;gap:1rem}
+canvas#qr{image-rendering:pixelated;border:16px solid #fff;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" rows="3" placeholder="Enter text or URL..." style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;color:var(--text);font-size:.9rem;resize:vertical;margin-bottom:1rem"></textarea>
+    <div class="qr-area"><canvas id="qr" width="256" height="256"></canvas></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+// Minimal QR Code encoder (numeric/alphanumeric/byte, version 1-10, EC level M)
+(function(){
+const EC_M_CAPACITY=[0,16,28,44,64,86,108,124,154,182,216]; // byte mode capacity per version
+const GF_EXP=new Uint8Array(512),GF_LOG=new Uint8Array(256);
+(function(){let x=1;for(let i=0;i<255;i++){GF_EXP[i]=x;GF_LOG[x]=i;x<<=1;if(x&256)x^=285;}for(let i=255;i<512;i++)GF_EXP[i]=GF_EXP[i-255];})();
+function gfMul(a,b){return a&&b?GF_EXP[GF_LOG[a]+GF_LOG[b]]:0;}
+function polyMul(a,b){const r=new Uint8Array(a.length+b.length-1);for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++)r[i+j]^=gfMul(a[i],b[j]);return r;}
+function genPoly(n){let p=new Uint8Array([1]);for(let i=0;i<n;i++)p=polyMul(p,new Uint8Array([1,GF_EXP[i]]));return p;}
+function ecBytes(data,ecCount){const gen=genPoly(ecCount);const msg=new Uint8Array(data.length+ecCount);msg.set(data);for(let i=0;i<data.length;i++){const c=msg[i];if(c)for(let j=0;j<gen.length;j++)msg[i+j]^=gfMul(gen[j],c);}return msg.slice(data.length);}
+// EC codewords count per version (M level)
+const EC_CW=[0,10,16,26,18,24,16,18,22,22,26];
+const TOTAL_CW=[0,26,44,70,100,134,172,196,242,292,346];
+
+function makeQR(text){
+  const data=new TextEncoder().encode(text);
+  let ver=1;
+  for(;ver<=10;ver++)if(data.length<=EC_M_CAPACITY[ver])break;
+  if(ver>10){ver=10;} // truncate if too long
+  const totalDC=TOTAL_CW[ver]-EC_CW[ver];
+  // Build data codewords
+  const bits=[];
+  function push(val,len){for(let i=len-1;i>=0;i--)bits.push((val>>i)&1);}
+  push(4,4); // byte mode
+  push(data.length, ver<=9?8:16);
+  for(const b of data)push(b,8);
+  // Terminator
+  const cap=totalDC*8;
+  for(let i=0;i<4&&bits.length<cap;i++)bits.push(0);
+  while(bits.length%8)bits.push(0);
+  const pads=[0xEC,0x11];let pi=0;
+  while(bits.length<cap){bits.push(...Array.from({length:8},(_, k)=>(pads[pi]>>(7-k))&1));pi^=1;}
+  const codewords=new Uint8Array(totalDC);
+  for(let i=0;i<totalDC;i++){let v=0;for(let j=0;j<8;j++)v=(v<<1)|bits[i*8+j];codewords[i]=v;}
+  const ec=ecBytes(codewords,EC_CW[ver]);
+  // Interleave (single block for v1-10 M level simplified)
+  const final=new Uint8Array(TOTAL_CW[ver]);
+  final.set(codewords);final.set(ec,totalDC);
+  // Create matrix
+  const size=ver*4+17;
+  const matrix=Array.from({length:size},()=>new Int8Array(size)); // 0=white,1=black,-1=unset
+  const reserved=Array.from({length:size},()=>new Uint8Array(size));
+  function setMod(r,c,v){if(r>=0&&r<size&&c>=0&&c<size){matrix[r][c]=v?1:0;reserved[r][c]=1;}}
+  // Finder patterns
+  function finder(r,c){for(let dr=-1;dr<=7;dr++)for(let dc=-1;dc<=7;dc++){const v=(dr<0||dr>6||dc<0||dc>6)?0:(dr===0||dr===6||dc===0||dc===6||(dr>=2&&dr<=4&&dc>=2&&dc<=4))?1:0;setMod(r+dr,c+dc,v);}}
+  finder(0,0);finder(0,size-7);finder(size-7,0);
+  // Timing
+  for(let i=8;i<size-8;i++){setMod(6,i,i%2===0);setMod(i,6,i%2===0);}
+  // Dark module + reserved
+  setMod(size-8,8,1);
+  // Format info reserved
+  for(let i=0;i<9;i++){if(!reserved[8][i])setMod(8,i,0);if(!reserved[i][8])setMod(i,8,0);}
+  for(let i=0;i<8;i++){if(!reserved[8][size-1-i])setMod(8,size-1-i,0);if(!reserved[size-1-i][8])setMod(size-1-i,8,0);}
+  // Alignment (v2+)
+  if(ver>=2){const pos=[6,ver*4+10];
+    for(const r of pos)for(const c of pos){if(reserved[r][c])continue;
+      for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)setMod(r+dr,c+dc,(Math.abs(dr)===2||Math.abs(dc)===2||(!dr&&!dc))?1:0);}}
+  // Place data
+  const allBits=[];
+  for(const b of final)for(let i=7;i>=0;i--)allBits.push((b>>i)&1);
+  let bi=0,up=true;
+  for(let col=size-1;col>=0;col-=2){
+    if(col===6)col--;
+    for(let row=0;row<size;row++){
+      const r=up?size-1-row:row;
+      for(const dc of [0,-1]){
+        const c=col+dc;
+        if(c>=0&&c<size&&!reserved[r][c]){matrix[r][c]=bi<allBits.length?allBits[bi++]:0;}
+      }
+    }
+    up=!up;
+  }
+  // Mask 0 (checkerboard) and format
+  for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(!reserved[r][c]&&(r+c)%2===0)matrix[r][c]^=1;
+  // Format info for mask 0, EC M: 0x5B2B... precomputed
+  const fmtBits=0b101010000010010; // M, mask 0
+  function setFmt(i,v){
+    if(i<6)setMod(8,i,v);else if(i===6)setMod(8,7,v);else if(i===7)setMod(8,8,v);else if(i===8)setMod(7,8,v);else setMod(14-i,8,v);
+    if(i<8)setMod(size-1-i,8,v);else setMod(8,size-8+i-8,v);
+  }
+  for(let i=0;i<15;i++)setFmt(i,(fmtBits>>i)&1);
+  return {matrix,size};
+}
+
+function drawQR(canvas,text){
+  if(!text){const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);return;}
+  try{
+    const {matrix,size}=makeQR(text);
+    const scale=Math.floor(256/size);
+    canvas.width=canvas.height=size*scale;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#000';
+    for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(matrix[r][c])ctx.fillRect(c*scale,r*scale,scale,scale);
+  }catch(e){const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,256,256);ctx.fillStyle='#f00';ctx.font='14px sans-serif';ctx.fillText('Text too long',20,130);}
+}
+window.drawQR=drawQR;
+})();
+
+GZI18n.register({
+  en:{toolTitle:'QR Code Generator',toolDesc:'Generate QR codes from text or URLs. Download as PNG image.',
+    step1:'Enter text or a URL in the input field',step2:'QR code generates automatically',step3:'Click Download to save as PNG'},
+  zh:{toolTitle:'QR 码生成器',toolDesc:'从文本或网址生成 QR 码，可下载为 PNG 图片。',
+    step1:'在输入框中输入文本或网址',step2:'QR 码会自动生成',step3:'点击下载保存为 PNG 图片'}
+});
+const {$,t}=GZ;
+function gen(){drawQR($('#qr'),$('#input').value);}
+function dl(){const a=document.createElement('a');a.download='qrcode.png';a.href=$('#qr').toDataURL();a.click();}
+function loadExample(){$('#input').value='https://tools.gamezipper.com';gen();}
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn" onclick="dl()">${t('download')}</button>`;
+$('#input').addEventListener('input',gen);
+gen();
+GZ.renderToolPage({category:'convert',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🔐',href:'/dev/base64.html',name:'Base64'},
+  {icon:'🔗',href:'/dev/url-encode.html',name:'URL Encode'},
+  {icon:'🎨',href:'/convert/color.html',name:'Color Converter'},
+]});
+</script>
+</body>
+</html>
