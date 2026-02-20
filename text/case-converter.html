@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Case Converter — GameZipper Tools</title>
+<meta name="description" content="Free online text case converter. Convert text to UPPER, lower, Title, camelCase, snake_case, kebab-case and more.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/case-converter.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.case-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="case-btns" id="caseBtns"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" rows="10"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" readonly rows="10"></textarea></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'Case Converter',toolDesc:'Convert text between UPPER CASE, lower case, Title Case, camelCase, snake_case and kebab-case.',
+    upper:'UPPER CASE',lower:'lower case',title:'Title Case',sentence:'Sentence case',
+    camel:'camelCase',snake:'snake_case',kebab:'kebab-case',
+    step1:'Type or paste your text in the input area',
+    step2:'Click a case style button to convert',
+    step3:'Copy the result from the output area',
+  },
+  zh:{
+    toolTitle:'大小写转换',toolDesc:'在大写、小写、首字母大写、驼峰、下划线、短横线等格式间转换文本。',
+    upper:'全部大写',lower:'全部小写',title:'首字母大写',sentence:'句首大写',
+    camel:'驼峰命名',snake:'下划线命名',kebab:'短横线命名',
+    step1:'在输入区输入或粘贴文本',
+    step2:'点击转换按钮选择目标格式',
+    step3:'从输出区复制结果',
+  }
+});
+const {$,copyText,t}=GZ;
+function words(s){return s.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_\-]+/g,' ').trim().split(/\s+/).filter(Boolean)}
+const converters={
+  upper:s=>s.toUpperCase(),
+  lower:s=>s.toLowerCase(),
+  title:s=>s.replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase()),
+  sentence:s=>s.replace(/(^\s*|[.!?]\s+)(\w)/g,(m,p,c)=>p+c.toUpperCase()),
+  camel:s=>{const w=words(s);return w.map((x,i)=>i===0?x.toLowerCase():x[0].toUpperCase()+x.slice(1).toLowerCase()).join('')},
+  snake:s=>words(s).map(x=>x.toLowerCase()).join('_'),
+  kebab:s=>words(s).map(x=>x.toLowerCase()).join('-'),
+};
+let currentCase='upper';
+function convert(){const v=$('#input').value;$('#output').value=v?converters[currentCase](v):'';}
+function setCase(c){currentCase=c;convert();document.querySelectorAll('.case-btns .gz-btn').forEach(b=>b.classList.toggle('gz-btn-secondary',b.dataset.c!==c))}
+function loadExample(){$('#input').value='Hello World! This is a sample text for case conversion.';convert();}
+
+$('#caseBtns').innerHTML=Object.keys(converters).map(c=>`<button class="gz-btn ${c==='upper'?'':'gz-btn-secondary'} gz-btn-sm" data-c="${c}" onclick="setCase('${c}')">${t(c)}</button>`).join('');
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').value=''">${t('clear')}</button>`;
+$('#input').addEventListener('input',convert);
+GZ.renderToolPage({category:'text',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🔢',href:'/text/letter-counter.html',name:'Letter Counter'},
+  {icon:'🔗',href:'/text/slug.html',name:'Slug Generator'},
+  {icon:'📝',href:'/dev/json.html',name:'JSON Formatter'},
+]});
+</script>
+</body>
+</html>

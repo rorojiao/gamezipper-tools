@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Text Diff — GameZipper Tools</title>
+<meta name="description" content="Free online text diff tool. Compare two texts side by side with line-level highlighting.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/diff.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.diff-out{max-height:500px;overflow:auto;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;font-family:monospace;font-size:.85rem;line-height:1.6}
+.diff-add{background:rgba(16,185,129,.15);color:#6ee7b7}.diff-del{background:rgba(239,68,68,.15);color:#fca5a5;text-decoration:line-through}.diff-eq{color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label>Original</label><textarea id="inputA" spellcheck="false" rows="12"></textarea></div>
+      <div><label>Modified</label><textarea id="inputB" spellcheck="false" rows="12"></textarea></div>
+    </div>
+    <div class="diff-out" id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Text Diff',toolDesc:'Compare two texts side by side with line-level diff highlighting.',
+    original:'Original',modified:'Modified',compare:'Compare',noDiff:'No differences found.',
+    step1:'Paste the original text on the left',step2:'Paste the modified text on the right',step3:'Click Compare to see the differences highlighted'},
+  zh:{toolTitle:'文本对比',toolDesc:'逐行对比两段文本，高亮显示差异。',
+    original:'原始文本',modified:'修改后文本',compare:'对比',noDiff:'没有发现差异。',
+    step1:'在左侧粘贴原始文本',step2:'在右侧粘贴修改后的文本',step3:'点击对比查看高亮差异'}
+});
+const {$,t}=GZ;
+function diff(){
+  const a=$('#inputA').value.split('\n'),b=$('#inputB').value.split('\n');
+  // Simple LCS-based line diff
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);
+  const lines=[];let i=m,j=n;
+  while(i>0||j>0){
+    if(i>0&&j>0&&a[i-1]===b[j-1]){lines.unshift({t:'eq',v:a[i-1]});i--;j--;}
+    else if(j>0&&(i===0||dp[i][j-1]>=dp[i-1][j])){lines.unshift({t:'add',v:b[j-1]});j--;}
+    else{lines.unshift({t:'del',v:a[i-1]});i--;}
+  }
+  if(!lines.length||lines.every(l=>l.t==='eq')){$('#output').innerHTML=`<span class="diff-eq">${t('noDiff')}</span>`;return;}
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  $('#output').innerHTML=lines.map(l=>{
+    const pre=l.t==='add'?'+ ':l.t==='del'?'- ':'  ';
+    return `<div class="diff-${l.t}">${pre}${esc(l.v)}</div>`;
+  }).join('');
+}
+function loadExample(){
+  $('#inputA').value='The quick brown fox\njumps over the lazy dog\nHello World';
+  $('#inputB').value='The quick brown cat\njumps over the lazy dog\nHello GameZipper\nNew line added';
+  diff();
+}
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="diff()">${t('compare')}</button><button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#inputA').value='';$('#inputB').value='';$('#output').innerHTML=''">${t('clear')}</button>`;
+GZ.renderToolPage({category:'text',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🔠',href:'/text/case-converter.html',name:'Case Converter'},
+  {icon:'📝',href:'/text/markdown.html',name:'Markdown Preview'},
+  {icon:'📊',href:'/dev/json.html',name:'JSON Formatter'},
+]});
+</script>
+</body>
+</html>

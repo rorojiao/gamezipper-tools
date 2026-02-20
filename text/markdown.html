@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Markdown Preview — GameZipper Tools</title>
+<meta name="description" content="Free online Markdown editor with live preview. Write Markdown on the left, see rendered HTML on the right.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/markdown.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#preview{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;min-height:200px;color:var(--text);font-size:.9rem;line-height:1.7;overflow:auto}
+#preview h1{font-size:1.6rem;margin:.5em 0 .3em;border-bottom:1px solid var(--border);padding-bottom:.2em}
+#preview h2{font-size:1.3rem;margin:.5em 0 .3em;border-bottom:1px solid var(--border);padding-bottom:.2em}
+#preview h3{font-size:1.1rem;margin:.5em 0 .3em}
+#preview code{background:var(--glass2);padding:2px 6px;border-radius:4px;font-size:.85em}
+#preview pre{background:rgba(0,0,0,.4);padding:1rem;border-radius:var(--radius-sm);overflow-x:auto;margin:.5em 0}
+#preview pre code{background:none;padding:0}
+#preview blockquote{border-left:3px solid var(--accent);padding-left:1rem;color:var(--text2);margin:.5em 0}
+#preview ul,#preview ol{padding-left:1.5rem;margin:.5em 0}
+#preview a{color:var(--accent)}
+#preview img{max-width:100%;border-radius:var(--radius-sm)}
+#preview hr{border:none;border-top:1px solid var(--border);margin:1em 0}
+#preview table{border-collapse:collapse;width:100%;margin:.5em 0}
+#preview th,#preview td{border:1px solid var(--border);padding:6px 10px;text-align:left}
+#preview th{background:var(--glass2)}
+</style>
+</head>
+<body>
+<div class="gz-container-wide">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label>Markdown</label><textarea id="input" spellcheck="false" rows="16"></textarea></div>
+      <div><label id="lbl-preview">Preview</label><div id="preview"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Markdown Preview',toolDesc:'Write Markdown on the left, see live rendered preview on the right.',preview:'Preview',
+    step1:'Write or paste Markdown in the left editor',step2:'Preview updates in real-time on the right',step3:'Supports headings, bold, italic, links, images, code blocks, lists, tables and more'},
+  zh:{toolTitle:'Markdown 预览',toolDesc:'左侧编写 Markdown，右侧实时渲染预览。',preview:'预览',
+    step1:'在左侧编辑器编写或粘贴 Markdown',step2:'右侧实时更新渲染预览',step3:'支持标题、粗体、斜体、链接、图片、代码块、列表、表格等'}
+});
+const {$,t}=GZ;
+function md2html(s){
+  // Simple Markdown to HTML
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let html=esc(s);
+  // Code blocks
+  html=html.replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>');
+  // Inline code
+  html=html.replace(/`([^`]+)`/g,'<code>$1</code>');
+  // Headings
+  html=html.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  html=html.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  html=html.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  // HR
+  html=html.replace(/^(-{3,}|\*{3,}|_{3,})$/gm,'<hr>');
+  // Bold/Italic
+  html=html.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  html=html.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  // Images
+  html=html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1">');
+  // Links
+  html=html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  // Blockquote
+  html=html.replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>');
+  // Unordered list
+  html=html.replace(/^[*\-+] (.+)$/gm,'<li>$1</li>');
+  html=html.replace(/((?:<li>.*<\/li>\n?)+)/g,'<ul>$1</ul>');
+  // Paragraphs
+  html=html.replace(/\n\n+/g,'</p><p>');
+  html='<p>'+html+'</p>';
+  html=html.replace(/<p>\s*(<h[1-3]|<pre|<ul|<ol|<hr|<blockquote)/g,'$1');
+  html=html.replace(/(<\/h[1-3]>|<\/pre>|<\/ul>|<\/ol>|<hr>|<\/blockquote>)\s*<\/p>/g,'$1');
+  return html;
+}
+function render(){$('#preview').innerHTML=md2html($('#input').value);}
+function loadExample(){$('#input').value=`# Hello Markdown!\n\nThis is a **bold** and *italic* text demo.\n\n## Features\n\n- Lists support\n- **Bold** and *italic*\n- \`inline code\`\n- [Links](https://gamezipper.com)\n\n### Code Block\n\n\`\`\`js\nconsole.log("Hello World!");\n\`\`\`\n\n> This is a blockquote\n\n---\n\nEnjoy writing Markdown!`;render();}
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#preview').innerHTML=''">${t('clear')}</button>`;
+$('#input').addEventListener('input',render);
+GZ.renderToolPage({category:'text',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'📊',href:'/text/diff.html',name:'Text Diff'},
+  {icon:'🔢',href:'/text/letter-counter.html',name:'Letter Counter'},
+  {icon:'🔗',href:'/text/slug.html',name:'Slug Generator'},
+]});
+</script>
+</body>
+</html>
