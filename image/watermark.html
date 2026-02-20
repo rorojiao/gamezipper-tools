@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Watermark Tool — GameZipper Tools</title>
+<meta name="description" content="Add text or image watermarks to photos. Customizable position, size, and opacity.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/watermark.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.wm-controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.wm-controls label{display:block;color:var(--text2);font-size:.8rem;margin-bottom:4px}
+.wm-controls input,.wm-controls select{width:100%;padding:.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text)}
+.wm-controls input:focus,.wm-controls select:focus{outline:none;border-color:var(--accent)}
+.preview-area{text-align:center;margin:1rem 0}
+.preview-area canvas{max-width:100%;border-radius:var(--radius-sm);border:1px solid var(--border)}
+@media(max-width:600px){.wm-controls{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-dropzone" id="dropzone" onclick="document.getElementById('fileIn').click()">
+      <span class="icon">💧</span>
+      <p id="dropText"></p>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+    </div>
+    <div id="controls" style="display:none">
+      <div class="wm-controls">
+        <div><label id="lText">Text</label><input type="text" id="wmText" value="© GameZipper" oninput="render()"></div>
+        <div><label id="lFont">Font Size</label><input type="range" id="wmSize" min="10" max="200" value="48" oninput="render()"></div>
+        <div><label id="lColor">Color</label><input type="color" id="wmColor" value="#ffffff" oninput="render()"></div>
+        <div><label id="lOpacity">Opacity</label><input type="range" id="wmOpacity" min="0" max="100" value="50" oninput="render()"></div>
+        <div><label id="lPos">Position</label>
+          <select id="wmPos" onchange="render()">
+            <option value="center">Center</option>
+            <option value="tl">Top Left</option>
+            <option value="tr">Top Right</option>
+            <option value="bl">Bottom Left</option>
+            <option value="br" selected>Bottom Right</option>
+            <option value="tile">Tile (Repeat)</option>
+          </select>
+        </div>
+        <div><label id="lRotate">Rotation</label><input type="range" id="wmRotate" min="-180" max="180" value="-30" oninput="render()"></div>
+      </div>
+      <div class="preview-area"><canvas id="canvas"></canvas></div>
+      <div style="text-align:center;margin:1rem 0">
+        <button class="gz-btn" onclick="download()">⬇️ Download</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Watermark Tool',toolDesc:'Add customizable text watermarks to images. All processing in your browser.',
+    s1:'Drop an image or click to upload',s2:'Enter watermark text and customize style',
+    s3:'Choose position, opacity, and rotation',s4:'Click Download to save the watermarked image',
+    dropHint:'Drop image here or click to upload',text:'Watermark Text',fontSize:'Font Size',
+    color:'Color',opacity:'Opacity',position:'Position',rotation:'Rotation',
+    rCompressor:'Image Compressor',rResizer:'Image Resizer',rCropper:'Image Cropper',rConverter:'Format Converter'},
+  zh:{toolTitle:'水印工具',toolDesc:'为图片添加自定义文字水印，全部在浏览器中处理。',
+    s1:'拖放图片或点击上传',s2:'输入水印文字并自定义样式',
+    s3:'选择位置、透明度和旋转角度',s4:'点击下载保存',
+    dropHint:'拖放图片到此处或点击上传',text:'水印文字',fontSize:'字体大小',
+    color:'颜色',opacity:'透明度',position:'位置',rotation:'旋转',
+    rCompressor:'图片压缩',rResizer:'图片缩放',rCropper:'图片裁剪',rConverter:'格式转换'}
+});
+
+const {t}=GZI18n;
+let origImg=null;
+document.getElementById('dropText').textContent=t('dropHint');
+['lText','lFont','lColor','lOpacity','lPos','lRotate'].forEach(id=>{
+  const map={lText:'text',lFont:'fontSize',lColor:'color',lOpacity:'opacity',lPos:'position',lRotate:'rotation'};
+  document.getElementById(id).textContent=t(map[id]);
+});
+
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fileIn');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+function loadFile(f){
+  const img=new Image();
+  img.onload=()=>{origImg=img;document.getElementById('controls').style.display='block';dz.style.display='none';render()};
+  img.src=URL.createObjectURL(f);
+}
+
+function render(){
+  if(!origImg)return;
+  const c=document.getElementById('canvas'),ctx=c.getContext('2d');
+  c.width=origImg.width;c.height=origImg.height;
+  ctx.drawImage(origImg,0,0);
+  const text=document.getElementById('wmText').value;
+  const size=+document.getElementById('wmSize').value;
+  const color=document.getElementById('wmColor').value;
+  const opacity=document.getElementById('wmOpacity').value/100;
+  const pos=document.getElementById('wmPos').value;
+  const rot=+document.getElementById('wmRotate').value*Math.PI/180;
+
+  ctx.globalAlpha=opacity;
+  ctx.font=`bold ${size}px sans-serif`;
+  ctx.fillStyle=color;
+
+  if(pos==='tile'){
+    const tw=ctx.measureText(text).width+40;
+    const th=size+40;
+    for(let y=-c.height;y<c.height*2;y+=th){
+      for(let x=-c.width;x<c.width*2;x+=tw){
+        ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.fillText(text,0,0);ctx.restore();
+      }
+    }
+  }else{
+    let x,y;
+    const m=ctx.measureText(text);
+    const pad=size;
+    switch(pos){
+      case'tl':x=pad;y=pad+size;break;
+      case'tr':x=c.width-m.width-pad;y=pad+size;break;
+      case'bl':x=pad;y=c.height-pad;break;
+      case'br':x=c.width-m.width-pad;y=c.height-pad;break;
+      default:x=(c.width-m.width)/2;y=c.height/2+size/2;
+    }
+    ctx.save();ctx.translate(x+m.width/2,y-size/2);ctx.rotate(rot);ctx.fillText(text,-m.width/2,size/2);ctx.restore();
+  }
+  ctx.globalAlpha=1;
+}
+
+function download(){
+  const c=document.getElementById('canvas');
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='watermarked.png';a.click()});
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/resizer.html',icon:'📐',nameKey:'rResizer'},
+    {href:'/image/cropper.html',icon:'✂️',nameKey:'rCropper'},
+    {href:'/image/converter.html',icon:'🔄',nameKey:'rConverter'}
+  ]
+});
+</script>
+</body>
+</html>

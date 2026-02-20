@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Image Resizer — GameZipper Tools</title>
+<meta name="description" content="Resize images to any dimension. Maintain aspect ratio or set custom sizes. Free browser-based tool.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/resizer.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.size-row{display:flex;gap:1rem;align-items:center;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.size-row input[type=number]{width:100px;padding:.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);text-align:center;font-size:1rem}
+.size-row input:focus{outline:none;border-color:var(--accent)}
+.lock-ar{font-size:1.3rem;cursor:pointer;user-select:none}
+.preset-btns{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.5rem 0}
+.preset-btn{padding:4px 10px;border-radius:6px;background:var(--glass2);border:1px solid var(--border);color:var(--text2);cursor:pointer;font-size:.8rem}
+.preset-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.preview-area{text-align:center;margin:1rem 0}
+.preview-area img{max-width:100%;max-height:300px;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.info{text-align:center;color:var(--text2);font-size:.85rem;margin:.5rem 0}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-dropzone" id="dropzone" onclick="document.getElementById('fileIn').click()">
+      <span class="icon">📐</span>
+      <p id="dropText"></p>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+    </div>
+    <div id="controls" style="display:none">
+      <div class="info" id="origSize"></div>
+      <div class="size-row">
+        <label style="color:var(--text2);font-size:.85rem">W</label>
+        <input type="number" id="wIn" min="1" max="10000">
+        <span class="lock-ar" id="lockBtn" onclick="toggleLock()">🔗</span>
+        <label style="color:var(--text2);font-size:.85rem">H</label>
+        <input type="number" id="hIn" min="1" max="10000">
+        <span style="color:var(--text2);font-size:.85rem">px</span>
+      </div>
+      <div class="preset-btns" id="presets"></div>
+      <div class="preview-area"><img id="preview"></div>
+      <div style="text-align:center;margin:1rem 0">
+        <button class="gz-btn" onclick="doResize()">📐 Resize & Download</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Image Resizer',toolDesc:'Resize images to any dimension while maintaining quality.',
+    s1:'Drop an image or click to upload',s2:'Enter target width and height, or choose a preset',
+    s3:'Toggle the lock to maintain aspect ratio',s4:'Click Resize & Download to save',
+    dropHint:'Drop image here or click to upload',original:'Original:',
+    rCompressor:'Image Compressor',rCropper:'Image Cropper',rConverter:'Format Converter',rWatermark:'Watermark Tool'},
+  zh:{toolTitle:'图片缩放',toolDesc:'将图片缩放到任意尺寸，保持画质。',
+    s1:'拖放图片或点击上传',s2:'输入目标宽高或选择预设',
+    s3:'切换锁定以保持宽高比',s4:'点击缩放并下载',
+    dropHint:'拖放图片到此处或点击上传',original:'原始尺寸：',
+    rCompressor:'图片压缩',rCropper:'图片裁剪',rConverter:'格式转换',rWatermark:'水印工具'}
+});
+
+const {t}=GZI18n;
+let origImg=null,lockAR=true,aspectRatio=1;
+document.getElementById('dropText').textContent=t('dropHint');
+
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fileIn');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+const wIn=document.getElementById('wIn'),hIn=document.getElementById('hIn');
+wIn.addEventListener('input',()=>{if(lockAR)hIn.value=Math.round(wIn.value/aspectRatio)});
+hIn.addEventListener('input',()=>{if(lockAR)wIn.value=Math.round(hIn.value*aspectRatio)});
+
+function toggleLock(){lockAR=!lockAR;document.getElementById('lockBtn').textContent=lockAR?'🔗':'🔓'}
+
+function loadFile(f){
+  const img=new Image();
+  img.onload=()=>{
+    origImg=img;aspectRatio=img.width/img.height;
+    wIn.value=img.width;hIn.value=img.height;
+    document.getElementById('origSize').textContent=`${t('original')} ${img.width} × ${img.height} px`;
+    document.getElementById('preview').src=img.src;
+    document.getElementById('controls').style.display='block';
+    dz.style.display='none';
+    const presets=[[1920,1080,'1920×1080'],[1280,720,'1280×720'],[800,600,'800×600'],[512,512,'512×512'],[256,256,'256×256']];
+    document.getElementById('presets').innerHTML=presets.map(p=>`<button class="preset-btn" onclick="wIn.value=${p[0]};hIn.value=${p[1]}">${p[2]}</button>`).join('');
+  };
+  img.src=URL.createObjectURL(f);
+}
+
+function doResize(){
+  if(!origImg)return;
+  const c=document.createElement('canvas');c.width=+wIn.value;c.height=+hIn.value;
+  c.getContext('2d').drawImage(origImg,0,0,c.width,c.height);
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='resized.png';a.click()});
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/cropper.html',icon:'✂️',nameKey:'rCropper'},
+    {href:'/image/converter.html',icon:'🔄',nameKey:'rConverter'},
+    {href:'/image/watermark.html',icon:'💧',nameKey:'rWatermark'}
+  ]
+});
+</script>
+</body>
+</html>

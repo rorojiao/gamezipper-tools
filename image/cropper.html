@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Image Cropper — GameZipper Tools</title>
+<meta name="description" content="Crop images in your browser with a draggable crop area. No upload needed.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/cropper.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.crop-container{position:relative;display:inline-block;margin:1rem auto;max-width:100%;cursor:crosshair}
+.crop-container img{display:block;max-width:100%;max-height:500px;border-radius:var(--radius-sm)}
+.crop-box{position:absolute;border:2px dashed #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.5);cursor:move;min-width:20px;min-height:20px}
+.crop-handle{position:absolute;width:12px;height:12px;background:#fff;border-radius:2px}
+.crop-handle.nw{top:-6px;left:-6px;cursor:nw-resize}.crop-handle.ne{top:-6px;right:-6px;cursor:ne-resize}
+.crop-handle.sw{bottom:-6px;left:-6px;cursor:sw-resize}.crop-handle.se{bottom:-6px;right:-6px;cursor:se-resize}
+.dims{text-align:center;color:var(--text2);font-size:.85rem;margin:.5rem 0;font-family:monospace}
+.ar-btns{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.5rem 0}
+.ar-btn{padding:4px 10px;border-radius:6px;background:var(--glass2);border:1px solid var(--border);color:var(--text2);cursor:pointer;font-size:.8rem}
+.ar-btn.active,.ar-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-dropzone" id="dropzone" onclick="document.getElementById('fileIn').click()">
+      <span class="icon">✂️</span>
+      <p id="dropText"></p>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+    </div>
+    <div class="ar-btns" id="arBtns" style="display:none"></div>
+    <div style="text-align:center">
+      <div class="crop-container" id="cropContainer" style="display:none">
+        <img id="srcImg">
+        <div class="crop-box" id="cropBox">
+          <div class="crop-handle nw" data-dir="nw"></div>
+          <div class="crop-handle ne" data-dir="ne"></div>
+          <div class="crop-handle sw" data-dir="sw"></div>
+          <div class="crop-handle se" data-dir="se"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dims" id="dims"></div>
+    <div style="text-align:center;margin:1rem 0">
+      <button class="gz-btn" id="cropBtn" style="display:none" onclick="doCrop()">✂️ Crop & Download</button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Image Cropper',toolDesc:'Crop images with a draggable selection. All processing in your browser.',
+    s1:'Drop an image or click to upload',s2:'Drag to select the crop area, or choose an aspect ratio',
+    s3:'Drag corners to resize the selection',s4:'Click Crop & Download to save',
+    dropHint:'Drop image here or click to upload',free:'Free',
+    rCompressor:'Image Compressor',rResizer:'Image Resizer',rConverter:'Format Converter',rWatermark:'Watermark Tool'},
+  zh:{toolTitle:'图片裁剪',toolDesc:'拖拽选区裁剪图片，全部在浏览器中处理。',
+    s1:'拖放图片或点击上传',s2:'拖动选择裁剪区域，或选择宽高比',
+    s3:'拖动角落调整选区大小',s4:'点击裁剪并下载',
+    dropHint:'拖放图片到此处或点击上传',free:'自由',
+    rCompressor:'图片压缩',rResizer:'图片缩放',rConverter:'格式转换',rWatermark:'水印工具'}
+});
+
+const {t}=GZI18n;
+let origImg=null,imgW=0,imgH=0,dispW=0,dispH=0;
+let crop={x:0,y:0,w:100,h:100},ar=null;
+let dragging=null,startX,startY,startCrop;
+
+document.getElementById('dropText').textContent=t('dropHint');
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fileIn');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+function loadFile(f){
+  const img=new Image();
+  img.onload=()=>{
+    origImg=img;imgW=img.width;imgH=img.height;
+    const si=document.getElementById('srcImg');si.src=img.src;
+    document.getElementById('cropContainer').style.display='inline-block';
+    document.getElementById('cropBtn').style.display='inline-flex';
+    dz.style.display='none';
+    // Wait for layout
+    requestAnimationFrame(()=>{
+      dispW=si.clientWidth;dispH=si.clientHeight;
+      crop={x:dispW*.1,y:dispH*.1,w:dispW*.8,h:dispH*.8};
+      updateBox();
+    });
+    // AR buttons
+    const ratios=[{l:t('free'),v:null},{l:'1:1',v:1},{l:'4:3',v:4/3},{l:'16:9',v:16/9},{l:'3:2',v:3/2}];
+    document.getElementById('arBtns').style.display='flex';
+    document.getElementById('arBtns').innerHTML=ratios.map((r,i)=>
+      `<button class="ar-btn${i===0?' active':''}" onclick="setAR(${r.v},this)">${r.l}</button>`
+    ).join('');
+  };
+  img.src=URL.createObjectURL(f);
+}
+
+function setAR(v,btn){
+  ar=v;
+  document.querySelectorAll('.ar-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(ar){crop.h=crop.w/ar;if(crop.y+crop.h>dispH){crop.h=dispH-crop.y;crop.w=crop.h*ar}}
+  updateBox();
+}
+
+function updateBox(){
+  const b=document.getElementById('cropBox');
+  b.style.left=crop.x+'px';b.style.top=crop.y+'px';b.style.width=crop.w+'px';b.style.height=crop.h+'px';
+  const sx=imgW/dispW,sy=imgH/dispH;
+  document.getElementById('dims').textContent=`${Math.round(crop.w*sx)} × ${Math.round(crop.h*sy)} px`;
+}
+
+const box=document.getElementById('cropBox');
+box.addEventListener('mousedown',e=>{
+  if(e.target.dataset.dir){dragging=e.target.dataset.dir}else{dragging='move'}
+  startX=e.clientX;startY=e.clientY;startCrop={...crop};e.preventDefault();
+});
+document.addEventListener('mousemove',e=>{
+  if(!dragging)return;
+  const dx=e.clientX-startX,dy=e.clientY-startY;
+  if(dragging==='move'){
+    crop.x=Math.max(0,Math.min(dispW-crop.w,startCrop.x+dx));
+    crop.y=Math.max(0,Math.min(dispH-crop.h,startCrop.y+dy));
+  }else{
+    if(dragging.includes('e')){crop.w=Math.max(20,Math.min(dispW-startCrop.x,startCrop.w+dx))}
+    if(dragging.includes('w')){const nw=Math.max(20,startCrop.w-dx);crop.x=startCrop.x+startCrop.w-nw;crop.w=nw}
+    if(dragging.includes('s')){crop.h=Math.max(20,Math.min(dispH-startCrop.y,startCrop.h+dy))}
+    if(dragging.includes('n')){const nh=Math.max(20,startCrop.h-dy);crop.y=startCrop.y+startCrop.h-nh;crop.h=nh}
+    if(ar){crop.h=crop.w/ar}
+  }
+  updateBox();
+});
+document.addEventListener('mouseup',()=>dragging=null);
+
+function doCrop(){
+  if(!origImg)return;
+  const sx=imgW/dispW,sy=imgH/dispH;
+  const c=document.createElement('canvas');
+  c.width=Math.round(crop.w*sx);c.height=Math.round(crop.h*sy);
+  c.getContext('2d').drawImage(origImg,crop.x*sx,crop.y*sy,c.width,c.height,0,0,c.width,c.height);
+  c.toBlob(b=>{
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cropped.png';a.click();
+  });
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/resizer.html',icon:'📐',nameKey:'rResizer'},
+    {href:'/image/converter.html',icon:'🔄',nameKey:'rConverter'},
+    {href:'/image/watermark.html',icon:'💧',nameKey:'rWatermark'}
+  ]
+});
+</script>
+</body>
+</html>

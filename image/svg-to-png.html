@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SVG to PNG Converter — GameZipper Tools</title>
+<meta name="description" content="Convert SVG files to PNG images with custom resolution. Free browser-based tool.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/svg-to-png.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.scale-row{display:flex;gap:1rem;align-items:center;justify-content:center;flex-wrap:wrap;margin:1rem 0;color:var(--text2);font-size:.85rem}
+.scale-row input[type=number]{width:80px;padding:.5rem;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text)}
+.scale-btns{display:flex;gap:.5rem;justify-content:center;margin:.5rem 0}
+.scale-btn{padding:4px 12px;border-radius:6px;background:var(--glass2);border:1px solid var(--border);color:var(--text2);cursor:pointer;font-size:.8rem}
+.scale-btn:hover,.scale-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.preview-split{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.preview-split>div{text-align:center}
+.preview-split label{display:block;color:var(--text2);font-size:.8rem;margin-bottom:.5rem;font-weight:600}
+.preview-split img,.preview-split canvas{max-width:100%;max-height:300px;border-radius:var(--radius-sm);border:1px solid var(--border);background:repeating-conic-gradient(#222 0% 25%,#333 0% 50%) 0 0/16px 16px}
+.dims{text-align:center;color:var(--text2);font-size:.85rem;margin:.5rem 0;font-family:monospace}
+@media(max-width:600px){.preview-split{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-dropzone" id="dropzone" onclick="document.getElementById('fileIn').click()">
+      <span class="icon">🖼️</span>
+      <p id="dropText"></p>
+      <input type="file" id="fileIn" accept=".svg,image/svg+xml" hidden>
+    </div>
+    <div id="controls" style="display:none">
+      <div class="scale-row">
+        <span id="scaleLabel"></span>
+        <input type="number" id="wIn" min="1" max="10000" placeholder="Width">
+        <span>×</span>
+        <input type="number" id="hIn" min="1" max="10000" placeholder="Height">
+        <span>px</span>
+      </div>
+      <div class="scale-btns">
+        <button class="scale-btn" onclick="setScale(1)">1×</button>
+        <button class="scale-btn active" onclick="setScale(2)">2×</button>
+        <button class="scale-btn" onclick="setScale(3)">3×</button>
+        <button class="scale-btn" onclick="setScale(4)">4×</button>
+      </div>
+      <div class="preview-split">
+        <div><label>SVG</label><img id="svgPreview"></div>
+        <div><label>PNG</label><canvas id="pngCanvas"></canvas></div>
+      </div>
+      <div class="dims" id="dims"></div>
+      <div style="text-align:center;margin:1rem 0">
+        <button class="gz-btn" onclick="doConvert()">⬇️ Convert & Download</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'SVG to PNG Converter',toolDesc:'Convert SVG vector graphics to PNG raster images at any resolution.',
+    s1:'Drop an SVG file or click to upload',s2:'Choose a scale factor or enter custom dimensions',
+    s3:'Preview the PNG result',s4:'Click Convert & Download to save',
+    dropHint:'Drop SVG file here or click to upload',scale:'Output size:',
+    rConverter:'Format Converter',rResizer:'Image Resizer',rCompressor:'Image Compressor',rCropper:'Image Cropper'},
+  zh:{toolTitle:'SVG 转 PNG',toolDesc:'将 SVG 矢量图转换为任意分辨率的 PNG 图片。',
+    s1:'拖放 SVG 文件或点击上传',s2:'选择缩放倍数或输入自定义尺寸',
+    s3:'预览 PNG 结果',s4:'点击转换并下载',
+    dropHint:'拖放 SVG 文件到此处或点击上传',scale:'输出尺寸：',
+    rConverter:'格式转换',rResizer:'图片缩放',rCompressor:'图片压缩',rCropper:'图片裁剪'}
+});
+
+const {t}=GZI18n;
+let svgImg=null,baseW=0,baseH=0;
+document.getElementById('dropText').textContent=t('dropHint');
+document.getElementById('scaleLabel').textContent=t('scale');
+
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fileIn');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+const wIn=document.getElementById('wIn'),hIn=document.getElementById('hIn');
+wIn.addEventListener('input',()=>{if(baseW)hIn.value=Math.round(wIn.value*baseH/baseW);renderPng()});
+hIn.addEventListener('input',()=>{if(baseH)wIn.value=Math.round(hIn.value*baseW/baseH);renderPng()});
+
+function loadFile(f){
+  const url=URL.createObjectURL(f);
+  const img=new Image();
+  img.onload=()=>{
+    svgImg=img;baseW=img.width||300;baseH=img.height||300;
+    document.getElementById('svgPreview').src=url;
+    document.getElementById('controls').style.display='block';
+    dz.style.display='none';
+    setScale(2);
+  };
+  img.src=url;
+}
+
+function setScale(s){
+  document.querySelectorAll('.scale-btn').forEach(b=>b.classList.toggle('active',b.textContent===s+'×'));
+  wIn.value=baseW*s;hIn.value=baseH*s;
+  renderPng();
+}
+
+function renderPng(){
+  if(!svgImg)return;
+  const c=document.getElementById('pngCanvas');
+  c.width=+wIn.value;c.height=+hIn.value;
+  c.getContext('2d').drawImage(svgImg,0,0,c.width,c.height);
+  document.getElementById('dims').textContent=`${c.width} × ${c.height} px`;
+}
+
+function doConvert(){
+  const c=document.getElementById('pngCanvas');
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='converted.png';a.click()});
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/converter.html',icon:'🔄',nameKey:'rConverter'},
+    {href:'/image/resizer.html',icon:'📐',nameKey:'rResizer'},
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/cropper.html',icon:'✂️',nameKey:'rCropper'}
+  ]
+});
+</script>
+</body>
+</html>

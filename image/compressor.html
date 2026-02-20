@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Image Compressor — GameZipper Tools</title>
+<meta name="description" content="Compress images in your browser. Reduce file size with adjustable quality. No upload needed.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/compressor.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.quality-row{display:flex;align-items:center;gap:1rem;margin:1rem 0;justify-content:center;flex-wrap:wrap}
+.quality-row input[type=range]{width:250px;accent-color:var(--accent)}
+.quality-row .val{font-weight:700;min-width:40px;text-align:center}
+.stats{display:flex;gap:2rem;justify-content:center;margin:1rem 0;flex-wrap:wrap;color:var(--text2);font-size:.9rem}
+.stats .num{font-weight:700;color:var(--text)}
+.preview-area{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin:1rem 0}
+.preview-area img{max-width:400px;max-height:300px;border-radius:var(--radius-sm);border:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-dropzone" id="dropzone" onclick="document.getElementById('fileIn').click()">
+      <span class="icon">📁</span>
+      <p id="dropText"></p>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+    </div>
+    <div class="quality-row">
+      <span id="qLabel"></span>
+      <input type="range" id="quality" min="1" max="100" value="75" oninput="compress()">
+      <span class="val" id="qVal">75%</span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="preview-area"><img id="preview" style="display:none"></div>
+    <div style="text-align:center;margin:1rem 0">
+      <button class="gz-btn" id="dlBtn" style="display:none" onclick="download()">⬇️ Download</button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Image Compressor',toolDesc:'Compress images with adjustable quality. All processing in your browser.',
+    s1:'Drop an image or click to upload',s2:'Adjust the quality slider',
+    s3:'Preview the compressed result',s4:'Click Download to save',
+    dropHint:'Drop image here or click to upload',quality:'Quality:',
+    original:'Original:',compressed:'Compressed:',saved:'Saved:',
+    rResizer:'Image Resizer',rConverter:'Format Converter',rCropper:'Image Cropper',rWatermark:'Watermark Tool'},
+  zh:{toolTitle:'图片压缩',toolDesc:'调整质量压缩图片，全部在浏览器中处理。',
+    s1:'拖放图片或点击上传',s2:'调整质量滑块',
+    s3:'预览压缩结果',s4:'点击下载保存',
+    dropHint:'拖放图片到此处或点击上传',quality:'质量：',
+    original:'原始大小：',compressed:'压缩后：',saved:'节省：',
+    rResizer:'图片缩放',rConverter:'格式转换',rCropper:'图片裁剪',rWatermark:'水印工具'}
+});
+
+const {t}=GZI18n;
+let origFile=null,blob=null;
+
+document.getElementById('dropText').textContent=t('dropHint');
+document.getElementById('qLabel').textContent=t('quality');
+
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fileIn');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+function loadFile(f){origFile=f;compress()}
+
+function compress(){
+  if(!origFile)return;
+  const q=document.getElementById('quality').value;
+  document.getElementById('qVal').textContent=q+'%';
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+    c.getContext('2d').drawImage(img,0,0);
+    c.toBlob(b=>{
+      blob=b;
+      const preview=document.getElementById('preview');
+      preview.src=URL.createObjectURL(b);preview.style.display='block';
+      document.getElementById('dlBtn').style.display='inline-flex';
+      const pct=((1-b.size/origFile.size)*100).toFixed(1);
+      document.getElementById('stats').innerHTML=`
+        <span>${t('original')} <span class="num">${fmt(origFile.size)}</span></span>
+        <span>${t('compressed')} <span class="num">${fmt(b.size)}</span></span>
+        <span>${t('saved')} <span class="num" style="color:var(--success)">${pct}%</span></span>`;
+    },'image/jpeg',q/100);
+  };
+  img.src=URL.createObjectURL(origFile);
+}
+
+function fmt(b){return b>1048576?(b/1048576).toFixed(1)+' MB':(b/1024).toFixed(1)+' KB'}
+
+function download(){
+  if(!blob)return;
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='compressed_'+origFile.name;a.click();
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/resizer.html',icon:'📐',nameKey:'rResizer'},
+    {href:'/image/converter.html',icon:'🔄',nameKey:'rConverter'},
+    {href:'/image/cropper.html',icon:'✂️',nameKey:'rCropper'},
+    {href:'/image/watermark.html',icon:'💧',nameKey:'rWatermark'}
+  ]
+});
+</script>
+</body>
+</html>
