@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HEX ↔ RGB Converter — GameZipper Tools</title>
+<meta name="description" content="Convert colors between HEX and RGB formats instantly. Free online color converter.">
+<link rel="canonical" href="https://tools.gamezipper.com/color/hex-rgb.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.conv-layout{display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.conv-box{flex:1;min-width:260px;text-align:center}
+.conv-box label{display:block;font-size:.85rem;color:var(--text2);margin-bottom:.5rem;font-weight:600}
+.conv-box input{width:100%;padding:.8rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);font-family:monospace;font-size:1.1rem;text-align:center}
+.conv-box input:focus{outline:none;border-color:var(--accent)}
+.preview{width:100%;height:100px;border-radius:var(--radius);margin:1.5rem 0;transition:background .2s}
+.swap-arrow{font-size:2rem;color:var(--text2);align-self:center;cursor:pointer;transition:transform .3s}
+.swap-arrow:hover{transform:rotate(180deg);color:var(--text)}
+.rgb-sliders{margin-top:1rem}
+.rgb-sliders label{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;font-size:.85rem;color:var(--text2)}
+.rgb-sliders input[type=range]{flex:1;accent-color:var(--accent)}
+.rgb-sliders .val{width:40px;text-align:right;font-family:monospace}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="preview" id="preview"></div>
+    <div class="conv-layout">
+      <div class="conv-box">
+        <label>HEX</label>
+        <input type="text" id="hexInput" value="#6c5ce7" maxlength="7" placeholder="#6c5ce7">
+        <button class="gz-btn gz-btn-sm" style="margin-top:.8rem" onclick="GZ.copyText(document.getElementById('hexInput').value)">📋 Copy HEX</button>
+      </div>
+      <div class="swap-arrow" onclick="swapFocus()">⇄</div>
+      <div class="conv-box">
+        <label>RGB</label>
+        <input type="text" id="rgbInput" placeholder="rgb(108, 92, 231)">
+        <button class="gz-btn gz-btn-sm" style="margin-top:.8rem" onclick="GZ.copyText(document.getElementById('rgbInput').value)">📋 Copy RGB</button>
+      </div>
+    </div>
+    <div class="rgb-sliders" id="sliders">
+      <label>R <input type="range" min="0" max="255" id="rSlider" oninput="fromSliders()"><span class="val" id="rVal">108</span></label>
+      <label>G <input type="range" min="0" max="255" id="gSlider" oninput="fromSliders()"><span class="val" id="gVal">92</span></label>
+      <label>B <input type="range" min="0" max="255" id="bSlider" oninput="fromSliders()"><span class="val" id="bVal">231</span></label>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'HEX ↔ RGB Converter',toolDesc:'Convert colors between HEX and RGB formats instantly.',
+    s1:'Enter a HEX color code (e.g. #6c5ce7)',s2:'Or enter an RGB value (e.g. rgb(108, 92, 231))',
+    s3:'Use sliders to adjust RGB values visually',s4:'Click Copy to copy the converted value',
+    rPicker:'Color Picker',rPalette:'Palette Generator',rContrast:'Contrast Checker',rShades:'Shades Generator'},
+  zh:{toolTitle:'HEX ↔ RGB 转换器',toolDesc:'即时转换 HEX 与 RGB 颜色格式。',
+    s1:'输入 HEX 颜色代码（如 #6c5ce7）',s2:'或输入 RGB 值（如 rgb(108, 92, 231)）',
+    s3:'使用滑块可视化调整 RGB 值',s4:'点击复制按钮复制转换结果',
+    rPicker:'取色器',rPalette:'调色板生成器',rContrast:'对比度检查器',rShades:'色阶生成器'}
+});
+
+const hexIn=document.getElementById('hexInput'),rgbIn=document.getElementById('rgbInput');
+const rS=document.getElementById('rSlider'),gS=document.getElementById('gSlider'),bS=document.getElementById('bSlider');
+
+function hex2rgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgb2hex(r,g,b){return'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}
+
+function updatePreview(r,g,b){
+  document.getElementById('preview').style.background=`rgb(${r},${g},${b})`;
+  rS.value=r;gS.value=g;bS.value=b;
+  document.getElementById('rVal').textContent=r;
+  document.getElementById('gVal').textContent=g;
+  document.getElementById('bVal').textContent=b;
+}
+
+hexIn.addEventListener('input',()=>{
+  const v=hexIn.value.trim();
+  if(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)){
+    const h=v.startsWith('#')?v:'#'+v;
+    const[r,g,b]=hex2rgb(h);
+    rgbIn.value=`rgb(${r}, ${g}, ${b})`;
+    updatePreview(r,g,b);
+  }
+});
+
+rgbIn.addEventListener('input',()=>{
+  const m=rgbIn.value.match(/(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/);
+  if(m){
+    const[r,g,b]=[+m[1],+m[2],+m[3]];
+    hexIn.value=rgb2hex(r,g,b);
+    updatePreview(r,g,b);
+  }
+});
+
+function fromSliders(){
+  const r=+rS.value,g=+gS.value,b=+bS.value;
+  hexIn.value=rgb2hex(r,g,b);
+  rgbIn.value=`rgb(${r}, ${g}, ${b})`;
+  updatePreview(r,g,b);
+}
+
+function swapFocus(){hexIn.focus()}
+
+// Init
+hexIn.dispatchEvent(new Event('input'));
+
+GZ.renderToolPage({category:'color',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/color/picker.html',icon:'🎯',nameKey:'rPicker'},
+    {href:'/color/palette.html',icon:'🎨',nameKey:'rPalette'},
+    {href:'/color/contrast.html',icon:'🔍',nameKey:'rContrast'},
+    {href:'/color/shades.html',icon:'🌗',nameKey:'rShades'}
+  ]
+});
+</script>
+</body>
+</html>

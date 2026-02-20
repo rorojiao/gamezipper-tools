@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Blindness Simulator — GameZipper Tools</title>
+<meta name="description" content="Simulate how colors appear to people with different types of color blindness. Free accessibility tool.">
+<link rel="canonical" href="https://tools.gamezipper.com/color/blindness.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.input-section{text-align:center;margin:1.5rem 0}
+.input-section input[type=color]{width:100px;height:70px;border-radius:14px;border:2px solid var(--border);cursor:pointer}
+.input-section input[type=text]{width:120px;text-align:center;margin-left:1rem}
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin:1.5rem 0}
+.sim-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;transition:all .2s}
+.sim-card:hover{border-color:var(--border2)}
+.sim-card .swatch{width:100%;height:80px;border-radius:10px;margin-bottom:.8rem;cursor:pointer;transition:transform .15s}
+.sim-card .swatch:hover{transform:scale(1.03)}
+.sim-card .type{font-weight:700;font-size:.95rem;margin-bottom:.25rem}
+.sim-card .hex{color:var(--text2);font-size:.85rem;font-family:monospace}
+.sim-card .pct{color:var(--text3);font-size:.75rem;margin-top:.25rem}
+.palette-test{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0}
+.palette-test .p-swatch{width:50px;height:50px;border-radius:8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="input-section">
+      <input type="color" id="colorIn" value="#e74c3c">
+      <input type="text" id="hexIn" value="#e74c3c" maxlength="7">
+      <button class="gz-btn gz-btn-sm" style="margin-left:.5rem" onclick="randomColor()">🎲</button>
+    </div>
+    <div class="sim-grid" id="simGrid"></div>
+    <h3 style="text-align:center;color:var(--text2);font-size:.9rem;margin-top:2rem" id="palTitle"></h3>
+    <div class="palette-test" id="palTest"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Color Blindness Simulator',toolDesc:'See how colors appear to people with different types of color vision deficiency.',
+    s1:'Pick a color using the color picker or enter HEX',s2:'See how the color appears under each type of color blindness',
+    s3:'Click any simulated swatch to copy its HEX',s4:'Test your palette colors below',
+    normal:'Normal Vision',protanopia:'Protanopia (No Red)',deuteranopia:'Deuteranopia (No Green)',
+    tritanopia:'Tritanopia (No Blue)',achromatopsia:'Achromatopsia (No Color)',protanomaly:'Protanomaly (Weak Red)',
+    deuteranomaly:'Deuteranomaly (Weak Green)',tritanomaly:'Tritanomaly (Weak Blue)',
+    palTitle:'Test Palette',
+    rContrast:'Contrast Checker',rPicker:'Color Picker',rPalette:'Palette Generator',rShades:'Shades Generator'},
+  zh:{toolTitle:'色盲模拟器',toolDesc:'模拟不同类型色觉缺陷下的颜色显示效果。',
+    s1:'使用取色器选择颜色或输入 HEX',s2:'查看各类色盲下的颜色表现',
+    s3:'点击模拟色块复制 HEX 值',s4:'在下方测试你的配色方案',
+    normal:'正常视觉',protanopia:'红色盲（无红）',deuteranopia:'绿色盲（无绿）',
+    tritanopia:'蓝色盲（无蓝）',achromatopsia:'全色盲（无色彩）',protanomaly:'红色弱',
+    deuteranomaly:'绿色弱',tritanomaly:'蓝色弱',
+    palTitle:'配色测试',
+    rContrast:'对比度检查器',rPicker:'取色器',rPalette:'调色板生成器',rShades:'色阶生成器'}
+});
+
+function hex2rgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgb2hex(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('')}
+
+// Color blindness simulation matrices
+const matrices={
+  protanopia:[[0.567,0.433,0],[0.558,0.442,0],[0,0.242,0.758]],
+  deuteranopia:[[0.625,0.375,0],[0.7,0.3,0],[0,0.3,0.7]],
+  tritanopia:[[0.95,0.05,0],[0,0.433,0.567],[0,0.475,0.525]],
+  achromatopsia:[[0.299,0.587,0.114],[0.299,0.587,0.114],[0.299,0.587,0.114]],
+  protanomaly:[[0.817,0.183,0],[0.333,0.667,0],[0,0.125,0.875]],
+  deuteranomaly:[[0.8,0.2,0],[0.258,0.742,0],[0,0.142,0.858]],
+  tritanomaly:[[0.967,0.033,0],[0,0.733,0.267],[0,0.183,0.817]],
+};
+
+function simulate(r,g,b,type){
+  if(type==='normal')return[r,g,b];
+  const m=matrices[type];
+  return[m[0][0]*r+m[0][1]*g+m[0][2]*b,m[1][0]*r+m[1][1]*g+m[1][2]*b,m[2][0]*r+m[2][1]*g+m[2][2]*b];
+}
+
+const types=['normal','protanopia','deuteranopia','tritanopia','achromatopsia','protanomaly','deuteranomaly','tritanomaly'];
+const pcts=['','~1% M / 0.01% F','~1% M / 0.01% F','~0.003%','~0.003%','~1% M','~5% M / 0.4% F','~0.01%'];
+
+const colorIn=document.getElementById('colorIn'),hexIn=document.getElementById('hexIn');
+colorIn.addEventListener('input',e=>{hexIn.value=e.target.value;update()});
+hexIn.addEventListener('input',e=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value)){colorIn.value=e.target.value;update()}});
+
+function randomColor(){
+  const h='#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  colorIn.value=h;hexIn.value=h;update();
+}
+
+function update(){
+  const[r,g,b]=hex2rgb(colorIn.value);
+  document.getElementById('simGrid').innerHTML=types.map((t,i)=>{
+    const[sr,sg,sb]=simulate(r,g,b,t);
+    const hex=rgb2hex(sr,sg,sb);
+    return`<div class="sim-card"><div class="swatch" style="background:${hex}" onclick="GZ.copyText('${hex}')"></div><div class="type">${GZI18n.t(t)}</div><div class="hex">${hex}</div>${pcts[i]?`<div class="pct">${pcts[i]}</div>`:''}</div>`;
+  }).join('');
+  // Test palette
+  const testColors=['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e67e22','#1abc9c'];
+  document.getElementById('palTitle').textContent=GZI18n.t('palTitle');
+  document.getElementById('palTest').innerHTML=testColors.map(c=>{
+    const[cr,cg,cb]=hex2rgb(c);
+    return types.filter(t=>t!=='normal').map(t=>{
+      const hex=rgb2hex(...simulate(cr,cg,cb,t));
+      return`<div class="p-swatch" style="background:${hex}" title="${t}: ${hex}" onclick="GZ.copyText('${hex}')"></div>`;
+    }).join('');
+  }).join('');
+}
+update();
+
+GZ.renderToolPage({category:'color',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/color/contrast.html',icon:'🔍',nameKey:'rContrast'},
+    {href:'/color/picker.html',icon:'🎯',nameKey:'rPicker'},
+    {href:'/color/palette.html',icon:'🎨',nameKey:'rPalette'},
+    {href:'/color/shades.html',icon:'🌗',nameKey:'rShades'}
+  ]
+});
+</script>
+</body>
+</html>

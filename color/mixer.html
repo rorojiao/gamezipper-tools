@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Mixer — GameZipper Tools</title>
+<meta name="description" content="Mix two colors together and see the result in real time. Free online color mixing tool.">
+<link rel="canonical" href="https://tools.gamezipper.com/color/mixer.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.mixer-row{display:flex;gap:1.5rem;align-items:center;justify-content:center;flex-wrap:wrap;margin:1.5rem 0}
+.mixer-col{text-align:center}
+.mixer-col input[type=color]{width:80px;height:60px;border-radius:14px;border:2px solid var(--border);cursor:pointer}
+.mixer-col input[type=text]{width:100px;text-align:center;margin-top:.5rem;display:block}
+.result-block{width:200px;height:120px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;cursor:pointer;transition:background .2s}
+.ratio-wrap{text-align:center;margin:1.5rem 0}
+.ratio-wrap label{color:var(--text2);font-size:.85rem;margin-right:.5rem}
+.ratio-wrap input[type=range]{width:300px;max-width:80%;accent-color:var(--accent)}
+.steps-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:1.5rem 0}
+.step-swatch{width:60px;height:60px;border-radius:10px;cursor:pointer;transition:transform .15s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-size:.6rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.step-swatch:hover{transform:scale(1.1)}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="mixer-row">
+      <div class="mixer-col">
+        <input type="color" id="c1" value="#e74c3c">
+        <input type="text" id="c1Hex" value="#e74c3c" maxlength="7">
+      </div>
+      <span style="font-size:2rem;color:var(--text2)">+</span>
+      <div class="mixer-col">
+        <input type="color" id="c2" value="#3498db">
+        <input type="text" id="c2Hex" value="#3498db" maxlength="7">
+      </div>
+      <span style="font-size:2rem;color:var(--text2)">=</span>
+      <div class="result-block" id="result" onclick="GZ.copyText(this.textContent)"></div>
+    </div>
+    <div class="ratio-wrap">
+      <label id="ratioLabel">50%</label>
+      <input type="range" id="ratio" min="0" max="100" value="50" oninput="mix()">
+    </div>
+    <h3 style="text-align:center;color:var(--text2);font-size:.9rem;margin-bottom:.5rem" id="stepsTitle"></h3>
+    <div class="steps-row" id="steps"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Color Mixer',toolDesc:'Mix two colors together and see intermediate steps.',
+    s1:'Pick two colors using the color pickers',s2:'Adjust the ratio slider to blend more of one color',
+    s3:'See the gradient steps between the two colors',s4:'Click any swatch to copy its HEX value',
+    mixSteps:'Mixing Steps',
+    rPicker:'Color Picker',rPalette:'Palette Generator',rShades:'Shades Generator',rHexRgb:'HEX↔RGB Converter'},
+  zh:{toolTitle:'颜色混合器',toolDesc:'混合两种颜色，查看中间过渡步骤。',
+    s1:'使用取色器选择两种颜色',s2:'调整比例滑块改变混合比例',
+    s3:'查看两色之间的渐变步骤',s4:'点击任意色块复制 HEX 值',
+    mixSteps:'混合步骤',
+    rPicker:'取色器',rPalette:'调色板生成器',rShades:'色阶生成器',rHexRgb:'HEX↔RGB 转换'}
+});
+
+function hex2rgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgb2hex(r,g,b){return'#'+[r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('')}
+
+const c1=document.getElementById('c1'),c2=document.getElementById('c2');
+const c1h=document.getElementById('c1Hex'),c2h=document.getElementById('c2Hex');
+const ratio=document.getElementById('ratio');
+
+c1.addEventListener('input',e=>{c1h.value=e.target.value;mix()});
+c2.addEventListener('input',e=>{c2h.value=e.target.value;mix()});
+c1h.addEventListener('input',e=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value)){c1.value=e.target.value;mix()}});
+c2h.addEventListener('input',e=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value)){c2.value=e.target.value;mix()}});
+
+function mixColors(hex1,hex2,t){
+  const a=hex2rgb(hex1),b=hex2rgb(hex2);
+  return rgb2hex(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t);
+}
+
+function mix(){
+  const t=ratio.value/100;
+  document.getElementById('ratioLabel').textContent=ratio.value+'%';
+  const res=mixColors(c1.value,c2.value,t);
+  const rb=document.getElementById('result');
+  rb.style.background=res;rb.textContent=res;
+  const[r,g,b]=hex2rgb(res);rb.style.color=(r*0.299+g*0.587+b*0.114)>128?'#000':'#fff';
+
+  // Steps
+  const steps=[];
+  for(let i=0;i<=10;i++)steps.push(mixColors(c1.value,c2.value,i/10));
+  document.getElementById('stepsTitle').textContent=GZI18n.t('mixSteps');
+  document.getElementById('steps').innerHTML=steps.map(s=>`<div class="step-swatch" style="background:${s}" onclick="GZ.copyText('${s}')">${s}</div>`).join('');
+}
+mix();
+
+GZ.renderToolPage({category:'color',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/color/picker.html',icon:'🎯',nameKey:'rPicker'},
+    {href:'/color/palette.html',icon:'🎨',nameKey:'rPalette'},
+    {href:'/color/shades.html',icon:'🌗',nameKey:'rShades'},
+    {href:'/color/hex-rgb.html',icon:'🔄',nameKey:'rHexRgb'}
+  ]
+});
+</script>
+</body>
+</html>

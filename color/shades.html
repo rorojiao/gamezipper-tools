@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shades Generator — GameZipper Tools</title>
+<meta name="description" content="Generate tints and shades from any base color. Create light to dark color scales for design systems.">
+<link rel="canonical" href="https://tools.gamezipper.com/color/shades.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.input-row{display:flex;gap:1rem;align-items:center;justify-content:center;margin:1.5rem 0;flex-wrap:wrap}
+.input-row input[type=color]{width:80px;height:60px;border-radius:14px;border:2px solid var(--border);cursor:pointer}
+.input-row input[type=text]{width:110px;text-align:center}
+.steps-control{display:flex;gap:1rem;align-items:center;justify-content:center;margin:1rem 0;color:var(--text2);font-size:.85rem}
+.steps-control input[type=range]{width:200px;accent-color:var(--accent)}
+.shades-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:1.5rem 0}
+.shade-swatch{flex:1;min-width:60px;max-width:100px;height:80px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:6px;font-size:.65rem;font-weight:600;transition:transform .15s}
+.shade-swatch:hover{transform:scale(1.08)}
+.section-label{text-align:center;color:var(--text2);font-size:.9rem;font-weight:600;margin:1.5rem 0 .5rem}
+.css-output{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;font-family:monospace;font-size:.8rem;color:var(--text2);white-space:pre-wrap;word-break:break-all;margin:1rem 0;max-height:200px;overflow-y:auto}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="input-row">
+      <input type="color" id="baseColor" value="#6c5ce7">
+      <input type="text" id="baseHex" value="#6c5ce7" maxlength="7">
+      <button class="gz-btn gz-btn-sm" onclick="randomColor()">🎲</button>
+    </div>
+    <div class="steps-control">
+      <span id="stepsLabel"></span>
+      <input type="range" id="steps" min="5" max="20" value="10" oninput="generate()">
+      <span id="stepsVal">10</span>
+    </div>
+    <div class="section-label" id="tintsLabel"></div>
+    <div class="shades-row" id="tints"></div>
+    <div class="section-label" id="shadesLabel"></div>
+    <div class="shades-row" id="shades"></div>
+    <div style="text-align:center;margin-top:1rem">
+      <button class="gz-btn gz-btn-sm" onclick="copyCss()">📋 Copy CSS Variables</button>
+    </div>
+    <div class="css-output" id="cssOut"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Shades Generator',toolDesc:'Generate tints (lighter) and shades (darker) from any base color.',
+    s1:'Pick a base color or enter a HEX value',s2:'Adjust the number of steps with the slider',
+    s3:'Click any swatch to copy its HEX value',s4:'Copy CSS variables for your design system',
+    steps:'Steps:',tints:'Tints (Lighter)',shades:'Shades (Darker)',
+    rPicker:'Color Picker',rPalette:'Palette Generator',rMixer:'Color Mixer',rHexRgb:'HEX↔RGB Converter'},
+  zh:{toolTitle:'色阶生成器',toolDesc:'从任意基色生成明色调（浅）和暗色调（深）。',
+    s1:'选择基色或输入 HEX 值',s2:'用滑块调整步数',
+    s3:'点击色块复制 HEX 值',s4:'复制 CSS 变量用于设计系统',
+    steps:'步数：',tints:'明色调（浅）',shades:'暗色调（深）',
+    rPicker:'取色器',rPalette:'调色板生成器',rMixer:'颜色混合器',rHexRgb:'HEX↔RGB 转换'}
+});
+
+function hex2rgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgb2hex(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('')}
+
+const bc=document.getElementById('baseColor'),bh=document.getElementById('baseHex');
+bc.addEventListener('input',e=>{bh.value=e.target.value;generate()});
+bh.addEventListener('input',e=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value)){bc.value=e.target.value;generate()}});
+
+function randomColor(){
+  const h='#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  bc.value=h;bh.value=h;generate();
+}
+
+function mixRgb(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
+
+let allColors=[];
+
+function generate(){
+  const n=+document.getElementById('steps').value;
+  document.getElementById('stepsVal').textContent=n;
+  document.getElementById('stepsLabel').textContent=GZI18n.t('steps');
+  document.getElementById('tintsLabel').textContent=GZI18n.t('tints');
+  document.getElementById('shadesLabel').textContent=GZI18n.t('shades');
+  const base=hex2rgb(bc.value);
+  const tints=[],shades=[];
+  for(let i=n;i>=1;i--){const t=i/(n+1);tints.push(rgb2hex(...mixRgb(base,[255,255,255],t)));}
+  for(let i=1;i<=n;i++){const t=i/(n+1);shades.push(rgb2hex(...mixRgb(base,[0,0,0],t)));}
+
+  allColors=[...tints,bc.value,...shades];
+
+  document.getElementById('tints').innerHTML=tints.map(c=>{
+    const[r,g,b]=hex2rgb(c);const dark=(r*.299+g*.587+b*.114)>128;
+    return`<div class="shade-swatch" style="background:${c};color:${dark?'#000':'#fff'}" onclick="GZ.copyText('${c}')">${c}</div>`;
+  }).join('');
+  document.getElementById('shades').innerHTML=shades.map(c=>{
+    const[r,g,b]=hex2rgb(c);const dark=(r*.299+g*.587+b*.114)>128;
+    return`<div class="shade-swatch" style="background:${c};color:${dark?'#000':'#fff'}" onclick="GZ.copyText('${c}')">${c}</div>`;
+  }).join('');
+
+  // CSS output
+  const css=allColors.map((c,i)=>`  --color-${(i+1)*100}: ${c};`).join('\n');
+  document.getElementById('cssOut').textContent=`:root {\n${css}\n}`;
+}
+generate();
+
+function copyCss(){GZ.copyText(document.getElementById('cssOut').textContent)}
+
+GZ.renderToolPage({category:'color',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/color/picker.html',icon:'🎯',nameKey:'rPicker'},
+    {href:'/color/palette.html',icon:'🎨',nameKey:'rPalette'},
+    {href:'/color/mixer.html',icon:'🎨',nameKey:'rMixer'},
+    {href:'/color/hex-rgb.html',icon:'🔄',nameKey:'rHexRgb'}
+  ]
+});
+</script>
+</body>
+</html>

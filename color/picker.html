@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Color Picker — GameZipper Tools</title>
+<meta name="description" content="Pick colors from a color wheel with real-time HEX, RGB, and HSL values. Free online color picker tool.">
+<link rel="canonical" href="https://tools.gamezipper.com/color/picker.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.picker-layout{display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.wheel-wrap{position:relative;width:280px;height:280px;flex-shrink:0}
+.wheel-wrap canvas{border-radius:50%;cursor:crosshair;display:block}
+.wheel-marker{position:absolute;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
+.sl-canvas{display:block;border-radius:12px;cursor:crosshair;margin-top:1rem;width:280px;height:180px}
+.sl-marker{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
+.color-info{flex:1;min-width:240px}
+.preview-block{width:100%;height:120px;border-radius:16px;margin-bottom:1.5rem;transition:background .2s;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2rem;cursor:pointer}
+.val-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;padding:.5rem .8rem;border-radius:8px;cursor:pointer;transition:background .15s}
+.val-row:hover{background:rgba(255,255,255,.05)}
+.val-row span{color:var(--muted);font-size:.85rem;min-width:40px}
+.val-row code{font-size:.95rem}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="picker-layout">
+      <div>
+        <div class="wheel-wrap" id="wheelWrap">
+          <canvas id="wheelCanvas" width="280" height="280"></canvas>
+          <div class="wheel-marker" id="wheelMarker"></div>
+        </div>
+        <div style="position:relative">
+          <canvas class="sl-canvas" id="slCanvas" width="280" height="180"></canvas>
+          <div class="sl-marker" id="slMarker"></div>
+        </div>
+      </div>
+      <div class="color-info">
+        <div class="preview-block" id="preview" onclick="GZ.copyText(hexVal)"></div>
+        <div class="val-row" onclick="GZ.copyText(hexVal)"><span>HEX</span><code id="vHex"></code></div>
+        <div class="val-row" onclick="GZ.copyText(rgbVal)"><span>RGB</span><code id="vRgb"></code></div>
+        <div class="val-row" onclick="GZ.copyText(hslVal)"><span>HSL</span><code id="vHsl"></code></div>
+        <div style="margin-top:1rem">
+          <label style="color:var(--muted);font-size:.85rem">HEX</label>
+          <input type="text" id="hexInput" maxlength="7" style="width:120px;margin-left:.5rem" oninput="fromHexInput()">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'Color Picker',toolDesc:'Pick any color from the wheel and get HEX, RGB, HSL values instantly.',
+    s1:'Click on the color wheel to select a hue',s2:'Use the square below to adjust saturation and lightness',
+    s3:'Click any value to copy it to clipboard',s4:'Or type a HEX value directly',
+    rPalette:'Palette Generator',rContrast:'Contrast Checker',rConverter:'HEX↔RGB Converter',rShades:'Shades Generator'
+  },
+  zh:{
+    toolTitle:'取色器',toolDesc:'从色轮上选取颜色，即时获取 HEX、RGB、HSL 值。',
+    s1:'点击色轮选择色相',s2:'在下方方块中调整饱和度和亮度',
+    s3:'点击数值复制到剪贴板',s4:'也可以直接输入 HEX 值',
+    rPalette:'调色板生成器',rContrast:'对比度检查器',rConverter:'HEX↔RGB 转换',rShades:'色阶生成器'
+  }
+});
+
+let currentH=260,currentS=70,currentL=55;
+let hexVal='',rgbVal='',hslVal='';
+
+// Color helpers (inline to avoid dependency on CP)
+function hsl2rgb(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12;const a=s*Math.min(l,1-l);const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));return[Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)]}
+function rgb2hex(r,g,b){return'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}
+function hex2rgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgb2hsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h,s,l=(mx+mn)/2;if(mx===mn){h=s=0}else{const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);switch(mx){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break}}return[Math.round(h*360),Math.round(s*100),Math.round(l*100)]}
+
+// Draw wheel
+const wc=document.getElementById('wheelCanvas'),wctx=wc.getContext('2d');
+function drawWheel(){
+  const cx=140,cy=140,r=136;
+  for(let a=0;a<360;a++){
+    wctx.beginPath();wctx.moveTo(cx,cy);
+    wctx.arc(cx,cy,r,(a-1)*Math.PI/180,(a+1)*Math.PI/180);
+    wctx.closePath();wctx.fillStyle=`hsl(${a},100%,50%)`;wctx.fill();
+  }
+  // Center gray
+  const g=wctx.createRadialGradient(cx,cy,0,cx,cy,r);
+  g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');
+}
+drawWheel();
+
+// Draw SL square
+const slc=document.getElementById('slCanvas'),slctx=slc.getContext('2d');
+function drawSL(){
+  const w=slc.width,h=slc.height;
+  for(let x=0;x<w;x++){
+    for(let y=0;y<h;y++){
+      const s=x/w*100,l=100-y/h*100;
+      slctx.fillStyle=`hsl(${currentH},${s}%,${l}%)`;
+      slctx.fillRect(x,y,1,1);
+    }
+  }
+}
+drawSL();
+
+function updateColor(){
+  const[r,g,b]=hsl2rgb(currentH,currentS,currentL);
+  hexVal=rgb2hex(r,g,b);rgbVal=`rgb(${r}, ${g}, ${b})`;hslVal=`hsl(${currentH}, ${currentS}%, ${currentL}%)`;
+  document.getElementById('vHex').textContent=hexVal;
+  document.getElementById('vRgb').textContent=rgbVal;
+  document.getElementById('vHsl').textContent=hslVal;
+  document.getElementById('hexInput').value=hexVal;
+  const prev=document.getElementById('preview');
+  prev.style.background=hexVal;prev.style.color=currentL>50?'#000':'#fff';prev.textContent=hexVal;
+  // Position wheel marker
+  const rad=currentH*Math.PI/180,cx=140,cy=140,dist=80;
+  const wm=document.getElementById('wheelMarker');
+  wm.style.left=(cx+Math.cos(rad)*dist)+'px';wm.style.top=(cy-Math.sin(rad)*dist)+'px';wm.style.background=`hsl(${currentH},100%,50%)`;
+  // Position SL marker
+  const sm=document.getElementById('slMarker');
+  sm.style.left=(currentS/100*280)+'px';sm.style.top=((100-currentL)/100*180)+'px';
+}
+updateColor();
+
+// Wheel interaction
+let wheelDrag=false;
+wc.addEventListener('mousedown',e=>{wheelDrag=true;pickWheel(e)});
+document.addEventListener('mousemove',e=>{if(wheelDrag)pickWheel(e)});
+document.addEventListener('mouseup',()=>wheelDrag=false);
+wc.addEventListener('touchstart',e=>{e.preventDefault();wheelDrag=true;pickWheel(e.touches[0])},{passive:false});
+document.addEventListener('touchmove',e=>{if(wheelDrag)pickWheel(e.touches[0])},{passive:false});
+document.addEventListener('touchend',()=>wheelDrag=false);
+
+function pickWheel(e){
+  const r=wc.getBoundingClientRect();
+  const x=e.clientX-r.left-140,y=-(e.clientY-r.top-140);
+  currentH=((Math.atan2(y,x)*180/Math.PI)+360)%360;
+  drawSL();updateColor();
+}
+
+// SL interaction
+let slDrag=false;
+slc.addEventListener('mousedown',e=>{slDrag=true;pickSL(e)});
+document.addEventListener('mousemove',e=>{if(slDrag)pickSL(e)});
+document.addEventListener('mouseup',()=>slDrag=false);
+slc.addEventListener('touchstart',e=>{e.preventDefault();slDrag=true;pickSL(e.touches[0])},{passive:false});
+document.addEventListener('touchmove',e=>{if(slDrag)pickSL(e.touches[0])},{passive:false});
+document.addEventListener('touchend',()=>slDrag=false);
+
+function pickSL(e){
+  const r=slc.getBoundingClientRect();
+  const x=Math.max(0,Math.min(e.clientX-r.left,280));
+  const y=Math.max(0,Math.min(e.clientY-r.top,180));
+  currentS=Math.round(x/280*100);currentL=Math.round(100-y/180*100);
+  updateColor();
+}
+
+function fromHexInput(){
+  const v=document.getElementById('hexInput').value;
+  if(/^#[0-9a-f]{6}$/i.test(v)){
+    const[r,g,b]=hex2rgb(v);
+    const[h,s,l]=rgb2hsl(r,g,b);
+    currentH=h;currentS=s;currentL=l;
+    drawSL();updateColor();
+  }
+}
+
+GZ.renderToolPage({
+  category:'color',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/color/palette.html',icon:'🎨',nameKey:'rPalette'},
+    {href:'/color/contrast.html',icon:'🔍',nameKey:'rContrast'},
+    {href:'/color/hex-rgb.html',icon:'🔄',nameKey:'rConverter'},
+    {href:'/color/shades.html',icon:'🌗',nameKey:'rShades'}
+  ]
+});
+</script>
+</body>
+</html>

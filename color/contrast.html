@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contrast Checker — GameZipper Tools</title>
+<meta name="description" content="Check color contrast ratios for WCAG AA and AAA compliance. Ensure your designs are accessible.">
+<link rel="canonical" href="https://tools.gamezipper.com/color/contrast.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.checker-row{display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;align-items:center;margin:1.5rem 0}
+.color-pick{display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.color-pick input[type="color"]{width:80px;height:60px;border-radius:14px;cursor:pointer;border:2px solid var(--border)}
+.color-pick input[type="text"]{width:110px;text-align:center}
+.swap-btn{font-size:1.5rem;cursor:pointer;background:none;border:none;color:var(--muted);transition:transform .3s}
+.swap-btn:hover{transform:rotate(180deg);color:var(--fg)}
+.ratio-display{text-align:center;margin:1.5rem 0}
+.ratio-num{font-size:3.5rem;font-weight:900;color:var(--primary)}
+.ratio-label{color:var(--muted);font-size:1rem}
+.wcag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;max-width:700px;margin:1.5rem auto}
+.wcag-card{background:var(--surface);border-radius:14px;padding:1.2rem;text-align:center;border:2px solid transparent;transition:all .3s}
+.wcag-card.pass{border-color:#10b981}.wcag-card.fail{border-color:#ef4444}
+.wcag-card .status{font-size:1.5rem;margin-bottom:.5rem}
+.wcag-card .level{font-weight:700;font-size:1.1rem}
+.wcag-card .desc{color:var(--muted);font-size:.8rem;margin-top:.25rem}
+.preview-box{max-width:600px;margin:1.5rem auto;border-radius:16px;padding:2rem;transition:all .3s}
+.preview-box h2{margin-bottom:.5rem}
+.preview-box p{font-size:1rem;line-height:1.6}
+.preview-box .small-text{font-size:.8rem;margin-top:.5rem}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="checker-row">
+      <div class="color-pick">
+        <span style="color:var(--muted);font-size:.85rem" id="lFg"></span>
+        <input type="color" id="fg" value="#ffffff">
+        <input type="text" id="fgHex" value="#ffffff" maxlength="7">
+      </div>
+      <button class="swap-btn" onclick="swapColors()" title="Swap">🔄</button>
+      <div class="color-pick">
+        <span style="color:var(--muted);font-size:.85rem" id="lBg"></span>
+        <input type="color" id="bg" value="#1e1e2e">
+        <input type="text" id="bgHex" value="#1e1e2e" maxlength="7">
+      </div>
+    </div>
+    <div class="ratio-display">
+      <div class="ratio-num" id="ratioNum">—</div>
+      <div class="ratio-label" id="ratioLabel"></div>
+    </div>
+    <div class="wcag-grid" id="wcagGrid"></div>
+    <div class="preview-box" id="previewBox">
+      <h2>Heading Text (24px Bold)</h2>
+      <p>Normal body text at 16px. Check readability against the background.</p>
+      <p class="small-text">Small text at 12.8px — needs higher contrast.</p>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'Contrast Checker',toolDesc:'Check WCAG 2.1 contrast ratios for accessibility compliance.',
+    foreground:'Foreground',background:'Background',contrastRatio:'Contrast Ratio',
+    s1:'Pick a foreground (text) color',s2:'Pick a background color',
+    s3:'Check the WCAG AA/AAA results below',s4:'Use the swap button to reverse colors',
+    rPicker:'Color Picker',rPalette:'Palette Generator',rBlindness:'Blindness Simulator',rConverter:'HEX↔RGB Converter'
+  },
+  zh:{
+    toolTitle:'对比度检查器',toolDesc:'检查 WCAG 2.1 对比度，确保无障碍合规。',
+    foreground:'前景色',background:'背景色',contrastRatio:'对比度',
+    s1:'选择前景（文字）颜色',s2:'选择背景颜色',
+    s3:'查看下方 WCAG AA/AAA 结果',s4:'用交换按钮反转颜色',
+    rPicker:'取色器',rPalette:'调色板生成器',rBlindness:'色盲模拟器',rConverter:'HEX↔RGB 转换'
+  }
+});
+
+function hex2rgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function luminance(r,g,b){const[rs,gs,bs]=[r,g,b].map(c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)});return .2126*rs+.7152*gs+.0722*bs}
+function contrast(rgb1,rgb2){const l1=luminance(...rgb1),l2=luminance(...rgb2);return(Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05)}
+
+const fg=document.getElementById('fg'),fgHex=document.getElementById('fgHex');
+const bg_=document.getElementById('bg'),bgHex=document.getElementById('bgHex');
+document.getElementById('lFg').textContent=GZI18n.t('foreground');
+document.getElementById('lBg').textContent=GZI18n.t('background');
+document.getElementById('ratioLabel').textContent=GZI18n.t('contrastRatio');
+
+fg.addEventListener('input',e=>{fgHex.value=e.target.value;update()});
+bg_.addEventListener('input',e=>{bgHex.value=e.target.value;update()});
+fgHex.addEventListener('input',e=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value)){fg.value=e.target.value;update()}});
+bgHex.addEventListener('input',e=>{if(/^#[0-9a-f]{6}$/i.test(e.target.value)){bg_.value=e.target.value;update()}});
+
+function swapColors(){const t=fg.value;fg.value=bg_.value;fgHex.value=bg_.value;bg_.value=t;bgHex.value=t;update()}
+
+function update(){
+  const fgRgb=hex2rgb(fg.value),bgRgb=hex2rgb(bg_.value);
+  const ratio=contrast(fgRgb,bgRgb),r=ratio.toFixed(2);
+  document.getElementById('ratioNum').textContent=r+':1';
+  const checks=[
+    {level:'AA Large',min:3,desc:'≥18pt or 14pt bold'},
+    {level:'AA Normal',min:4.5,desc:'Normal text (≥16px)'},
+    {level:'AAA Large',min:4.5,desc:'≥18pt or 14pt bold'},
+    {level:'AAA Normal',min:7,desc:'Normal text (≥16px)'},
+  ];
+  document.getElementById('wcagGrid').innerHTML=checks.map(c=>{
+    const pass=ratio>=c.min;
+    return`<div class="wcag-card ${pass?'pass':'fail'}"><div class="status">${pass?'✅':'❌'}</div><div class="level">${c.level}</div><div class="desc">${c.desc} (≥${c.min}:1)</div></div>`;
+  }).join('');
+  const box=document.getElementById('previewBox');
+  box.style.backgroundColor=bg_.value;box.style.color=fg.value;
+}
+update();
+
+GZ.renderToolPage({
+  category:'color',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/color/picker.html',icon:'🎯',nameKey:'rPicker'},
+    {href:'/color/palette.html',icon:'🎨',nameKey:'rPalette'},
+    {href:'/color/blindness.html',icon:'👁️',nameKey:'rBlindness'},
+    {href:'/color/hex-rgb.html',icon:'🔄',nameKey:'rConverter'}
+  ]
+});
+</script>
+</body>
+</html>
