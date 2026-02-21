@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JSON Tree Viewer — GameZipper Tools</title>
+<meta name="description" content="Free online JSON tree viewer. Paste JSON to render a collapsible tree with syntax highlighting, search, and path display.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/json-tree.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#tree{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.85em;line-height:1.6;overflow:auto;max-height:70vh;min-height:200px}
+.jt-key{color:#e94560;cursor:pointer}.jt-str{color:#00d672}.jt-num{color:#ff9f43}.jt-bool{color:#54a0ff}.jt-null{color:#888}
+.jt-toggle{cursor:pointer;user-select:none;display:inline-block;width:1em;text-align:center;color:var(--gz-text-muted)}
+.jt-collapsed>.jt-children{display:none}
+.jt-bracket{color:var(--gz-text-muted)}
+.jt-path{background:var(--gz-bg);border:1px solid var(--gz-border);border-radius:6px;padding:4px 10px;font-family:monospace;font-size:.8em;margin-top:8px;color:var(--gz-accent);min-height:1.5em}
+.jt-highlight{background:#ff9f4333;border-radius:2px}
+.jt-hidden{display:none!important}
+#searchBox{margin-bottom:1rem;display:flex;gap:8px;align-items:center}
+#searchBox input{flex:1;height:32px;border-radius:6px;border:1px solid var(--gz-border);padding:0 10px;background:var(--gz-surface);color:var(--gz-text)}
+#searchCount{font-size:.8em;color:var(--gz-text-muted)}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" rows="6" placeholder=""></textarea>
+    <div id="searchBox"><input type="text" id="searchInput" placeholder=""><span id="searchCount"></span></div>
+    <div id="tree"></div>
+    <div class="jt-path" id="pathDisplay"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'JSON Tree Viewer',toolDesc:'Paste JSON to render an interactive collapsible tree with syntax highlighting, search filtering, and node path display.',
+    step1:'Paste JSON data in the input area',step2:'Click nodes to expand or collapse them',step3:'Use search to filter and highlight matching keys/values',step4:'Click any value to see its full path',
+    searchPh:'Search keys or values...',expandAll:'Expand All',collapseAll:'Collapse All',pathLabel:'Path:',inputPh:'Paste your JSON here...',
+    matchCount:'{n} matches',
+  },
+  zh:{
+    toolTitle:'JSON 树形查看器',toolDesc:'粘贴JSON数据，渲染可折叠的交互式树形结构，支持语法高亮、搜索过滤和节点路径显示。',
+    step1:'在输入区粘贴JSON数据',step2:'点击节点展开或折叠',step3:'使用搜索过滤并高亮匹配的键/值',step4:'点击任意值查看完整路径',
+    searchPh:'搜索键名或值...',expandAll:'全部展开',collapseAll:'全部折叠',pathLabel:'路径：',inputPh:'在此粘贴JSON...',
+    matchCount:'{n} 个匹配',
+  }
+});
+const {$,t,copyText}=GZ;
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function buildTree(data,path=''){
+  if(data===null)return `<span class="jt-null jt-val" data-path="${esc(path)}">null</span>`;
+  if(typeof data==='boolean')return `<span class="jt-bool jt-val" data-path="${esc(path)}">${data}</span>`;
+  if(typeof data==='number')return `<span class="jt-num jt-val" data-path="${esc(path)}">${data}</span>`;
+  if(typeof data==='string')return `<span class="jt-str jt-val" data-path="${esc(path)}">"${esc(data)}"</span>`;
+  const isArr=Array.isArray(data);
+  const entries=isArr?data.map((v,i)=>[i,v]):Object.entries(data);
+  const open=isArr?'[':'{';const close=isArr?']':'}';
+  if(entries.length===0)return `<span class="jt-bracket">${open}${close}</span>`;
+  let html=`<span class="jt-node"><span class="jt-toggle" onclick="toggleNode(this)">▼</span><span class="jt-bracket">${open}</span><div class="jt-children" style="padding-left:1.5em">`;
+  entries.forEach(([k,v])=>{
+    const cp=isArr?`${path}[${k}]`:(path?path+'.':'')+k;
+    const keyHtml=isArr?'':`<span class="jt-key" data-path="${esc(cp)}">"${esc(k)}"</span>: `;
+    html+=`<div class="jt-entry">${keyHtml}${buildTree(v,cp)}${','}</div>`;
+  });
+  html+=`</div><span class="jt-bracket">${close}</span></span>`;
+  return html;
+}
+
+window.toggleNode=function(el){
+  const node=el.closest('.jt-node');
+  node.classList.toggle('jt-collapsed');
+  el.textContent=node.classList.contains('jt-collapsed')?'▶':'▼';
+};
+
+function parse(){
+  const inp=$('#input').value.trim();
+  if(!inp){$('#tree').innerHTML='';return;}
+  try{
+    const data=JSON.parse(inp);
+    $('#tree').innerHTML=buildTree(data);
+    // click to show path
+    $('#tree').querySelectorAll('[data-path]').forEach(el=>el.addEventListener('click',e=>{
+      e.stopPropagation();$('#pathDisplay').textContent=el.dataset.path;
+    }));
+  }catch(e){$('#tree').innerHTML=`<span style="color:var(--gz-accent)">Error: ${esc(e.message)}</span>`;}
+}
+
+function expandAll(){$('#tree').querySelectorAll('.jt-node').forEach(n=>{n.classList.remove('jt-collapsed');const t=n.querySelector(':scope>.jt-toggle');if(t)t.textContent='▼';});}
+function collapseAll(){$('#tree').querySelectorAll('.jt-node').forEach(n=>{n.classList.add('jt-collapsed');const t=n.querySelector(':scope>.jt-toggle');if(t)t.textContent='▶';});}
+
+function doSearch(){
+  const q=$('#searchInput').value.toLowerCase().trim();
+  const entries=$('#tree').querySelectorAll('.jt-entry');
+  let count=0;
+  entries.forEach(e=>{
+    e.classList.remove('jt-hidden');
+    e.querySelectorAll('.jt-highlight').forEach(h=>{h.classList.remove('jt-highlight');});
+  });
+  if(!q){$('#searchCount').textContent='';return;}
+  entries.forEach(e=>{
+    const text=e.textContent.toLowerCase();
+    if(text.includes(q)){count++;e.querySelectorAll('.jt-key,.jt-val').forEach(el=>{if(el.textContent.toLowerCase().includes(q))el.classList.add('jt-highlight');});}
+  });
+  $('#searchCount').textContent=t('matchCount').replace('{n}',count);
+}
+
+function loadExample(){
+  $('#input').value=JSON.stringify({"data":{"users":[{"id":1,"name":"Alice","active":true,"score":95.5},{"id":2,"name":"Bob","active":false,"score":null}],"meta":{"total":2,"page":1}}},null,0);
+  parse();
+}
+
+$('#input').placeholder=t('inputPh');
+$('#searchInput').placeholder=t('searchPh');
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="parse()">${t('format')}</button><button class="gz-btn gz-btn-secondary" onclick="expandAll()">${t('expandAll')}</button><button class="gz-btn gz-btn-secondary" onclick="collapseAll()">${t('collapseAll')}</button><button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#tree').innerHTML='';$('#pathDisplay').textContent=''">${t('clear')}</button>`;
+$('#input').addEventListener('input',parse);
+$('#searchInput').addEventListener('input',doSearch);
+
+GZ.renderToolPage({category:'dev',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'📋',href:'/dev/json.html',name:'JSON Formatter'},
+  {icon:'🔐',href:'/dev/base64.html',name:'Base64'},
+  {icon:'🔗',href:'/dev/url-encode.html',name:'URL Encode'},
+  {icon:'📊',href:'/dev/sql.html',name:'SQL Formatter'},
+]});
+</script>
+</body>
+</html>
