@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bionic Reading Converter — GameZipper Tools</title>
+<meta name="description" content="Free online Bionic Reading converter. Bold the first half of each word to help you read faster.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/bionic.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.bio-options{display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.bio-options label{font-size:.85em;font-weight:600}
+#preview{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;padding:1.2rem;line-height:1.8;font-size:1.05em;min-height:120px;white-space:pre-wrap}
+#preview b{font-weight:700}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="bio-options">
+      <label id="lbl-ratio"></label>
+      <select id="ratio"><option value="0.3">30%</option><option value="0.4" selected>40%</option><option value="0.5">50%</option></select>
+    </div>
+    <textarea id="input" spellcheck="false" rows="6" placeholder=""></textarea>
+    <label style="margin:1rem 0 .5rem;display:block;font-weight:600" id="lbl-preview"></label>
+    <div id="preview"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'Bionic Reading Converter',toolDesc:'Bold the first portion of each word to guide your eyes and read faster. Adjust bold ratio and copy as rich text or HTML.',
+    lblRatio:'Bold ratio:',lblPreview:'Preview:',
+    copyHtml:'Copy HTML',copyRich:'Copy Rich Text',
+    step1:'Type or paste your text in the input area',
+    step2:'Adjust the bold ratio (30%-50%)',
+    step3:'Preview the bionic reading result below',
+    step4:'Copy as HTML or rich text',
+    inputPh:'Paste your text here to convert to bionic reading...',
+  },
+  zh:{
+    toolTitle:'仿生阅读转换器',toolDesc:'将每个单词的前半部分加粗，引导视线更快阅读。可调整加粗比例，支持复制富文本或HTML。',
+    lblRatio:'加粗比例：',lblPreview:'预览：',
+    copyHtml:'复制HTML',copyRich:'复制富文本',
+    step1:'在输入区输入或粘贴文本',
+    step2:'调整加粗比例（30%-50%）',
+    step3:'在下方预览仿生阅读效果',
+    step4:'复制为HTML或富文本',
+    inputPh:'在此粘贴文本以转换为仿生阅读...',
+  }
+});
+const {$,t,copyText,showToast}=GZ;
+
+function bionicWord(w,ratio){
+  if(w.length<=1)return `<b>${w}</b>`;
+  const n=Math.max(1,Math.ceil(w.length*ratio));
+  return `<b>${w.slice(0,n)}</b>${w.slice(n)}`;
+}
+
+function convert(){
+  const text=$('#input').value;
+  const ratio=parseFloat($('#ratio').value);
+  if(!text){$('#preview').innerHTML='';return;}
+  const html=text.replace(/[\S]+/g,w=>{
+    // preserve punctuation attached to words
+    const m=w.match(/^(\W*)([\w']+)(\W*)$/);
+    if(m)return m[1]+bionicWord(m[2],ratio)+m[3];
+    return bionicWord(w,ratio);
+  });
+  $('#preview').innerHTML=html;
+}
+
+function getHTML(){
+  return $('#preview').innerHTML;
+}
+
+function copyHTML(){
+  copyText(getHTML());
+}
+
+function copyRich(){
+  const html=getHTML();
+  try{
+    const blob=new Blob([html],{type:'text/html'});
+    navigator.clipboard.write([new ClipboardItem({'text/html':blob,'text/plain':new Blob([$('#input').value],{type:'text/plain'})})]).then(()=>showToast(t('copied')));
+  }catch(e){copyText(html);}
+}
+
+function loadExample(){
+  $('#input').value='Bionic Reading is a new method facilitating the reading process by guiding the eyes through text with artificial fixation points. As a result, the reader is only focusing on the highlighted initial letters and lets the brain center complete the word.';
+  convert();
+}
+
+$('#lbl-ratio').textContent=t('lblRatio');
+$('#lbl-preview').textContent=t('lblPreview');
+$('#input').placeholder=t('inputPh');
+
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn" onclick="copyRich()">${t('copyRich')}</button><button class="gz-btn gz-btn-secondary" onclick="copyHTML()">${t('copyHtml')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#preview').innerHTML=''">${t('clear')}</button>`;
+$('#input').addEventListener('input',convert);
+$('#ratio').addEventListener('change',convert);
+
+GZ.renderToolPage({category:'text',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'🔤',href:'/text/case-converter.html',name:'Case Converter'},
+  {icon:'✍️',href:'/text/handwriting.html',name:'Handwriting'},
+  {icon:'🔢',href:'/text/letter-counter.html',name:'Letter Counter'},
+]});
+</script>
+</body>
+</html>

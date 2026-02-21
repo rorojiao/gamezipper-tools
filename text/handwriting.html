@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Text to Handwriting — GameZipper Tools</title>
+<meta name="description" content="Free online text to handwriting converter. Generate realistic handwritten text on lined, grid, or blank paper and download as PNG.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/handwriting.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.hw-options{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:1rem;align-items:center}
+.hw-options label{font-size:.85em;font-weight:600}
+.hw-options select,.hw-options input[type=color]{height:32px;border-radius:6px;border:1px solid var(--gz-border);padding:0 8px;background:var(--gz-surface)}
+#hwCanvas{border:1px solid var(--gz-border);border-radius:8px;max-width:100%;background:#fff;display:block;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="hw-options">
+      <label id="lbl-style"></label><select id="fontStyle"><option value="messy" id="opt-messy"></option><option value="neat" id="opt-neat"></option><option value="cute" id="opt-cute"></option></select>
+      <label id="lbl-paper"></label><select id="paperStyle"><option value="lined" id="opt-lined"></option><option value="grid" id="opt-grid"></option><option value="blank" id="opt-blank"></option></select>
+      <label id="lbl-ink"></label><input type="color" id="inkColor" value="#1a1a2e">
+    </div>
+    <textarea id="input" spellcheck="false" rows="6" placeholder=""></textarea>
+    <canvas id="hwCanvas" width="800" height="600"></canvas>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'Text to Handwriting',toolDesc:'Convert typed text into realistic handwriting on paper. Choose font style, paper type, and ink color, then download as PNG.',
+    lblStyle:'Style:',lblPaper:'Paper:',lblInk:'Ink:',
+    messy:'Messy',neat:'Neat',cute:'Cute',lined:'Lined',grid:'Grid',blank:'Blank',
+    step1:'Type or paste text in the input area',
+    step2:'Choose handwriting style, paper type, and ink color',
+    step3:'Click Generate to render handwriting on canvas',
+    step4:'Click Download to save as PNG',
+    inputPh:'Type your text here...',
+  },
+  zh:{
+    toolTitle:'文字转手写体',toolDesc:'将输入文字转换为逼真手写效果。可选字体风格、纸张类型和墨水颜色，支持下载PNG。',
+    lblStyle:'风格：',lblPaper:'纸张：',lblInk:'墨水：',
+    messy:'潦草',neat:'工整',cute:'可爱',lined:'横线纸',grid:'方格纸',blank:'空白纸',
+    step1:'在输入区输入或粘贴文本',
+    step2:'选择手写风格、纸张类型和墨水颜色',
+    step3:'点击"生成"在画布上渲染手写效果',
+    step4:'点击"下载"保存为PNG图片',
+    inputPh:'在此输入文字...',
+  }
+});
+const {$,t,copyText}=GZ;
+
+function applyI18nLabels(){
+  $('#lbl-style').textContent=t('lblStyle');
+  $('#lbl-paper').textContent=t('lblPaper');
+  $('#lbl-ink').textContent=t('lblInk');
+  $('#opt-messy').textContent=t('messy');
+  $('#opt-neat').textContent=t('neat');
+  $('#opt-cute').textContent=t('cute');
+  $('#opt-lined').textContent=t('lined');
+  $('#opt-grid').textContent=t('grid');
+  $('#opt-blank').textContent=t('blank');
+  $('#input').placeholder=t('inputPh');
+}
+
+function drawPaper(ctx,w,h,style){
+  ctx.fillStyle='#fffef5';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#c8d6e5';ctx.lineWidth=0.5;
+  if(style==='lined'){for(let y=60;y<h;y+=32){ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w-20,y);ctx.stroke();}}
+  else if(style==='grid'){for(let y=20;y<h;y+=28){ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(w-20,y);ctx.stroke();}for(let x=20;x<w;x+=28){ctx.beginPath();ctx.moveTo(x,20);ctx.lineTo(x,h-20);ctx.stroke();}}
+}
+
+function rnd(a,b){return a+Math.random()*(b-a)}
+function drawChar(ctx,ch,x,y,style){
+  const sz=style==='cute'?20:style==='neat'?22:21;
+  const jx=style==='messy'?rnd(-3,3):style==='cute'?rnd(-1,1):rnd(-0.5,0.5);
+  const jy=style==='messy'?rnd(-3,3):style==='cute'?rnd(-1,1):rnd(-0.5,0.5);
+  const rot=style==='messy'?rnd(-0.08,0.08):style==='cute'?rnd(-0.03,0.03):rnd(-0.01,0.01);
+  ctx.save();ctx.translate(x+jx,y+jy);ctx.rotate(rot);
+  const ff=style==='cute'?'"Comic Sans MS",cursive':style==='neat'?'"Georgia",serif':'"Segoe Script","cursive",sans-serif';
+  ctx.font=`${sz}px ${ff}`;ctx.globalAlpha=rnd(0.82,1);
+  // slight stroke width variation
+  ctx.lineWidth=style==='messy'?rnd(0.3,0.8):0.2;
+  ctx.fillText(ch,0,0);
+  ctx.restore();
+}
+
+function render(){
+  const text=$('#input').value;
+  const style=$('#fontStyle').value;
+  const paper=$('#paperStyle').value;
+  const ink=$('#inkColor').value;
+  const cvs=$('#hwCanvas');const ctx=cvs.getContext('2d');
+  // auto height
+  const lineH=32;const margin=50;const maxW=cvs.width-margin*2;
+  const charW=style==='cute'?16:style==='neat'?14:13;
+  const lines=text.split('\n');
+  let totalLines=0;
+  lines.forEach(l=>{totalLines+=Math.max(1,Math.ceil((l.length*charW)/maxW));});
+  cvs.height=Math.max(300,totalLines*lineH+margin*2+40);
+  drawPaper(ctx,cvs.width,cvs.height,paper);
+  ctx.fillStyle=ink;
+  let cy=margin+20;
+  lines.forEach(line=>{
+    let cx=margin;
+    for(let i=0;i<line.length;i++){
+      if(cx+charW>cvs.width-margin){cx=margin;cy+=lineH;}
+      drawChar(ctx,line[i],cx,cy,style);
+      cx+=charW+rnd(-1,2);
+    }
+    cy+=lineH;
+  });
+}
+
+function downloadPNG(){
+  const a=document.createElement('a');a.download='handwriting.png';a.href=$('#hwCanvas').toDataURL('image/png');a.click();
+}
+
+function loadExample(){
+  $('#input').value='The quick brown fox jumps over the lazy dog.\nPack my box with five dozen liquor jugs.\nHow vexingly quick daft zebras jump!';
+  render();
+}
+
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="render()">${t('generate')}</button><button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="downloadPNG()">${t('download')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#input').value=''">${t('clear')}</button>`;
+applyI18nLabels();
+$('#input').addEventListener('input',render);
+$('#fontStyle').addEventListener('change',render);
+$('#paperStyle').addEventListener('change',render);
+$('#inkColor').addEventListener('input',render);
+
+GZ.renderToolPage({category:'text',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'🔤',href:'/text/case-converter.html',name:'Case Converter'},
+  {icon:'📖',href:'/text/bionic.html',name:'Bionic Reading'},
+  {icon:'🔢',href:'/text/letter-counter.html',name:'Letter Counter'},
+]});
+</script>
+</body>
+</html>
