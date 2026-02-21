@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CSS Triangle Generator — GameZipper Tools</title>
+<meta name="description" content="Free online CSS triangle generator. Create CSS triangles with 8 directions, custom size and color.">
+<link rel="canonical" href="https://tools.gamezipper.com/css-tools/triangle.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.preview-area{display:flex;align-items:center;justify-content:center;width:100%;height:220px;border-radius:var(--radius);border:1px solid var(--border);background:var(--glass);margin-bottom:1rem}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:1rem}
+.controls label{color:var(--text2);font-size:.85rem;display:flex;align-items:center;gap:6px}
+.controls select,.controls input{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:.85rem}
+.controls input[type=range]{width:120px}
+.controls input[type=color]{width:40px;height:32px;padding:2px;cursor:pointer}
+.dir-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1rem}
+.dir-grid button{padding:8px 4px;font-size:.8rem;background:var(--glass);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);cursor:pointer;transition:all .2s}
+.dir-grid button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.code-out{background:rgba(0,0,0,.4);padding:1rem;border-radius:var(--radius-sm);font-family:monospace;font-size:.85rem;color:var(--text);word-break:break-all;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <p style="color:var(--text2);font-size:.85rem;margin-bottom:6px" id="dirLabel"></p>
+    <div class="dir-grid" id="dirs"></div>
+    <div class="controls" id="controls"></div>
+    <div class="preview-area"><div id="triangle"></div></div>
+    <div class="code-out" id="code"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'CSS Triangle Generator',toolDesc:'Create CSS triangles pointing in any direction with custom size and color.',
+    direction:'Direction',width:'Width',height:'Height',color:'Color',
+    up:'Up',down:'Down',left:'Left',right:'Right',upLeft:'Up-Left',upRight:'Up-Right',downLeft:'Down-Left',downRight:'Down-Right',
+    step1:'Select triangle direction',step2:'Adjust width, height and color',step3:'Copy the CSS code'},
+  zh:{toolTitle:'CSS 三角形生成器',toolDesc:'创建任意方向的 CSS 三角形，自定义大小和颜色。',
+    direction:'方向',width:'宽度',height:'高度',color:'颜色',
+    up:'上',down:'下',left:'左',right:'右',upLeft:'左上',upRight:'右上',downLeft:'左下',downRight:'右下',
+    step1:'选择三角形方向',step2:'调整宽度、高度和颜色',step3:'复制 CSS 代码'}
+});
+const {$,copyText,t}=GZ;
+let dir='down',w=80,h=80,color='#6c5ce7';
+const dirs=['up','down','left','right','upLeft','upRight','downLeft','downRight'];
+
+function renderDirs(){
+  $('#dirs').innerHTML=dirs.map(d=>`<button class="${d===dir?'active':''}" onclick="dir='${d}';renderDirs();update()">${t(d)}</button>`).join('');
+}
+function getCSS(){
+  const hw=w/2,hh=h/2;
+  const map={
+    up:`border-left:${hw}px solid transparent;border-right:${hw}px solid transparent;border-bottom:${h}px solid ${color};`,
+    down:`border-left:${hw}px solid transparent;border-right:${hw}px solid transparent;border-top:${h}px solid ${color};`,
+    left:`border-top:${hh}px solid transparent;border-bottom:${hh}px solid transparent;border-right:${w}px solid ${color};`,
+    right:`border-top:${hh}px solid transparent;border-bottom:${hh}px solid transparent;border-left:${w}px solid ${color};`,
+    upLeft:`border-top:${h}px solid ${color};border-right:${w}px solid transparent;`,
+    upRight:`border-top:${h}px solid ${color};border-left:${w}px solid transparent;`,
+    downLeft:`border-bottom:${h}px solid ${color};border-right:${w}px solid transparent;`,
+    downRight:`border-bottom:${h}px solid ${color};border-left:${w}px solid transparent;`
+  };
+  return `width: 0;\nheight: 0;\n${map[dir].split(';').filter(Boolean).join(';\n')};`;
+}
+function update(){
+  const el=$('#triangle');
+  el.style.cssText='width:0;height:0;'+getCSS().replace(/\n/g,'');
+  $('#code').textContent=getCSS();
+}
+function loadExample(){dir='up';w=100;h=100;color='#e74c3c';$('#w').value=100;$('#h').value=100;$('#wVal').textContent='100';$('#hVal').textContent='100';$('#color').value=color;renderDirs();update();}
+
+$('#dirLabel').textContent=t('direction');
+$('#controls').innerHTML=`<label>${t('width')}: <input type="range" id="w" min="10" max="200" value="${w}" oninput="w=+this.value;$('#wVal').textContent=this.value;update()"><span id="wVal">${w}</span>px</label><label>${t('height')}: <input type="range" id="h" min="10" max="200" value="${h}" oninput="h=+this.value;$('#hVal').textContent=this.value;update()"><span id="hVal">${h}</span>px</label><label>${t('color')}: <input type="color" id="color" value="${color}" oninput="color=this.value;update()"></label>`;
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn" onclick="copyText($('#code').textContent)">${t('copy')}</button>`;
+renderDirs();update();
+GZ.renderToolPage({category:'css',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🎨',href:'/css-tools/gradient.html',name:'Gradient'},
+  {icon:'📦',href:'/css-tools/shadow.html',name:'Box Shadow'},
+  {icon:'🔲',href:'/css-tools/border-radius.html',name:'Border Radius'},
+]});
+</script>
+</body>
+</html>

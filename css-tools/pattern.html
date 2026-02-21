@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CSS Background Pattern Generator — GameZipper Tools</title>
+<meta name="description" content="Free CSS background pattern generator. 12+ pure CSS patterns with customizable colors and sizes.">
+<link rel="canonical" href="https://tools.gamezipper.com/css-tools/pattern.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.preview-box{width:100%;height:240px;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1rem}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:1rem}
+.controls label{color:var(--text2);font-size:.85rem;display:flex;align-items:center;gap:6px}
+.controls input{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:.85rem}
+.controls input[type=range]{width:120px}
+.controls input[type=color]{width:40px;height:32px;padding:2px;cursor:pointer}
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-bottom:1rem}
+.preset-grid button{padding:8px;font-size:.75rem;background:var(--glass);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);cursor:pointer}
+.preset-grid button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.code-out{background:rgba(0,0,0,.4);padding:1rem;border-radius:var(--radius-sm);font-family:monospace;font-size:.82rem;color:var(--text);white-space:pre-wrap;max-height:300px;overflow-y:auto}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="preset-grid" id="presets"></div>
+    <div class="controls" id="controls"></div>
+    <div class="preview-box" id="preview"></div>
+    <div class="code-out" id="code"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'CSS Background Pattern Generator',toolDesc:'12+ pure CSS patterns. Customize colors, size and spacing — no images needed.',
+    color1:'Color 1',color2:'Color 2',pSize:'Size',spacing:'Spacing',
+    step1:'Choose a pattern preset',step2:'Adjust colors, size and spacing',step3:'Copy the pure CSS code'},
+  zh:{toolTitle:'CSS 背景图案生成器',toolDesc:'12+ 纯 CSS 图案，自定义颜色、大小和间距，无需图片。',
+    color1:'颜色 1',color2:'颜色 2',pSize:'大小',spacing:'间距',
+    step1:'选择图案预设',step2:'调整颜色、大小和间距',step3:'复制纯 CSS 代码'}
+});
+const {$,copyText,t}=GZ;
+let c1='#6c5ce7',c2='#1a1a2e',sz=20,sp=20,preset='stripes';
+
+const PATTERNS={
+  stripes:{name:'Stripes',css:(a,b,s)=>`background:repeating-linear-gradient(45deg,${a},${a} ${s}px,${b} ${s}px,${b} ${s*2}px)`},
+  hStripes:{name:'H-Stripes',css:(a,b,s)=>`background:repeating-linear-gradient(0deg,${a},${a} ${s}px,${b} ${s}px,${b} ${s*2}px)`},
+  vStripes:{name:'V-Stripes',css:(a,b,s)=>`background:repeating-linear-gradient(90deg,${a},${a} ${s}px,${b} ${s}px,${b} ${s*2}px)`},
+  grid:{name:'Grid',css:(a,b,s)=>`background-color:${b};background-image:linear-gradient(${a} 1px,transparent 1px),linear-gradient(90deg,${a} 1px,transparent 1px);background-size:${s}px ${s}px`},
+  checkerboard:{name:'Checkerboard',css:(a,b,s)=>`background-color:${b};background-image:linear-gradient(45deg,${a} 25%,transparent 25%,transparent 75%,${a} 75%),linear-gradient(45deg,${a} 25%,transparent 25%,transparent 75%,${a} 75%);background-size:${s*2}px ${s*2}px;background-position:0 0,${s}px ${s}px`},
+  dots:{name:'Dots',css:(a,b,s)=>`background-color:${b};background-image:radial-gradient(circle,${a} ${Math.max(1,s/6)}px,transparent ${Math.max(1,s/6)}px);background-size:${s}px ${s}px`},
+  bigDots:{name:'Big Dots',css:(a,b,s)=>`background-color:${b};background-image:radial-gradient(circle,${a} ${s/3}px,transparent ${s/3}px);background-size:${s}px ${s}px`},
+  diamond:{name:'Diamond',css:(a,b,s)=>`background-color:${b};background-image:linear-gradient(45deg,${a} 25%,transparent 25%),linear-gradient(-45deg,${a} 25%,transparent 25%),linear-gradient(45deg,transparent 75%,${a} 75%),linear-gradient(-45deg,transparent 75%,${a} 75%);background-size:${s}px ${s}px;background-position:0 0,0 ${s/2}px,${s/2}px -${s/2}px,-${s/2}px 0`},
+  zigzag:{name:'Zigzag',css:(a,b,s)=>`background-color:${b};background-image:linear-gradient(135deg,${a} 25%,transparent 25%),linear-gradient(225deg,${a} 25%,transparent 25%),linear-gradient(315deg,${a} 25%,transparent 25%),linear-gradient(45deg,${a} 25%,transparent 25%);background-size:${s}px ${s}px;background-position:0 0,${s/2}px 0,${s/2}px -${s/2}px,0 ${s/2}px`},
+  triangles:{name:'Triangles',css:(a,b,s)=>`background-color:${b};background-image:linear-gradient(60deg,${a} 25%,transparent 25.5%,transparent 75%,${a} 75%);background-size:${s}px ${Math.round(s*0.866)}px`},
+  waves:{name:'Waves',css:(a,b,s)=>`background-color:${b};background-image:radial-gradient(circle at 100% 50%,transparent ${s-1}px,${a} ${s}px,${a} ${s+2}px,transparent ${s+3}px),radial-gradient(circle at 0% 50%,transparent ${s-1}px,${a} ${s}px,${a} ${s+2}px,transparent ${s+3}px);background-size:${s*3}px ${s*2}px;background-position:0 0,${s*1.5}px ${s}px`},
+  crosshatch:{name:'Crosshatch',css:(a,b,s)=>`background-color:${b};background-image:repeating-linear-gradient(45deg,transparent,transparent ${s}px,${a} ${s}px,${a} ${s+1}px),repeating-linear-gradient(-45deg,transparent,transparent ${s}px,${a} ${s}px,${a} ${s+1}px)`},
+};
+
+function renderPresets(){
+  $('#presets').innerHTML=Object.entries(PATTERNS).map(([k,v])=>`<button class="${k===preset?'active':''}" onclick="preset='${k}';renderPresets();update()">${v.name}</button>`).join('');
+}
+function update(){
+  const css=PATTERNS[preset].css(c1,c2,sz);
+  $('#preview').style.cssText=css;
+  $('#code').textContent=css.split(';').join(';\n')+';';
+}
+function loadExample(){preset='checkerboard';c1='#e74c3c';c2='#2d3436';sz=30;$('#c1').value=c1;$('#c2').value=c2;$('#sz').value=30;$('#szVal').textContent='30';renderPresets();update();}
+
+$('#controls').innerHTML=`<label>${t('color1')}: <input type="color" id="c1" value="${c1}" oninput="c1=this.value;update()"></label><label>${t('color2')}: <input type="color" id="c2" value="${c2}" oninput="c2=this.value;update()"></label><label>${t('pSize')}: <input type="range" id="sz" min="5" max="80" value="${sz}" oninput="sz=+this.value;$('#szVal').textContent=this.value;update()"><span id="szVal">${sz}</span>px</label>`;
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn" onclick="copyText($('#code').textContent)">${t('copy')}</button>`;
+renderPresets();update();
+GZ.renderToolPage({category:'css',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🎨',href:'/css-tools/gradient.html',name:'Gradient'},
+  {icon:'🔲',href:'/css-tools/glassmorphism.html',name:'Glassmorphism'},
+  {icon:'📦',href:'/css-tools/shadow.html',name:'Box Shadow'},
+]});
+</script>
+</body>
+</html>

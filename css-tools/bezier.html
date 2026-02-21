@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CSS Cubic Bezier Generator — GameZipper Tools</title>
+<meta name="description" content="Free CSS cubic-bezier editor with draggable control points, presets and animation preview.">
+<link rel="canonical" href="https://tools.gamezipper.com/css-tools/bezier.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.bezier-wrap{display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1rem}
+.canvas-wrap{position:relative;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius)}
+canvas{display:block;cursor:crosshair}
+.anim-track{width:100%;height:50px;background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);position:relative;margin-bottom:1rem;overflow:hidden}
+.anim-ball{width:40px;height:40px;background:var(--accent);border-radius:50%;position:absolute;top:5px;left:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:1rem}
+.controls label{color:var(--text2);font-size:.85rem;display:flex;align-items:center;gap:6px}
+.controls select,.controls input{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:.85rem}
+.controls input[type=range]{width:100px}
+.preset-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem}
+.preset-grid button{padding:6px 12px;font-size:.8rem;background:var(--glass);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);cursor:pointer}
+.preset-grid button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.code-out{background:rgba(0,0,0,.4);padding:1rem;border-radius:var(--radius-sm);font-family:monospace;font-size:.85rem;color:var(--text);white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="preset-grid" id="presets"></div>
+    <div class="controls" id="controls"></div>
+    <div class="bezier-wrap">
+      <div class="canvas-wrap"><canvas id="canvas" width="260" height="260"></canvas></div>
+      <div style="flex:1;min-width:200px">
+        <p style="color:var(--text2);font-size:.85rem;margin-bottom:8px" id="animLabel">Animation Preview</p>
+        <div class="anim-track" id="track"><div class="anim-ball" id="ball"></div></div>
+        <button class="gz-btn gz-btn-secondary" id="playBtn" style="margin-bottom:1rem">▶ Play</button>
+      </div>
+    </div>
+    <div class="code-out" id="code"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'CSS Cubic Bezier Generator',toolDesc:'Drag control points to design custom easing curves. Preview animation and copy CSS.',
+    duration:'Duration',presetLabel:'Presets',animPreview:'Animation Preview',play:'Play',
+    step1:'Drag the control points on the curve',step2:'Or choose a preset easing',step3:'Preview animation and copy the CSS'},
+  zh:{toolTitle:'CSS 贝塞尔曲线生成器',toolDesc:'拖拽控制点设计自定义缓动曲线，预览动画并复制 CSS。',
+    duration:'时长',presetLabel:'预设',animPreview:'动画预览',play:'播放',
+    step1:'拖拽曲线上的控制点',step2:'或选择预设缓动',step3:'预览动画并复制 CSS'}
+});
+const {$,copyText,t}=GZ;
+const canvas=$('#canvas'),ctx=canvas.getContext('2d');
+const W=260,H=260,PAD=20,GW=W-PAD*2,GH=H-PAD*2;
+let cp1={x:0.25,y:0.1},cp2={x:0.25,y:1},duration=1;
+let dragging=null,animId=null;
+
+const PRESETS=[
+  {name:'ease',v:[0.25,0.1,0.25,1]},
+  {name:'linear',v:[0,0,1,1]},
+  {name:'ease-in',v:[0.42,0,1,1]},
+  {name:'ease-out',v:[0,0,0.58,1]},
+  {name:'ease-in-out',v:[0.42,0,0.58,1]},
+  {name:'bounce',v:[0.68,-0.55,0.27,1.55]},
+];
+let activePreset='ease';
+
+function toCanvas(x,y){return{cx:PAD+x*GW,cy:PAD+(1-y)*GH}}
+function fromCanvas(cx,cy){return{x:Math.max(-0.5,Math.min(1.5,(cx-PAD)/GW)),y:Math.max(-0.5,Math.min(1.5,1-(cy-PAD)/GH))}}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const x=PAD+i*GW/4,y=PAD+i*GH/4;ctx.beginPath();ctx.moveTo(x,PAD);ctx.lineTo(x,PAD+GH);ctx.stroke();ctx.beginPath();ctx.moveTo(PAD,y);ctx.lineTo(PAD+GW,y);ctx.stroke()}
+  // diagonal
+  ctx.strokeStyle='rgba(255,255,255,.15)';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(PAD,PAD+GH);ctx.lineTo(PAD+GW,PAD);ctx.stroke();ctx.setLineDash([]);
+  // control lines
+  const p0=toCanvas(0,0),p1=toCanvas(cp1.x,cp1.y),p2=toCanvas(cp2.x,cp2.y),p3=toCanvas(1,1);
+  ctx.strokeStyle='rgba(108,92,231,.6)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(p0.cx,p0.cy);ctx.lineTo(p1.cx,p1.cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(p3.cx,p3.cy);ctx.lineTo(p2.cx,p2.cy);ctx.stroke();
+  // curve
+  ctx.strokeStyle='#6c5ce7';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(p0.cx,p0.cy);ctx.bezierCurveTo(p1.cx,p1.cy,p2.cx,p2.cy,p3.cx,p3.cy);ctx.stroke();
+  // points
+  [p0,p3].forEach(p=>{ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(p.cx,p.cy,5,0,Math.PI*2);ctx.fill()});
+  [{p:p1,c:'#e74c3c'},{p:p2,c:'#2ecc71'}].forEach(({p,c})=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(p.cx,p.cy,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()});
+}
+
+function updateCode(){
+  const v=`cubic-bezier(${cp1.x.toFixed(2)}, ${cp1.y.toFixed(2)}, ${cp2.x.toFixed(2)}, ${cp2.y.toFixed(2)})`;
+  $('#code').textContent=`transition-timing-function: ${v};\nanimation-timing-function: ${v};`;
+  draw();
+}
+
+canvas.addEventListener('mousedown',e=>{
+  const r=canvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const p1=toCanvas(cp1.x,cp1.y),p2=toCanvas(cp2.x,cp2.y);
+  if(Math.hypot(mx-p1.cx,my-p1.cy)<15)dragging='cp1';
+  else if(Math.hypot(mx-p2.cx,my-p2.cy)<15)dragging='cp2';
+});
+canvas.addEventListener('mousemove',e=>{
+  if(!dragging)return;
+  const r=canvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const p=fromCanvas(mx,my);
+  if(dragging==='cp1'){cp1.x=p.x;cp1.y=p.y}else{cp2.x=p.x;cp2.y=p.y}
+  activePreset='';renderPresets();updateCode();
+});
+canvas.addEventListener('mouseup',()=>dragging=null);
+canvas.addEventListener('mouseleave',()=>dragging=null);
+// touch
+canvas.addEventListener('touchstart',e=>{const t2=e.touches[0];canvas.dispatchEvent(new MouseEvent('mousedown',{clientX:t2.clientX,clientY:t2.clientY}));e.preventDefault()},{passive:false});
+canvas.addEventListener('touchmove',e=>{const t2=e.touches[0];canvas.dispatchEvent(new MouseEvent('mousemove',{clientX:t2.clientX,clientY:t2.clientY}));e.preventDefault()},{passive:false});
+canvas.addEventListener('touchend',()=>dragging=null);
+
+function renderPresets(){
+  $('#presets').innerHTML=PRESETS.map(p=>`<button class="${activePreset===p.name?'active':''}" onclick="setPreset('${p.name}')">${p.name}</button>`).join('');
+}
+function setPreset(name){
+  const p=PRESETS.find(x=>x.name===name);if(!p)return;
+  activePreset=name;cp1={x:p.v[0],y:p.v[1]};cp2={x:p.v[2],y:p.v[3]};
+  renderPresets();updateCode();
+}
+function playAnim(){
+  const ball=$('#ball'),track=$('#track');
+  const maxX=track.offsetWidth-ball.offsetWidth;
+  const v=`cubic-bezier(${cp1.x.toFixed(2)},${cp1.y.toFixed(2)},${cp2.x.toFixed(2)},${cp2.y.toFixed(2)})`;
+  ball.style.transition='none';ball.style.left='0px';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ball.style.transition=`left ${duration}s ${v}`;ball.style.left=maxX+'px'}));
+}
+$('#playBtn').onclick=playAnim;
+
+$('#animLabel').textContent=t('animPreview');
+$('#playBtn').textContent='▶ '+t('play');
+$('#controls').innerHTML=`<label>${t('duration')}: <input type="range" id="dur" min="0.2" max="3" step="0.1" value="${duration}" oninput="duration=+this.value;$('#durVal').textContent=this.value;updateCode()"><span id="durVal">${duration}</span>s</label>`;
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="setPreset('ease')">${t('example')}</button><button class="gz-btn" onclick="copyText($('#code').textContent)">${t('copy')}</button>`;
+renderPresets();updateCode();
+GZ.renderToolPage({category:'css',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🎨',href:'/css-tools/gradient.html',name:'Gradient'},
+  {icon:'🔄',href:'/css-tools/loader.html',name:'Loader/Spinner'},
+  {icon:'📦',href:'/css-tools/shadow.html',name:'Box Shadow'},
+]});
+</script>
+</body>
+</html>
