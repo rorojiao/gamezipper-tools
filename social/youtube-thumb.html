@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YouTube Thumbnail Grabber — GameZipper Tools</title>
+<meta name="description" content="Get all YouTube video thumbnail sizes. Enter a YouTube URL and download thumbnails instantly.">
+<link rel="canonical" href="https://tools.gamezipper.com/social/youtube-thumb.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.url-row{display:flex;gap:.5rem;margin:1rem 0}
+.url-row input{flex:1;background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:.9rem}
+.thumbs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin:1.5rem 0}
+.thumb-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;text-align:center}
+.thumb-card img{width:100%;display:block;cursor:pointer}
+.thumb-card img.error{display:none}
+.thumb-card .info{padding:8px 12px;font-size:.82rem;color:var(--text2);display:flex;justify-content:space-between;align-items:center}
+.thumb-card .info a{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="url-row">
+      <input id="urlIn" placeholder="https://www.youtube.com/watch?v=..." oninput="grab()">
+      <button class="gz-btn" onclick="grab()">🔍 <span id="grabLabel"></span></button>
+    </div>
+    <div class="thumbs-grid" id="grid"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'YouTube Thumbnail Grabber',toolDesc:'Get all thumbnail sizes for any YouTube video.',
+    s1:'Paste a YouTube video URL',s2:'Click Grab to fetch thumbnails',s3:'Preview all available sizes',s4:'Click Download to save any thumbnail',
+    grab:'Grab',download:'Download',invalidUrl:'Could not parse video ID',
+    rOgMeta:'OG Meta Generator',rCompressor:'Image Compressor',rResizer:'Image Resizer',rFilters:'Image Filters'},
+  zh:{toolTitle:'YouTube缩略图下载',toolDesc:'获取YouTube视频所有尺寸的缩略图。',
+    s1:'粘贴YouTube视频链接',s2:'点击获取缩略图',s3:'预览所有可用尺寸',s4:'点击下载保存缩略图',
+    grab:'获取',download:'下载',invalidUrl:'无法解析视频ID',
+    rOgMeta:'OG Meta生成器',rCompressor:'图片压缩',rResizer:'图片缩放',rFilters:'图片滤镜'}
+});
+
+const {t}=GZI18n;
+document.getElementById('grabLabel').textContent=t('grab');
+
+const SIZES=[
+  {name:'Max Resolution',file:'maxresdefault',w:1280,h:720},
+  {name:'SD Default',file:'sddefault',w:640,h:480},
+  {name:'HQ Default',file:'hqdefault',w:480,h:360},
+  {name:'MQ Default',file:'mqdefault',w:320,h:180},
+  {name:'Default',file:'default',w:120,h:90}
+];
+
+function parseVideoId(url){
+  const m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+  return m?m[1]:null;
+}
+
+function grab(){
+  const url=document.getElementById('urlIn').value.trim();
+  const vid=parseVideoId(url);
+  if(!vid){document.getElementById('grid').innerHTML=`<p style="color:var(--warn)">${t('invalidUrl')}</p>`;return}
+  const grid=document.getElementById('grid');
+  grid.innerHTML=SIZES.map(s=>`
+    <div class="thumb-card">
+      <img src="https://img.youtube.com/vi/${vid}/${s.file}.jpg" alt="${s.name}" onerror="this.classList.add('error');this.nextElementSibling.style.display='block'" loading="lazy">
+      <p style="display:none;padding:12px;color:var(--text3)">Not available</p>
+      <div class="info">
+        <span>${s.name} (${s.w}×${s.h})</span>
+        <a href="https://img.youtube.com/vi/${vid}/${s.file}.jpg" download="${vid}_${s.file}.jpg" target="_blank">${t('download')}</a>
+      </div>
+    </div>`).join('');
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/social/og-meta.html',icon:'🏷️',nameKey:'rOgMeta'},
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/resizer.html',icon:'📐',nameKey:'rResizer'},
+    {href:'/image/filters.html',icon:'🎨',nameKey:'rFilters'}
+  ]
+});
+</script>
+</body>
+</html>

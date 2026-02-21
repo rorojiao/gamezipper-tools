@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Open Graph Meta Generator — GameZipper Tools</title>
+<meta name="description" content="Generate Open Graph and Twitter Card meta tags. Fill in the form and copy the HTML tags.">
+<link rel="canonical" href="https://tools.gamezipper.com/social/og-meta.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0}
+.form-grid .full{grid-column:1/-1}
+.form-grid label{display:block;font-size:.82rem;color:var(--text2);margin-bottom:4px}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:var(--radius-sm);font-size:.9rem}
+.form-grid textarea{min-height:60px;resize:vertical;font-family:inherit}
+.output-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin:1rem 0;font-family:monospace;font-size:.82rem;white-space:pre-wrap;word-break:break-all;color:var(--success);max-height:400px;overflow:auto;line-height:1.7}
+.btn-row{display:flex;gap:.5rem;justify-content:center;margin:1rem 0;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="form-grid">
+      <div class="full"><label id="lTitle"></label><input id="inTitle" placeholder="My Awesome Page" oninput="gen()"></div>
+      <div class="full"><label id="lDesc"></label><textarea id="inDesc" placeholder="A brief description of your page..." oninput="gen()"></textarea></div>
+      <div><label id="lUrl"></label><input id="inUrl" placeholder="https://example.com" oninput="gen()"></div>
+      <div><label id="lImage"></label><input id="inImage" placeholder="https://example.com/image.jpg" oninput="gen()"></div>
+      <div><label id="lType"></label>
+        <select id="inType" onchange="gen()">
+          <option value="website">website</option>
+          <option value="article">article</option>
+          <option value="product">product</option>
+          <option value="profile">profile</option>
+          <option value="video.other">video</option>
+          <option value="music.song">music</option>
+        </select>
+      </div>
+      <div><label id="lSiteName"></label><input id="inSiteName" placeholder="My Site" oninput="gen()"></div>
+      <div><label id="lLocale"></label><input id="inLocale" value="en_US" oninput="gen()"></div>
+      <div><label id="lTwitterCard"></label>
+        <select id="inTwitterCard" onchange="gen()">
+          <option value="summary_large_image">summary_large_image</option>
+          <option value="summary">summary</option>
+          <option value="app">app</option>
+          <option value="player">player</option>
+        </select>
+      </div>
+      <div><label id="lTwitterSite"></label><input id="inTwitterSite" placeholder="@yoursite" oninput="gen()"></div>
+    </div>
+    <div class="output-box" id="output"></div>
+    <div class="btn-row">
+      <button class="gz-btn" onclick="copyAll()">📋 <span id="copyLabel"></span></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Open Graph Meta Generator',toolDesc:'Generate OG and Twitter Card meta tags for your website.',
+    s1:'Fill in the form fields',s2:'Preview the generated meta tags',s3:'Click Copy to copy all tags',s4:'Paste into your HTML head section',
+    ogTitle:'OG Title',ogDesc:'OG Description',ogUrl:'URL',ogImage:'Image URL',ogType:'Type',
+    siteName:'Site Name',locale:'Locale',twitterCard:'Twitter Card',twitterSite:'Twitter @site',
+    copyAll:'Copy All Tags',
+    rYoutube:'YouTube Thumbnail',rCompressor:'Image Compressor',rFilters:'Image Filters',rCodeImg:'Code to Image'},
+  zh:{toolTitle:'OG Meta标签生成器',toolDesc:'为网站生成Open Graph和Twitter Card元标签。',
+    s1:'填写表单字段',s2:'预览生成的meta标签',s3:'点击复制所有标签',s4:'粘贴到HTML的head部分',
+    ogTitle:'OG标题',ogDesc:'OG描述',ogUrl:'网址',ogImage:'图片URL',ogType:'类型',
+    siteName:'站点名称',locale:'语言区域',twitterCard:'Twitter卡片',twitterSite:'Twitter @站点',
+    copyAll:'复制所有标签',
+    rYoutube:'YouTube缩略图',rCompressor:'图片压缩',rFilters:'图片滤镜',rCodeImg:'代码转图片'}
+});
+
+const {t}=GZI18n;
+const labels={lTitle:'ogTitle',lDesc:'ogDesc',lUrl:'ogUrl',lImage:'ogImage',lType:'ogType',lSiteName:'siteName',lLocale:'locale',lTwitterCard:'twitterCard',lTwitterSite:'twitterSite'};
+Object.entries(labels).forEach(([id,key])=>document.getElementById(id).textContent=t(key));
+document.getElementById('copyLabel').textContent=t('copyAll');
+
+let output='';
+function esc(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function gen(){
+  const title=document.getElementById('inTitle').value;
+  const desc=document.getElementById('inDesc').value;
+  const url=document.getElementById('inUrl').value;
+  const image=document.getElementById('inImage').value;
+  const type=document.getElementById('inType').value;
+  const siteName=document.getElementById('inSiteName').value;
+  const locale=document.getElementById('inLocale').value;
+  const tCard=document.getElementById('inTwitterCard').value;
+  const tSite=document.getElementById('inTwitterSite').value;
+
+  const lines=[];
+  lines.push('<!-- Open Graph Meta Tags -->');
+  if(title)lines.push(`<meta property="og:title" content="${esc(title)}">`);
+  if(desc)lines.push(`<meta property="og:description" content="${esc(desc)}">`);
+  if(url)lines.push(`<meta property="og:url" content="${esc(url)}">`);
+  if(image)lines.push(`<meta property="og:image" content="${esc(image)}">`);
+  if(type)lines.push(`<meta property="og:type" content="${esc(type)}">`);
+  if(siteName)lines.push(`<meta property="og:site_name" content="${esc(siteName)}">`);
+  if(locale)lines.push(`<meta property="og:locale" content="${esc(locale)}">`);
+  lines.push('');
+  lines.push('<!-- Twitter Card Meta Tags -->');
+  if(tCard)lines.push(`<meta name="twitter:card" content="${esc(tCard)}">`);
+  if(title)lines.push(`<meta name="twitter:title" content="${esc(title)}">`);
+  if(desc)lines.push(`<meta name="twitter:description" content="${esc(desc)}">`);
+  if(image)lines.push(`<meta name="twitter:image" content="${esc(image)}">`);
+  if(tSite)lines.push(`<meta name="twitter:site" content="${esc(tSite)}">`);
+
+  output=lines.join('\n');
+  document.getElementById('output').textContent=output;
+}
+
+function copyAll(){GZ.copyText(output)}
+
+gen();
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/social/youtube-thumb.html',icon:'📺',nameKey:'rYoutube'},
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/filters.html',icon:'🎨',nameKey:'rFilters'},
+    {href:'/image/code-to-image.html',icon:'💻',nameKey:'rCodeImg'}
+  ]
+});
+</script>
+</body>
+</html>
