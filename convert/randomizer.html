@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>List Randomizer — GameZipper Tools</title>
+<meta name="description" content="Free online list randomizer. Shuffle, pick random items, or split into groups with animation and history.">
+<link rel="canonical" href="https://tools.gamezipper.com/convert/randomizer.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.rnd-modes{display:flex;flex-wrap:wrap;gap:8px;margin:1rem 0}
+.rnd-param{display:flex;align-items:center;gap:8px;margin-bottom:1rem;font-size:.9em}
+.rnd-param input{width:60px;text-align:center;border:1px solid var(--gz-border);border-radius:6px;padding:4px 8px;background:var(--gz-surface);color:var(--gz-text)}
+#result{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;padding:1rem;min-height:100px;line-height:1.8;font-size:1em;white-space:pre-wrap;transition:opacity .3s}
+#result.shuffling{opacity:.5}
+.rnd-history{margin-top:1.5rem}
+.rnd-history h3{font-size:.9em;color:var(--gz-text-muted);margin-bottom:.5rem}
+.rnd-history-item{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:.85em;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" rows="8" placeholder=""></textarea>
+    <div class="rnd-modes" id="modes"></div>
+    <div class="rnd-param" id="paramArea"></div>
+    <div id="result"></div>
+    <div class="rnd-history" id="historyArea"><h3 id="histTitle"></h3><div id="histList"></div></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'List Randomizer',toolDesc:'Shuffle lists, pick random items, or split into groups. Features shuffle animation and history of recent results.',
+    shuffle:'Shuffle',pickN:'Pick N Items',groups:'Split Groups',
+    pickLabel:'Pick count:',groupLabel:'Group count:',
+    history:'Recent Results',group:'Group',
+    step1:'Enter items, one per line',step2:'Choose mode: Shuffle, Pick, or Groups',step3:'Click Generate to see results with animation',step4:'View history of your last 5 results',
+    inputPh:'Enter items, one per line...',
+  },
+  zh:{
+    toolTitle:'列表随机器',toolDesc:'随机打乱列表、随机抽取N项、随机分组。支持洗牌动画和历史记录。',
+    shuffle:'随机排序',pickN:'随机抽取',groups:'随机分组',
+    pickLabel:'抽取数量：',groupLabel:'分组数量：',
+    history:'最近结果',group:'组',
+    step1:'输入列表项，每行一个',step2:'选择模式：排序、抽取或分组',step3:'点击"生成"查看动画效果',step4:'查看最近5次结果记录',
+    inputPh:'输入列表项，每行一个...',
+  }
+});
+const {$,t,copyText}=GZ;
+let mode='shuffle',history=[];
+
+function getItems(){return $('#input').value.split('\n').map(s=>s.trim()).filter(Boolean);}
+function fisherYates(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('#modes .gz-btn').forEach(b=>b.classList.toggle('gz-btn-secondary',b.dataset.m!==m));
+  const pa=$('#paramArea');
+  if(m==='pickN')pa.innerHTML=`<label>${t('pickLabel')}</label><input type="number" id="pickCount" value="3" min="1">`;
+  else if(m==='groups')pa.innerHTML=`<label>${t('groupLabel')}</label><input type="number" id="groupCount" value="2" min="2">`;
+  else pa.innerHTML='';
+}
+
+function generate(){
+  const items=getItems();if(!items.length)return;
+  const el=$('#result');el.classList.add('shuffling');
+  // shuffle animation
+  let frames=0;const maxFrames=8;
+  const anim=setInterval(()=>{
+    el.textContent=fisherYates(items).join('\n');
+    frames++;if(frames>=maxFrames){clearInterval(anim);finalResult(items);}
+  },80);
+}
+
+function finalResult(items){
+  const el=$('#result');el.classList.remove('shuffling');
+  let output='';
+  if(mode==='shuffle'){
+    const r=fisherYates(items);output=r.join('\n');
+  }else if(mode==='pickN'){
+    const n=Math.min(parseInt($('#pickCount')?.value||3),items.length);
+    output=fisherYates(items).slice(0,n).join('\n');
+  }else{
+    const g=parseInt($('#groupCount')?.value||2);
+    const shuffled=fisherYates(items);
+    const groups=Array.from({length:g},()=>[]);
+    shuffled.forEach((item,i)=>groups[i%g].push(item));
+    output=groups.map((gr,i)=>`--- ${t('group')} ${i+1} ---\n${gr.join('\n')}`).join('\n\n');
+  }
+  el.textContent=output;
+  history.unshift(output);if(history.length>5)history.pop();
+  renderHistory();
+}
+
+function renderHistory(){
+  $('#histList').innerHTML=history.map(h=>`<div class="rnd-history-item">${h}</div>`).join('');
+}
+
+function loadExample(){
+  $('#input').value='Alice\nBob\nCharlie\nDiana\nEve\nFrank\nGrace\nHeidi';
+  generate();
+}
+
+$('#input').placeholder=t('inputPh');
+$('#histTitle').textContent=t('history');
+$('#modes').innerHTML=['shuffle','pickN','groups'].map(m=>`<button class="gz-btn ${m==='shuffle'?'':'gz-btn-secondary'} gz-btn-sm" data-m="${m}" onclick="setMode('${m}')">${t(m)}</button>`).join('');
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="generate()">${t('generate')}</button><button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="copyText($('#result').textContent)">${t('copy')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#result').textContent=''">${t('clear')}</button>`;
+setMode('shuffle');
+
+GZ.renderToolPage({category:'convert',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'🔑',href:'/convert/password.html',name:'Password Generator'},
+  {icon:'📊',href:'/convert/barcode.html',name:'Barcode Generator'},
+  {icon:'📸',href:'/convert/instagram.html',name:'Instagram Post'},
+]});
+</script>
+</body>
+</html>

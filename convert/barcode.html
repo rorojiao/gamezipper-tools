@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Barcode Generator — GameZipper Tools</title>
+<meta name="description" content="Free online Code 128 barcode generator. Create barcodes from text using pure Canvas rendering with no external libraries.">
+<link rel="canonical" href="https://tools.gamezipper.com/convert/barcode.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#barcodeCanvas{border:1px solid var(--gz-border);border-radius:8px;display:block;margin:1rem auto;background:#fff}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <input type="text" id="input" class="gz-input" style="width:100%;padding:10px;font-size:1em;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-surface);color:var(--gz-text)" placeholder="" maxlength="80">
+    <canvas id="barcodeCanvas" width="600" height="120"></canvas>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'Barcode Generator',toolDesc:'Generate Code 128 barcodes from text. Pure browser-based Canvas rendering — no external libraries needed.',
+    step1:'Type text in the input field',step2:'The barcode is generated automatically',step3:'Click Download to save as PNG',
+    inputPh:'Enter text to encode...',
+  },
+  zh:{
+    toolTitle:'条形码生成器',toolDesc:'从文本生成Code 128条形码。纯浏览器Canvas渲染，无需外部库。',
+    step1:'在输入框中输入文本',step2:'条形码自动生成',step3:'点击下载保存为PNG',
+    inputPh:'输入要编码的文本...',
+  }
+});
+const {$,t}=GZ;
+
+// Code 128B encoding tables
+const C128B_START=104;const C128_STOP=[2,3,3,1,1,1,2];
+const PATTERNS=[
+[2,1,2,2,2,2],[2,2,2,1,2,2],[2,2,2,2,2,1],[1,2,1,2,2,3],[1,2,1,3,2,2],
+[1,3,1,2,2,2],[1,2,2,2,1,3],[1,2,2,3,1,2],[1,3,2,2,1,2],[2,2,1,2,1,3],
+[2,2,1,3,1,2],[2,3,1,2,1,2],[1,1,2,2,3,2],[1,2,2,1,3,2],[1,2,2,2,3,1],
+[1,1,3,2,2,2],[1,2,3,1,2,2],[1,2,3,2,2,1],[2,2,3,2,1,1],[2,2,1,1,3,2],
+[2,2,1,2,3,1],[2,1,3,2,1,2],[2,2,3,1,1,2],[3,1,2,1,3,1],[3,1,1,2,2,2],
+[3,2,1,1,2,2],[3,2,1,2,2,1],[3,1,2,2,1,2],[3,2,2,1,1,2],[3,2,2,2,1,1],
+[2,1,2,1,2,3],[2,1,2,3,2,1],[2,3,2,1,2,1],[1,1,1,3,2,3],[1,3,1,1,2,3],
+[1,3,1,3,2,1],[1,1,2,3,1,3],[1,3,2,1,1,3],[1,3,2,3,1,1],[2,1,1,3,1,3],
+[2,3,1,1,1,3],[2,3,1,3,1,1],[1,1,2,1,3,3],[1,1,2,3,3,1],[1,3,2,1,3,1],
+[1,1,3,1,2,3],[1,1,3,3,2,1],[1,3,3,1,2,1],[3,1,3,1,2,1],[2,1,1,3,3,1],
+[2,3,1,1,3,1],[2,1,3,1,1,3],[2,1,3,3,1,1],[2,1,3,1,3,1],[3,1,1,1,2,3],
+[3,1,1,3,2,1],[3,3,1,1,2,1],[3,1,2,1,1,3],[3,1,2,3,1,1],[3,3,2,1,1,1],
+[3,1,4,1,1,1],[2,2,1,4,1,1],[4,3,1,1,1,1],[1,1,1,2,2,4],[1,1,1,4,2,2],
+[1,2,1,1,2,4],[1,2,1,4,2,1],[1,4,1,1,2,2],[1,4,1,2,2,1],[1,1,2,2,1,4],
+[1,1,2,4,1,2],[1,2,2,1,1,4],[1,2,2,4,1,1],[1,4,2,1,1,2],[1,4,2,2,1,1],
+[2,4,1,2,1,1],[2,2,1,1,1,4],[4,1,3,1,1,1],[2,4,1,1,1,2],[1,3,4,1,1,1],
+[1,1,1,2,4,2],[1,2,1,1,4,2],[1,2,1,2,4,1],[1,1,4,2,1,2],[1,2,4,1,1,2],
+[1,2,4,2,1,1],[4,1,1,2,1,2],[4,2,1,1,1,2],[4,2,1,2,1,1],[2,1,2,1,4,1],
+[2,1,4,1,2,1],[4,1,2,1,2,1],[1,1,1,1,4,3],[1,1,1,3,4,1],[1,3,1,1,4,1],
+[1,1,4,1,1,3],[1,1,4,3,1,1],[4,1,1,1,1,3],[4,1,1,3,1,1],[1,1,3,1,4,1],
+[1,1,4,1,3,1],[3,1,1,1,4,1],[4,1,1,1,3,1],[2,1,1,4,1,2],[2,1,1,2,1,4],
+[2,1,1,2,3,2],[2,3,3,1,1,1,2]];
+
+function encode128B(text){
+  const codes=[C128B_START];
+  for(let i=0;i<text.length;i++){
+    const c=text.charCodeAt(i)-32;
+    if(c<0||c>95)continue;
+    codes.push(c);
+  }
+  // checksum
+  let sum=codes[0];
+  for(let i=1;i<codes.length;i++)sum+=codes[i]*i;
+  codes.push(sum%103);
+  return codes;
+}
+
+function render(){
+  const text=$('#input').value;
+  const cvs=$('#barcodeCanvas');const ctx=cvs.getContext('2d');
+  if(!text){ctx.clearRect(0,0,cvs.width,cvs.height);return;}
+  const codes=encode128B(text);
+  // build bars
+  const bars=[];
+  codes.forEach(c=>PATTERNS[c].forEach((w,i)=>{bars.push({w,black:i%2===0});}));
+  // stop pattern
+  C128_STOP.forEach((w,i)=>bars.push({w,black:i%2===0}));
+  const totalW=bars.reduce((s,b)=>s+b.w,0);
+  const barW=Math.max(1,Math.floor((cvs.width-40)/totalW));
+  cvs.width=totalW*barW+40;cvs.height=100;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,cvs.width,cvs.height);
+  let x=20;
+  bars.forEach(b=>{
+    if(b.black){ctx.fillStyle='#000';ctx.fillRect(x,10,b.w*barW,60);}
+    x+=b.w*barW;
+  });
+  // text below
+  ctx.fillStyle='#000';ctx.font='14px monospace';ctx.textAlign='center';
+  ctx.fillText(text,cvs.width/2,88);
+}
+
+function downloadPNG(){const a=document.createElement('a');a.download='barcode.png';a.href=$('#barcodeCanvas').toDataURL('image/png');a.click();}
+function loadExample(){$('#input').value='GameZipper2025';render();}
+
+$('#input').placeholder=t('inputPh');
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="render()">${t('generate')}</button><button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="downloadPNG()">${t('download')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';render()">${t('clear')}</button>`;
+$('#input').addEventListener('input',render);
+
+GZ.renderToolPage({category:'convert',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🔑',href:'/convert/password.html',name:'Password Generator'},
+  {icon:'🎲',href:'/convert/randomizer.html',name:'List Randomizer'},
+  {icon:'📸',href:'/convert/instagram.html',name:'Instagram Post'},
+]});
+</script>
+</body>
+</html>

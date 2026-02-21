@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Instagram Post Generator — GameZipper Tools</title>
+<meta name="description" content="Free online Instagram post generator. Create realistic-looking Instagram posts with custom username, photo, caption, and likes.">
+<link rel="canonical" href="https://tools.gamezipper.com/convert/instagram.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.ig-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1rem 0}
+.ig-form label{font-size:.85em;font-weight:600;display:block;margin-bottom:4px}
+.ig-form input,.ig-form textarea{width:100%;padding:8px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-surface);color:var(--gz-text);box-sizing:border-box}
+.ig-form .full{grid-column:1/-1}
+#igCanvas{border:1px solid var(--gz-border);border-radius:8px;display:block;margin:1rem auto;max-width:100%}
+.ig-upload{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ig-upload input[type=file]{font-size:.85em}
+@media(max-width:600px){.ig-form{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="ig-form">
+      <div><label id="lbl-user"></label><input type="text" id="igUser" value="gamezipper" placeholder="username"></div>
+      <div><label id="lbl-likes"></label><input type="number" id="igLikes" value="1234" min="0"></div>
+      <div><label id="lbl-time"></label><input type="text" id="igTime" value="2 hours ago"></div>
+      <div class="ig-upload"><label id="lbl-avatar"></label><input type="file" id="igAvatar" accept="image/*"></div>
+      <div class="full ig-upload"><label id="lbl-photo"></label><input type="file" id="igPhoto" accept="image/*"></div>
+      <div class="full"><label id="lbl-caption"></label><textarea id="igCaption" rows="3">Having a great time! 🎮✨ #gamezipper #tools</textarea></div>
+    </div>
+    <canvas id="igCanvas" width="480" height="700"></canvas>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'Instagram Post Generator',toolDesc:'Create realistic Instagram-style posts. Customize username, avatar, photo, caption, likes, and time, then download as PNG.',
+    lblUser:'Username:',lblLikes:'Likes:',lblTime:'Time:',lblAvatar:'Avatar (optional):',lblPhoto:'Post Image (optional):',lblCaption:'Caption:',
+    step1:'Enter username, likes count, and time',step2:'Optionally upload avatar and post image',step3:'Write your caption text',step4:'Click Generate and Download as PNG',
+  },
+  zh:{
+    toolTitle:'Instagram 帖子生成器',toolDesc:'创建逼真的Instagram风格帖子。自定义用户名、头像、图片、描述、点赞数和时间，下载为PNG。',
+    lblUser:'用户名：',lblLikes:'点赞数：',lblTime:'时间：',lblAvatar:'头像（可选）：',lblPhoto:'帖子图片（可选）：',lblCaption:'描述文字：',
+    step1:'输入用户名、点赞数和时间',step2:'可选上传头像和帖子图片',step3:'编写描述文字',step4:'点击生成并下载为PNG',
+  }
+});
+const {$,t}=GZ;
+let avatarImg=null,photoImg=null;
+
+$('#igAvatar').addEventListener('change',e=>{const f=e.target.files[0];if(f){const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{avatarImg=img;render();};img.src=ev.target.result;};r.readAsDataURL(f);}});
+$('#igPhoto').addEventListener('change',e=>{const f=e.target.files[0];if(f){const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{photoImg=img;render();};img.src=ev.target.result;};r.readAsDataURL(f);}});
+
+function drawCircle(ctx,img,x,y,r){
+  ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.clip();
+  ctx.drawImage(img,x-r,y-r,r*2,r*2);ctx.restore();
+}
+
+function formatLikes(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':String(n);}
+
+function wrapText(ctx,text,x,y,maxW,lineH){
+  const words=text.split(' ');let line='';
+  for(const w of words){
+    const test=line?line+' '+w:w;
+    if(ctx.measureText(test).width>maxW&&line){ctx.fillText(line,x,y);y+=lineH;line=w;}
+    else line=test;
+  }
+  if(line)ctx.fillText(line,x,y);
+  return y+lineH;
+}
+
+function render(){
+  const cvs=$('#igCanvas');const ctx=cvs.getContext('2d');
+  const W=480;let H=700;
+  const user=$('#igUser').value||'user';
+  const likes=parseInt($('#igLikes').value)||0;
+  const time=$('#igTime').value||'now';
+  const caption=$('#igCaption').value||'';
+
+  // Background
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+
+  // Header bar
+  ctx.fillStyle='#fafafa';ctx.fillRect(0,0,W,58);
+  ctx.strokeStyle='#dbdbdb';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,58);ctx.lineTo(W,58);ctx.stroke();
+
+  // Avatar
+  if(avatarImg){drawCircle(ctx,avatarImg,30,29,18);}
+  else{ctx.fillStyle='#c7c7c7';ctx.beginPath();ctx.arc(30,29,18,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 16px Arial';ctx.textAlign='center';ctx.fillText(user[0].toUpperCase(),30,35);ctx.textAlign='left';}
+
+  // Username
+  ctx.fillStyle='#262626';ctx.font='bold 14px -apple-system,Arial,sans-serif';ctx.textAlign='left';
+  ctx.fillText(user,56,34);
+
+  // "..." menu
+  ctx.fillStyle='#262626';for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(W-20,24+i*8,2,0,Math.PI*2);ctx.fill();}
+
+  // Photo area
+  const photoY=59;const photoH=W;
+  if(photoImg){
+    const aspect=photoImg.width/photoImg.height;
+    let dw=W,dh=W;
+    if(aspect>1){dh=W/aspect;}else{dw=W*aspect;}
+    ctx.fillStyle='#efefef';ctx.fillRect(0,photoY,W,photoH);
+    ctx.drawImage(photoImg,(W-dw)/2,photoY+(photoH-dh)/2,dw,dh);
+  }else{
+    ctx.fillStyle='#efefef';ctx.fillRect(0,photoY,W,photoH);
+    ctx.fillStyle='#c7c7c7';ctx.font='48px Arial';ctx.textAlign='center';ctx.fillText('📷',W/2,photoY+photoH/2+16);ctx.textAlign='left';
+  }
+
+  // Action icons row
+  const actY=photoY+photoH+14;
+  ctx.font='24px Arial';ctx.fillText('♡',14,actY);ctx.fillText('💬',50,actY);ctx.fillText('📤',86,actY);
+  // bookmark
+  ctx.fillText('🔖',W-34,actY);
+
+  // Likes
+  const likeY=actY+26;
+  ctx.fillStyle='#262626';ctx.font='bold 13px -apple-system,Arial,sans-serif';
+  ctx.fillText(formatLikes(likes)+' likes',14,likeY);
+
+  // Caption
+  let capY=likeY+20;
+  ctx.font='13px -apple-system,Arial,sans-serif';
+  ctx.fillStyle='#262626';
+  const boldUser=user+' ';
+  ctx.font='bold 13px -apple-system,Arial,sans-serif';
+  const uw=ctx.measureText(boldUser).width;
+  ctx.fillText(boldUser,14,capY);
+  ctx.font='13px -apple-system,Arial,sans-serif';
+  capY=wrapText(ctx,caption,14+uw,capY,W-28-uw,18);
+
+  // Time
+  capY+=6;
+  ctx.fillStyle='#8e8e8e';ctx.font='11px -apple-system,Arial,sans-serif';
+  ctx.fillText(time,14,capY);
+
+  // Resize canvas to fit
+  H=capY+20;cvs.height=H;
+  // re-render at correct height
+  if(cvs.height!==700)render.__depth=(render.__depth||0)+1;
+  if(render.__depth>1){render.__depth=0;return;}
+  // just redraw (recursive once to set correct height)
+}
+
+function downloadPNG(){const a=document.createElement('a');a.download='instagram-post.png';a.href=$('#igCanvas').toDataURL('image/png');a.click();}
+
+function loadExample(){
+  $('#igUser').value='gamezipper';$('#igLikes').value=4829;$('#igTime').value='3 hours ago';
+  $('#igCaption').value='Building awesome free tools for everyone! 🛠️✨ Check out our new barcode generator and password tool.\n\n#developer #tools #free #gamezipper';
+  avatarImg=null;photoImg=null;render();
+}
+
+// labels
+$('#lbl-user').textContent=t('lblUser');$('#lbl-likes').textContent=t('lblLikes');
+$('#lbl-time').textContent=t('lblTime');$('#lbl-avatar').textContent=t('lblAvatar');
+$('#lbl-photo').textContent=t('lblPhoto');$('#lbl-caption').textContent=t('lblCaption');
+
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="render()">${t('generate')}</button><button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="downloadPNG()">${t('download')}</button>`;
+
+['#igUser','#igLikes','#igTime','#igCaption'].forEach(s=>$(s).addEventListener('input',render));
+render();
+
+GZ.renderToolPage({category:'convert',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'📊',href:'/convert/barcode.html',name:'Barcode Generator'},
+  {icon:'🔑',href:'/convert/password.html',name:'Password Generator'},
+  {icon:'🎲',href:'/convert/randomizer.html',name:'List Randomizer'},
+]});
+</script>
+</body>
+</html>
