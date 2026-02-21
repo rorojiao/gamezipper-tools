@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tweet to Image — GameZipper Tools</title>
+<meta name="description" content="Create social media post style images. Enter username, text, avatar and generate shareable tweet images.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/tweet-to-image.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0}
+.form-grid .full{grid-column:1/-1}
+.form-grid label{display:block;font-size:.82rem;color:var(--text2);margin-bottom:4px}
+.form-grid input,.form-grid textarea,.form-grid select{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:var(--radius-sm);font-size:.9rem}
+.form-grid textarea{min-height:80px;resize:vertical;font-family:inherit}
+.tweet-preview{display:flex;justify-content:center;margin:1.5rem 0}
+.tweet-card{width:520px;max-width:100%;border-radius:16px;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.tweet-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.tweet-avatar{width:48px;height:48px;border-radius:50%;background:#555;object-fit:cover}
+.tweet-name{font-weight:700;font-size:15px}
+.tweet-handle{color:#71767b;font-size:14px}
+.tweet-text{font-size:17px;line-height:1.4;margin-bottom:12px;white-space:pre-wrap}
+.tweet-time{color:#71767b;font-size:14px;border-top:1px solid rgba(128,128,128,0.2);padding-top:10px}
+.tweet-metrics{display:flex;gap:20px;color:#71767b;font-size:13px;margin-top:8px}
+.tweet-metrics span b{color:inherit;font-weight:700}
+.btn-row{display:flex;gap:.5rem;justify-content:center;margin:1rem 0;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="form-grid">
+      <div><label id="lName"></label><input id="inName" value="John Doe" oninput="render()"></div>
+      <div><label id="lHandle"></label><input id="inHandle" value="@johndoe" oninput="render()"></div>
+      <div><label id="lAvatar"></label><input id="inAvatar" placeholder="https://..." oninput="render()"></div>
+      <div><label id="lTheme"></label>
+        <select id="inTheme" onchange="render()">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="dim">Dim</option>
+        </select>
+      </div>
+      <div class="full"><label id="lText"></label><textarea id="inText" oninput="render()">Just created an amazing tool with GameZipper Tools! 🚀
+
+Check it out at tools.gamezipper.com</textarea></div>
+      <div><label id="lDate"></label><input id="inDate" value="2:30 PM · Feb 21, 2026" oninput="render()"></div>
+      <div><label id="lBg"></label>
+        <select id="inBg" onchange="render()">
+          <option value="none">None</option>
+          <option value="gradient1">Purple</option>
+          <option value="gradient2">Blue</option>
+          <option value="gradient3">Sunset</option>
+        </select>
+      </div>
+    </div>
+    <div class="tweet-preview"><div id="tweetWrap"></div></div>
+    <div class="btn-row">
+      <button class="gz-btn" onclick="exportPng()">⬇️ <span id="dlLabel"></span></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Tweet to Image',toolDesc:'Create social media post style images. Customize and export as PNG.',
+    s1:'Enter display name and handle',s2:'Type the post text',s3:'Choose theme and background',s4:'Export the image',
+    name:'Display Name',handle:'Handle',avatar:'Avatar URL',theme:'Theme:',text:'Post Text',
+    date:'Date / Time',background:'Background:',exportPng:'Export PNG',
+    rCodeImg:'Code to Image',rFilters:'Image Filters',rCompressor:'Image Compressor',rBlob:'SVG Blob Generator'},
+  zh:{toolTitle:'推文转图片',toolDesc:'创建社交媒体风格帖子图片，自定义并导出PNG。',
+    s1:'输入显示名和用户名',s2:'输入帖子文本',s3:'选择主题和背景',s4:'导出图片',
+    name:'显示名称',handle:'用户名',avatar:'头像URL',theme:'主题：',text:'帖子文本',
+    date:'日期/时间',background:'背景：',exportPng:'导出PNG',
+    rCodeImg:'代码转图片',rFilters:'图片滤镜',rCompressor:'图片压缩',rBlob:'SVG Blob生成器'}
+});
+
+const {t}=GZI18n;
+document.getElementById('lName').textContent=t('name');
+document.getElementById('lHandle').textContent=t('handle');
+document.getElementById('lAvatar').textContent=t('avatar');
+document.getElementById('lTheme').textContent=t('theme');
+document.getElementById('lText').textContent=t('text');
+document.getElementById('lDate').textContent=t('date');
+document.getElementById('lBg').textContent=t('background');
+document.getElementById('dlLabel').textContent=t('exportPng');
+
+const THEMES={
+  dark:{bg:'#15202b',text:'#e7e9ea',sub:'#71767b',border:'#38444d'},
+  light:{bg:'#ffffff',text:'#0f1419',sub:'#536471',border:'#eff3f4'},
+  dim:{bg:'#1e2732',text:'#e7e9ea',sub:'#8b98a5',border:'#38444d'}
+};
+const BGS={none:'transparent',gradient1:'linear-gradient(135deg,#667eea,#764ba2)',gradient2:'linear-gradient(135deg,#2193b0,#6dd5ed)',gradient3:'linear-gradient(135deg,#f093fb,#f5576c)'};
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function render(){
+  const name=document.getElementById('inName').value;
+  const handle=document.getElementById('inHandle').value;
+  const avatar=document.getElementById('inAvatar').value;
+  const text=document.getElementById('inText').value;
+  const date=document.getElementById('inDate').value;
+  const themeKey=document.getElementById('inTheme').value;
+  const bgKey=document.getElementById('inBg').value;
+  const th=THEMES[themeKey];
+  const bg=BGS[bgKey];
+  const avatarHtml=avatar?`<img class="tweet-avatar" src="${esc(avatar)}" onerror="this.style.background='#555';this.src=''">`:`<div class="tweet-avatar" style="background:#555;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">${(name[0]||'?').toUpperCase()}</div>`;
+  const pad=bgKey==='none'?'0':'32px';
+  document.getElementById('tweetWrap').innerHTML=`
+    <div style="background:${bg};padding:${pad};border-radius:${bgKey==='none'?'0':'20px'}" id="exportTarget">
+      <div class="tweet-card" style="background:${th.bg};color:${th.text}">
+        <div class="tweet-header">
+          ${avatarHtml}
+          <div><div class="tweet-name" style="color:${th.text}">${esc(name)}</div><div class="tweet-handle" style="color:${th.sub}">${esc(handle)}</div></div>
+        </div>
+        <div class="tweet-text" style="color:${th.text}">${esc(text)}</div>
+        <div class="tweet-time" style="color:${th.sub};border-color:${th.border}">${esc(date)}</div>
+        <div class="tweet-metrics"><span><b>128</b> Retweets</span><span><b>45</b> Quotes</span><span><b>1,024</b> Likes</span></div>
+      </div>
+    </div>`;
+}
+
+function exportPng(){
+  const el=document.getElementById('exportTarget');if(!el)return;
+  const html=el.outerHTML;const w=el.offsetWidth,h=el.offsetHeight;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">${html}</div></foreignObject></svg>`;
+  const img=new Image();
+  img.onload=()=>{const c=document.createElement('canvas');c.width=w*2;c.height=h*2;const cx=c.getContext('2d');cx.scale(2,2);cx.drawImage(img,0,0);const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='tweet-image.png';a.click()};
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+
+render();
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/code-to-image.html',icon:'💻',nameKey:'rCodeImg'},
+    {href:'/image/filters.html',icon:'🎨',nameKey:'rFilters'},
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/blob.html',icon:'🫧',nameKey:'rBlob'}
+  ]
+});
+</script>
+</body>
+</html>

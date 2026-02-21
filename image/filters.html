@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Image Filters — GameZipper Tools</title>
+<meta name="description" content="Apply filters to images in your browser. Brightness, contrast, saturation, blur, sharpen, vintage and more.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/filters.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.filters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;margin:1.5rem 0}
+.filter-row{display:flex;align-items:center;gap:.5rem}
+.filter-row label{min-width:80px;font-size:.85rem;color:var(--text2)}
+.filter-row input[type=range]{flex:1;accent-color:var(--accent)}
+.filter-row .val{min-width:40px;text-align:right;font-weight:700;font-size:.85rem}
+.preview-wrap{text-align:center;margin:1rem 0}
+.preview-wrap canvas{max-width:100%;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.btn-row{display:flex;gap:.5rem;justify-content:center;margin:1rem 0;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-dropzone" id="dropzone" onclick="document.getElementById('fileIn').click()">
+      <span class="icon">🎨</span>
+      <p id="dropText"></p>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+    </div>
+    <div class="filters-grid" id="filtersGrid"></div>
+    <div class="preview-wrap"><canvas id="canvas" style="display:none"></canvas></div>
+    <div class="btn-row">
+      <button class="gz-btn" id="resetBtn" style="display:none" onclick="resetFilters()">🔄 Reset</button>
+      <button class="gz-btn" id="dlBtn" style="display:none" onclick="download()">⬇️ Download</button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Image Filters',toolDesc:'Apply filters to your images. All processing in your browser.',
+    s1:'Upload an image',s2:'Adjust filter sliders',s3:'Preview the result in real time',s4:'Download the filtered image',
+    dropHint:'Drop image here or click to upload',
+    brightness:'Brightness',contrast:'Contrast',saturate:'Saturation',grayscale:'Grayscale',
+    blur:'Blur',sepia:'Vintage',invert:'Invert',hueRotate:'Hue Rotate',
+    rCompressor:'Image Compressor',rResizer:'Image Resizer',rCropper:'Image Cropper',rCensor:'Photo Censor'},
+  zh:{toolTitle:'图片滤镜',toolDesc:'为图片应用滤镜效果，全部在浏览器中处理。',
+    s1:'上传图片',s2:'调整滤镜滑块',s3:'实时预览效果',s4:'下载处理后的图片',
+    dropHint:'拖放图片到此处或点击上传',
+    brightness:'亮度',contrast:'对比度',saturate:'饱和度',grayscale:'灰度',
+    blur:'模糊',sepia:'复古',invert:'反转',hueRotate:'色相旋转',
+    rCompressor:'图片压缩',rResizer:'图片缩放',rCropper:'图片裁剪',rCensor:'图片打码'}
+});
+
+const {t}=GZI18n;
+let origImg=null;
+
+const FILTERS=[
+  {key:'brightness',min:0,max:200,def:100,unit:'%'},
+  {key:'contrast',min:0,max:200,def:100,unit:'%'},
+  {key:'saturate',min:0,max:200,def:100,unit:'%'},
+  {key:'grayscale',min:0,max:100,def:0,unit:'%'},
+  {key:'blur',min:0,max:20,def:0,unit:'px'},
+  {key:'sepia',min:0,max:100,def:0,unit:'%'},
+  {key:'invert',min:0,max:100,def:0,unit:'%'},
+  {key:'hueRotate',min:0,max:360,def:0,unit:'deg'}
+];
+
+const grid=document.getElementById('filtersGrid');
+FILTERS.forEach(f=>{
+  const row=document.createElement('div');row.className='filter-row';
+  row.innerHTML=`<label>${t(f.key)}</label><input type="range" min="${f.min}" max="${f.max}" value="${f.def}" data-key="${f.key}" oninput="applyFilters()"><span class="val" id="v_${f.key}">${f.def}</span>`;
+  grid.appendChild(row);
+});
+
+document.getElementById('dropText').textContent=t('dropHint');
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fileIn');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+function loadFile(f){
+  const img=new Image();
+  img.onload=()=>{origImg=img;applyFilters();document.getElementById('resetBtn').style.display='inline-flex';document.getElementById('dlBtn').style.display='inline-flex'};
+  img.src=URL.createObjectURL(f);
+}
+
+function applyFilters(){
+  if(!origImg)return;
+  const c=document.getElementById('canvas'),ctx=c.getContext('2d');
+  c.width=origImg.width;c.height=origImg.height;c.style.display='block';
+  const parts=[];
+  FILTERS.forEach(f=>{
+    const el=document.querySelector(`[data-key="${f.key}"]`);
+    const v=el.value;document.getElementById('v_'+f.key).textContent=v;
+    const cssName=f.key==='hueRotate'?'hue-rotate':f.key;
+    parts.push(`${cssName}(${v}${f.unit})`);
+  });
+  ctx.filter=parts.join(' ');
+  ctx.drawImage(origImg,0,0);
+}
+
+function resetFilters(){
+  FILTERS.forEach(f=>{
+    const el=document.querySelector(`[data-key="${f.key}"]`);el.value=f.def;
+  });
+  applyFilters();
+}
+
+function download(){
+  const c=document.getElementById('canvas');
+  const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='filtered_image.png';a.click();
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/resizer.html',icon:'📐',nameKey:'rResizer'},
+    {href:'/image/cropper.html',icon:'✂️',nameKey:'rCropper'},
+    {href:'/image/censor.html',icon:'🔲',nameKey:'rCensor'}
+  ]
+});
+</script>
+</body>
+</html>

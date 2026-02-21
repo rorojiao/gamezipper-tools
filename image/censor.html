@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Photo Censor — GameZipper Tools</title>
+<meta name="description" content="Censor parts of your images with pixelation or blur. Drag to select area. All processing in browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/censor.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.canvas-wrap{position:relative;display:inline-block;margin:1rem auto;cursor:crosshair}
+.canvas-wrap canvas{max-width:100%;border-radius:var(--radius-sm);border:1px solid var(--border);display:block}
+.ctrl-row{display:flex;align-items:center;gap:1rem;margin:.8rem 0;justify-content:center;flex-wrap:wrap}
+.ctrl-row label{font-size:.85rem;color:var(--text2)}
+.ctrl-row input[type=range]{width:180px;accent-color:var(--accent)}
+.ctrl-row .val{min-width:30px;font-weight:700;font-size:.85rem}
+.mode-btns{display:flex;gap:.5rem;justify-content:center;margin:.5rem 0}
+.mode-btns button{background:var(--glass2);border:1px solid var(--border);color:var(--text2);padding:6px 16px;border-radius:var(--radius-sm);cursor:pointer;font-size:.85rem;transition:all .15s}
+.mode-btns button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-row{display:flex;gap:.5rem;justify-content:center;margin:1rem 0;flex-wrap:wrap}
+.sel-rect{position:absolute;border:2px dashed var(--accent);pointer-events:none}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-dropzone" id="dropzone" onclick="document.getElementById('fileIn').click()">
+      <span class="icon">🔲</span>
+      <p id="dropText"></p>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+    </div>
+    <div class="mode-btns">
+      <button class="active" id="btnMosaic" onclick="setMode('mosaic')">🟫 <span id="lMosaic"></span></button>
+      <button id="btnBlur" onclick="setMode('blur')">🌫️ <span id="lBlur"></span></button>
+    </div>
+    <div class="ctrl-row">
+      <label id="lStrength"></label>
+      <input type="range" id="strength" min="2" max="40" value="15" oninput="document.getElementById('vStr').textContent=this.value">
+      <span class="val" id="vStr">15</span>
+    </div>
+    <div style="text-align:center">
+      <div class="canvas-wrap" id="canvasWrap" style="display:none">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="gz-btn" id="undoBtn" style="display:none" onclick="undo()">↩️ Undo</button>
+      <button class="gz-btn" id="dlBtn" style="display:none" onclick="download()">⬇️ Download</button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Photo Censor',toolDesc:'Censor parts of images with pixelation or blur. Drag to select areas.',
+    s1:'Upload an image',s2:'Choose mosaic or blur mode',s3:'Drag on the image to censor areas',s4:'Download the censored image',
+    dropHint:'Drop image here or click to upload',mosaic:'Mosaic',blur:'Blur',strength:'Strength:',
+    rFilters:'Image Filters',rCompressor:'Image Compressor',rCropper:'Image Cropper',rResizer:'Image Resizer'},
+  zh:{toolTitle:'图片打码',toolDesc:'用马赛克或模糊遮盖图片敏感区域，拖拽选择区域。',
+    s1:'上传图片',s2:'选择马赛克或模糊模式',s3:'在图片上拖拽选择打码区域',s4:'下载处理后的图片',
+    dropHint:'拖放图片到此处或点击上传',mosaic:'马赛克',blur:'模糊',strength:'强度：',
+    rFilters:'图片滤镜',rCompressor:'图片压缩',rCropper:'图片裁剪',rResizer:'图片缩放'}
+});
+
+const {t}=GZI18n;
+document.getElementById('dropText').textContent=t('dropHint');
+document.getElementById('lMosaic').textContent=t('mosaic');
+document.getElementById('lBlur').textContent=t('blur');
+document.getElementById('lStrength').textContent=t('strength');
+
+let origImg=null,mode='mosaic',history=[];
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+const wrap=document.getElementById('canvasWrap');
+
+const dz=document.getElementById('dropzone'),fi=document.getElementById('fileIn');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+
+function loadFile(f){
+  const img=new Image();
+  img.onload=()=>{
+    origImg=img;canvas.width=img.width;canvas.height=img.height;
+    ctx.drawImage(img,0,0);
+    wrap.style.display='inline-block';
+    document.getElementById('dlBtn').style.display='inline-flex';
+    document.getElementById('undoBtn').style.display='inline-flex';
+    history=[ctx.getImageData(0,0,canvas.width,canvas.height)];
+  };
+  img.src=URL.createObjectURL(f);
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btnMosaic').classList.toggle('active',m==='mosaic');
+  document.getElementById('btnBlur').classList.toggle('active',m==='blur');
+}
+
+let dragging=false,sx,sy;
+canvas.addEventListener('mousedown',e=>{dragging=true;const r=canvas.getBoundingClientRect();const sc=canvas.width/r.width;sx=(e.clientX-r.left)*sc;sy=(e.clientY-r.top)*sc});
+canvas.addEventListener('mousemove',e=>{if(!dragging)return});
+canvas.addEventListener('mouseup',e=>{
+  if(!dragging)return;dragging=false;
+  const r=canvas.getBoundingClientRect(),sc=canvas.width/r.width;
+  const ex=(e.clientX-r.left)*sc,ey=(e.clientY-r.top)*sc;
+  const x=Math.min(sx,ex),y=Math.min(sy,ey),w=Math.abs(ex-sx),h=Math.abs(ey-sy);
+  if(w<3||h<3)return;
+  applyCensor(x,y,w,h);
+  history.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+});
+// Touch support
+canvas.addEventListener('touchstart',e=>{e.preventDefault();const touch=e.touches[0];const r=canvas.getBoundingClientRect();const sc=canvas.width/r.width;sx=(touch.clientX-r.left)*sc;sy=(touch.clientY-r.top)*sc;dragging=true},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  if(!dragging)return;dragging=false;const touch=e.changedTouches[0];
+  const r=canvas.getBoundingClientRect(),sc=canvas.width/r.width;
+  const ex=(touch.clientX-r.left)*sc,ey=(touch.clientY-r.top)*sc;
+  const x=Math.min(sx,ex),y=Math.min(sy,ey),w=Math.abs(ex-sx),h=Math.abs(ey-sy);
+  if(w<3||h<3)return;
+  applyCensor(x,y,w,h);
+  history.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+},{passive:false});
+
+function applyCensor(x,y,w,h){
+  const str=+document.getElementById('strength').value;
+  if(mode==='mosaic'){
+    const bs=Math.max(str,2);
+    const imgData=ctx.getImageData(x,y,w,h);
+    for(let by=0;by<h;by+=bs){
+      for(let bx=0;bx<w;bx+=bs){
+        const i=(by*w+bx)*4;
+        const r=imgData.data[i],g=imgData.data[i+1],b=imgData.data[i+2];
+        for(let dy=0;dy<bs&&by+dy<h;dy++){
+          for(let dx=0;dx<bs&&bx+dx<w;dx++){
+            const j=((by+dy)*w+(bx+dx))*4;
+            imgData.data[j]=r;imgData.data[j+1]=g;imgData.data[j+2]=b;
+          }
+        }
+      }
+    }
+    ctx.putImageData(imgData,x,y);
+  }else{
+    // Simple box blur by scaling down and up
+    const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
+    const tc=tmp.getContext('2d');
+    tc.drawImage(canvas,x,y,w,h,0,0,w,h);
+    const s=Math.max(1,Math.round(w/(str*2)));
+    const s2=Math.max(1,Math.round(h/(str*2)));
+    const tmp2=document.createElement('canvas');tmp2.width=s;tmp2.height=s2;
+    const tc2=tmp2.getContext('2d');
+    tc2.drawImage(tmp,0,0,s,s2);
+    ctx.imageSmoothingEnabled=true;
+    ctx.drawImage(tmp2,0,0,s,s2,x,y,w,h);
+  }
+}
+
+function undo(){
+  if(history.length>1){history.pop();ctx.putImageData(history[history.length-1],0,0)}
+}
+
+function download(){
+  const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='censored_image.png';a.click();
+}
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/filters.html',icon:'🎨',nameKey:'rFilters'},
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/cropper.html',icon:'✂️',nameKey:'rCropper'},
+    {href:'/image/resizer.html',icon:'📐',nameKey:'rResizer'}
+  ]
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SVG Blob Generator — GameZipper Tools</title>
+<meta name="description" content="Generate random organic SVG blob shapes. Customize color, complexity and size. Export SVG code or download.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/blob.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.ctrl-row{display:flex;align-items:center;gap:.8rem;margin:.6rem 0;flex-wrap:wrap;justify-content:center}
+.ctrl-row label{min-width:90px;font-size:.85rem;color:var(--text2);text-align:right}
+.ctrl-row input[type=range]{width:180px;accent-color:var(--accent)}
+.ctrl-row input[type=color]{width:40px;height:32px;border:none;background:none;cursor:pointer}
+.ctrl-row .val{min-width:35px;font-weight:700;font-size:.85rem}
+.blob-preview{display:flex;justify-content:center;margin:1.5rem 0}
+.blob-preview svg{filter:drop-shadow(0 4px 12px rgba(108,92,231,0.3))}
+.code-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin:1rem 0;font-family:monospace;font-size:.8rem;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-all;color:var(--text2)}
+.btn-row{display:flex;gap:.5rem;justify-content:center;margin:1rem 0;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="ctrl-row">
+      <label id="lColor"></label><input type="color" id="blobColor" value="#6c5ce7" oninput="generate()">
+      <label id="lComplexity"></label><input type="range" id="complexity" min="3" max="12" value="6" oninput="generate()"><span class="val" id="vComplex">6</span>
+    </div>
+    <div class="ctrl-row">
+      <label id="lSize"></label><input type="range" id="blobSize" min="100" max="600" value="300" oninput="generate()"><span class="val" id="vSize">300</span>
+      <button class="gz-btn" onclick="generate()">🎲 <span id="randBtn"></span></button>
+    </div>
+    <div class="blob-preview" id="blobPreview"></div>
+    <div class="code-box" id="svgCode"></div>
+    <div class="btn-row">
+      <button class="gz-btn" onclick="copySvg()">📋 <span id="copyLabel"></span></button>
+      <button class="gz-btn" onclick="downloadSvg()">⬇️ <span id="dlLabel"></span></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'SVG Blob Generator',toolDesc:'Generate random organic blob shapes. Export as SVG.',
+    s1:'Adjust color, complexity and size',s2:'Click Randomize for new shapes',s3:'Copy SVG code or download the file',s4:'Use in your designs',
+    color:'Color:',complexity:'Complexity:',size:'Size:',randomize:'Randomize',copySvg:'Copy SVG',dlSvg:'Download SVG',
+    rFilters:'Image Filters',rCompressor:'Image Compressor',rConverter:'Format Converter',rCropper:'Image Cropper'},
+  zh:{toolTitle:'SVG Blob 生成器',toolDesc:'随机生成有机Blob形状，导出SVG。',
+    s1:'调整颜色、复杂度和大小',s2:'点击随机生成新形状',s3:'复制SVG代码或下载文件',s4:'在设计中使用',
+    color:'颜色：',complexity:'复杂度：',size:'大小：',randomize:'随机生成',copySvg:'复制SVG',dlSvg:'下载SVG',
+    rFilters:'图片滤镜',rCompressor:'图片压缩',rConverter:'格式转换',rCropper:'图片裁剪'}
+});
+
+const {t}=GZI18n;
+document.getElementById('lColor').textContent=t('color');
+document.getElementById('lComplexity').textContent=t('complexity');
+document.getElementById('lSize').textContent=t('size');
+document.getElementById('randBtn').textContent=t('randomize');
+document.getElementById('copyLabel').textContent=t('copySvg');
+document.getElementById('dlLabel').textContent=t('dlSvg');
+
+let svgStr='';
+
+function generateBlob(pts,size){
+  const cx=size/2,cy=size/2,r=size*0.38;
+  const angles=[];
+  for(let i=0;i<pts;i++)angles.push((Math.PI*2/pts)*i);
+  const points=angles.map(a=>{
+    const rr=r*(0.7+Math.random()*0.6);
+    return[cx+Math.cos(a)*rr,cy+Math.sin(a)*rr];
+  });
+  points.push(points[0]);
+  let d=`M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
+  for(let i=0;i<points.length-1;i++){
+    const curr=points[i],next=points[i+1];
+    const mx=(curr[0]+next[0])/2,my=(curr[1]+next[1])/2;
+    d+=` Q ${curr[0].toFixed(1)} ${curr[1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+  }
+  d+=' Z';
+  return d;
+}
+
+function generate(){
+  const pts=+document.getElementById('complexity').value;
+  const size=+document.getElementById('blobSize').value;
+  const color=document.getElementById('blobColor').value;
+  document.getElementById('vComplex').textContent=pts;
+  document.getElementById('vSize').textContent=size;
+  const path=generateBlob(pts,size);
+  svgStr=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><path d="${path}" fill="${color}"/></svg>`;
+  document.getElementById('blobPreview').innerHTML=svgStr;
+  document.getElementById('svgCode').textContent=svgStr;
+}
+
+function copySvg(){GZ.copyText(svgStr)}
+function downloadSvg(){
+  const a=document.createElement('a');a.href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
+  a.download='blob.svg';a.click();
+}
+
+generate();
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/filters.html',icon:'🎨',nameKey:'rFilters'},
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/converter.html',icon:'🔄',nameKey:'rConverter'},
+    {href:'/image/cropper.html',icon:'✂️',nameKey:'rCropper'}
+  ]
+});
+</script>
+</body>
+</html>

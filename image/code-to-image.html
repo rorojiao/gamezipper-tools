@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Code to Image — GameZipper Tools</title>
+<meta name="description" content="Convert code snippets to beautiful images. Choose themes, languages, backgrounds. Like Carbon but in browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/code-to-image.html">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.settings{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;align-items:center}
+.settings select,.settings input[type=number]{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:.85rem}
+.settings label{font-size:.82rem;color:var(--text2)}
+.code-input{width:100%;min-height:200px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Fira Code','Cascadia Code','Consolas',monospace;font-size:.9rem;padding:1rem;resize:vertical;tab-size:2}
+.preview-container{margin:1.5rem auto;display:flex;justify-content:center;overflow:auto}
+.code-card{position:relative;border-radius:12px;overflow:hidden}
+.code-card .dots{display:flex;gap:6px;padding:12px 16px 0}
+.code-card .dots span{width:12px;height:12px;border-radius:50%}
+.code-card pre{margin:0;padding:16px 20px 20px;font-family:'Fira Code','Cascadia Code','Consolas',monospace;font-size:14px;line-height:1.6;overflow-x:auto;white-space:pre}
+.btn-row{display:flex;gap:.5rem;justify-content:center;margin:1rem 0;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <textarea class="code-input" id="codeInput" placeholder="Paste your code here..." oninput="render()">function hello() {
+  console.log("Hello, World!");
+  return 42;
+}</textarea>
+    <div class="settings">
+      <label id="lTheme"></label>
+      <select id="theme" onchange="render()">
+        <option value="dark">Dark</option>
+        <option value="monokai">Monokai</option>
+        <option value="light">Light</option>
+        <option value="dracula">Dracula</option>
+        <option value="nord">Nord</option>
+      </select>
+      <label id="lBg"></label>
+      <select id="bgStyle" onchange="render()">
+        <option value="gradient1">Purple Gradient</option>
+        <option value="gradient2">Blue Gradient</option>
+        <option value="gradient3">Green Gradient</option>
+        <option value="solid">Solid Gray</option>
+        <option value="none">No Background</option>
+      </select>
+      <label id="lPad"></label>
+      <input type="number" id="padding" value="40" min="0" max="100" step="8" onchange="render()">
+      <label id="lFontSize"></label>
+      <input type="number" id="fontSize" value="14" min="10" max="24" onchange="render()">
+    </div>
+    <div class="preview-container"><div id="cardWrap"></div></div>
+    <div class="btn-row">
+      <button class="gz-btn" onclick="exportPng()">⬇️ <span id="dlLabel">Export PNG</span></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Code to Image',toolDesc:'Convert code snippets into beautiful shareable images.',
+    s1:'Paste your code in the editor',s2:'Choose a theme and background style',s3:'Adjust padding and font size',s4:'Export as PNG image',
+    theme:'Theme:',background:'Background:',padding:'Padding:',fontSize:'Font Size:',exportPng:'Export PNG',
+    rFilters:'Image Filters',rCompressor:'Image Compressor',rTweet:'Tweet to Image',rBlob:'SVG Blob Generator'},
+  zh:{toolTitle:'代码转图片',toolDesc:'将代码片段转换为精美的可分享图片。',
+    s1:'在编辑器中粘贴代码',s2:'选择主题和背景样式',s3:'调整内边距和字号',s4:'导出PNG图片',
+    theme:'主题：',background:'背景：',padding:'内边距：',fontSize:'字号：',exportPng:'导出PNG',
+    rFilters:'图片滤镜',rCompressor:'图片压缩',rTweet:'推文转图片',rBlob:'SVG Blob生成器'}
+});
+
+const {t}=GZI18n;
+document.getElementById('lTheme').textContent=t('theme');
+document.getElementById('lBg').textContent=t('background');
+document.getElementById('lPad').textContent=t('padding');
+document.getElementById('lFontSize').textContent=t('fontSize');
+document.getElementById('dlLabel').textContent=t('exportPng');
+
+const THEMES={
+  dark:{bg:'#1e1e2e',text:'#cdd6f4',kw:'#cba6f7',str:'#a6e3a1',comment:'#6c7086',fn:'#89b4fa',num:'#fab387',dot1:'#ff5f57',dot2:'#febc2e',dot3:'#28c840'},
+  monokai:{bg:'#272822',text:'#f8f8f2',kw:'#f92672',str:'#e6db74',comment:'#75715e',fn:'#a6e22e',num:'#ae81ff',dot1:'#ff5f57',dot2:'#febc2e',dot3:'#28c840'},
+  light:{bg:'#fafafa',text:'#383a42',kw:'#a626a4',str:'#50a14f',comment:'#a0a1a7',fn:'#4078f2',num:'#986801',dot1:'#ff5f57',dot2:'#febc2e',dot3:'#28c840'},
+  dracula:{bg:'#282a36',text:'#f8f8f2',kw:'#ff79c6',str:'#f1fa8c',comment:'#6272a4',fn:'#50fa7b',num:'#bd93f9',dot1:'#ff5555',dot2:'#f1fa8c',dot3:'#50fa7b'},
+  nord:{bg:'#2e3440',text:'#d8dee9',kw:'#81a1c1',str:'#a3be8c',comment:'#616e88',fn:'#88c0d0',num:'#b48ead',dot1:'#bf616a',dot2:'#ebcb8b',dot3:'#a3be8c'}
+};
+
+const BGS={
+  gradient1:'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+  gradient2:'linear-gradient(135deg,#2193b0 0%,#6dd5ed 100%)',
+  gradient3:'linear-gradient(135deg,#11998e 0%,#38ef7d 100%)',
+  solid:'#404040',
+  none:'transparent'
+};
+
+function simpleHighlight(code,theme){
+  const th=THEMES[theme];
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc(code)
+    .replace(/(\/\/.*)/g,`<span style="color:${th.comment}">$1</span>`)
+    .replace(/(\/\*[\s\S]*?\*\/)/g,`<span style="color:${th.comment}">$1</span>`)
+    .replace(/(&quot;.*?&quot;|'.*?'|`.*?`|".*?")/g,`<span style="color:${th.str}">$1</span>`)
+    .replace(/\b(function|const|let|var|return|if|else|for|while|import|export|class|new|this|async|await|from|of|in|try|catch|throw)\b/g,`<span style="color:${th.kw}">$1</span>`)
+    .replace(/\b(\d+\.?\d*)\b/g,`<span style="color:${th.num}">$1</span>`);
+}
+
+function render(){
+  const code=document.getElementById('codeInput').value;
+  const theme=document.getElementById('theme').value;
+  const bg=document.getElementById('bgStyle').value;
+  const pad=+document.getElementById('padding').value;
+  const fs=+document.getElementById('fontSize').value;
+  const th=THEMES[theme];
+  const bgVal=BGS[bg];
+  const bgStyle=bg==='solid'?`background:${bgVal}`:`background:${bgVal}`;
+  const highlighted=simpleHighlight(code,theme);
+
+  document.getElementById('cardWrap').innerHTML=`
+    <div style="${bgStyle};padding:${pad}px;border-radius:${pad>0?16:0}px" id="exportTarget">
+      <div class="code-card" style="background:${th.bg};border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+        <div class="dots"><span style="background:${th.dot1}"></span><span style="background:${th.dot2}"></span><span style="background:${th.dot3}"></span></div>
+        <pre style="color:${th.text};font-size:${fs}px">${highlighted}</pre>
+      </div>
+    </div>`;
+}
+
+function exportPng(){
+  const el=document.getElementById('exportTarget');
+  if(!el)return;
+  // Use canvas approach: render to canvas via foreignObject in SVG
+  const html=el.outerHTML;
+  const w=el.offsetWidth,h=el.offsetHeight;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${html}</div></foreignObject></svg>`;
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');c.width=w*2;c.height=h*2;
+    const cx=c.getContext('2d');cx.scale(2,2);cx.drawImage(img,0,0);
+    const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='code-image.png';a.click();
+  };
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+
+render();
+
+GZ.renderToolPage({category:'image',titleKey:'toolTitle',descKey:'toolDesc',
+  howToSteps:['s1','s2','s3','s4'],
+  related:[
+    {href:'/image/filters.html',icon:'🎨',nameKey:'rFilters'},
+    {href:'/image/compressor.html',icon:'📦',nameKey:'rCompressor'},
+    {href:'/image/tweet-to-image.html',icon:'🐦',nameKey:'rTweet'},
+    {href:'/image/blob.html',icon:'🫧',nameKey:'rBlob'}
+  ]
+});
+</script>
+</body>
+</html>
