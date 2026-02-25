@@ -37,6 +37,9 @@ const GZ = (function(){
     { id: 'css', icon: '✨', path: '/css-tools/' },
     { id: 'convert', icon: '🔄', path: '/convert/' },
     { id: 'fortune', icon: '🔮', path: '/fortune/' },
+    { id: 'calc', icon: '🧮', path: '/calc/' },
+    { id: 'seo', icon: '🔍', path: '/seo/' },
+    { id: 'fun', icon: '🎲', path: '/fun/' },
   ];
 
   function renderHeader(activeCat) {
