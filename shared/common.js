@@ -114,18 +114,6 @@ const GZ = (function(){
     setLang(getLang() === 'en' ? 'zh' : 'en');
   }
 
-  // AdSense
-  function initAdsense() {
-    if (document.querySelector('script[src*="pagead2"]')) return;
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
-    s.crossOrigin = 'anonymous';
-    document.head.appendChild(s);
-  }
-
-  return { $, $$, showToast, copyText, renderHeader, renderFooter, renderToolPage, toggleLang, initAdsense, CATEGORIES, t };
+  return { $, $$, showToast, copyText, renderHeader, renderFooter, renderToolPage, toggleLang, CATEGORIES, t };
 })();
 
-// Auto-init AdSense
-GZ.initAdsense();
