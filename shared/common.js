@@ -63,6 +63,7 @@ const GZ = (function(){
     footer.innerHTML = `
       <p>${t('madeWith')} <a href="https://gamezipper.com">GameZipper</a> · 
       <a href="https://gamezipper.com">${t('gamesAt')} gamezipper.com 🎮</a></p>
+      <p style="margin-top:8px"><a href="https://gamezipper.com" style="color:#ffd93d">🎮 Play Free Games</a> — Puzzle, arcade, idle & more!</p>
       <p style="margin-top:6px;font-size:0.75rem">${t('privacyNote')}</p>`;
     document.body.appendChild(footer);
   }
