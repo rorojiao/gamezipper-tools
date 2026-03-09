@@ -1,4 +1,5 @@
 /* GameZipper Tools — Common JS */
+(function(){var s=document.createElement('script');s.src='/shared/monetag-safe.js';s.defer=true;document.head.appendChild(s);s.onload=function(){window.GZToolAds&&window.GZToolAds.init();};})();
 const GZ = (function(){
   const { t, getLang, setLang } = GZI18n;
 
