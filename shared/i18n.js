@@ -16,6 +16,15 @@ const GZI18n = (function(){
   // Set html lang attribute on load
   document.documentElement.lang = lang;
 
+  // Auto-redirect: if browser is zh and we're on en URL (and no manual override)
+  if (!localStorage.getItem('gz-lang') && navigator.language && navigator.language.startsWith('zh')) {
+    var p = location.pathname;
+    if (!p.startsWith('/zh/') && p !== '/zh') {
+      var zhUrl = '/zh' + (p === '/' ? '/' : p);
+      location.replace(zhUrl);
+    }
+  }
+
   // Common strings
   register({
     en: {
