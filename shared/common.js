@@ -53,7 +53,7 @@ const GZ = (function(){
         ${CATEGORIES.map(c => `<a href="${c.path}" class="${activeCat === c.id ? 'active' : ''}">${c.icon} ${t(c.id + 'Tools')}</a>`).join('')}
       </nav>
       <div class="gz-actions">
-        <a class="gz-lang-btn" id="gz-lang-switch" href="#">中文</a>
+        <button class="gz-lang-btn" onclick="GZ.toggleLang()">'EN'</button>
       </div>`;
     document.body.prepend(header);
   }

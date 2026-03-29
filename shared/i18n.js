@@ -1,40 +1,10 @@
 /* GameZipper Tools — i18n system */
 const GZI18n = (function(){
   const T = { en: {}, zh: {} };
-  let lang = (function(){
-    // If on /zh/ path, force zh
-    if (location.pathname.startsWith('/zh/')) return 'zh';
-    // If force-zh flag set (zh pages inject this), use zh
-    if (localStorage.getItem('gz-force-zh') === '1') { localStorage.removeItem('gz-force-zh'); return 'zh'; }
-    // User preference
-    var saved = localStorage.getItem('gz-lang');
-    if (saved) return saved;
-    // Auto-redirect: zh browser on en page → redirect to /zh/
-    if (navigator.language && navigator.language.startsWith('zh') && !localStorage.getItem('gz-lang-manual')) {
-      var zhPath = '/zh' + location.pathname;
-      localStorage.setItem('gz-lang', 'zh');
-      location.replace(zhPath);
-      return 'zh';
-    }
-    return 'en';
-  })();
+  let lang = localStorage.getItem('gz-lang') || (navigator.language && navigator.language.startsWith('zh') ? 'zh' : 'en');
 
   function t(k) { return (T[lang] && T[lang][k]) || T.en[k] || k; }
-  function setLang(l) {
-    lang = l;
-    localStorage.setItem('gz-lang', l);
-    localStorage.setItem('gz-lang-manual', '1');
-    document.documentElement.lang = l;
-    // Navigate between en/zh versions
-    var path = location.pathname;
-    if (l === 'zh' && !path.startsWith('/zh/')) {
-      location.replace('/zh' + path);
-    } else if (l === 'en' && path.startsWith('/zh/')) {
-      location.replace(path.replace('/zh/', '/'));
-    } else {
-      location.reload();
-    }
-  }
+  function setLang(l) { lang = l; localStorage.setItem('gz-lang', l); document.documentElement.lang = l; location.reload(); }
   function getLang() { return lang; }
   function register(translations) {
     for (const [l, entries] of Object.entries(translations)) {
