@@ -1,10 +1,10 @@
 /* GameZipper Tools — i18n system */
 const GZI18n = (function(){
   const T = { en: {}, zh: {} };
-  let lang = localStorage.getItem('gz-lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+  let lang = localStorage.getItem('gz-lang') || (navigator.language && navigator.language.startsWith('zh') ? 'zh' : 'en');
 
   function t(k) { return (T[lang] && T[lang][k]) || T.en[k] || k; }
-  function setLang(l) { lang = l; localStorage.setItem('gz-lang', l); location.reload(); }
+  function setLang(l) { lang = l; localStorage.setItem('gz-lang', l); document.documentElement.lang = l; location.reload(); }
   function getLang() { return lang; }
   function register(translations) {
     for (const [l, entries] of Object.entries(translations)) {
@@ -12,6 +12,10 @@ const GZI18n = (function(){
       Object.assign(T[l], entries);
     }
   }
+
+  // Set html lang attribute on load
+  document.documentElement.lang = lang;
+
   // Common strings
   register({
     en: {

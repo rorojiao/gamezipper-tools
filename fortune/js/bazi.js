@@ -66,7 +66,7 @@ function countElements(pillars) {
     return count;
 }
 
-// Ten Gods: 0=比肩, 1=劫财, 2=食神, 3=伤官, 4=偏财, 5=正财, 6=七杀, 7=正官, 8=偏印, 9=正印
+// Ten Gods: 0=BiJian, 1=JieCai, 2=ShiShen, 3=ShangGuan, 4=PianCai, 5=ZhengCai, 6=QiSha, 7=ZhengGuan, 8=PianYin, 9=ZhengYin
 const TEN_GOD_NAMES = ['Peer','Rob Wealth','Eat God','Hurting Officer','Ind Wealth','Dir Wealth','7 Killings','Dir Officer','Ind Seal','Dir Seal'];
 
 function getTenGod(dayTg, otherTg) {

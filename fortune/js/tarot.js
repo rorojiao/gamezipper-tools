@@ -1,110 +1,108 @@
-// 塔罗牌数据 - 22张大阿尔卡纳 + 56张小阿尔卡纳
+// Tarot card data - 22 Major Arcana + 56 Minor Arcana
 const majorArcana = [
-    { name: '愚者', num: 0, img: '🃏',
-      upright: '新的开始、冒险、自由、天真无邪。你正站在人生的十字路口，一段全新的旅程即将展开。不要被世俗的眼光束缚，相信自己内心的声音，勇敢地迈出第一步。宇宙正在为你铺设一条充满可能性的道路。',
-      reversed: '鲁莽行事、缺乏计划、盲目乐观。当前你可能过于冲动，忽视了潜在的风险。建议在做重要决定前三思而后行，不要被一时的热情冲昏头脑。踏实前行，方能行稳致远。' },
-    { name: '魔术师', num: 1, img: '🎩',
-      upright: '创造力、意志力、技能精湛。你拥有将想法变为现实的能力，天地间的四大元素都在你的掌控之中。现在正是施展才华的最佳时机，你的每一个创意都有可能开花结果。',
-      reversed: '欺骗、操纵、能力不足。警惕身边可能有人在利用花言巧语蒙蔽你的双眼。同时也要反思自己是否在某些方面过于自负，脚踏实地方能成就大事。' },
-    { name: '女祭司', num: 2, img: '🌙',
-      upright: '直觉、智慧、神秘的内在知识。你的潜意识正在向你传递重要的信息，静下心来倾听内心的声音。答案不在外界，而在你的内心深处。相信你的第六感，它不会欺骗你。',
-      reversed: '忽视直觉、信息不明、表面化。你可能过于依赖理性分析而忽略了内心的感受。某些事情的真相尚未浮出水面，保持耐心，不要急于下结论。' },
-    { name: '女皇', num: 3, img: '👑',
-      upright: '丰盛、母性、自然之美。生活正向你展现它最丰饶的一面，无论是感情、事业还是财运都有丰收的迹象。享受当下的美好，同时也要学会与他人分享你的幸福。',
-      reversed: '创造力受阻、依赖他人、过度溺爱。你可能正经历一段创造力枯竭的时期，或者在某段关系中失去了自我。是时候重新找回内心的力量和独立性了。' },
-    { name: '皇帝', num: 4, img: '🏛️',
-      upright: '权威、结构、稳定、领导力。你正处于一个需要展现领导才能的时期。建立秩序和规则，用理性和纪律来管理你的生活。你有能力成为自己命运的主宰者。',
-      reversed: '专制、僵化、控制欲过强。过度的控制只会适得其反。学会放手，给自己和他人一些自由的空间。灵活变通有时比铁腕政策更有效。' },
-    { name: '教皇', num: 5, img: '⛪',
-      upright: '传统、信仰、精神指引。寻求智者的指导会对你大有裨益。这是一个适合学习和探索精神世界的时期，传统的智慧中蕴含着解决当前困境的钥匙。',
-      reversed: '教条主义、反叛传统、不良建议。不要盲目遵从权威，也不要全盘否定传统。用批判性思维来审视你接收到的建议，找到适合自己的道路。' },
-    { name: '恋人', num: 6, img: '💕',
-      upright: '爱情、和谐、重要选择。一段美好的感情正在你的生命中绽放，或者你正面临一个关于爱与价值观的重要选择。跟随你的心，但也要兼顾理性的判断。',
-      reversed: '不和谐、价值观冲突、选择困难。你可能正面临感情上的困扰或价值观的撕裂。不要逃避问题，正视内心的真实感受，才能找到出路。' },
-    { name: '战车', num: 7, img: '⚔️',
-      upright: '胜利、意志力、克服障碍。你正以势不可挡之势前进！坚定的意志和不屈的精神将带领你克服一切困难。胜利就在前方，不要停下脚步。',
-      reversed: '失控、方向不明、内心冲突。你可能正在经历一种失去方向感的迷茫。内心的矛盾让你无法集中精力。停下来整理思绪，重新找到你的目标。' },
-    { name: '力量', num: 8, img: '🦁',
-      upright: '内在力量、勇气、耐心。真正的力量不在于外在的强悍，而在于内心的坚韧。你拥有驯服内心猛兽的能力，用温柔和耐心来面对当前的挑战。',
-      reversed: '自我怀疑、软弱、缺乏自信。不要让恐惧和自我怀疑吞噬你的力量。你比自己想象的更加强大，相信自己，勇敢面对。' },
-    { name: '隐士', num: 9, img: '🏔️',
-      upright: '内省、独处、寻求真理。这是一个适合独处和深度思考的时期。暂时远离喧嚣的人群，在宁静中寻找内心的答案。智慧之光就在你的内心深处。',
-      reversed: '孤僻、固步自封、逃避现实。过度的封闭只会让你与世界脱节。是时候走出你的舒适区，重新与外界建立联系了。' },
-    { name: '命运之轮', num: 10, img: '☸️',
-      upright: '转折、好运、命运的转变。命运之轮正在转动，一个重大的转折点即将到来！保持乐观和开放的心态，迎接即将到来的变化。宇宙正在为你安排最好的剧本。',
-      reversed: '逆境、变化受阻、运气不佳。当前可能正处于低谷期，但请记住——轮回不止，否极泰来。保持耐心，好运终会再次降临。' },
-    { name: '正义', num: 11, img: '⚖️',
-      upright: '公正、真相、因果报应。真相终将大白，公正的裁决即将到来。你过去种下的善因正在结出善果。保持正直和诚实，宇宙会给你公平的回报。',
-      reversed: '不公正、逃避责任、偏见。你可能正面临不公平的对待，或者在某件事上缺乏客观的判断。审视自己的行为，承担应有的责任。' },
-    { name: '倒吊人', num: 12, img: '🙃',
-      upright: '牺牲、新视角、放下执念。有时候换一个角度看问题，世界就完全不同了。暂时的停滞和牺牲是为了更大的收获。放下执念，你会发现新的可能。',
-      reversed: '拖延、无谓牺牲、固执。你可能正在一个毫无意义的事情上浪费时间和精力。是时候做出改变，不要再自我牺牲了。' },
-    { name: '死神', num: 13, img: '💀',
-      upright: '结束与新生、转变、放手。不要被这张牌的名字吓到——它代表的是旧事物的终结和新生活的开始。该放手的就放手，为新的篇章腾出空间。凤凰涅槃，浴火重生。',
-      reversed: '抗拒改变、停滞不前、无法放手。你正在紧紧抓住已经过去的东西，这阻碍了你的成长。学会接受变化，因为改变是生命的本质。' },
-    { name: '节制', num: 14, img: '🏺',
-      upright: '平衡、和谐、中庸之道。现在是追求内心平衡的时候。不要走极端，在各种力量之间找到完美的平衡点。节制和耐心将为你带来长久的成功。',
-      reversed: '失衡、过度、缺乏耐心。你的生活可能已经失去了平衡。某个方面的过度投入导致了其他方面的缺失。是时候重新审视你的优先级了。' },
-    { name: '恶魔', num: 15, img: '😈',
-      upright: '束缚、诱惑、物质执念。警惕那些看似诱人却会束缚你的事物。你可能被某种执念或不良习惯所控制。认清这些枷锁，你就有了打破它们的力量。',
-      reversed: '解脱、觉醒、打破束缚。恭喜你！你正在从某种束缚中解放出来。继续保持这种觉醒的状态，不要再回到旧有的模式中去。' },
-    { name: '塔', num: 16, img: '🗼',
-      upright: '剧变、觉醒、根基动摇。一场突如其来的变化可能会打破你现有的生活格局。虽然过程可能痛苦，但这是宇宙在帮你清除那些建立在虚假根基上的东西。废墟之上，方能重建更坚固的城堡。',
-      reversed: '灾难延迟、恐惧改变、苟延残喘。你可能已经预感到某些变化即将到来却在刻意逃避。与其被动承受，不如主动迎接变化。' },
-    { name: '星星', num: 17, img: '⭐',
-      upright: '希望、灵感、宁静。暴风雨后的天空最为晴朗。你正进入一个充满希望和灵感的时期，宇宙正在向你发送祝福的信号。保持信心，你的愿望终将实现。',
-      reversed: '失望、信心不足、缺乏灵感。你可能暂时失去了对未来的信心。但请记住，即使最黑暗的夜晚也有星星在闪烁。不要放弃希望。' },
-    { name: '月亮', num: 18, img: '🌕',
-      upright: '幻觉、潜意识、恐惧。事物并非表面看起来的那样。你的潜意识正在向你发出警告，注意那些隐藏在暗处的真相。相信你的直觉，但也要保持清醒的判断力。',
-      reversed: '走出迷雾、真相浮现、恐惧消散。困扰你已久的迷雾正在散去，真相即将显现。不再被幻觉所迷惑，你正在找回清晰的判断力。' },
-    { name: '太阳', num: 19, img: '☀️',
-      upright: '成功、快乐、活力。这是塔罗牌中最吉祥的牌之一！阳光普照，万物生长。你正处于人生最光明灿烂的时期，享受这份喜悦吧！成功和幸福正在向你招手。',
-      reversed: '暂时受挫、乐观过度、精力不足。阳光暂时被乌云遮蔽，但这只是暂时的。保持积极的心态，乌云终将散去，阳光会再次照耀你的生活。' },
-    { name: '审判', num: 20, img: '📯',
-      upright: '觉醒、重生、召唤。一个重要的觉醒时刻正在到来。你将对过去的经历有全新的理解，并获得重生的机会。听从内心深处的召唤，勇敢地开启新的人生篇章。',
-      reversed: '自我怀疑、拒绝反思、错失良机。不要因为过去的失败而裹足不前。每一次经历都是宝贵的课程，从中学习并向前看。' },
-    { name: '世界', num: 21, img: '🌍',
-      upright: '圆满、成就、旅程完成。恭喜你！你正在收获一段旅程的圆满成果。所有的努力都没有白费，宇宙正在为你的坚持给予最高的奖赏。享受这份成就感，同时准备迎接更大的挑战。',
-      reversed: '不完整、缺乏收尾、半途而废。你的旅程还没有真正完成。不要急于开始新的冒险，先把手头的事情做好。善始善终，方能无憾。' }
+    { name: 'The Fool', num: 0, img: '🃏',
+      upright: 'New beginnings, adventure, freedom, innocence. You stand at a crossroads with a brand new journey about to unfold. Do not be bound by convention — trust your inner voice and take that first brave step. The universe is paving a path full of possibilities.',
+      reversed: 'Recklessness, lack of planning, blind optimism. You may be acting too impulsively, overlooking potential risks. Think twice before making important decisions. Steady progress leads to lasting success.' },
+    { name: 'The Magician', num: 1, img: '🎩',
+      upright: 'Creativity, willpower, mastery of skills. You have the power to turn ideas into reality, with all four elements at your command. Now is the perfect time to showcase your talents — every creative spark has the potential to blossom.',
+      reversed: 'Deception, manipulation, lack of skill. Beware of those using sweet words to blind you. Also reflect on whether you have been overconfident in certain areas. Stay grounded to achieve great things.' },
+    { name: 'The High Priestess', num: 2, img: '🌙',
+      upright: 'Intuition, wisdom, hidden knowledge. Your subconscious is sending you important messages. Quiet your mind and listen to your inner voice. The answer lies not outside, but deep within. Trust your sixth sense — it will not deceive you.',
+      reversed: 'Ignoring intuition, unclear information, superficiality. You may be relying too much on rational analysis while ignoring your feelings. The full truth has not surfaced yet. Be patient and do not rush to conclusions.' },
+    { name: 'The Empress', num: 3, img: '👑',
+      upright: 'Abundance, nurturing, natural beauty. Life is showing you its most bountiful side. Whether in love, career, or finances, harvest is on the horizon. Enjoy the present beauty and learn to share your happiness with others.',
+      reversed: 'Creative block, dependency, overindulgence. You may be going through a period of creative drought, or losing yourself in a relationship. Time to reclaim your inner strength and independence.' },
+    { name: 'The Emperor', num: 4, img: '🏛️',
+      upright: 'Authority, structure, stability, leadership. You are in a period that calls for leadership. Build order and rules, manage your life with reason and discipline. You have the power to be the master of your own destiny.',
+      reversed: 'Tyranny, rigidity, excessive control. Too much control backfires. Learn to let go and give yourself and others some freedom. Flexibility is sometimes more effective than an iron fist.' },
+    { name: 'The Hierophant', num: 5, img: '⛪',
+      upright: 'Tradition, faith, spiritual guidance. Seeking wisdom from a mentor will benefit you greatly. This is a time for learning and exploring the spiritual world. Traditional wisdom holds the key to your current challenges.',
+      reversed: 'Dogmatism, rebellion against tradition, poor advice. Do not blindly follow authority, nor reject all tradition. Use critical thinking to evaluate advice and find your own path.' },
+    { name: 'The Lovers', num: 6, img: '💕',
+      upright: 'Love, harmony, important choices. A beautiful romance is blooming in your life, or you face a crucial decision about love and values. Follow your heart, but let reason have its say too.',
+      reversed: 'Disharmony, value conflicts, indecision. You may be facing relationship troubles or torn values. Do not avoid the issue — face your true feelings to find the way forward.' },
+    { name: 'The Chariot', num: 7, img: '⚔️',
+      upright: 'Victory, willpower, overcoming obstacles. You are charging forward with unstoppable momentum! Firm will and indomitable spirit will help you overcome all difficulties. Victory is near — do not stop now.',
+      reversed: 'Loss of control, unclear direction, inner conflict. You may be feeling lost and directionless. Inner contradictions prevent you from focusing. Stop, sort your thoughts, and find your goal again.' },
+    { name: 'Strength', num: 8, img: '🦁',
+      upright: 'Inner strength, courage, patience. True strength lies not in external toughness, but in inner resilience. You have the ability to tame your inner beast. Face current challenges with gentleness and patience.',
+      reversed: 'Self-doubt, weakness, lack of confidence. Do not let fear and self-doubt consume your power. You are stronger than you think. Believe in yourself and face things bravely.' },
+    { name: 'The Hermit', num: 9, img: '🏔️',
+      upright: 'Introspection, solitude, seeking truth. This is a time for solitude and deep reflection. Step away from the noise and find your inner answers in stillness. The light of wisdom shines from within.',
+      reversed: 'Isolation, closed-mindedness, escapism. Excessive isolation only disconnects you from the world. It is time to step out of your comfort zone and reconnect with others.' },
+    { name: 'Wheel of Fortune', num: 10, img: '☸️',
+      upright: 'Turning point, good luck, destiny shifts. The wheel of fortune is spinning — a major turning point is coming! Stay optimistic and open-minded. Embrace the changes ahead. The universe is writing the best script for you.',
+      reversed: 'Adversity, blocked changes, bad luck. You may be in a low period, but remember — the wheel keeps turning. After the darkest hour comes the dawn. Stay patient and good fortune will return.' },
+    { name: 'Justice', num: 11, img: '⚖️',
+      upright: 'Fairness, truth, karma. The truth will be revealed and justice served. The good seeds you have planted are bearing fruit. Stay upright and honest — the universe will reward you fairly.',
+      reversed: 'Injustice, avoiding responsibility, bias. You may be facing unfair treatment, or lacking objectivity. Examine your actions and take due responsibility.' },
+    { name: 'The Hanged Man', num: 12, img: '🙃',
+      upright: 'Sacrifice, new perspective, letting go. Sometimes seeing things from a different angle changes everything. Temporary pause and sacrifice lead to greater gains. Let go of attachments and discover new possibilities.',
+      reversed: 'Procrastination, needless sacrifice, stubbornness. You may be wasting time and energy on something meaningless. It is time to make a change and stop self-sacrificing.' },
+    { name: 'Death', num: 13, img: '💀',
+      upright: 'Endings and new beginnings, transformation, letting go. Do not be scared by the name — it represents the end of the old and the start of the new. Let go of what must go, and make room for a new chapter. Like a phoenix rising from the ashes.',
+      reversed: 'Resisting change, stagnation, unable to let go. You are holding tightly to the past, which blocks your growth. Learn to accept change — it is the essence of life.' },
+    { name: 'Temperance', num: 14, img: '🏺',
+      upright: 'Balance, harmony, moderation. Now is the time to pursue inner balance. Avoid extremes and find the perfect equilibrium between opposing forces. Moderation and patience will bring lasting success.',
+      reversed: 'Imbalance, excess, impatience. Your life may have lost its balance. Over-investment in one area has caused neglect in others. Time to reassess your priorities.' },
+    { name: 'The Devil', num: 15, img: '😈',
+      upright: 'Bondage, temptation, material obsession. Beware of things that seem alluring but will entrap you. You may be controlled by an obsession or bad habit. Recognize these chains, and you will have the power to break them.',
+      reversed: 'Liberation, awakening, breaking free. Congratulations! You are being freed from bondage. Stay awakened and do not fall back into old patterns.' },
+    { name: 'The Tower', num: 16, img: '🗼',
+      upright: 'Upheaval, awakening, shattered foundations. A sudden change may disrupt your current life. Though painful, the universe is clearing what was built on false foundations. Upon the ruins, you will rebuild something stronger.',
+      reversed: 'Delayed disaster, fear of change, clinging. You may sense approaching change yet actively avoid it. Rather than passively enduring, proactively embrace the transformation.' },
+    { name: 'The Star', num: 17, img: '⭐',
+      upright: 'Hope, inspiration, serenity. The sky is clearest after the storm. You are entering a period of hope and inspiration. The universe is sending you signals of blessing. Keep faith — your wishes will come true.',
+      reversed: 'Disappointment, lack of faith, no inspiration. You may have temporarily lost faith in the future. But remember, even the darkest night has stars twinkling. Do not give up hope.' },
+    { name: 'The Moon', num: 18, img: '🌕',
+      upright: 'Illusion, subconscious, fear. Things are not what they seem on the surface. Your subconscious is warning you — watch for hidden truths. Trust your intuition but maintain clear judgment.',
+      reversed: 'Emerging from the fog, truth revealed, fears fading. The fog that plagued you is lifting, and truth is coming to light. No longer confused by illusions, your clarity is returning.' },
+    { name: 'The Sun', num: 19, img: '☀️',
+      upright: 'Success, joy, vitality. One of the most auspicious cards in the tarot! The sun shines on everything. You are in the brightest period of your life. Enjoy this joy! Success and happiness are waving at you.',
+      reversed: 'Temporary setback, excessive optimism, low energy. Clouds temporarily cover the sun, but this is only temporary. Stay positive — clouds will part and sunshine will return.' },
+    { name: 'Judgement', num: 20, img: '📯',
+      upright: 'Awakening, rebirth, calling. An important awakening moment is arriving. You will gain a new understanding of past experiences and an opportunity for rebirth. Listen to your inner calling and bravely start a new chapter.',
+      reversed: 'Self-doubt, refusing reflection, missed opportunities. Do not be paralyzed by past failures. Every experience is a valuable lesson — learn from it and look forward.' },
+    { name: 'The World', num: 21, img: '🌍',
+      upright: 'Completion, achievement, journey fulfilled. Congratulations! You are harvesting the fruits of a completed journey. All efforts were worthwhile. The universe rewards your persistence with the highest prize. Enjoy this accomplishment while preparing for greater challenges ahead.',
+      reversed: 'Incompletion, lack of closure, giving up halfway. Your journey is not truly complete. Do not rush into a new adventure before finishing what is at hand. See things through to the end.' }
 ];
 
-// 小阿尔卡纳 - 四个花色
-const suits = ['权杖','圣杯','宝剑','星币'];
-const suitEmoji = { '权杖': '🪄', '圣杯': '🏆', '宝剑': '⚔️', '星币': '💰' };
-const suitElement = { '权杖': '火', '圣杯': '水', '宝剑': '风', '星币': '土' };
-const ranks = ['Ace','二','三','四','五','六','七','八','九','十','侍从','骑士','王后','国王'];
+const suits = ['Wands','Cups','Swords','Pentacles'];
+const suitEmoji = { Wands: '🪄', Cups: '🏆', Swords: '⚔️', Pentacles: '💰' };
+const suitElement = { Wands: 'Fire', Cups: 'Water', Swords: 'Air', Pentacles: 'Earth' };
+const ranks = ['Ace','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Page','Knight','Queen','King'];
 
 const minorMeanings = {
-    '权杖': {
-        upright: ['创意萌芽，灵感迸发','激情规划，志向远大','拓展视野，等待收获','庆祝成功，和谐稳定','竞争激烈，挑战不断','胜利凯旋，荣耀加身','坚守立场，捍卫信念','迅速行动，势如破竹','坚韧不拔，严阵以待','重担在肩，负重前行','热情探索，勇于冒险','勇猛果敢，义无反顾','温暖大方，有吸引力','领袖风范，运筹帷幄'],
-        reversed: ['延迟受阻，计划搁浅','犹豫不决，信心不足','期望落空，方向不明','不安定，缺乏归属感','逃避冲突，私下较量','被打击，丧失信心','退缩畏惧，立场不坚','急躁冲动，方向偏差','多疑焦虑，过度防备','承受过多，需要放下','缺乏方向，过于理想','急躁冲动，做事草率','缺乏自信，过于依赖','专断独行，刚愎自用']
+    Wands: {
+        upright: ['Creative spark, inspiration burst','Ambitious planning, big vision','Expanding horizons, awaiting harvest','Celebrating success, stable harmony','Fierce competition, constant challenges','Triumphant victory, earned glory','Standing firm, defending beliefs','Swift action, unstoppable force','Steadfast resolve, battle-ready','Heavy burden, bearing weight','Passionate exploration, adventurous spirit','Bold and brave, charging forward','Warm and generous, naturally attractive','Natural leader, strategic mastermind'],
+        reversed: ['Delays and blocks, plans on hold','Indecisive, lacking confidence','Disappointed expectations, unclear direction','Instability, lack of belonging','Avoiding conflict, behind-the-scenes moves','Deflated confidence, setback','Retreating, wavering stance','Impatient, off-course','Paranoid, over-defensive','Overloaded, need to let go','Lacking direction, overly idealistic','Impulsive, careless actions','Low confidence, overly dependent','Dictatorial, refuses advice']
     },
-    '圣杯': {
-        upright: ['新感情，直觉启动','相互吸引，建立连接','庆祝友谊，分享喜悦','情感倦怠，内心反思','失落悲伤，关注现有','重温旧梦，怀旧之情','幻想丰富，需做选择','离开过去，寻找新路','愿望成真，心满意足','家庭幸福，情感圆满','感性温柔，传达爱意','浪漫追求，魅力四射','温柔共情，情感丰沛','情感成熟，慷慨仁慈'],
-        reversed: ['情感受阻，封闭内心','关系失衡，沟通不畅','过度沉溺，忽略重要','机会出现，走出倦怠','从失去中恢复，释怀','活在当下，接受现实','迷失幻想，逃避现实','放弃太容易，缺乏坚持','贪心不足，不知满足','家庭不和，期望过高','情绪不稳，过度敏感','不切实际，情感依赖','情绪化过度，缺乏边界','情感操控，过度牺牲']
+    Cups: {
+        upright: ['New feelings, intuition awakened','Mutual attraction, building connection','Celebrating friendship, sharing joy','Emotional burnout, inner reflection','Loss and grief, appreciate what remains','Nostalgia, revisiting old dreams','Rich fantasies, time to choose','Leaving the past, seeking new paths','Wish fulfilled, deep contentment','Family happiness, emotional fulfillment','Sensitive and gentle, expressing love','Romantic pursuit, radiating charm','Empathetic, emotionally rich','Emotionally mature, generous and kind'],
+        reversed: ['Blocked feelings, closed heart','Imbalanced relationship, poor communication','Overindulgence, ignoring what matters','Opportunity appears, emerging from burnout','Recovering from loss, letting go','Living in the present, accepting reality','Lost in fantasy, escaping reality','Giving up too easily, lacking persistence','Never satisfied, wanting more','Family discord, unrealistic expectations','Emotionally unstable, oversensitive','Unrealistic, emotionally dependent','Overly emotional, no boundaries','Emotional manipulation, over-sacrifice']
     },
-    '宝剑': {
-        upright: ['洞察真相，思维清晰','抉择困难，需要平衡','心碎悲痛，接受现实','休整恢复，暂时退隐','冲突获胜，可能代价','离开困境，过渡阶段','策略巧思，不走寻常路','自我设限，感到束缚','焦虑恐惧，噩梦缠绕','最低谷，否极泰来','好奇心强，渴望真相','迅速行动，直截了当','独立理性，洞察力强','公正权威，真理至上'],
-        reversed: ['思维混乱，判断失误','回避决定，信息不全','释放痛苦，开始愈合','需要休息，过度疲劳','失败受辱，反思教训','困境持续，难以脱身','欺骗暴露，诡计失败','解放自我，打破限制','希望回归，恐惧减退','度过最难时刻，恢复','八卦流言，不成熟','粗心大意，缺乏思考','冷漠尖刻，过于苛刻','滥用权力，不公正']
+    Swords: {
+        upright: ['Clear insight, sharp thinking','Difficult choices, seeking balance','Heartbreak, accepting reality','Retreat and recovery, temporary withdrawal','Victory in conflict, possible cost','Leaving difficulties, transition period','Clever strategy, unconventional approach','Self-limitation, feeling trapped','Anxiety and fear, nightmares','Rock bottom, dawn after darkness','Curious, seeking truth','Swift action, straightforward','Independent and rational, perceptive','Fair authority, truth above all'],
+        reversed: ['Clouded thinking, poor judgment','Avoiding decisions, missing info','Releasing pain, beginning to heal','Exhausted, needing rest','Defeat, learning from failure','Ongoing difficulty, hard to escape','Deception exposed, plans fail','Liberation, breaking limits','Hope returns, fear recedes','Past the worst, recovering','Gossip, immaturity','Careless, unthinking','Cold and harsh, overly critical','Abuse of power, unfairness']
     },
-    '星币': {
-        upright: ['新的财机，物质开端','平衡兼顾，灵活处理','精益求精，团队合作','守财稳妥，物质安全','困难时期，财务压力','慷慨给予，分享财富','耐心投资，等待收获','专注技能，精雕细琢','独立富足，享受成果','家族传承，物质丰盛','勤奋学习，务实踏实','稳步前进，脚踏实地','富裕舒适，善于投资','事业成功，财富巅峰'],
-        reversed: ['机会流失，缺乏规划','失衡忙碌，顾此失彼','质量下降，缺乏合作','吝啬贪婪，过度控制','走出困境，财务好转','附条件给予，不平等','焦急等待，回报不足','缺乏耐心，急功近利','过度依赖物质，挥霍','家庭纠纷，遗产问题','缺乏专注，好高骛远','停滞不前，缺乏动力','不善理财，物质执着','过度工作，忽略生活']
+    Pentacles: {
+        upright: ['New financial opportunity, material start','Balancing act, juggling priorities','Refining skills, teamwork','Conservative wealth, material security','Hard times, financial pressure','Generous giving, sharing wealth','Patient investment, awaiting harvest','Focused on skills, mastering craft','Independent wealth, enjoying fruits','Family legacy, material abundance','Diligent learner, practical and grounded','Steady progress, one step at a time','Prosperous, savvy investor','Career success, wealth peak'],
+        reversed: ['Lost opportunity, poor planning','Imbalanced, spreading thin','Declining quality, poor teamwork','Stingy, over-controlling','Emerging from difficulty, finances improving','Conditional giving, inequality','Anxious waiting, insufficient returns','Impatient, seeking quick gains','Over-dependent on material things','Family disputes, inheritance issues','Unfocused, reaching too high','Stagnant, lacking drive','Poor money management, materialistic','Overworking, neglecting life']
     }
 };
 
-// 生成完整的78张牌
 function getAllCards() {
     const cards = majorArcana.map(c => ({ ...c, type: 'major' }));
     suits.forEach(suit => {
         ranks.forEach((rank, i) => {
             cards.push({
                 type: 'minor',
-                name: `${suit}${rank}`,
+                name: `${rank} of ${suit}`,
                 suit, rank, rankIdx: i,
                 img: suitEmoji[suit],
-                upright: `${minorMeanings[suit].upright[i]}。${suitElement[suit]}元素的能量在这张牌中流动，为你带来${suit}领域的启示。当前适宜顺势而为，把握${suit}所代表的力量。`,
-                reversed: `${minorMeanings[suit].reversed[i]}。${suit}的能量在逆位时提醒你需要注意${suitElement[suit]}元素的失衡。调整心态，重新审视当前的处境。`
+                upright: `${minorMeanings[suit].upright[i]}. The energy of ${suitElement[suit]} flows through this card, bringing insights from the realm of ${suit}. Go with the flow and harness the power that ${suit} represents.`,
+                reversed: `${minorMeanings[suit].reversed[i]}. When reversed, ${suit} reminds you to watch for imbalance in the ${suitElement[suit]} element. Adjust your mindset and reassess your situation.`
             });
         });
     });
