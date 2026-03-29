@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Online Timer & Stopwatch - Free Pomodoro Timer | GameZipper Tools</title>
+<meta name="description" content="Free online timer with stopwatch, countdown, and Pomodoro modes. Web Audio alerts, lap tracking, and 25/5 work-rest cycles.">
+<link rel="canonical" href="https://tools.gamezipper.com/calc/timer/">
+<meta property="og:title" content="Online Timer & Stopwatch - Free Pomodoro Timer">
+<meta property="og:description" content="Free stopwatch, countdown timer, and Pomodoro timer with audio alerts.">
+<meta property="og:url" content="https://tools.gamezipper.com/calc/timer/">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Online Timer & Stopwatch","description":"Free stopwatch, countdown timer, and Pomodoro timer with audio alerts.","url":"https://tools.gamezipper.com/calc/timer/","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}
+</script>
+<style>
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--glass);border-radius:var(--radius-sm);padding:4px}
+.tab-btn{flex:1;padding:10px;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--text2);font-size:0.9rem;cursor:pointer;transition:all 0.15s;touch-action:manipulation;font-weight:600}
+.tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.display{font-size:4rem;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;padding:2rem 0;background:linear-gradient(135deg,#fff,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px}
+.controls{display:flex;justify-content:center;gap:12px;margin:1rem 0;flex-wrap:wrap}
+.laps{max-height:200px;overflow-y:auto;margin-top:1rem}
+.lap-item{display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);font-size:0.85rem;font-variant-numeric:tabular-nums}
+.countdown-input{display:flex;justify-content:center;gap:8px;margin:1rem 0;align-items:center}
+.countdown-input input{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;color:var(--text);font-size:1.5rem;width:70px;text-align:center;touch-action:manipulation}
+.countdown-input input:focus{outline:none;border-color:var(--accent)}
+.countdown-input span{color:var(--text2);font-size:1.2rem}
+.pomo-info{text-align:center;color:var(--text2);font-size:0.9rem;margin-bottom:0.5rem}
+.pomo-info .count{font-weight:700;color:var(--accent2)}
+.status{text-align:center;color:var(--text2);font-size:0.85rem;margin-top:0.5rem;min-height:1.2rem}
+</style>
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1>⏱️ Timer & Stopwatch</h1>
+<p class="desc">Stopwatch, countdown, and Pomodoro timer</p>
+</div>
+<div class="tabs">
+<button class="tab-btn active" onclick="switchTab('stopwatch')">⏱️ Stopwatch</button>
+<button class="tab-btn" onclick="switchTab('countdown')">⏳ Countdown</button>
+<button class="tab-btn" onclick="switchTab('pomodoro')">🍅 Pomodoro</button>
+</div>
+<div id="stopwatch" class="tab-content">
+<div class="display" id="swDisplay">00:00.00</div>
+<div class="controls">
+<button class="gz-btn" id="swStart" onclick="swToggle()">▶ Start</button>
+<button class="gz-btn gz-btn-secondary" onclick="swLap()">🏁 Lap</button>
+<button class="gz-btn gz-btn-secondary" onclick="swReset()">🔄 Reset</button>
+</div>
+<div class="laps" id="swLaps"></div>
+</div>
+<div id="countdown" class="tab-content" style="display:none">
+<div class="countdown-input">
+<input type="number" id="cdH" placeholder="HH" min="0" max="23" value="0">
+<span>:</span>
+<input type="number" id="cdM" placeholder="MM" min="0" max="59" value="5">
+<span>:</span>
+<input type="number" id="cdS" placeholder="SS" min="0" max="59" value="0">
+</div>
+<div class="display" id="cdDisplay">05:00</div>
+<div class="status" id="cdStatus"></div>
+<div class="controls">
+<button class="gz-btn" id="cdStart" onclick="cdToggle()">▶ Start</button>
+<button class="gz-btn gz-btn-secondary" onclick="cdReset()">🔄 Reset</button>
+</div>
+</div>
+<div id="pomodoro" class="tab-content" style="display:none">
+<div class="pomo-info">🍅 Work: <b>25 min</b> · ☕ Break: <b>5 min</b> · Sessions: <span class="count" id="pomoCount">0</span></div>
+<div class="display" id="pomoDisplay">25:00</div>
+<div class="status" id="pomoStatus">Ready to focus!</div>
+<div class="controls">
+<button class="gz-btn" id="pomoStart" onclick="pomoToggle()">▶ Start</button>
+<button class="gz-btn gz-btn-secondary" onclick="pomoReset()">🔄 Reset</button>
+</div>
+</div>
+</div>
+<script>
+GZ.renderHeader('calc');GZ.renderFooter();
+new Image().src="https://site-analytics.cap.1ktower.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);
+
+let audioCtx;
+function beep(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator();const g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=800;g.gain.value=0.3;o.start();setTimeout(()=>{o.frequency.value=1000},200);setTimeout(()=>{o.stop()},400)}
+function fmt(ms){const totalSec=Math.floor(ms/1000);const min=Math.floor(totalSec/60);const sec=totalSec%60;const cs=Math.floor((ms%1000)/10);if(min>=60){const h=Math.floor(min/60);return h.toString().padStart(2,'0')+':'+(min%60).toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0')}return min.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0')+'.'+cs.toString().padStart(2,'0')}
+function fmtShort(ms){const totalSec=Math.ceil(ms/1000);const min=Math.floor(totalSec/60);const sec=totalSec%60;return min.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0')}
+
+function switchTab(tab){document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));document.getElementById(tab).style.display='block';event.target.classList.add('active')}
+
+// Stopwatch
+let swRunning=false,swStart=0,swElapsed=0,swInterval=null,swLapCount=0;
+function swToggle(){if(swRunning){clearInterval(swInterval);swRunning=false;document.getElementById('swStart').textContent='▶ Resume'}else{swStart=Date.now()-swElapsed;swInterval=setInterval(()=>{swElapsed=Date.now()-swStart;document.getElementById('swDisplay').textContent=fmt(swElapsed)},10);swRunning=true;document.getElementById('swStart').textContent='⏸ Pause'}}
+function swLap(){if(!swRunning)return;swLapCount++;const el=document.getElementById('swLaps');el.innerHTML='<div class="lap-item"><span>Lap '+swLapCount+'</span><span>'+fmt(swElapsed)+'</span></div>'+el.innerHTML}
+function swReset(){clearInterval(swInterval);swRunning=false;swElapsed=0;swLapCount=0;document.getElementById('swDisplay').textContent='00:00.00';document.getElementById('swStart').textContent='▶ Start';document.getElementById('swLaps').innerHTML=''}
+
+// Countdown
+let cdRunning=false,cdTotal=300000,cdRemain=300000,cdStart=0,cdInterval=null;
+function cdToggle(){if(cdRunning){clearInterval(cdInterval);cdRunning=false;document.getElementById('cdStart').textContent='▶ Resume'}else{if(cdRemain<=0){cdRemain=cdTotal;document.getElementById('cdDisplay').textContent=fmtShort(cdRemain)}cdStart=Date.now()-(cdTotal-cdRemain);cdInterval=setInterval(()=>{cdRemain=cdTotal-(Date.now()-cdStart);if(cdRemain<=0){cdRemain=0;clearInterval(cdInterval);cdRunning=false;document.getElementById('cdStart').textContent='▶ Start';beep();document.getElementById('cdStatus').textContent='⏰ Time\'s up!'}document.getElementById('cdDisplay').textContent=fmtShort(Math.max(0,cdRemain))},100);cdRunning=true;document.getElementById('cdStart').textContent='⏸ Pause';document.getElementById('cdStatus').textContent=''}}
+function cdReset(){clearInterval(cdInterval);cdRunning=false;const h=parseInt(document.getElementById('cdH').value)||0;const m=parseInt(document.getElementById('cdM').value)||0;const s=parseInt(document.getElementById('cdS').value)||0;cdTotal=(h*3600+m*60+s)*1000;cdRemain=cdTotal;document.getElementById('cdDisplay').textContent=fmtShort(cdRemain);document.getElementById('cdStart').textContent='▶ Start';document.getElementById('cdStatus').textContent=''}
+['cdH','cdM','cdS'].forEach(id=>document.getElementById(id).addEventListener('change',cdReset));
+
+// Pomodoro
+let pomoRunning=false,pomoIsWork=true,pomoTotal=25*60*1000,pomoRemain=25*60*1000,pomoStart=0,pomoInterval=null,pomoSessions=0;
+function pomoToggle(){if(pomoRunning){clearInterval(pomoInterval);pomoRunning=false;document.getElementById('pomoStart').textContent='▶ Resume'}else{pomoStart=Date.now()-(pomoTotal-pomoRemain);pomoInterval=setInterval(()=>{pomoRemain=pomoTotal-(Date.now()-pomoStart);if(pomoRemain<=0){beep();if(pomoIsWork){pomoSessions++;document.getElementById('pomoCount').textContent=pomoSessions;pomoIsWork=false;pomoTotal=5*60*1000;document.getElementById('pomoStatus').textContent='☕ Break time!'}else{pomoIsWork=true;pomoTotal=25*60*1000;document.getElementById('pomoStatus').textContent='🍅 Back to work!'}pomoRemain=pomoTotal;pomoStart=Date.now()}document.getElementById('pomoDisplay').textContent=fmtShort(Math.max(0,pomoRemain))},100);pomoRunning=true;document.getElementById('pomoStart').textContent='⏸ Pause';document.getElementById('pomoStatus').textContent=pomoIsWork?'🍅 Focusing...':'☕ On break...'}}
+function pomoReset(){clearInterval(pomoInterval);pomoRunning=false;pomoIsWork=true;pomoTotal=25*60*1000;pomoRemain=25*60*1000;document.getElementById('pomoDisplay').textContent='25:00';document.getElementById('pomoStart').textContent='▶ Start';document.getElementById('pomoStatus').textContent='Ready to focus!'}
+</script>
+</body>
+</html>
