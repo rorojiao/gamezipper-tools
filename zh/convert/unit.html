@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>单位换算 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="Length、Weight、Temperature、面积、体积和速度单位互转。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/unit.html">
+  <meta property="og:title" content="单位换算 - 免费在线工具 | GameZipper 工具箱">
+  <meta property="og:description" content="Length、Weight、Temperature、面积、体积和速度单位互转。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/unit.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="单位换算 - 免费在线工具 | GameZipper 工具箱">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/shared/style.css">
+<script>localStorage.setItem('gz-force-zh','1');</script>
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.conv-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.conv-row select,.conv-row input{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:var(--radius-sm);font-size:.9rem}
+.conv-row input{flex:1;min-width:120px}
+.conv-row select{min-width:100px}
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.cat-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:.82rem;transition:all .15s}
+.cat-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.result-display{font-size:1.4rem;font-weight:700;color:var(--text);text-align:center;padding:1rem;background:var(--glass);border-radius:var(--radius-sm);margin-bottom:1rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"单位换算","description":"Length、Weight、Temperature、面积、体积和速度单位互转。","url":"https://tools.gamezipper.com/zh/convert/unit.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/unit.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/unit.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/unit.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="cat-tabs" id="cats"></div>
+    <div class="conv-row">
+      <input type="number" id="valA" value="1" oninput="calc('a')">
+      <select id="unitA" onchange="calc('a')"></select>
+      <span style="color:var(--text2);font-size:1.2rem">⇄</span>
+      <input type="number" id="valB" oninput="calc('b')">
+      <select id="unitB" onchange="calc('a')"></select>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Unit Converter',toolDesc:'Convert between units of length, weight, temperature, area, volume and speed.',
+    length:'Length',weight:'Weight',temperature:'Temperature',area:'Area',volume:'Volume',speed:'Speed',
+    step1:'Select a category (length, weight, etc.)',step2:'Enter a value and choose units on both sides',step3:'Conversion happens instantly in real-time'},
+  zh:{toolTitle:'单位换算',toolDesc:'Length、Weight、Temperature、面积、体积和速度单位互转。',
+    length:'Length',weight:'Weight',temperature:'Temperature',area:'面积',volume:'体积',speed:'速度',
+    step1:'选择类别（Length、Weight等）',step2:'输入数值并选择两边的单位',step3:'实时自动换算'}
+});
+const {$,t}=GZ;
+const units={
+  length:{m:1,km:1000,cm:0.01,mm:0.001,mi:1609.344,yd:0.9144,ft:0.3048,in:0.0254},
+  weight:{kg:1,g:0.001,mg:1e-6,lb:0.453592,oz:0.0283495,t:1000},
+  temperature:{_special:true,units:['°C','°F','K']},
+  area:{m2:1,km2:1e6,cm2:1e-4,ha:1e4,acre:4046.86,ft2:0.092903,in2:6.4516e-4},
+  volume:{L:1,mL:0.001,m3:1000,gal:3.78541,qt:0.946353,cup:0.236588,fl_oz:0.0295735},
+  speed:{mps:1,kph:0.277778,mph:0.44704,kn:0.514444,fps:0.3048},
+};
+let cat='length';
+function setCategory(c){
+  cat=c;
+  document.querySelectorAll('.cat-tab').forEach(b=>b.classList.toggle('active',b.dataset.c===c));
+  const u=units[c];
+  const opts=u._special?u.units:Object.keys(u);
+  const html=opts.map(k=>`<option value="${k}">${k}</option>`).join('');
+  $('#unitA').innerHTML=html;$('#unitB').innerHTML=html;
+  if(opts.length>1)$('#unitB').selectedIndex=1;
+  calc('a');
+}
+function calc(from){
+  const u=units[cat];
+  if(u._special){// temperature
+    const va=+$('#valA').value,vb=+$('#valB').value;
+    const fa=$('#unitA').value,fb=$('#unitB').value;
+    function toC(v,u){return u==='°C'?v:u==='°F'?(v-32)*5/9:v-273.15;}
+    function fromC(v,u){return u==='°C'?v:u==='°F'?v*9/5+32:v+273.15;}
+    if(from==='a'){$('#valB').value=+fromC(toC(va,fa),fb).toFixed(6);}
+    else{$('#valA').value=+fromC(toC(vb,fb),fa).toFixed(6);}
+  }else{
+    const fa=$('#unitA').value,fb=$('#unitB').value;
+    if(from==='a'){const base=+$('#valA').value*u[fa];$('#valB').value=+(base/u[fb]).toFixed(6);}
+    else{const base=+$('#valB').value*u[fb];$('#valA').value=+(base/u[fa]).toFixed(6);}
+  }
+}
+const cats=['length','weight','temperature','area','volume','speed'];
+$('#cats').innerHTML=cats.map(c=>`<button class="cat-tab" data-c="${c}" onclick="setCategory('${c}')">${t(c)}</button>`).join('');
+function loadExample(){setCategory('length');$('#valA').value=1;$('#unitA').value='mi';$('#unitB').value='km';calc('a');}
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>`;
+setCategory('length');
+GZ.renderToolPage({category:'convert',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3'],related:[
+  {icon:'🔢',href:'/convert/number-base.html',name:'Number Base'},
+  {icon:'🎨',href:'/convert/color.html',name:'Color Converter'},
+  {icon:'📱',href:'/convert/qrcode.html',name:'QR Code'},
+]});
+</script>
+<script>new Image().src="https://site-analytics.cap.1ktower.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<div id="gz-bottom-ad" style="max-width:728px;margin:20px auto;text-align:center;min-height:90px"></div>
+</body>
+</html>

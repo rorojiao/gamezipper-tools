@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="zh"><head>
+<title>Chmod Calculator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Calculate Unix file permissions with chmod calculator online. Convert between numeric and symbolic permission modes. Free chmod tool.">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/chmod.html">
+  <meta property="og:title" content="Chmod Calculator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Calculate Unix file permissions with chmod calculator online. Convert between numeric and symbolic permission modes. Free chmod tool.">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/chmod.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Chmod Calculator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/shared/style.css">
+<script>localStorage.setItem('gz-force-zh','1');</script>
+<script src="/shared/i18n.js"></script><script src="/shared/common.js"></script>
+<style>
+.perm-grid{display:grid;grid-template-columns:auto repeat(3,1fr);gap:4px 16px;align-items:center;margin:16px 0;font-size:.95em}
+.perm-grid label{display:flex;align-items:center;gap:4px;cursor:pointer}
+.perm-grid .role{font-weight:600;color:var(--primary)}
+.perm-display{display:flex;gap:24px;margin:16px 0;align-items:center;flex-wrap:wrap}
+.perm-display .num{font-size:2em;font-family:monospace;font-weight:700;color:var(--primary)}
+.perm-display .sym{font-size:1.3em;font-family:monospace;color:var(--text)}
+.perm-cmd{background:var(--surface);padding:12px;border-radius:8px;font-family:monospace;margin:8px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Chmod Calculator","description":"Calculate Unix file permissions with chmod calculator online. Convert between numeric and symbolic permission modes. Free chmod tool.","url":"https://tools.gamezipper.com/dev/chmod.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/chmod.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/chmod.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/chmod.html">
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="max-width:500px;margin:0 auto">
+      <div class="perm-display">
+        <div><input id="num-input" maxlength="4" value="755" style="font-size:2em;font-family:monospace;font-weight:700;width:5ch;text-align:center;border:2px solid var(--primary);border-radius:8px;padding:4px"></div>
+        <div class="sym" id="sym-display">rwxr-xr-x</div>
+      </div>
+      <div class="perm-grid" id="perm-grid"></div>
+      <div class="perm-cmd" id="cmd-display"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    chmodTitle:'Unix Chmod Calculator',chmodDesc:'Calculate Unix file permissions. Convert between numeric (755) and symbolic (rwxr-xr-x) formats.',
+    owner:'Owner',group:'Group',others:'Others',
+    read:'Read',write:'Write',execute:'Execute',
+    chmodCmd:'Command',
+    chmodStep1:'Set permissions using checkboxes or enter a number',
+    chmodStep2:'See the symbolic and numeric representations',
+    chmodStep3:'Copy the chmod command',
+    commonPerms:'Common Permissions',
+  },
+  zh:{
+    chmodTitle:'Unix 权限计算器',chmodDesc:'Calculate Unix file permissions。在数字(755)和符号(rwxr-xr-x)格式之间转换。',
+    owner:'Owner',group:'用户Group',others:'Others',
+    read:'Read',write:'Write',execute:'Execute',
+    chmodCmd:'命令',
+    chmodStep1:'使用复选框设置权限或输入数字',
+    chmodStep2:'查看符号和数字表示',
+    chmodStep3:'复制chmod命令',
+    commonPerms:'常用权限',
+  }
+});
+const {t,$,$$}=GZ;
+const roles=['owner','group','others'];
+const perms=['read','write','execute'];
+const bits=[4,2,1];
+
+function buildGrid(){
+  const grid=$('#perm-grid');
+  grid.innerHTML='<div></div>'+perms.map(p=>`<div style="text-align:center;font-weight:600">${t(p)}</div>`).join('');
+  roles.forEach((r,ri)=>{
+    grid.innerHTML+=`<div class="role">${t(r)}</div>`+bits.map((b,bi)=>`<label style="justify-content:center"><input type="checkbox" data-role="${ri}" data-bit="${b}" onchange="fromCheckboxes()"></label>`).join('');
+  });
+}
+
+function fromCheckboxes(){
+  let val='';
+  roles.forEach((_,ri)=>{
+    let n=0;
+    $$(`input[data-role="${ri}"]`).forEach(cb=>{if(cb.checked)n+=+cb.dataset.bit});
+    val+=n;
+  });
+  $('#num-input').value=val;
+  updateDisplay(val);
+}
+
+function fromNumber(){
+  const v=$('#num-input').value.replace(/[^0-7]/g,'').slice(0,3);
+  if(v.length===3){
+    v.split('').forEach((d,ri)=>{
+      const n=+d;
+      bits.forEach(b=>{
+        const cb=document.querySelector(`input[data-role="${ri}"][data-bit="${b}"]`);
+        if(cb)cb.checked=!!(n&b);
+      });
+    });
+    updateDisplay(v);
+  }
+}
+
+function updateDisplay(num){
+  const sym=num.split('').map(d=>{
+    const n=+d;
+    return(n&4?'r':'-')+(n&2?'w':'-')+(n&1?'x':'-');
+  }).join('');
+  $('#sym-display').textContent=sym;
+  $('#cmd-display').innerHTML=`<strong>${t('chmodCmd')}:</strong> chmod ${num} filename`;
+}
+
+function setPreset(v){$('#num-input').value=v;fromNumber()}
+
+buildGrid();
+$('#num-input').addEventListener('input',fromNumber);
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn gz-btn-secondary" onclick="setPreset('755')">755</button>
+  <button class="gz-btn gz-btn-secondary" onclick="setPreset('644')">644</button>
+  <button class="gz-btn gz-btn-secondary" onclick="setPreset('777')">777</button>
+  <button class="gz-btn gz-btn-secondary" onclick="setPreset('600')">600</button>
+  <button class="gz-btn gz-btn-secondary" onclick="setPreset('444')">444</button>
+  <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#cmd-display').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="setPreset('750')">${t('example')}</button>`;
+
+GZ.renderToolPage({category:'dev',titleKey:'chmodTitle',descKey:'chmodDesc',
+  howToSteps:['chmodStep1','chmodStep2','chmodStep3'],
+  related:[
+    {icon:'#️⃣',href:'/dev/hash.html',name:'Hash Generator'},
+    {icon:'🔑',href:'/dev/uuid.html',name:'UUID Generator'},
+    {icon:'⏱️',href:'/dev/timestamp.html',name:'Timestamp'},
+  ]
+});
+fromNumber();
+</script><script>new Image().src="https://site-analytics.cap.1ktower.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<div id="gz-bottom-ad" style="max-width:728px;margin:20px auto;text-align:center;min-height:90px"></div>
+</body></html>

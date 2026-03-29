@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>正则表达式测试 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="实时测试正则表达式，支持匹配高亮和捕获组显示。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/regex.html">
+  <meta property="og:title" content="正则表达式测试 - 免费在线工具 | GameZipper 工具箱">
+  <meta property="og:description" content="实时测试正则表达式，支持匹配高亮和捕获组显示。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/regex.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="正则表达式测试 - 免费在线工具 | GameZipper 工具箱">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/shared/style.css">
+<script>localStorage.setItem('gz-force-zh','1');</script>
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.regex-input{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.regex-input input{padding:8px 12px;border:1px solid var(--gz-border,#ddd);border-radius:8px;font-family:monospace}
+.regex-input input#pattern{flex:1;min-width:200px}
+.regex-input input#flags{width:60px}
+.highlight{background:#e9456044;border-radius:2px;padding:1px 0}
+#matchOutput{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;min-height:120px;padding:12px;background:var(--gz-surface,#f5f5f5);border-radius:8px;border:1px solid var(--gz-border,#ddd);line-height:1.6}
+#matchInfo{margin-top:8px;font-size:.85em;opacity:.7}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"正则表达式测试","description":"实时测试正则表达式，支持匹配高亮和捕获组显示。","url":"https://tools.gamezipper.com/zh/dev/regex.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/regex.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/regex.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/regex.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="regex-input">
+      <label>Pattern:</label>
+      <input type="text" id="pattern" placeholder="e.g. \d+">
+      <label>Flags:</label>
+      <input type="text" id="flags" value="g">
+    </div>
+    <label>Test String:</label>
+    <textarea id="input" spellcheck="false" style="width:100%;min-height:100px"></textarea>
+    <h3 style="margin-top:12px">Matches</h3>
+    <div id="matchOutput"></div>
+    <div id="matchInfo"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Regex Tester',
+    toolDesc: 'Test regular expressions in real-time with match highlighting and capture group display.',
+    noMatch: 'No matches found',
+    step1: 'Enter a regex pattern in the Pattern field',
+    step2: 'Set flags (g for global, i for case-insensitive, m for multiline)',
+    step3: 'Type or paste test string — matches highlight in real-time',
+    step4: 'View match details including index and capture groups',
+  },
+  zh: {
+    toolTitle: '正则表达式测试',
+    toolDesc: '实时测试正则表达式，支持匹配高亮和捕获组显示。',
+    noMatch: '未找到匹配',
+    step1: '在 Pattern 字段Enter regex pattern',
+    step2: '设置标志（g 全局，i 忽略大小写，m 多行）',
+    step3: '输入或粘贴测试字符串，匹配结果实时高亮',
+    step4: '查看匹配详情，包括位置和捕获组',
+  }
+});
+
+const { $, t } = GZ;
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function doRegex() {
+  const p = $('#pattern').value, f = $('#flags').value, s = $('#input').value;
+  if (!p || !s) { $('#matchOutput').innerHTML = ''; $('#matchInfo').textContent = ''; return; }
+  try {
+    const re = new RegExp(p, f);
+    let m, matches = [], last = 0, html = '';
+    if (f.includes('g')) {
+      while ((m = re.exec(s)) !== null) {
+        if (m.index === re.lastIndex) re.lastIndex++;
+        html += escHtml(s.slice(last, m.index)) + '<span class="highlight">' + escHtml(m[0]) + '</span>';
+        matches.push({match: m[0], index: m.index, groups: m.slice(1)});
+        last = m.index + m[0].length;
+      }
+      html += escHtml(s.slice(last));
+    } else {
+      m = re.exec(s);
+      if (m) {
+        html = escHtml(s.slice(0, m.index)) + '<span class="highlight">' + escHtml(m[0]) + '</span>' + escHtml(s.slice(m.index + m[0].length));
+        matches.push({match: m[0], index: m.index, groups: m.slice(1)});
+      } else { html = escHtml(s); }
+    }
+    $('#matchOutput').innerHTML = html || escHtml(s);
+    $('#matchInfo').textContent = matches.length
+      ? `${matches.length} match(es): ${matches.map((x,i) => `[${i}] "${x.match}" @${x.index}`).join(', ')}`
+      : t('noMatch');
+  } catch(e) { $('#matchOutput').textContent = e.message; $('#matchInfo').textContent = ''; }
+}
+
+function loadExample() {
+  $('#pattern').value = '(\\d{4})-(\\d{2})-(\\d{2})';
+  $('#flags').value = 'g';
+  $('#input').value = 'Today is 2026-02-21 and tomorrow is 2026-02-22. Last year: 2025-01-01.';
+  doRegex();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#pattern').value='';$('#input').value='';$('#matchOutput').innerHTML='';$('#matchInfo').textContent=''">${t('clear')}</button>`;
+
+$('#pattern').addEventListener('input', doRegex);
+$('#flags').addEventListener('input', doRegex);
+$('#input').addEventListener('input', doRegex);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📊', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'🔗', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'⏰', href:'/dev/cron.html', name:'Cron Expression'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.cap.1ktower.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<div id="gz-bottom-ad" style="max-width:728px;margin:20px auto;text-align:center;min-height:90px"></div>
+</body>
+</html>
