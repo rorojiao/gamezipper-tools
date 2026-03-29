@@ -1,148 +1,138 @@
-// 八字算命核心算法
-const 天干 = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-const 地支 = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-const 生肖 = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
-const 五行天干 = ['木','木','火','火','土','土','金','金','水','水'];
-const 五行地支 = ['水','土','木','木','土','火','火','土','金','金','土','水'];
-const 地支藏干 = [
-    ['癸'],['己','癸','辛'],['甲','丙','戊'],['乙'],['戊','乙','癸'],['丙','庚','戊'],
-    ['丁','己'],['己','丁','乙'],['庚','壬','戊'],['辛'],['戊','辛','丁'],['壬','甲']
+// Bazi Four Pillars core algorithm
+const STEMS = ['Jia','Yi','Bing','Ding','Wu','Ji','Geng','Xin','Ren','Gui'];
+const BRANCHES = ['Zi','Chou','Yin','Mao','Chen','Si','Wu','Wei','Shen','You','Xu','Hai'];
+const ZODIAC = ['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
+const STEM_EL = ['Wood','Wood','Fire','Fire','Earth','Earth','Metal','Metal','Water','Water'];
+const BRANCH_EL = ['Water','Earth','Wood','Wood','Earth','Fire','Fire','Earth','Metal','Metal','Earth','Water'];
+const BRANCH_HIDDEN = [
+    ['Gui'],['Ji','Gui','Xin'],['Jia','Bing','Wu'],['Yi'],['Wu','Yi','Gui'],['Bing','Geng','Wu'],
+    ['Ding','Ji'],['Ji','Ding','Yi'],['Geng','Ren','Wu'],['Xin'],['Wu','Xin','Ding'],['Ren','Jia']
 ];
-const 纳音 = [
-    '海中金','炉中火','大林木','路旁土','剑锋金','山头火','涧下水','城头土','白蜡金','杨柳木',
-    '泉中水','屋上土','霹雳火','松柏木','长流水','沙中金','山下火','平地木','壁上土','金箔金',
-    '覆灯火','天河水','大驿土','钗钏金','桑柘木','大溪水','沙中土','天上火','石榴木','大海水'
+const NAYIN = [
+    'Sea Metal','Furnace Fire','Forest Wood','Roadside Earth','Sword Metal','Mountain Fire',
+    'Stream Water','Wall Earth','Wax Metal','Willow Wood','Spring Water','Roof Earth',
+    'Thunder Fire','Pine Wood','Long Stream Water','Sand Metal','Hill Fire','Plain Wood',
+    'Wall Earth','Foil Gold','Lamp Fire','River Water','Earth Post','Hairpin Metal',
+    'Mulberry Wood','Creek Water','Sand Earth','Sky Fire','Pomegranate Wood','Ocean Water'
 ];
 
-const 十神名 = ['比肩','劫财','食神','伤官','偏财','正财','七杀','正官','偏印','正印'];
+// Ten Gods: 0=Peer, 1=Rob, 2=EatGod, 3=Hurting, 4=IndWealth, 5=DirWealth, 6=7Kill, 7=DirOfficer, 8=IndSeal, 9=DirSeal
+const TENGAN = ['Jia','Yi','Bing','Ding','Wu','Ji','Geng','Xin','Ren','Gui'];
+const DIZHI = ['Zi','Chou','Yin','Mao','Chen','Si','Wu','Wei','Shen','You','Xu','Hai'];
 
-function get五行(tg) { return 五行天干[天干.indexOf(tg)]; }
-function get地支五行(dz) { return 五行地支[地支.indexOf(dz)]; }
+function getElement(tg) { return STEM_EL[STEMS.indexOf(tg)]; }
+function getBranchElement(dz) { return BRANCH_EL[BRANCHES.indexOf(dz)]; }
 
-// 年柱
 function getYearPillar(year) {
     const tgIdx = (year - 4) % 10;
     const dzIdx = (year - 4) % 12;
-    return { tg: 天干[tgIdx], dz: 地支[dzIdx], shengxiao: 生肖[dzIdx] };
+    return { tg: STEMS[tgIdx], dz: BRANCHES[dzIdx], zodiac: ZODIAC[dzIdx] };
 }
 
-// 月柱 (简化：以节气近似，用农历月份)
 function getMonthPillar(year, month) {
-    // 月干 = (年干序号 * 2 + 月份) % 10
     const yearTgIdx = (year - 4) % 10;
     const tgIdx = (yearTgIdx * 2 + month) % 10;
-    // 月支：寅月(1月/正月)起 = 地支[2]开始
     const dzIdx = (month + 1) % 12;
-    return { tg: 天干[tgIdx], dz: 地支[dzIdx] };
+    return { tg: STEMS[tgIdx], dz: BRANCHES[dzIdx] };
 }
 
-// 日柱 (简化算法)
 function getDayPillar(year, month, day) {
-    // 使用蔡勒公式变体求日干支序号
-    const baseDate = new Date(1900, 0, 1); // 1900-01-01 是甲子日 (序号0 偏移需校准)
+    const baseDate = new Date(1900, 0, 1);
     const targetDate = new Date(year, month - 1, day);
     const diffDays = Math.floor((targetDate - baseDate) / 86400000);
-    // 1900-01-01 实际是甲戌日，偏移量校准
-    const offset = diffDays + 10; // 校准到甲子
+    const offset = diffDays + 10;
     const tgIdx = ((offset % 10) + 10) % 10;
     const dzIdx = ((offset % 12) + 12) % 12;
-    return { tg: 天干[tgIdx], dz: 地支[dzIdx] };
+    return { tg: STEMS[tgIdx], dz: BRANCHES[dzIdx] };
 }
 
-// 时柱
 function getHourPillar(dayTgIdx, hour) {
-    // 时辰：23-1子, 1-3丑, 3-5寅...
     const shiChen = Math.floor(((hour + 1) % 24) / 2);
     const dzIdx = shiChen;
-    // 时干 = (日干序号 * 2 + 时辰序号) % 10
     const tgIdx = (dayTgIdx * 2 + dzIdx) % 10;
-    return { tg: 天干[tgIdx], dz: 地支[dzIdx] };
+    return { tg: STEMS[tgIdx], dz: BRANCHES[dzIdx] };
 }
 
-function get纳音(tgIdx, dzIdx) {
-    return 纳音[Math.floor(((tgIdx % 10) * 12 + dzIdx) % 60 / 2)];
+function getNayin(tgIdx, dzIdx) {
+    return NAYIN[Math.floor(((tgIdx % 10) * 12 + dzIdx) % 60 / 2)];
 }
 
-function count五行(pillars) {
-    const count = { 金: 0, 木: 0, 水: 0, 火: 0, 土: 0 };
+function countElements(pillars) {
+    const count = { Metal: 0, Wood: 0, Water: 0, Fire: 0, Earth: 0 };
     pillars.forEach(p => {
-        count[五行天干[天干.indexOf(p.tg)]]++;
-        count[五行地支[地支.indexOf(p.dz)]]++;
+        count[STEM_EL[STEMS.indexOf(p.tg)]]++;
+        count[BRANCH_EL[BRANCHES.indexOf(p.dz)]]++;
     });
     return count;
 }
 
-function get十神(dayTg, otherTg) {
-    const dayIdx = 天干.indexOf(dayTg);
-    const otherIdx = 天干.indexOf(otherTg);
+// Ten Gods: 0=比肩, 1=劫财, 2=食神, 3=伤官, 4=偏财, 5=正财, 6=七杀, 7=正官, 8=偏印, 9=正印
+const TEN_GOD_NAMES = ['Peer','Rob Wealth','Eat God','Hurting Officer','Ind Wealth','Dir Wealth','7 Killings','Dir Officer','Ind Seal','Dir Seal'];
+
+function getTenGod(dayTg, otherTg) {
+    const dayIdx = STEMS.indexOf(dayTg);
+    const otherIdx = STEMS.indexOf(otherTg);
     const diff = ((otherIdx - dayIdx) % 10 + 10) % 10;
-    return 十神名[diff];
+    return TEN_GOD_NAMES[diff];
 }
 
-// 性格分析文案库
-const 性格库 = {
-    '甲': ['如参天大树般正直挺拔，有领袖气质，做事光明磊落。但有时过于固执己见，不善变通。','天性仁慈善良，有济世之心，适合从事管理、教育、法律等行业。'],
-    '乙': ['如藤萝花草般柔韧灵活，善于适应环境，有艺术天赋。内心坚韧，外表温和。','聪明伶俐，善于交际，有审美天赋，适合艺术、设计、外交等领域。'],
-    '丙': ['如太阳般热情奔放，性格开朗大方，乐于助人。充满正能量，能照亮身边每个人。','热情似火，光明磊落，有感染力和号召力，适合演艺、销售、公关等行业。'],
-    '丁': ['如烛火星光般温暖细腻，内心敏感而丰富，有洞察力。看似柔弱，实则内心坚定。','心思细腻，观察力强，有研究精神，适合科研、文学、心理咨询等领域。'],
-    '戊': ['如高山大地般沉稳厚重，为人忠厚老实，值得信赖。有包容之心，能承载万物。','稳重踏实，信守承诺，有大将之风，适合金融、房地产、管理等行业。'],
-    '己': ['如田园沃土般温润包容，善于培育他人，心地善良。低调务实，不喜张扬。','温和谦虚，善于协调，有服务精神，适合农业、教育、服务等行业。'],
-    '庚': ['如刀剑利器般果断刚毅，行事雷厉风行，有决断力。义薄云天，重视义气。','性格刚强，有魄力和执行力，适合军警、外科医生、工程等行业。'],
-    '辛': ['如珠玉宝石般精致优雅，内心细腻敏感，有品味。表面温润，内心有主见。','聪慧优雅，追求完美，有鉴赏力，适合珠宝、金融、法律等行业。'],
-    '壬': ['如大江大河般气势磅礴，思维开阔活跃，有智慧。善于变通，不拘一格。','智慧过人，思维敏捷，有谋略，适合贸易、航运、信息技术等行业。'],
-    '癸': ['如细雨露珠般润物无声，性格温和内敛，有灵性。感受力极强，直觉敏锐。','心思灵巧，有神秘气质，想象力丰富，适合玄学、艺术、医疗等行业。']
+// Personality descriptions
+const PERSONALITY = {
+    'Jia': ['Upright like a great tree, born leader. May be too stubborn at times.', 'Kind and compassionate, suited for management, education, law.'],
+    'Yi': ['Flexible vines, highly adaptable, artistic talent. Soft exterior, strong inner will.', 'Clever and sociable with aesthetic sense, suited for art, design, diplomacy.'],
+    'Bing': ['Radiant like the sun, cheerful and generous. Full of positive energy.', 'Warm-hearted and open with charisma, suited for entertainment, sales, PR.'],
+    'Ding': ['Warm candlelight, sensitive and insightful. Soft appearance, inner strength.', 'Detail-oriented and observant, suited for science, literature, counseling.'],
+    'Wu': ['Steady as mountains, honest and trustworthy. Generous and enduring.', 'Reliable with leadership, suited for finance, real estate, management.'],
+    'Ji': ['Nurturing soil, kind and humble. Low-key and practical.', 'Gentle and modest, good at coordination, suited for agriculture, education, service.'],
+    'Geng': ['Sharp as sword, bold and resolute. Values loyalty and justice.', 'Strong-willed with great execution, suited for military, surgery, engineering.'],
+    'Xin': ['Precious gems, refined and elegant. Gentle exterior, strong inner will.', 'Intelligent and elegant, suited for jewelry, finance, law.'],
+    'Ren': ['Vast rivers, open-minded and wise. Adaptable and unconventional.', 'Highly intelligent and strategic, suited for trade, shipping, IT.'],
+    'Gui': ['Morning dew, subtle and intuitive. Extremely perceptive.', 'Clever with mystical quality, suited for metaphysics, art, healing.']
 };
 
-const 运势评语 = {
-    very_good: ['紫气东来，鸿运当头！近期运势如日中天，贵人频现，事业财运双收。','风生水起之象！当前时运极佳，把握机遇可成大事，贵人暗中相助。'],
-    good: ['运势渐入佳境，稳中有升。虽无大起大落，但处处有小惊喜，宜积极进取。','春风送暖之象，诸事顺遂。保持积极心态，好运自然来敲门。'],
-    normal: ['运势平平，需要韬光养晦。此时不宜激进冒险，以守为攻方为上策。','时运中等偏上，有小波折但无大碍。凡事三思而后行，可保平安顺遂。'],
-    bad: ['运势稍有低迷，注意提防小人。遇事需冷静处理，切勿冲动行事。','暂时运势不畅，但否极泰来，困难只是暂时的。修身养性，等待时机。'],
+// Fortune verdicts
+const VERDICTS = {
+    very_good: ['Great fortune ahead! Auspicious energy surrounds you.', 'Excellent timing! Stars align in your favor. Seize opportunities.'],
+    good: ['Fortune is improving steadily. Pleasant surprises await.', 'Spring breeze — things flow smoothly. Keep a positive mindset.'],
+    normal: ['Average fortune. Best to lay low and conserve energy.', 'Moderate fortune with minor bumps. Think twice before acting.'],
+    bad: ['Fortune is temporarily low. Beware of petty people.', 'A rough patch — after the darkest night comes the dawn.']
 };
 
-const 五行相生 = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
-const 五行相克 = { '木': '土', '土': '水', '水': '火', '火': '金', '金': '木' };
-const 五行颜色 = { '金': '#ffd700', '木': '#66cc66', '水': '#6699ff', '火': '#ff6666', '土': '#cc9966' };
+const EL_GENERATING = { Wood: 'Fire', Fire: 'Earth', Earth: 'Metal', Metal: 'Water', Water: 'Wood' };
+const EL_COLORS = { Metal: '#ffd700', Wood: '#66cc66', Water: '#6699ff', Fire: '#ff6666', Earth: '#cc9966' };
 
 function analyzeBazi(year, month, day, hour) {
     const yearP = getYearPillar(year);
     const monthP = getMonthPillar(year, month);
     const dayP = getDayPillar(year, month, day);
-    const dayTgIdx = 天干.indexOf(dayP.tg);
+    const dayTgIdx = STEMS.indexOf(dayP.tg);
     const hourP = getHourPillar(dayTgIdx, hour);
 
     const pillars = [yearP, monthP, dayP, hourP];
-    const wxCount = count五行(pillars);
+    const wxCount = countElements(pillars);
+    const dayEl = getElement(dayP.tg);
 
-    // 日主五行
-    const dayWx = get五行(dayP.tg);
-
-    // 找最旺和最弱
     const sorted = Object.entries(wxCount).sort((a, b) => b[1] - a[1]);
     const strongest = sorted[0];
     const weakest = sorted[sorted.length - 1];
 
-    // 喜用神 (简化：缺什么补什么)
     const lacking = sorted.filter(s => s[1] === 0).map(s => s[0]);
     const xiYong = lacking.length > 0 ? lacking : [weakest[0]];
 
-    // 运势等级
     const balance = Math.max(...Object.values(wxCount)) - Math.min(...Object.values(wxCount));
     let fortuneLevel = balance <= 2 ? 'very_good' : balance <= 4 ? 'good' : balance <= 6 ? 'normal' : 'bad';
 
-    // 纳音
-    const yearNayin = get纳音((year - 4) % 10, (year - 4) % 12);
+    const yearNayin = getNayin((year - 4) % 10, (year - 4) % 12);
 
-    // 十神
     const shiShen = [
-        { pos: '年柱', name: get十神(dayP.tg, yearP.tg) },
-        { pos: '月柱', name: get十神(dayP.tg, monthP.tg) },
-        { pos: '时柱', name: get十神(dayP.tg, hourP.tg) },
+        { pos: 'Year Pillar', name: getTenGod(dayP.tg, yearP.tg) },
+        { pos: 'Month Pillar', name: getTenGod(dayP.tg, monthP.tg) },
+        { pos: 'Hour Pillar', name: getTenGod(dayP.tg, hourP.tg) },
     ];
 
     return {
         pillars, yearP, monthP, dayP, hourP,
-        wxCount, dayWx, strongest, weakest,
+        wxCount, dayEl, strongest, weakest,
         xiYong, fortuneLevel, yearNayin, shiShen,
         dayTg: dayP.tg
     };

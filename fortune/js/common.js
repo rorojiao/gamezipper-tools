@@ -5,9 +5,9 @@ const SITE_URL = 'https://tools.gamezipper.com/fortune/';
 function getTipBoxHTML() {
     return `
     <div class="tip-box">
-        <p class="tip-text">觉得算得准？打赏香香公主一杯奶茶 🧋</p>
-        <div class="wallet" onclick="copyWallet()" title="点击复制">${WALLET}</div>
-        <p style="font-size:0.8em;color:#776655;">👆 点击复制钱包地址</p>
+        <p class="tip-text">Found this accurate？Buy Princess Xiangxiang a bubble tea 🧋</p>
+        <div class="wallet" onclick="copyWallet()" title="Click to copy">${WALLET}</div>
+        <p style="font-size:0.8em;color:#776655;">👆 Click to copy wallet address</p>
         <div class="chains">
             <span class="chain-tag">ETH</span>
             <span class="chain-tag">USDC</span>
@@ -23,31 +23,31 @@ function getShareBarHTML(title, text) {
     const txt = encodeURIComponent(text || '');
     return `
     <div class="share-bar">
-        <a class="share-btn" onclick="shareWeChat()" href="javascript:void(0)">📱 微信分享</a>
-        <a class="share-btn" href="https://service.weibo.com/share/share.php?url=${url}&title=${t}" target="_blank">🔴 微博</a>
+        <a class="share-btn" onclick="shareWeChat()" href="javascript:void(0)">📱 WeChat Share</a>
+        <a class="share-btn" href="https://service.weibo.com/share/share.php?url=${url}&title=${t}" target="_blank">🔴 Weibo</a>
         <a class="share-btn" href="https://twitter.com/intent/tweet?url=${url}&text=${t}" target="_blank">🐦 Twitter</a>
-        <a class="share-btn" onclick="copyResult()" href="javascript:void(0)">📋 复制结果</a>
+        <a class="share-btn" onclick="copyResult()" href="javascript:void(0)">📋 Copy Result</a>
     </div>`;
 }
 
 function copyWallet() {
     navigator.clipboard.writeText(WALLET).then(() => {
-        showToast('钱包地址已复制 ✅');
+        showToast('Wallet address copied ✅');
     }).catch(() => {
-        prompt('请复制钱包地址:', WALLET);
+        prompt('Please copy wallet address:', WALLET);
     });
 }
 
 function shareWeChat() {
-    showToast('请截图分享到微信朋友圈 📸');
+    showToast('Please screenshot and share on WeChat Moments 📸');
 }
 
 let _resultText = '';
 function setResultText(t) { _resultText = t; }
 function copyResult() {
     const text = _resultText || document.querySelector('.result-area')?.innerText || '';
-    navigator.clipboard.writeText(text + '\n\n来自灵算阁: ' + SITE_URL).then(() => {
-        showToast('结果已复制 ✅');
+    navigator.clipboard.writeText(text + '\n\nFrom Fortune Tools: ' + SITE_URL).then(() => {
+        showToast('Result copied ✅');
     });
 }
 
@@ -80,5 +80,5 @@ function pickRandom(arr, rng) {
 }
 
 function getPageFooterHTML() {
-    return `<div class="page-footer"><p>灵算阁 © 2024 | 仅供娱乐参考</p></div>`;
+    return `<div class="page-footer"><p>Fortune Tools © 2024 | For entertainment purposes only</p></div>`;
 }
