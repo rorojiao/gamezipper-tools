@@ -32,12 +32,12 @@
     if (!state.firstActionAt) state.firstActionAt = Date.now();
     setTimeout(function(){
       if (state.meaningful && !hasActiveEditorFocus()) inject();
-    }, 15000);
+    }, 8000);
   }
 
   function setup(){
     if (isHubPage()) {
-      setTimeout(function(){ if (!hasActiveEditorFocus()) inject(); }, 18000);
+      setTimeout(function(){ if (!hasActiveEditorFocus()) inject(); }, 10000);
       window.addEventListener('scroll', function(){ if (window.scrollY > 500) inject(); }, { passive:true, once:true });
       return;
     }
