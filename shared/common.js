@@ -52,6 +52,7 @@ const GZ = (function(){
       <nav class="gz-nav">
         ${CATEGORIES.map(c => `<a href="${c.path}" class="${activeCat === c.id ? 'active' : ''}">${c.icon} ${t(c.id + 'Tools')}</a>`).join('')}
       </nav>
+      <a href="https://gamezipper.com" target="_blank" style="background:#ffd93d;color:#1a1a2e;padding:6px 14px;border-radius:20px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-left:8px;white-space:nowrap;">🎮 Play Games</a>
       <div class="gz-actions">
         <button class="gz-lang-btn" onclick="GZ.toggleLang()">'EN'</button>
       </div>`;
