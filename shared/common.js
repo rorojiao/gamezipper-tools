@@ -54,9 +54,10 @@ const GZ = (function(){
       </nav>
       <a href="https://gamezipper.com" target="_blank" style="background:#ffd93d;color:#1a1a2e;padding:6px 14px;border-radius:20px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-left:8px;white-space:nowrap;">🎮 Play Games</a>
       <div class="gz-actions">
-        <button class="gz-lang-btn" onclick="GZ.toggleLang()">'EN'</button>
+        <button class="gz-lang-btn" onclick="GZ.toggleLang()"></button>
       </div>`;
     document.body.prepend(header);
+    updateLangBtn();
   }
 
   function renderFooter() {
@@ -113,8 +114,14 @@ const GZ = (function(){
     renderFooter();
   }
 
+  function updateLangBtn() {
+    const btn = document.querySelector('.gz-lang-btn');
+    if (btn) btn.textContent = getLang() === 'en' ? '中文' : 'EN';
+  }
+
   function toggleLang() {
     setLang(getLang() === 'en' ? 'zh' : 'en');
+    updateLangBtn();
   }
 
   return { $, $$, showToast, copyText, renderHeader, renderFooter, renderToolPage, toggleLang, CATEGORIES, t };
