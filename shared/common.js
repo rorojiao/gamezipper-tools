@@ -61,12 +61,15 @@ const GZ = (function(){
   }
 
   function renderFooter() {
+    const games = document.createElement('section');
+    games.style.cssText = 'max-width:1100px;margin:30px auto 0;padding:20px 24px;background:var(--glass);border:1px solid var(--border);border-radius:20px;text-align:center';
+    games.innerHTML = `<h3 style="margin:0 0 12px;font-size:1rem"><a href="https://gamezipper.com" style="color:var(--accent);text-decoration:none">🎮 Try Our Free Games</a></h3><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"><a href="https://gamezipper.com/snake/" style="background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)">🐍 Snake</a><a href="https://gamezipper.com/2048/" style="background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)">🔢 2048</a><a href="https://gamezipper.com/tetris/" style="background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)">🧱 Tetris</a><a href="https://gamezipper.com/color-sort/" style="background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)">🎨 Color Sort</a><a href="https://gamezipper.com/word-puzzle/" style="background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)">📝 Word Puzzle</a><a href="https://gamezipper.com/idle-clicker/" style="background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)">👆 Idle Clicker</a><a href="https://gamezipper.com/brick-breaker/" style="background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)">💥 Brick Breaker</a><a href="https://gamezipper.com" style="background:var(--accent);color:#000;padding:6px 14px;border-radius:10px;text-decoration:none;font-size:.8em;font-weight:700">All Games →</a></div>`;
+    document.body.appendChild(games);
     const footer = document.createElement('footer');
     footer.className = 'gz-footer';
     footer.innerHTML = `
       <p>${t('madeWith')} <a href="https://gamezipper.com">GameZipper</a> · 
       <a href="https://gamezipper.com">${t('gamesAt')} gamezipper.com 🎮</a></p>
-      <p style="margin-top:8px"><a href="https://gamezipper.com" style="color:#ffd93d">🎮 Play Free Games</a> — Puzzle, arcade, idle & more!</p>
       <p style="margin-top:6px;font-size:0.75rem">${t('privacyNote')}</p>`;
     document.body.appendChild(footer);
   }
