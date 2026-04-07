@@ -122,6 +122,25 @@ def process_file(src, dst):
     with open(dst, 'w') as f:
         f.write(html)
 
+# zh mirror translations for static HTML sections (rendered before JS/i18n loads)
+ZH_STATIC = {
+    'Popular tools with real traffic': '热门工具（真实流量）',
+    'Start with the most useful online tools': '从最有用的在线工具开始',
+    'Practical browser tools for developers, designers, creators, text editing, color workflows, image processing, CSS generation, quick converters, and lightweight utility tasks — all free and instant to use.': '为开发者、设计师、创作者提供的实用浏览器工具，涵盖文本编辑、配色工作流、图片处理、CSS生成、快速转换和轻量级实用工具——全部免费，即开即用。',
+    'Format JSON, test regex, decode Base64 or JWT, generate hashes, and convert timestamps during real debugging work.': '格式化 JSON、测试正则、解码 Base64 或 JWT、生成哈希值、转换时间戳——真实调试工作中的得力助手。',
+    'Pick colors, convert HEX/RGB/HSL, build palettes, generate shades, and check WCAG contrast for design systems.': '选取颜色、转换 HEX/RGB/HSL、构建调色板、生成色阶、检查设计系统的 WCAG 对比度。',
+    'Compress images, crop or resize assets, extract colors, compare text, generate slugs, and handle markdown or handwriting effects.': '压缩图片、裁剪或调整图片尺寸、提取颜色、对比文本、生成 slug，处理 Markdown 或手写效果。',
+    'Use QR generators, unit converters, social helpers, and small single-purpose tools without sign-up or installation friction.': '使用二维码生成器、单位转换器、社交助手和各种单一用途的小工具，无需注册或安装。',
+    'FAQ': '常见问题',
+    'What kinds of tools are on Tools.GameZipper?': 'Tools.GameZipper 上有哪些工具？',
+    'You can find developer tools, text tools, color tools, CSS generators, image utilities, converters, social helpers, and lightweight browser tools for everyday workflows.': '包括开发者工具、文本工具、颜色工具、CSS 生成器、图片工具、转换器、社交助手以及日常工作中用得到的轻量级浏览器工具。',
+    'Do these tools work without sign-up?': '这些工具需要注册吗？',
+    'Yes. Most tools open instantly in the browser and are designed for quick single-task use without registration.': '不需要。大多数工具在浏览器中即时打开，为快速单一任务设计，无需注册。',
+    'Recommended Games': '精选游戏',
+    'Take a break and play free online games — no downloads, no signups.': '休息一下，玩点免费网络游戏——无需下载，无需注册。',
+    'Browse all free games': '浏览全部免费游戏',
+}
+
 # Copy and process
 for d in DIRS:
     src_dir = os.path.join(BASE, d)
@@ -149,13 +168,16 @@ if os.path.exists(src):
     html = html.replace('<html lang="en">', '<html lang="zh">')
     html = html.replace('GameZipper Tools', 'GameZipper 工具箱')
     html = re.sub(r'<title>.*?</title>', '<title>免费在线工具集合 | GameZipper 工具箱</title>', html)
+    # Replace static section texts with Chinese
+    for en_str, zh_str in ZH_STATIC.items():
+        html = html.replace(en_str, zh_str)
     html = html.replace('</head>', 
         '<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/">\n'
         '<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/">\n'
         '<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/">\n'
         '<script>localStorage.setItem("gz-lang","zh");</script>\n'
         '</head>')
-    html = html.replace('localStorage.getItem(\'gz-lang\')', '"zh"')
+    html = html.replace("localStorage.getItem('gz-lang')", '"zh"')
     with open(dst, 'w') as f:
         f.write(html)
     print("✅ index.html → zh/index.html")
