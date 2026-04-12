@@ -7,7 +7,7 @@
     if (state.loaded || state.loading) return false;
     state.loading = true;
     var s = document.createElement('script');
-    s.src = 'https://quge5.com/88/tag.min.js';
+    s.src = 'https://a.magsrv.com/ad-provider.js?zone=' + state.zone;
     s.async = true;
     s.setAttribute('data-zone', String(state.zone));
     s.setAttribute('data-cfasync', 'false');
