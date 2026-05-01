@@ -2,6 +2,7 @@
 (function(){
   var s1=document.createElement('script');s1.src='/shared/monetag-safe.js';s1.defer=true;document.head.appendChild(s1);s1.onload=function(){window.GZToolAds&&window.GZToolAds.init();};
   var s2=document.createElement('script');s2.src='/monetag-native.js';s2.defer=true;document.head.appendChild(s2);s2.onload=function(){window.GZToolsNativeAd&&window.GZToolsNativeAd.init();};
+  var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
 })();
 const GZ = (function(){
   const { t, getLang, setLang } = GZI18n;
