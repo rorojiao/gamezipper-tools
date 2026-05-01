@@ -46,18 +46,21 @@
   }
 
   // Show after user copies text (monkey-patch GZ.copyText)
-  // GZ may not be ready yet (common.js defines it later), so poll
+  // GZ is defined via `const` in common.js (not on window), so access it directly
   function hookCopyText(){
-    if (window.GZ && window.GZ.copyText && !window.GZToolsStickyAd._hooked) {
-      window.GZToolsStickyAd._hooked = true;
-      var orig = window.GZ.copyText;
-      window.GZ.copyText = function(text){
-        var result = orig.call(this, text);
-        setTimeout(show, 500);
-        return result;
-      };
-      return true;
-    }
+    try {
+      var gz = window.GZ || (typeof GZ !== 'undefined' ? GZ : null);
+      if (gz && gz.copyText && !window.GZToolsStickyAd._hooked) {
+        window.GZToolsStickyAd._hooked = true;
+        var orig = gz.copyText;
+        gz.copyText = function(text){
+          var result = orig.call(this, text);
+          setTimeout(show, 500);
+          return result;
+        };
+        return true;
+      }
+    } catch(e) {}
     return false;
   }
 
