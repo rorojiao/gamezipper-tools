@@ -66,18 +66,30 @@ const GZ = (function(){
 
   function renderFooter() {
     const allGames = [
-      {n:'2048',e:'🔢',u:'/2048/'},{n:'Basketball Shoot',e:'🏀',u:'/basketball-shoot/'},
-      {n:'Sudoku',e:'🔢',u:'/sudoku/'},{n:'Snake',e:'🐍',u:'/snake/'},
-      {n:'Minesweeper',e:'💣',u:'/minesweeper/'},{n:'Tetris',e:'🧱',u:'/tetris/'},
-      {n:'Brick Breaker',e:'💥',u:'/brick-breaker/'},{n:'Neon Run',e:'⚡',u:'/neon-run/'},
-      {n:'Color Sort',e:'🎨',u:'/color-sort/'},{n:'Bounce Bot',e:'🤖',u:'/bounce-bot/'},
-      {n:'Sushi Stack',e:'🍣',u:'/sushi-stack/'},{n:'Wood Block',e:'🪵',u:'/wood-block-puzzle/'},
-      {n:'Catch Turkey',e:'🦃',u:'/catch-turkey/'},{n:'Abyss Chef',e:'🍳',u:'/abyss-chef/'},
-      {n:'Word Puzzle',e:'📝',u:'/word-puzzle/'},{n:'Idle Clicker',e:'👆',u:'/idle-clicker/'}
+      {n:'2048',e:'🔢',u:'/2048/'},{n:'Abyss Chef',e:'🍳',u:'/abyss-chef/'},
+      {n:'Alien Whack',e:'👽',u:'/alien-whack/'},{n:'Ball Catch',e:'⚽',u:'/ball-catch/'},
+      {n:'Basketball Shoot',e:'🏀',u:'/basketball-shoot/'},{n:'Bolt Jam 3D',e:'⚡',u:'/bolt-jam-3d/'},
+      {n:'Bounce Bot',e:'🤖',u:'/bounce-bot/'},{n:'Brick Breaker',e:'💥',u:'/brick-breaker/'},
+      {n:'Catch Turkey',e:'🦃',u:'/catch-turkey/'},{n:'Chess',e:'♟️',u:'/chess/'},
+      {n:'Cloud Sheep',e:'☁️',u:'/cloud-sheep/'},{n:'Color Sort',e:'🎨',u:'/color-sort/'},
+      {n:'Crossword',e:'📰',u:'/crossword/'},{n:'Dessert Blast',e:'🍰',u:'/dessert-blast/'},
+      {n:'Flappy Wings',e:'🐦',u:'/flappy-wings/'},{n:'Fruit Slash',e:'🍉',u:'/fruit-slash/'},
+      {n:'Glyph Quest',e:'🔮',u:'/glyph-quest/'},{n:'Idle Clicker',e:'👆',u:'/idle-clicker/'},
+      {n:'Kitty Cafe',e:'🐱',u:'/kitty-cafe/'},{n:'Magic Sort',e:'✨',u:'/magic-sort/'},
+      {n:'Memory Match',e:'🧠',u:'/memory-match/'},{n:'Minesweeper',e:'💣',u:'/minesweeper/'},
+      {n:'Neon Run',e:'🌈',u:'/neon-run/'},{n:'Ocean Gem Pop',e:'💎',u:'/ocean-gem-pop/'},
+      {n:'Paint Splash',e:'🎨',u:'/paint-splash/'},{n:'Phantom Blade',e:'⚔️',u:'/phantom-blade/'},
+      {n:'Pong',e:'🏓',u:'/pong/'},{n:'Reaction Time',e:'⏱️',u:'/reaction-time/'},
+      {n:'Slope',e:'🏔️',u:'/slope/'},{n:'Snake',e:'🐍',u:'/snake/'},
+      {n:'Stacker',e:'📦',u:'/stacker/'},{n:'Sudoku',e:'🔢',u:'/sudoku/'},
+      {n:'Sushi Stack',e:'🍣',u:'/sushi-stack/'},{n:'T-Rex',e:'🦖',u:'/t-rex/'},
+      {n:'Tetris',e:'🧱',u:'/tetris/'},{n:'Typing Speed',e:'⌨️',u:'/typing-speed/'},
+      {n:'Whack-a-Mole',e:'🔨',u:'/whack-a-mole/'},{n:'Wood Block',e:'🪵',u:'/wood-block-puzzle/'},
+      {n:'Word Puzzle',e:'📝',u:'/word-puzzle/'}
     ];
-    // Pick 5 random games each load for variety
+    // Pick 8 random games each load for variety and better link distribution
     const shuffled = allGames.slice().sort(function(){return 0.5-Math.random()});
-    const picked = shuffled.slice(0,5);
+    const picked = shuffled.slice(0,8);
     const linkStyle = 'background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)';
     const gameLinks = picked.map(function(g){return '<a href="https://gamezipper.com'+g.u+'" style="'+linkStyle+'">'+g.e+' '+g.n+'</a>';}).join('');
     const games = document.createElement('section');
