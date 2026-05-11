@@ -50,10 +50,39 @@
     document.head.appendChild(s);
   }
 
-  // Tools pages: load In-Page Push after 5s, Vignette after 30s
-  // Tools don't have gameplay, so both are safe with shorter delays
+  // Tools pages: load In-Page Push after meaningful action or 8s fallback
+  // Tools don't have gameplay, but triggering on action improves viewability
   function init() {
-    setTimeout(loadInPagePush, 5000);
+    var pushLoaded = false;
+
+    // Trigger InPage Push on meaningful user actions (copy, convert, generate)
+    // These are natural pause points where user is likely to notice an ad
+    function onMeaningfulAction() {
+      if (pushLoaded) return;
+      pushLoaded = true;
+      loadInPagePush();
+    }
+
+    // Listen for copy actions (GZ.copyText or clipboard events)
+    document.addEventListener('copy', onMeaningfulAction, { once: true, capture: true });
+    // Listen for button clicks that indicate tool usage
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.gz-btn, button[type="submit"], input[type="submit"]')) {
+        onMeaningfulAction();
+      }
+    }, { capture: true, once: true });
+    // Listen for form submissions (convert/generate actions)
+    document.addEventListener('submit', onMeaningfulAction, { once: true, capture: true });
+
+    // Fallback: load after 8s if no meaningful action detected
+    setTimeout(function() {
+      if (!pushLoaded) {
+        pushLoaded = true;
+        loadInPagePush();
+      }
+    }, 8000);
+
+    // Vignette: load after 30s (non-intrusive corner ad, safe for tools)
     setTimeout(loadVignette, 30000);
   }
 

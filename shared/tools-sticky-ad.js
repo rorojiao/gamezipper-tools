@@ -45,32 +45,47 @@
     setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 500);
   }
 
-  // Show after user copies text (monkey-patch GZ.copyText)
-  // GZ is defined via `const` in common.js (not on window), so access it directly
-  function hookCopyText(){
-    try {
-      var gz = window.GZ || (typeof GZ !== 'undefined' ? GZ : null);
-      if (gz && gz.copyText && !window.GZToolsStickyAd._hooked) {
-        window.GZToolsStickyAd._hooked = true;
-        var orig = gz.copyText;
-        gz.copyText = function(text){
-          var result = orig.call(this, text);
-          setTimeout(show, 500);
-          return result;
-        };
-        return true;
+  // Show after user copies text, clicks convert/generate buttons, or submits forms
+  // These are natural completion points where a cross-promo is welcome
+  function setupTriggers() {
+    // Hook GZ.copyText (monkey-patch)
+    function hookCopyText() {
+      try {
+        var gz = window.GZ || (typeof GZ !== 'undefined' ? GZ : null);
+        if (gz && gz.copyText && !window.GZToolsStickyAd._hooked) {
+          window.GZToolsStickyAd._hooked = true;
+          var orig = gz.copyText;
+          gz.copyText = function(text){
+            var result = orig.call(this, text);
+            setTimeout(show, 500);
+            return result;
+          };
+          return true;
+        }
+      } catch(e) {}
+      return false;
+    }
+
+    // Also trigger on button clicks and form submissions
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.gz-btn, button[type="submit"], input[type="submit"]')) {
+        setTimeout(show, 1000);
       }
-    } catch(e) {}
-    return false;
+    }, { capture: true, once: true });
+
+    document.addEventListener('submit', function() {
+      setTimeout(show, 1500);
+    }, { capture: true, once: true });
+
+    if (!hookCopyText()) {
+      var tries = 0;
+      var timer = setInterval(function(){
+        if (hookCopyText() || ++tries > 25) clearInterval(timer);
+      }, 200);
+    }
   }
 
-  // Try immediately, then poll every 200ms for up to 5s
-  if (!hookCopyText()) {
-    var tries = 0;
-    var timer = setInterval(function(){
-      if (hookCopyText() || ++tries > 25) clearInterval(timer);
-    }, 200);
-  }
+  setupTriggers();
 
   window.GZToolsStickyAd = { show: show, hide: hide, _hooked: false };
 })();
