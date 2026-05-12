@@ -11,7 +11,8 @@
   // VIGNETTE_ZONE: Placeholder ID — 10689347 was same as Popunder zone (monetag-safe.js)
   // Previously caused ad-provider.js to load twice with same zone ID (wasted bandwidth)
   // ⚠️ Create a dedicated Vignette zone in Monetag dashboard and update this ID
-  var VIGNETTE_ZONE = 10689348;      // ⚠️ PLACEHOLDER — create this zone in Monetag dashboard
+  // var VIGNETTE_ZONE = 10689348;   // DISABLED — placeholder zone was never created in Monetag dashboard
+  var VIGNETTE_ZONE = 0;              // 0 = disabled, no ad will load
   var loaded = {};
 
   // Session-based frequency control: track when each ad type was last shown
@@ -35,6 +36,7 @@
   }
 
   function loadVignette() {
+    if (!VIGNETTE_ZONE) return; // Disabled — no zone configured
     if (loaded.vignette) return;
     // Frequency cap: don't load again within MIN_INTERVAL
     if (Date.now() - lastShown.vignette < MIN_INTERVAL) {
