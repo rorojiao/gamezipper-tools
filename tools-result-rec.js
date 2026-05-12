@@ -19,16 +19,20 @@
   var games = [
     {n:'2048 Galaxy',e:'🌌',u:'https://gamezipper.com/2048/',t:'Puzzle'},
     {n:'Snake Classic',e:'🐍',u:'https://gamezipper.com/snake/',t:'Arcade'},
+    {n:'Basketball Shoot',e:'🏀',u:'https://gamezipper.com/basketball-shoot/',t:'Sports'},
+    {n:'Sudoku',e:'🔢',u:'https://gamezipper.com/sudoku/',t:'Puzzle'},
+    {n:'Minesweeper',e:'💣',u:'https://gamezipper.com/minesweeper/',t:'Puzzle'},
+    {n:'Slope',e:'🏔️',u:'https://gamezipper.com/slope/',t:'Arcade'},
+    {n:'Neon Run',e:'🌈',u:'https://gamezipper.com/neon-run/',t:'Arcade'},
+    {n:'T-Rex Runner',e:'🦖',u:'https://gamezipper.com/t-rex/',t:'Arcade'},
     {n:'Sushi Stack',e:'🍣',u:'https://gamezipper.com/sushi-stack/',t:'Puzzle'},
     {n:'Brick Breaker',e:'🧱',u:'https://gamezipper.com/brick-breaker/',t:'Arcade'},
     {n:'Color Sort',e:'🎨',u:'https://gamezipper.com/color-sort/',t:'Puzzle'},
-    {n:'Tetris',e:'方块',u:'https://gamezipper.com/tetris/',t:'Classic'},
-    {n:'Idle Clicker',e:'👆',u:'https://gamezipper.com/idle-clicker/',t:'Idle'},
-    {n:'Word Puzzle',e:'📝',u:'https://gamezipper.com/word-puzzle/',t:'Word'},
-    {n:'Flappy Wings',e:'🐦',u:'https://gamezipper.com/flappy-wings/',t:'Arcade'},
-    {n:'Memory Match',e:'🧠',u:'https://gamezipper.com/memory-match/',t:'Card'},
-    {n:'Minesweeper',e:'💣',u:'https://gamezipper.com/minesweeper/',t:'Puzzle'},
-    {n:'Typing Speed',e:'⚡',u:'https://gamezipper.com/typing-speed/',t:'Skill'}
+    {n:'Tetris',e:'🧱',u:'https://gamezipper.com/tetris/',t:'Classic'},
+    {n:'Fruit Slash',e:'🍉',u:'https://gamezipper.com/fruit-slash/',t:'Action'},
+    {n:'Pong',e:'🏓',u:'https://gamezipper.com/pong/',t:'Classic'},
+    {n:'Chess',e:'♟️',u:'https://gamezipper.com/chess/',t:'Strategy'},
+    {n:'Crossword',e:'📰',u:'https://gamezipper.com/crossword/',t:'Word'}
   ];
 
   function ensureStyle(){
@@ -94,12 +98,16 @@
     var related = document.querySelector('.gz-related');
     var container = document.querySelector('.gz-container');
 
+    var footer = document.querySelector('footer') || document.querySelector('.gz-footer');
     if (toolArea && toolArea.nextSibling) {
       toolArea.parentNode.insertBefore(wrap, toolArea.nextSibling);
     } else if (howto) {
       howto.parentNode.insertBefore(wrap, howto);
     } else if (related) {
       related.parentNode.insertBefore(wrap, related);
+    } else if (footer) {
+      // Insert before footer on homepage/category pages (not body bottom)
+      footer.parentNode.insertBefore(wrap, footer);
     } else if (container) {
       container.appendChild(wrap);
     } else {
