@@ -4,6 +4,7 @@
   var s2=document.createElement('script');s2.src='/monetag-native.js';s2.defer=true;document.head.appendChild(s2);s2.onload=function(){window.GZToolsNativeAd&&window.GZToolsNativeAd.init();};
   var s4=document.createElement('script');s4.src='/adsense-auto.js';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
+  var s5=document.createElement('script');s5.src='https://gamezipper-bi.cap.1ktower.com/t.js';s5.defer=true;document.head.appendChild(s5);
 })();
 const GZ = (function(){
   const { t, getLang, setLang } = GZI18n;
