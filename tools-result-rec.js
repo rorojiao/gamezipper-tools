@@ -154,6 +154,13 @@
     // Only on tools pages
     if (location.hostname.indexOf('tools.gamezipper.com') === -1) return;
 
+    // Skip homepage and category index pages — rec only makes sense on actual tool pages
+    var path = location.pathname.replace(/\/+$/, '');
+    if (!path || path === '/zh' || path === '/fortune') return; // bare homepage / simple index
+    // Category index pages: /dev, /text, /color, /convert, /zh/dev, etc.
+    var catPattern = /^\/(zh\/)?(dev|text|color|convert|fortune|hasher|seo|math|image|generator)$/i;
+    if (catPattern.test(path)) return;
+
     var triggered = false;
     function onAction(){
       if (triggered) return;
