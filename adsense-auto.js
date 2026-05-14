@@ -5,7 +5,7 @@
  *   - Loads after 5s (tools have interaction — give user time to engage first)
  *   - CSS constraints for clean tool UX
  *   - z-index below tool inputs/results
- *   - Session-aware: only loads once per session
+ *   - Page-level limit: loads once per page (no session limit)
  */
 (function(){
   'use strict';
@@ -13,7 +13,6 @@
   window.GZToolsAdSense = { loaded: false, skipped: false };
 
   var AD_CLIENT = 'ca-pub-8346383990981353';
-  var SESSION_KEY = 'gz_tools_adsense_loaded';
 
   function injectSafetyCSS() {
     var s = document.createElement('style');
@@ -31,13 +30,7 @@
 
   function loadAdSense() {
     if (window.GZToolsAdSense.loaded) return;
-    if (sessionStorage.getItem(SESSION_KEY)) {
-      window.GZToolsAdSense.skipped = true;
-      console.log('[GZToolsAdSense] Already loaded this session, skipping');
-      return;
-    }
     window.GZToolsAdSense.loaded = true;
-    sessionStorage.setItem(SESSION_KEY, '1');
 
     injectSafetyCSS();
 

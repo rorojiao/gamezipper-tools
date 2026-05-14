@@ -1,7 +1,6 @@
 /* GameZipper Tools — Common JS */
 (function(){
-  var s1=document.createElement('script');s1.src='/shared/monetag-safe.js';s1.defer=true;document.head.appendChild(s1);s1.onload=function(){window.GZToolAds&&window.GZToolAds.init();};
-  var s2=document.createElement('script');s2.src='/monetag-native.js';s2.defer=true;document.head.appendChild(s2);s2.onload=function(){window.GZToolsNativeAd&&window.GZToolsNativeAd.init();};
+  var s1=document.createElement('script');s1.src='/monetag-manager.js';s1.defer=true;document.head.appendChild(s1);
   var s4=document.createElement('script');s4.src='/adsense-auto.js';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
   var s5=document.createElement('script');s5.src='https://gamezipper-bi.cap.1ktower.com/t.js';s5.defer=true;document.head.appendChild(s5);
@@ -92,6 +91,12 @@ const GZ = (function(){
     // Pick 8 random games each load for variety and better link distribution
     const shuffled = allGames.slice().sort(function(){return 0.5-Math.random()});
     const picked = shuffled.slice(0,8);
+    // Ad container below tool content
+    var adBelow = document.createElement('div');
+    adBelow.id = 'gz-tools-ad-below';
+    adBelow.style.cssText = 'min-height:100px;margin:20px auto;max-width:728px;text-align:center';
+    document.body.appendChild(adBelow);
+
     const linkStyle = 'background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)';
     const gameLinks = picked.map(function(g){return '<a href="https://gamezipper.com'+g.u+'" style="'+linkStyle+'">'+g.e+' '+g.n+'</a>';}).join('');
     const games = document.createElement('section');
