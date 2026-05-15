@@ -1,22 +1,47 @@
 /**
- * GameZipper Tools — Monetag Ad Manager
- * ─────────────────────────────────────
- * Unified ad manager replacing monetag-safe.js and monetag-native.js.
- * Manages Popunder + In-Page Push with optimized timing & frequency.
+ * GameZipper Tools — Monetag Ad Manager v2
+ * ────────────────────────────────────────
+ * MultiTag zones (all MULTI = auto-anti-adblock + anti-fraud):
+ *   - Popunder:         11012009
+ *   - In-Page Push:     11012010
+ *   - Vignette Banner:  11012011
+ *   - Push Notifications: 11012012
+ *
+ * Strategy:
+ *   1. Popunder: hub → first click; tool pages → 5s after meaningful interaction
+ *      Frequency: every 20 min (localStorage, cross-tab via BroadcastChannel)
+ *   2. In-Page Push: all pages → 3s delay, once per page
+ *   3. Vignette Banner: hub → 25s; tool pages → 45s
+ *   4. Push Notifications: all pages → 12s delay, once per session
  */
 (function(){
   'use strict';
   if (window.GZMonetagManager) return;
   window.GZMonetagManager = true;
 
+  /* ── Zone Configuration (MultiTag) ────────────────────────── */
   var ZONES = {
-    popunder: 10689347,      // Tools Popunder
-    inpagePush: 10689346,    // Tools In-Page Push
+    popunder:   11012009,
+    inpagePush: 11012010,
+    vignette:   11012011,
+    pushNotif:  11012012
   };
 
   var POPUNDER_INTERVAL = 20 * 60 * 1000; // 20 minutes
-  var POPUNDER_STORAGE_KEY = 'gz_popunder_last';
+  var POPUNDER_STORAGE_KEY = 'gz_tools_popunder_last';
   var loaded = {};
+
+  /* ── BroadcastChannel for cross-tab frequency cap ─────────── */
+  var _bc = null;
+  try { _bc = new BroadcastChannel('gz_tools_popunder'); } catch(e) {}
+  function broadcastPopShown() {
+    if (_bc) try { _bc.postMessage(Date.now()); } catch(e) {}
+  }
+  if (_bc) {
+    _bc.onmessage = function(e) {
+      try { localStorage.setItem(POPENDER_STORAGE_KEY, String(e.data)); } catch(e2) {}
+    };
+  }
 
   /* ── Helpers ── */
 
@@ -38,9 +63,10 @@
 
   function markPopunderShown() {
     try { localStorage.setItem(POPENDER_STORAGE_KEY, String(Date.now())); } catch(e) {}
+    broadcastPopShown();
   }
 
-  function loadScript(zone, callback) {
+  function loadScript(zone) {
     if (loaded[zone]) return;
     loaded[zone] = true;
     var s = document.createElement('script');
@@ -48,32 +74,58 @@
     s.setAttribute('data-zone', String(zone));
     s.setAttribute('data-cfasync', 'false');
     s.src = 'https://a.magsrv.com/ad-provider.js?zone=' + zone;
-    if (callback) { s.onload = callback; s.onerror = callback; }
     document.head.appendChild(s);
+    console.log('[GZMonetag] Zone ' + zone + ' loaded');
   }
 
-  /* ── Popunder (zone 10689347) ── */
+  /* ── Popunder (zone 11012009) — CLICK-TRIGGERED ─────────── */
+
+  var popPending = false;
 
   function loadPopunder() {
-    if (!canShowPopunder()) {
-      console.log('[GZMonetag] Popunder frequency-capped, skipping');
-      return;
-    }
+    if (loaded[ZONES.popunder] || !canShowPopunder()) return;
     if (hasActiveEditorFocus()) {
       console.log('[GZMonetag] User typing, defer popunder');
+      popPending = true; // re-arm for next click
       return;
     }
     markPopunderShown();
+    popPending = false;
     loadScript(ZONES.popunder);
-    console.log('[GZMonetag] Popunder loaded');
   }
 
-  /* ── In-Page Push (zone 10689346) ── */
+  function armPopunder() {
+    if (loaded[ZONES.popunder] || !canShowPopunder()) return;
+    popPending = true;
+  }
+
+  // Global click listener — fire popunder when armed
+  document.addEventListener('click', function(e) {
+    if (popPending) {
+      popPending = false;
+      loadPopunder();
+    }
+  }, { passive: true });
+
+  /* ── In-Page Push (zone 11012010) ───────────────────────── */
 
   function loadInPagePush() {
     if (loaded[ZONES.inpagePush]) return;
     loadScript(ZONES.inpagePush);
-    console.log('[GZMonetag] In-Page Push loaded');
+  }
+
+  /* ── Vignette Banner (zone 11012011) ────────────────────── */
+
+  function loadVignette() {
+    if (loaded[ZONES.vignette]) return;
+    loadScript(ZONES.vignette);
+  }
+
+  /* ── Push Notifications (zone 11012012) ─────────────────── */
+
+  function loadPushNotif() {
+    if (loaded[ZONES.pushNotif]) return;
+    loadScript(ZONES.pushNotif);
   }
 
   /* ── Bottom ad container fill ── */
@@ -81,41 +133,45 @@
   function fillBottomAd() {
     var container = document.getElementById('gz-tools-ad-below');
     if (!container || container.hasChildNodes()) return;
-    // In-Page Push can render into any zone container — load it if not yet loaded
     loadInPagePush();
   }
 
   /* ── Init ── */
 
   function init() {
-    // 1. In-Page Push: all pages, 3 seconds after load (once per page)
+    // 1. In-Page Push: all pages, 3 seconds after load
     setTimeout(loadInPagePush, 3000);
 
-    // 2. Popunder strategy depends on page type
+    // 2. Push Notifications: 12s delay
+    setTimeout(loadPushNotif, 12000);
+
+    // 3. Popunder strategy depends on page type
     if (isHubPage()) {
-      // Hub page: 5 seconds after load
-      setTimeout(function() {
-        if (!hasActiveEditorFocus()) loadPopunder();
-      }, 5000);
-      // Also trigger on scroll engagement
+      // Hub page: arm for next click
+      armPopunder();
+      // Also re-arm on scroll engagement
       window.addEventListener('scroll', function() {
-        if (window.scrollY > 300) loadPopunder();
+        if (window.scrollY > 300) armPopunder();
       }, { passive: true, once: true });
+      // Vignette: 25s
+      setTimeout(loadVignette, 25000);
     } else {
-      // Tool page: 5 seconds after first meaningful interaction
+      // Tool page: arm popunder after 5s meaningful interaction
       var interacted = false;
       function onInteract() {
         if (interacted) return;
         interacted = true;
-        setTimeout(loadPopunder, 5000);
+        setTimeout(armPopunder, 5000);
       }
       document.addEventListener('click', function(e) {
         if (e.target.closest('.gz-btn, button, input[type="submit"]')) onInteract();
       }, { capture: true, passive: true });
       document.addEventListener('keydown', onInteract, { once: true, passive: true });
+      // Vignette: 45s
+      setTimeout(loadVignette, 45000);
     }
 
-    // 3. Fill bottom ad container when DOM is ready
+    // 4. Fill bottom ad container when DOM is ready
     setTimeout(fillBottomAd, 3500);
   }
 
@@ -124,4 +180,23 @@
   } else {
     init();
   }
+
+  /* ── Backward-compatible API ── */
+  window.GZMonetagSafe = {
+    init: function () {},
+    loadNow: loadPopunder,
+    maybeLoad: loadPopunder,
+    hasBlockingOverlay: function () { return false; },
+    disabled: false,
+    mode: 'unified-manager-v2'
+  };
+  window.GZNativeAd = {
+    init: function () {},
+    loadInPagePush: loadInPagePush,
+    loadVignette: loadVignette,
+    loadPushNotif: loadPushNotif,
+    loaded: { inpage: !!loaded[ZONES.inpagePush], vignette: !!loaded[ZONES.vignette], push: !!loaded[ZONES.pushNotif] }
+  };
+
+  console.log('[GZMonetag] v2 Initialized — MultiTag zones active (Popunder: click-triggered)');
 })();
