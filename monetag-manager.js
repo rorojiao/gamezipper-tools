@@ -128,12 +128,20 @@
     loadScript(ZONES.pushNotif);
   }
 
-  /* ── Bottom ad container fill ── */
+  /* ── Container ads (below tool content) ────────────────────── */
 
-  function fillBottomAd() {
-    var container = document.getElementById('gz-tools-ad-below');
-    if (!container || container.hasChildNodes()) return;
-    loadInPagePush();
+  function fillContainerAd(containerId, delay) {
+    setTimeout(function () {
+      var container = document.getElementById(containerId);
+      if (!container || container.getAttribute('data-filled')) return;
+      container.setAttribute('data-filled', '1');
+      var s = document.createElement('script');
+      s.async = true;
+      s.setAttribute('data-zone', String(ZONES.inpagePush));
+      s.src = 'https://a.magsrv.com/ad-provider.js?zone=' + ZONES.inpagePush;
+      container.appendChild(s);
+      console.log('[GZMonetag] Container ad filled: ' + containerId);
+    }, delay);
   }
 
   /* ── Init ── */
@@ -172,7 +180,7 @@
     }
 
     // 4. Fill bottom ad container when DOM is ready
-    setTimeout(fillBottomAd, 3500);
+    fillContainerAd('gz-tools-ad-below', 3500);
   }
 
   if (document.readyState === 'loading') {
