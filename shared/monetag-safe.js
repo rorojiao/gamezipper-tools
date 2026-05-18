@@ -1,6 +1,9 @@
 (function(){
   'use strict';
   if (window.GZToolAds) return;
+  /* ── AD PAUSED ── Set ADS_ENABLED=true to re-enable */
+  var ADS_ENABLED = false;
+  if (!ADS_ENABLED) { console.log('[GZToolAds] PAUSED'); return; }
   var state = { loaded:false, loading:false, zone:10689347, meaningful:false, firstActionAt:0 };
 
   function inject(){
