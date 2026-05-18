@@ -10,7 +10,14 @@
 (function(){
   'use strict';
   if (window.GZToolsAdSense) return;
-  window.GZToolsAdSense = { loaded: false, skipped: false };
+  window.GZToolsAdSense = { loaded: false, skipped: true };
+
+  /* ── AD PAUSED ── Set to true to re-enable */
+  var ADS_ENABLED = false;
+  if (!ADS_ENABLED) {
+    console.log('[GZToolsAdSense] AdSense PAUSED — set ADS_ENABLED=true to resume');
+    return;
+  }
 
   var AD_CLIENT = 'ca-pub-8346383990981353';
 
