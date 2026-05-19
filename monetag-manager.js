@@ -19,8 +19,8 @@
   if (window.GZMonetagManager) return;
   window.GZMonetagManager = true;
 
-  /* ── AD PAUSE SWITCH ── Set to false to re-enable all ads */
-  var ADS_ENABLED = false;
+  /* ── AD PAUSE SWITCH ── configurable via window.GZ_ADS_ENABLED (default: true) */
+  var ADS_ENABLED = (window.GZ_ADS_ENABLED !== undefined) ? window.GZ_ADS_ENABLED : true;
   if (!ADS_ENABLED) {
     console.log('[GZMonetagManager] All ads PAUSED — set ADS_ENABLED=true to resume');
     return;
