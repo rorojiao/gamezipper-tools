@@ -125,7 +125,7 @@
       link.addEventListener('click', function(){
         try {
           var img = new Image();
-          img.src = 'https://site-analytics.cap.1ktower.com/hit?s=tools.gamezipper.com&p=/rec-click/' + encodeURIComponent(location.pathname);
+          img.src = 'https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p=/rec-click/' + encodeURIComponent(location.pathname);
         } catch(e){}
       });
     });
@@ -139,7 +139,7 @@
     // Track impression
     try {
       var img = new Image();
-      img.src = 'https://site-analytics.cap.1ktower.com/hit?s=tools.gamezipper.com&p=/rec-show/' + encodeURIComponent(location.pathname);
+      img.src = 'https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p=/rec-show/' + encodeURIComponent(location.pathname);
     } catch(e){}
 
     // Trigger animation on next frame
