@@ -12,8 +12,8 @@
   if (window.GZToolsAdSense) return;
   window.GZToolsAdSense = { loaded: false, skipped: true };
 
-  /* ── AD PAUSED ── Set to true to re-enable */
-  var ADS_ENABLED = false;
+  /* ── AD ENABLED ── Set to false to pause */
+  var ADS_ENABLED = true;
   if (!ADS_ENABLED) {
     console.log('[GZToolsAdSense] AdSense PAUSED — set ADS_ENABLED=true to resume');
     return;
