@@ -80,7 +80,7 @@
     s.async = true;
     s.setAttribute('data-zone', String(zone));
     s.setAttribute('data-cfasync', 'false');
-    s.src = 'https://a.magsrv.com/ad-provider.js';
+    s.src = 'https://quge5.com/88/tag.min.js';
     document.head.appendChild(s);
     console.log('[GZMonetag] Zone ' + zone + ' loaded');
   }
@@ -145,7 +145,7 @@
       var s = document.createElement('script');
       s.async = true;
       s.setAttribute('data-zone', String(ZONES.inpagePush));
-      s.src = 'https://a.magsrv.com/ad-provider.js';
+      s.src = 'https://quge5.com/88/tag.min.js';
       container.appendChild(s);
       console.log('[GZMonetag] Container ad filled: ' + containerId);
     }, delay);
