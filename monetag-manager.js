@@ -46,7 +46,7 @@
   }
   if (_bc) {
     _bc.onmessage = function(e) {
-      try { localStorage.setItem(POPENDER_STORAGE_KEY, String(e.data)); } catch(e2) {}
+      try { localStorage.setItem(POPUNDER_STORAGE_KEY, String(e.data)); } catch(e2) {}
     };
   }
 
@@ -64,12 +64,12 @@
 
   function canShowPopunder() {
     var last = 0;
-    try { last = parseInt(localStorage.getItem(POPENDER_STORAGE_KEY), 10) || 0; } catch(e) {}
+    try { last = parseInt(localStorage.getItem(POPUNDER_STORAGE_KEY), 10) || 0; } catch(e) {}
     return Date.now() - last >= POPUNDER_INTERVAL;
   }
 
   function markPopunderShown() {
-    try { localStorage.setItem(POPENDER_STORAGE_KEY, String(Date.now())); } catch(e) {}
+    try { localStorage.setItem(POPUNDER_STORAGE_KEY, String(Date.now())); } catch(e) {}
     broadcastPopShown();
   }
 
