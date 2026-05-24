@@ -25,7 +25,7 @@
   };
 
   var CONFIG = {
-    AD_PROVIDER: 'https://quge5.com/88/tag.min.js',
+    AD_PROVIDER: 'https://a.magsrv.com/ad-provider.js',
     FREQUENCY: {
       minBetweenAds: 40 * 1000,         // 40s between any ads
       popunderInterval: 25 * 60 * 1000,  // 25 min between popunders
@@ -86,9 +86,10 @@
     return new Promise(function(resolve, reject) {
       var timeout = setTimeout(function() { reject(new Error('timeout')); }, CONFIG.TIMING.adLoadTimeout);
       var s = document.createElement('script');
-      s.src = CONFIG.AD_PROVIDER;
+      s.src = CONFIG.AD_PROVIDER + '?zone=' + String(zoneId);
       s.async = true;
       s.setAttribute('data-zone', String(zoneId));
+      s.setAttribute('data-cf-async', 'false');
       s.onload = function() { clearTimeout(timeout); resolve(true); };
       s.onerror = function() { clearTimeout(timeout); reject(new Error('err')); };
       if (targetEl) { targetEl.appendChild(s); } else { document.head.appendChild(s); }
