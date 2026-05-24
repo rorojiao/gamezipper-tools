@@ -1,217 +1,180 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v2
- * ────────────────────────────────────────
- * MultiTag zones (all MULTI = auto-anti-adblock + anti-fraud):
- *   - Popunder:         11012009
- *   - In-Page Push:     11012010
- *   - Vignette Banner:  11012011
- *   - Push Notifications: 11012012
- *
- * Strategy:
- *   1. Popunder: hub → first click; tool pages → 5s after meaningful interaction
- *      Frequency: every 20 min (localStorage, cross-tab via BroadcastChannel)
- *   2. In-Page Push: all pages → 3s delay, once per page
- *   3. Vignette Banner: hub → 25s; tool pages → 45s
- *   4. Push Notifications: all pages → 12s delay, once per session
+ * GameZipper Tools — Monetag Ad Manager v3 (Poki-style)
+ * ────────────────────────────────────────────────
+ * Poki-model: Smart frequency control, minimal disruption
+ * 
+ * Zones (MultiTag):
+ *   - In-Page Push:     11012010 (banners, containers)
+ *   - Vignette Banner:  11012011 (interstitials)
+ *   - Popunder:         11012009 (click-triggered only)
+ *   - Push:             11012012 (disabled per user request)
  */
-(function(){
+;(function() {
   'use strict';
   if (window.GZMonetagManager) return;
   window.GZMonetagManager = true;
 
-  /* ── AD PAUSE SWITCH ── configurable via window.GZ_ADS_ENABLED (default: true) */
   var ADS_ENABLED = (window.GZ_ADS_ENABLED !== undefined) ? window.GZ_ADS_ENABLED : true;
-  if (!ADS_ENABLED) {
-    console.log('[GZMonetagManager] All ads PAUSED — set ADS_ENABLED=true to resume');
-    return;
-  }
+  if (!ADS_ENABLED) return;
 
-  /* ── Zone Configuration (MultiTag) ────────────────────────── */
   var ZONES = {
     popunder:   11012009,
     inpagePush: 11012010,
     vignette:   11012011,
-    pushNotif:  11012012
+    // pushNotif: 11012012  // DISABLED
   };
 
-  var POPUNDER_INTERVAL = 20 * 60 * 1000; // 20 minutes
-  var POPUNDER_STORAGE_KEY = 'gz_tools_popunder_last';
-  var loaded = {};
+  var CONFIG = {
+    AD_PROVIDER: 'https://quge5.com/88/tag.min.js',
+    FREQUENCY: {
+      minBetweenAds: 40 * 1000,         // 40s between any ads
+      popunderInterval: 25 * 60 * 1000,  // 25 min between popunders
+      sessionMaxAds: 15,
+      sessionWindowMs: 30 * 60 * 1000,
+    },
+    TIMING: {
+      containerAdDelay: 3500,
+      vignetteHubDelay: 20 * 1000,    // 20s on hub pages
+      vignetteToolDelay: 35 * 1000,   // 35s on tool pages
+      popunderInteractionDelay: 5000,  // 5s after first interaction
+      adLoadTimeout: 5000,
+    },
+    STORAGE_PREFIX: 'gzt3_',
+  };
 
-  /* ── BroadcastChannel for cross-tab frequency cap ─────────── */
-  var _bc = null;
-  try { _bc = new BroadcastChannel('gz_tools_popunder'); } catch(e) {}
-  function broadcastPopShown() {
-    if (_bc) try { _bc.postMessage(Date.now()); } catch(e) {}
+  var state = {
+    adTimestamps: [],
+    popunderShown: false,
+    isHubPage: false,
+    isToolPage: false,
+    firstInteraction: 0,
+    loaded: {},
+    channel: null,
+  };
+
+  function now() { return Date.now(); }
+  function storageGet(k) { try { return JSON.parse(localStorage.getItem(CONFIG.STORAGE_PREFIX + k)); } catch(e) { return null; } }
+  function storageSet(k, v) { try { localStorage.setItem(CONFIG.STORAGE_PREFIX + k, JSON.stringify(v)); } catch(e) {} }
+
+  function canShowAd() {
+    var ts = storageGet('ad_ts') || [];
+    var n = now();
+    ts = ts.filter(function(t) { return (n - t) < CONFIG.FREQUENCY.sessionWindowMs; });
+    if (ts.length >= CONFIG.FREQUENCY.sessionMaxAds) return false;
+    if (ts.length > 0 && (n - Math.max.apply(null, ts)) < CONFIG.FREQUENCY.minBetweenAds) return false;
+    return true;
   }
-  if (_bc) {
-    _bc.onmessage = function(e) {
-      try { localStorage.setItem(POPUNDER_STORAGE_KEY, String(e.data)); } catch(e2) {}
+
+  function markShown() {
+    var ts = storageGet('ad_ts') || [];
+    ts.push(now());
+    storageSet('ad_ts', ts.slice(-50));
+    if (state.channel) try { state.channel.postMessage(now()); } catch(e) {}
+  }
+
+  // BroadcastChannel
+  try {
+    state.channel = new BroadcastChannel('gz4-tools-sync');
+    state.channel.onmessage = function(e) {
+      var ts = storageGet('ad_ts') || [];
+      ts.push(e.data);
+      storageSet('ad_ts', ts.slice(-50));
     };
-  }
+  } catch(e) {}
 
-  /* ── Helpers ── */
-
-  function isHubPage() {
-    return location.pathname === '/' || /\/$/.test(location.pathname);
-  }
-
-  function hasActiveEditorFocus() {
-    var el = document.activeElement;
-    if (!el) return false;
-    return /^(TEXTAREA|INPUT|SELECT)$/i.test(el.tagName) || el.isContentEditable;
-  }
-
-  function canShowPopunder() {
-    var last = 0;
-    try { last = parseInt(localStorage.getItem(POPUNDER_STORAGE_KEY), 10) || 0; } catch(e) {}
-    return Date.now() - last >= POPUNDER_INTERVAL;
-  }
-
-  function markPopunderShown() {
-    try { localStorage.setItem(POPUNDER_STORAGE_KEY, String(Date.now())); } catch(e) {}
-    broadcastPopShown();
-  }
-
-  function loadScript(zone) {
-    if (loaded[zone]) return;
-    loaded[zone] = true;
-    var s = document.createElement('script');
-    s.async = true;
-    s.setAttribute('data-zone', String(zone));
-    s.setAttribute('data-cfasync', 'false');
-    s.src = 'https://quge5.com/88/tag.min.js';
-    document.head.appendChild(s);
-    console.log('[GZMonetag] Zone ' + zone + ' loaded');
-  }
-
-  /* ── Popunder (zone 11012009) — CLICK-TRIGGERED ─────────── */
-
-  var popPending = false;
-
-  function loadPopunder() {
-    if (loaded[ZONES.popunder] || !canShowPopunder()) return;
-    if (hasActiveEditorFocus()) {
-      console.log('[GZMonetag] User typing, defer popunder');
-      popPending = true; // re-arm for next click
-      return;
-    }
-    markPopunderShown();
-    popPending = false;
-    loadScript(ZONES.popunder);
-  }
-
-  function armPopunder() {
-    if (loaded[ZONES.popunder] || !canShowPopunder()) return;
-    popPending = true;
-  }
-
-  // Global click listener — fire popunder when armed
-  document.addEventListener('click', function(e) {
-    if (popPending) {
-      popPending = false;
-      loadPopunder();
-    }
-  }, { passive: true });
-
-  /* ── In-Page Push (zone 11012010) ───────────────────────── */
-
-  function loadInPagePush() {
-    if (loaded[ZONES.inpagePush]) return;
-    loadScript(ZONES.inpagePush);
-  }
-
-  /* ── Vignette Banner (zone 11012011) ────────────────────── */
-
-  function loadVignette() {
-    if (loaded[ZONES.vignette]) return;
-    loadScript(ZONES.vignette);
-  }
-
-  /* ── Push Notifications (zone 11012012) ─────────────────── */
-
-  function loadPushNotif() {
-    if (loaded[ZONES.pushNotif]) return;
-    loadScript(ZONES.pushNotif);
-  }
-
-  /* ── Container ads (below tool content) ────────────────────── */
-
-  function fillContainerAd(containerId, delay) {
-    setTimeout(function () {
-      var container = document.getElementById(containerId);
-      if (!container || container.getAttribute('data-filled')) return;
-      container.setAttribute('data-filled', '1');
+  function loadZone(zoneId, targetEl) {
+    return new Promise(function(resolve, reject) {
+      var timeout = setTimeout(function() { reject(new Error('timeout')); }, CONFIG.TIMING.adLoadTimeout);
       var s = document.createElement('script');
+      s.src = CONFIG.AD_PROVIDER;
       s.async = true;
-      s.setAttribute('data-zone', String(ZONES.inpagePush));
-      s.src = 'https://quge5.com/88/tag.min.js';
-      container.appendChild(s);
-      console.log('[GZMonetag] Container ad filled: ' + containerId);
+      s.setAttribute('data-zone', String(zoneId));
+      s.onload = function() { clearTimeout(timeout); resolve(true); };
+      s.onerror = function() { clearTimeout(timeout); reject(new Error('err')); };
+      if (targetEl) { targetEl.appendChild(s); } else { document.head.appendChild(s); }
+    });
+  }
+
+  function detectPage() {
+    var path = window.location.pathname;
+    // Hub pages: / or /zh or index pages
+    state.isHubPage = /^\/(zh\/?)?$/.test(path);
+    state.isToolPage = !state.isHubPage && path.length > 1;
+  }
+
+  // Container ad (below tool results)
+  function showContainerAd() {
+    var container = document.getElementById('gz-tools-ad-below');
+    if (!container) return;
+    if (container.getAttribute('data-filled')) return;
+    if (!canShowAd()) return;
+
+    setTimeout(function() {
+      if (container.getAttribute('data-filled')) return;
+      loadZone(ZONES.inpagePush, container).then(function() {
+        container.setAttribute('data-filled', '1');
+        markShown();
+      }).catch(function() {});
+    }, CONFIG.TIMING.containerAdDelay);
+  }
+
+  // Vignette banner (delayed, non-blocking)
+  function showVignette() {
+    if (!canShowAd()) return;
+    var delay = state.isHubPage ? CONFIG.TIMING.vignetteHubDelay : CONFIG.TIMING.vignetteToolDelay;
+    setTimeout(function() {
+      if (!canShowAd()) return;
+      loadZone(ZONES.vignette).then(function() { markShown(); }).catch(function() {});
     }, delay);
   }
 
-  /* ── Init ── */
+  // Popunder (click-triggered, with frequency control)
+  function initPopunder() {
+    var lastPopunder = storageGet('popunder_last') || 0;
+    if (now() - lastPopunder < CONFIG.FREQUENCY.popunderInterval) return;
 
-  function init() {
-    // 1. In-Page Push: all pages, 3 seconds after load
-    setTimeout(loadInPagePush, 3000);
-
-    // 2. Push Notifications: 12s delay
-    setTimeout(loadPushNotif, 12000);
-
-    // 3. Popunder strategy depends on page type
-    if (isHubPage()) {
-      // Hub page: arm for next click
-      armPopunder();
-      // Also re-arm on scroll engagement
-      window.addEventListener('scroll', function() {
-        if (window.scrollY > 300) armPopunder();
-      }, { passive: true, once: true });
-      // Vignette: 25s
-      setTimeout(loadVignette, 25000);
-    } else {
-      // Tool page: arm popunder after 5s meaningful interaction
-      var interacted = false;
-      function onInteract() {
-        if (interacted) return;
-        interacted = true;
-        setTimeout(armPopunder, 5000);
-      }
-      document.addEventListener('click', function(e) {
-        if (e.target.closest('.gz-btn, button, input[type="submit"]')) onInteract();
-      }, { capture: true, passive: true });
-      document.addEventListener('keydown', onInteract, { once: true, passive: true });
-      // Vignette: 45s
-      setTimeout(loadVignette, 45000);
+    function triggerPopunder() {
+      if (state.popunderShown) return;
+      if (!canShowAd()) return;
+      var last = storageGet('popunder_last') || 0;
+      if (now() - last < CONFIG.FREQUENCY.popunderInterval) return;
+      
+      state.popunderShown = true;
+      storageSet('popunder_last', now());
+      markShown();
+      loadZone(ZONES.popunder).catch(function() {});
     }
 
-    // 4. Fill bottom ad container when DOM is ready
-    fillContainerAd('gz-tools-ad-below', 3500);
+    // Hub: first click triggers popunder
+    if (state.isHubPage) {
+      document.addEventListener('click', function() { triggerPopunder(); }, { once: true, passive: true });
+    }
+    // Tool pages: 5s after meaningful interaction
+    if (state.isToolPage) {
+      function onInteract() {
+        if (state.firstInteraction) return;
+        state.firstInteraction = now();
+        setTimeout(triggerPopunder, CONFIG.TIMING.popunderInteractionDelay);
+      }
+      document.addEventListener('click', onInteract, { once: true, passive: true });
+      document.addEventListener('keydown', onInteract, { once: true, passive: true });
+    }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  // In-Page Push (lightweight, all pages)
+  function showInPagePush() {
+    if (!canShowAd()) return;
+    setTimeout(function() {
+      if (!canShowAd()) return;
+      loadZone(ZONES.inpagePush).then(function() { markShown(); }).catch(function() {});
+    }, 3000);
   }
 
-  /* ── Backward-compatible API ── */
-  window.GZMonetagSafe = {
-    init: function () {},
-    loadNow: loadPopunder,
-    maybeLoad: loadPopunder,
-    hasBlockingOverlay: function () { return false; },
-    disabled: false,
-    mode: 'unified-manager-v2'
-  };
-  window.GZNativeAd = {
-    init: function () {},
-    loadInPagePush: loadInPagePush,
-    loadVignette: loadVignette,
-    loadPushNotif: loadPushNotif,
-    loaded: { inpage: !!loaded[ZONES.inpagePush], vignette: !!loaded[ZONES.vignette], push: !!loaded[ZONES.pushNotif] }
-  };
+  // Init
+  detectPage();
+  showContainerAd();
+  showVignette();
+  initPopunder();
+  showInPagePush();
 
-  console.log('[GZMonetag] v2 Initialized — MultiTag zones active (Popunder: click-triggered)');
 })();
