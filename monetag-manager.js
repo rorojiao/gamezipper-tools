@@ -27,15 +27,16 @@
   var CONFIG = {
     AD_PROVIDER: 'https://a.magsrv.com/ad-provider.js',
     FREQUENCY: {
-      minBetweenAds: 40 * 1000,         // 40s between any ads
+      minBetweenAds: 30 * 1000,         // 30s between any ads (optimized from 40s)
       popunderInterval: 25 * 60 * 1000,  // 25 min between popunders
-      sessionMaxAds: 15,
+      sessionMaxAds: 30,                 // max 30 per session (optimized from 15)
       sessionWindowMs: 30 * 60 * 1000,
+      dailyMaxAds: 100,                 // max 100 per day (new)
     },
     TIMING: {
-      containerAdDelay: 3500,
-      vignetteHubDelay: 20 * 1000,    // 20s on hub pages
-      vignetteToolDelay: 35 * 1000,   // 35s on tool pages
+      containerAdDelay: 3000,           // 3s (optimized from 3.5s)
+      vignetteHubDelay: 15 * 1000,      // 15s on hub pages (optimized from 20s)
+      vignetteToolDelay: 30 * 1000,     // 30s on tool pages (optimized from 35s)
       popunderInteractionDelay: 5000,  // 5s after first interaction
       adLoadTimeout: 5000,
     },
@@ -59,6 +60,11 @@
   function canShowAd() {
     var ts = storageGet('ad_ts') || [];
     var n = now();
+    // Clean old timestamps (keep last 24h)
+    ts = ts.filter(function(t) { return (n - t) < 24 * 60 * 60 * 1000; });
+    // Check daily max
+    if (ts.length >= CONFIG.FREQUENCY.dailyMaxAds) return false;
+    // Clean session window
     ts = ts.filter(function(t) { return (n - t) < CONFIG.FREQUENCY.sessionWindowMs; });
     if (ts.length >= CONFIG.FREQUENCY.sessionMaxAds) return false;
     if (ts.length > 0 && (n - Math.max.apply(null, ts)) < CONFIG.FREQUENCY.minBetweenAds) return false;
@@ -172,6 +178,17 @@
   }
 
   // Init
+  // Preconnect to ad provider for faster loading
+  ['https://a.magsrv.com', 'https://static.magsrv.com'].forEach(function(origin) {
+    try {
+      var l = document.createElement('link');
+      l.rel = 'preconnect';
+      l.href = origin;
+      l.crossOrigin = 'anonymous';
+      document.head.appendChild(l);
+    } catch(e) {}
+  });
+
   detectPage();
   showContainerAd();
   showVignette();
