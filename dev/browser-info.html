@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Browser Info Tool - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Check your browser information online. View user agent, screen resolution, IP detection, browser version, OS, language, cookies status, and more. Free tool.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/browser-info.html">
+  <meta property="og:title" content="Browser Info Tool - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Check your browser information online. View user agent, screen resolution, IP detection, browser version, OS, language, cookies status, and more.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/browser-info.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Browser Info Tool - Free Online Tool | GameZipper Tools">
+  <meta name="twitter:description" content="Check your browser information online. View user agent, screen resolution, IP detection, browser version, OS, language, cookies status, and more.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:16px}
+.gz-info-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.gz-info-card .label{font-size:.8em;color:var(--text2);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.gz-info-card .value{font-size:.95em;word-break:break-all;font-family:monospace;line-height:1.5}
+.gz-info-card .value.good{color:var(--gz-success,#00d672)}
+.gz-info-card .value.bad{color:var(--gz-accent,#ff6b6b)}
+.gz-info-section{font-size:1.1rem;font-weight:700;margin-top:20px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Browser Info Tool","description":"Check your browser information online. View user agent, screen resolution, browser version, OS, language, cookies status, and more.","url":"https://tools.gamezipper.com/dev/browser-info.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What information does this tool show?","acceptedAnswer":{"@type":"Answer","text":"The tool displays your browser name and version, operating system, screen resolution, viewport size, user agent string, language, cookies status, JavaScript status, touch support, and more."}},{"@type":"Question","name":"Is my data sent to any server?","acceptedAnswer":{"@type":"Answer","text":"No. All information is read directly from your browser's built-in APIs. Nothing is sent to any server. The data stays completely local."}},{"@type":"Question","name":"Why do I need to know my browser info?","acceptedAnswer":{"@type":"Answer","text":"Browser info is useful for debugging website issues, checking feature support, verifying device capabilities, and ensuring your browser is up to date."}},{"@type":"Question","name":"What is a User Agent string?","acceptedAnswer":{"@type":"Answer","text":"A User Agent string is a text that your browser sends to websites to identify itself, including the browser name, version, operating system, and rendering engine."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/browser-info.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/browser-info.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/browser-info.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="info-container"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Browser Info Tool',
+    toolDesc: 'Instantly view detailed information about your browser, screen, OS, and device capabilities. All data is read locally — nothing is sent to any server.',
+    copyAll: 'Copy All',
+    sectionBrowser: '🌐 Browser',
+    sectionScreen: '🖥️ Screen & Display',
+    sectionNetwork: '🌐 Network & Location',
+    sectionFeatures: '⚡ Features & Capabilities',
+    step1: 'The tool automatically detects your browser information on page load',
+    step2: 'Review browser, screen, and device details in the cards',
+    step3: 'Use Copy All to copy all information to clipboard',
+    step4: 'Use this data for debugging or checking feature support',
+  },
+  zh: {
+    toolTitle: '浏览器信息工具',
+    toolDesc: '即时查看浏览器、屏幕、操作系统和设备能力的详细信息。所有数据在本地读取，不会上传到任何服务器。',
+    copyAll: '全部复制',
+    sectionBrowser: '🌐 浏览器',
+    sectionScreen: '🖥️ 屏幕与显示',
+    sectionNetwork: '🌐 网络与位置',
+    sectionFeatures: '⚡ 功能与能力',
+    step1: '页面加载后工具会自动检测浏览器信息',
+    step2: '查看卡片中的浏览器、屏幕和设备详情',
+    step3: '点击「全部复制」将所有信息复制到剪贴板',
+    step4: '使用这些数据进行调试或检查功能支持',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function detectBrowser() {
+  const ua = navigator.userAgent;
+  let browser = 'Unknown', version = '';
+  if (ua.includes('Firefox/')) { browser = 'Firefox'; version = ua.match(/Firefox\/([\d.]+)/)?.[1] || ''; }
+  else if (ua.includes('Edg/')) { browser = 'Edge'; version = ua.match(/Edg\/([\d.]+)/)?.[1] || ''; }
+  else if (ua.includes('Chrome/')) { browser = 'Chrome'; version = ua.match(/Chrome\/([\d.]+)/)?.[1] || ''; }
+  else if (ua.includes('Safari/') && !ua.includes('Chrome')) { browser = 'Safari'; version = ua.match(/Version\/([\d.]+)/)?.[1] || ''; }
+  return { browser, version };
+}
+
+function detectOS() {
+  const ua = navigator.userAgent;
+  if (ua.includes('Win')) return 'Windows';
+  if (ua.includes('Mac')) return 'macOS';
+  if (ua.includes('Linux')) return 'Linux';
+  if (ua.includes('Android')) return 'Android';
+  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+  return navigator.platform || 'Unknown';
+}
+
+function card(label, value, cls) {
+  return `<div class="gz-info-card"><div class="label">${label}</div><div class="value ${cls||''}">${value || '—'}</div></div>`;
+}
+
+function renderInfo() {
+  const b = detectBrowser();
+  const os = detectOS();
+  let html = '';
+
+  // Browser section
+  html += `<div class="gz-info-section">${t('sectionBrowser')}</div>`;
+  html += '<div class="gz-info-grid">';
+  html += card('Browser', b.browser + ' ' + b.version);
+  html += card('Operating System', os);
+  html += card('Platform', navigator.platform || '—');
+  html += card('User Agent', navigator.userAgent);
+  html += card('Language', navigator.language);
+  html += card('Languages', (navigator.languages || []).join(', '));
+  html += card('Cookies Enabled', navigator.cookieEnabled ? '✅ Yes' : '❌ No', navigator.cookieEnabled ? 'good' : 'bad');
+  html += card('Do Not Track', navigator.doNotTrack === '1' ? '✅ Enabled' : '❌ Disabled');
+  html += card('Online Status', navigator.onLine ? '✅ Online' : '❌ Offline', navigator.onLine ? 'good' : 'bad');
+  html += card('PDF Viewer', navigator.pdfViewerEnabled ? '✅ Yes' : '❌ No');
+  html += '</div>';
+
+  // Screen section
+  html += `<div class="gz-info-section">${t('sectionScreen')}</div>`;
+  html += '<div class="gz-info-grid">';
+  html += card('Screen Resolution', screen.width + ' × ' + screen.height);
+  html += card('Available Screen', screen.availWidth + ' × ' + screen.availHeight);
+  html += card('Viewport Size', window.innerWidth + ' × ' + window.innerHeight);
+  html += card('Outer Window', window.outerWidth + ' × ' + window.outerHeight);
+  html += card('Device Pixel Ratio', window.devicePixelRatio);
+  html += card('Color Depth', screen.colorDepth + ' bit');
+  html += card('Orientation', screen.orientation?.type || '—');
+  html += card('Touch Support', 'ontouchstart' in window ? '✅ Yes' : '❌ No');
+  html += card('Max Touch Points', navigator.maxTouchPoints || 0);
+  html += '</div>';
+
+  // Network section
+  html += `<div class="gz-info-section">${t('sectionNetwork')}</div>`;
+  html += '<div class="gz-info-grid">';
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn) {
+    html += card('Connection Type', conn.effectiveType || '—');
+    html += card('Downlink', conn.downlink ? conn.downlink + ' Mbps' : '—');
+    html += card('RTT', conn.rtt ? conn.rtt + ' ms' : '—');
+    html += card('Save Data', conn.saveData ? '✅ Yes' : '❌ No');
+  }
+  html += card('Protocol', location.protocol);
+  html += card('Host', location.hostname || '—');
+  html += '</div>';
+
+  // Features section
+  html += `<div class="gz-info-section">${t('sectionFeatures')}</div>`;
+  html += '<div class="gz-info-grid">';
+  html += card('JavaScript', '✅ Enabled', 'good');
+  html += card('WebGL', (function(){ try { return document.createElement('canvas').getContext('webgl') ? '✅ Supported' : '❌ Not supported'; } catch(e) { return '❌ Not supported'; } })());
+  html += card('WebGL2', (function(){ try { return document.createElement('canvas').getContext('webgl2') ? '✅ Supported' : '❌ Not supported'; } catch(e) { return '❌ Not supported'; } })());
+  html += card('WebAssembly', typeof WebAssembly === 'object' ? '✅ Supported' : '❌ Not supported');
+  html += card('Service Workers', 'serviceWorker' in navigator ? '✅ Supported' : '❌ Not supported');
+  html += card('WebSocket', 'WebSocket' in window ? '✅ Supported' : '❌ Not supported');
+  html += card('Clipboard API', navigator.clipboard ? '✅ Supported' : '❌ Not supported');
+  html += card('Notifications', 'Notification' in window ? '✅ Supported' : '❌ Not supported');
+  html += card('Geolocation', 'geolocation' in navigator ? '✅ Supported' : '❌ Not supported');
+  html += card('Local Storage', (function(){ try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return '✅ Supported'; } catch(e) { return '❌ Not supported'; } })());
+  html += card('IndexedDB', 'indexedDB' in window ? '✅ Supported' : '❌ Not supported');
+  html += card('Web Workers', 'Worker' in window ? '✅ Supported' : '❌ Not supported');
+  html += '</div>';
+
+  $('#info-container').innerHTML = html;
+}
+
+function copyAll() {
+  const cards = document.querySelectorAll('.gz-info-card');
+  let text = '';
+  cards.forEach(function(c) {
+    text += c.querySelector('.label').textContent + ': ' + c.querySelector('.value').textContent + '\n';
+  });
+  copyText(text.trim());
+}
+
+renderInfo();
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyAll()">📋 ${t('copyAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="renderInfo()">🔄 ${t('refresh') || 'Refresh'}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌐', href:'/dev/url-encode.html', name:'URL Encoder'},
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
