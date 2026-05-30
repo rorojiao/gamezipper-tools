@@ -349,5 +349,34 @@ GZ.renderFooter();
 </div>
 </noscript>
 
+<!-- Error Boundary — catches unhandled errors, only shows toast for our own code if tools not loaded -->
+<script>
+(function(){
+  var _errCount=0;
+  function reportErr(type,msg,src){
+    _errCount++;
+    if(_errCount>5)return;
+    if(!msg||!msg.trim())return;
+    if(src&&src.indexOf(location.origin)!==0&&src.indexOf('/shared/')===-1&&src.indexOf('/dev/')===-1&&src.indexOf('/text/')===-1)return;
+    var sections=document.getElementById('tool-sections');
+    if(sections&&sections.children.length>0)return;
+    if(_errCount===1)showRecoveryToast();
+  }
+  function showRecoveryToast(){
+    var existing=document.getElementById('gz-error-toast');
+    if(existing)return;
+    var t=document.createElement('div');
+    t.id='gz-error-toast';
+    t.setAttribute('role','alert');
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a1a1a;border:1px solid #ff6b6b;color:#ffd93d;padding:10px 20px;border-radius:12px;font-size:.85em;z-index:100001;max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(255,107,107,.3);font-family:system-ui,sans-serif';
+    t.innerHTML='Something went wrong — <button onclick="location.reload()" style="background:#4ecdc4;color:#000;border:none;padding:4px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9em">Refresh</button>';
+    document.body.appendChild(t);
+    setTimeout(function(){if(t.parentNode)t.remove()},15000);
+  }
+  window.onerror=function(msg,src,lineno,colno,err){reportErr('err',msg,src,lineno,colno,err)};
+  window.addEventListener('unhandledrejection',function(e){reportErr('rej',String(e.reason),'promise',0,0,null)});
+})();
+</script>
+
 </body>
 </html>
