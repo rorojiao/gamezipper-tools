@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>DNS 查询工具 - 免费在线工具 | GameZipper Tools</title>
+  <meta name="description" content="查询任意域名的 DNS 记录。即时检查 A、AAAA、MX、CNAME、TXT、NS 等 DNS 记录。免费在线 DNS 查询工具。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/dns-lookup.html">
+  <meta property="og:title" content="DNS 查询工具 - 免费在线工具 | GameZipper Tools">
+  <meta property="og:description" content="查询任意域名的 DNS 记录。即时检查 A、AAAA、MX、CNAME、TXT、NS 等 DNS 记录。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/dns-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DNS 查询工具 - 免费在线工具 | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.dns-input-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.dns-input-row input{flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1rem}
+.dns-input-row input:focus{outline:none;border-color:var(--accent)}
+.dns-input-row select{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:.9rem}
+.dns-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.85rem}
+.dns-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;white-space:nowrap}
+.dns-table td{padding:8px 12px;border-bottom:1px solid var(--border);word-break:break-all}
+.dns-table tr:hover td{background:var(--glass2)}
+.dns-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;background:var(--accent);color:#000;margin-right:4px}
+.dns-error{color:var(--gz-accent);padding:16px;background:var(--glass2);border-radius:12px;margin-top:16px}
+.dns-loading{text-align:center;padding:24px;color:var(--text2)}
+.dns-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.dns-stat{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center}
+.dns-stat .num{font-size:1.4rem;font-weight:700;color:var(--accent)}
+.dns-stat .lbl{font-size:.75rem;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"DNS 查询工具","description":"查询任意域名的 DNS 记录，支持 A、AAAA、MX、CNAME、TXT、NS、SOA 等记录类型。","url":"https://tools.gamezipper.com/zh/dev/dns-lookup.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "什么是 DNS 查询？", "acceptedAnswer": {"@type": "Answer", "text": "DNS 查询向域名系统发送请求，获取与域名关联的记录，如 IP 地址（A/AAAA）、邮件服务器（MX）、域名服务器（NS）等。"}}, {"@type": "Question", "name": "可以查询哪些 DNS 记录类型？", "acceptedAnswer": {"@type": "Answer", "text": "支持 A、AAAA、MX、CNAME、TXT、NS、SOA 和 SRV 等常见记录类型。"}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/dns-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/dns-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/dns-lookup.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="dns-input-row">
+      <input type="text" id="domain" placeholder="example.com" spellcheck="false">
+      <select id="rtype">
+        <option value="A">A</option>
+        <option value="AAAA">AAAA</option>
+        <option value="MX">MX</option>
+        <option value="CNAME">CNAME</option>
+        <option value="TXT">TXT</option>
+        <option value="NS">NS</option>
+        <option value="SOA">SOA</option>
+        <option value="SRV">SRV</option>
+      </select>
+      <button class="gz-btn" onclick="doLookup()" id="btn-lookup"></button>
+    </div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'DNS Lookup Tool',
+    toolDesc: 'Look up DNS records for any domain — A, AAAA, MX, CNAME, TXT, NS, SOA and more.',
+    btnLookup: 'Lookup',
+    name: 'Name', ttl: 'TTL', type: 'Type', value: 'Value',
+    noRecords: 'No records found for this domain and record type.',
+    fetchError: 'Failed to fetch DNS records. Please check the domain name and try again.',
+    loading: 'Looking up DNS records...',
+    recordsFound: 'records found',
+    queryFor: 'DNS lookup for',
+    step1: 'Enter a domain name (e.g. example.com)',
+    step2: 'Select the DNS record type you want to check',
+    step3: 'Click Lookup to query the DNS records',
+    step4: 'Review the results including TTL, values and priorities',
+  },
+  zh: {
+    toolTitle: 'DNS 查询工具',
+    toolDesc: '查询任意域名的 DNS 记录 — A、AAAA、MX、CNAME、TXT、NS、SOA 等。',
+    btnLookup: '查询',
+    name: '名称', ttl: 'TTL', type: '类型', value: '值',
+    noRecords: '未找到该域名和记录类型的相关记录。',
+    fetchError: '获取 DNS 记录失败，请检查域名后重试。',
+    loading: '正在查询 DNS 记录...',
+    recordsFound: '条记录',
+    queryFor: 'DNS 查询',
+    step1: '输入域名（如 example.com）',
+    step2: '选择要查询的 DNS 记录类型',
+    step3: '点击「查询」获取 DNS 记录',
+    step4: '查看结果，包括 TTL、值和优先级',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+async function doLookup() {
+  let domain = $('#domain').value.trim();
+  if (!domain) return;
+  domain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '');
+  const rtype = $('#rtype').value;
+  const output = $('#output');
+  output.innerHTML = `<div class="dns-loading">${t('loading')}</div>`;
+  try {
+    const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${rtype}`, {
+      headers: { 'Accept': 'application/dns-json' }
+    });
+    const data = await res.json();
+    if (!data.Answer || data.Answer.length === 0) {
+      output.innerHTML = `<div class="dns-error">${t('noRecords')}</div>`;
+      return;
+    }
+    let html = `<div class="dns-stats">
+      <div class="dns-stat"><div class="num">${data.Answer.length}</div><div class="lbl">${t('recordsFound')}</div></div>
+      <div class="dns-stat"><div class="num">${t('queryFor')}</div><div class="lbl">${domain} / ${rtype}</div></div>
+    </div>`;
+    html += '<table class="dns-table"><thead><tr><th>' + t('name') + '</th><th>' + t('type') + '</th><th>' + t('ttl') + '</th><th>' + t('value') + '</th></tr></thead><tbody>';
+    for (const r of data.Answer) {
+      html += `<tr><td>${r.name}</td><td><span class="dns-badge">${r.type === 1 ? 'A' : r.type === 28 ? 'AAAA' : r.type === 15 ? 'MX' : r.type === 5 ? 'CNAME' : r.type === 16 ? 'TXT' : r.type === 2 ? 'NS' : r.type === 6 ? 'SOA' : r.type === 33 ? 'SRV' : r.type}</span></td><td>${r.TTL}s</td><td>${r.data}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    output.innerHTML = html;
+  } catch (e) {
+    output.innerHTML = `<div class="dns-error">${t('fetchError')}<br><small>${e.message}</small></div>`;
+  }
+}
+
+$('#domain').addEventListener('keydown', e => { if (e.key === 'Enter') doLookup(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/url-encode.html', name:'URL Encoder'},
+    {icon:'🎫', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
