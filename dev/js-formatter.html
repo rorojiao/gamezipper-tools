@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JavaScript Formatter & Beautifier - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Format and beautify messy JavaScript code online for free. Paste minified or unformatted JS and get clean, properly indented code instantly.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/js-formatter.html">
+  <meta property="og:title" content="JavaScript Formatter & Beautifier - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Format and beautify messy JavaScript code online for free. Paste minified or unformatted JS and get clean, properly indented code instantly.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/js-formatter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JavaScript Formatter & Beautifier - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.js-keyword{color:#e94560}.js-string{color:#00d672}.js-number{color:#d19a66}.js-comment{color:#888;font-style:italic}.js-func{color:#61afef}.js-operator{color:#c678dd}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JavaScript Formatter & Beautifier","description":"Format and beautify messy JavaScript code online for free. Paste minified or unformatted JS and get clean, properly indented code instantly.","url":"https://tools.gamezipper.com/dev/js-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I format JavaScript code online?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your JavaScript code into the input area and click the Format button. The tool will instantly beautify your JS with proper indentation and syntax highlighting."}}, {"@type": "Question", "name": "What is JS beautification?", "acceptedAnswer": {"@type": "Answer", "text": "JS beautification (formatting) adds proper indentation, line breaks, and spacing to minified or messy JavaScript code, making it easy to read and debug."}}, {"@type": "Question", "name": "Is my JavaScript code safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All formatting happens entirely in your browser. No code is ever sent to any server."}}, {"@type": "Question", "name": "Does this tool support ES6+ syntax?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The formatter handles modern JavaScript syntax including arrow functions, template literals, destructuring, async/await, classes, and more."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/js-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/js-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/js-formatter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JavaScript Formatter & Beautifier',
+    toolDesc: 'Format and beautify messy or minified JavaScript into clean, readable code with proper indentation.',
+    indent: 'spaces',
+    formatted: '✓ Formatted successfully',
+    step1: 'Paste or type your JavaScript in the input area',
+    step2: 'Click Format to beautify with proper indentation',
+    step3: 'Choose 2-space or 4-space indentation',
+    step4: 'Use Copy to copy the result to clipboard',
+  },
+  zh: {
+    toolTitle: 'JavaScript 格式化工具',
+    toolDesc: '将混乱或压缩的 JavaScript 代码格式化为整洁、可读的代码，自动缩进排版。',
+    indent: '空格',
+    formatted: '✓ 格式化成功',
+    step1: '在输入区粘贴或输入 JavaScript',
+    step2: '点击「格式化」美化并缩进',
+    step3: '选择 2 空格或 4 空格缩进',
+    step4: '点击「复制」将结果复制到剪贴板',
+  }
+});
+
+let indentSize = 2;
+const { $, copyText, t } = GZ;
+
+function formatJS(code, indent) {
+  const tab = ' '.repeat(indent);
+  let result = '';
+  let level = 0;
+  let inString = false;
+  let stringChar = '';
+  let inTemplate = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+  let inRegex = false;
+  let i = 0;
+  let lastNonWS = '';
+  let lineStarted = false;
+
+  function addLine(text) {
+    if (text.trim()) {
+      result += tab.repeat(level) + text.trim() + '\n';
+    } else {
+      result += '\n';
+    }
+  }
+
+  let currentLine = '';
+
+  while (i < code.length) {
+    const ch = code[i];
+    const next = code[i + 1] || '';
+
+    // Handle string literals
+    if (inString) {
+      currentLine += ch;
+      if (ch === '\\') { currentLine += next; i += 2; continue; }
+      if (ch === stringChar) inString = false;
+      i++; continue;
+    }
+
+    // Handle template literals
+    if (inTemplate) {
+      currentLine += ch;
+      if (ch === '\\') { currentLine += next; i += 2; continue; }
+      if (ch === '`') inTemplate = false;
+      i++; continue;
+    }
+
+    // Handle line comments
+    if (inLineComment) {
+      currentLine += ch;
+      if (ch === '\n') {
+        addLine(currentLine);
+        currentLine = '';
+        inLineComment = false;
+      }
+      i++; continue;
+    }
+
+    // Handle block comments
+    if (inBlockComment) {
+      currentLine += ch;
+      if (ch === '*' && next === '/') {
+        currentLine += '/';
+        i += 2;
+        inBlockComment = false;
+        continue;
+      }
+      if (ch === '\n') {
+        addLine(currentLine);
+        currentLine = '';
+      }
+      i++; continue;
+    }
+
+    // Check for comment starts
+    if (ch === '/' && next === '/') {
+      inLineComment = true;
+      currentLine += '//';
+      i += 2; continue;
+    }
+    if (ch === '/' && next === '*') {
+      inBlockComment = true;
+      currentLine += '/*';
+      i += 2; continue;
+    }
+
+    // Check for string/template starts
+    if (ch === '"' || ch === "'") {
+      inString = true;
+      stringChar = ch;
+      currentLine += ch;
+      i++; continue;
+    }
+    if (ch === '`') {
+      inTemplate = true;
+      currentLine += ch;
+      i++; continue;
+    }
+
+    // Handle newlines
+    if (ch === '\n' || ch === '\r') {
+      if (currentLine.trim()) {
+        // Check if line ends with opening bracket
+        const trimmed = currentLine.trimEnd();
+        const lastChar = trimmed[trimmed.length - 1];
+
+        if (lastChar === '{' || lastChar === '[' || lastChar === '(') {
+          addLine(currentLine);
+          currentLine = '';
+          level++;
+        } else {
+          addLine(currentLine);
+          currentLine = '';
+        }
+      }
+      i++; continue;
+    }
+
+    // Handle opening brackets
+    if (ch === '{' || ch === '[' || ch === '(') {
+      currentLine += ch;
+      if (currentLine.trim()) {
+        addLine(currentLine);
+        currentLine = '';
+      }
+      level++;
+      i++; continue;
+    }
+
+    // Handle closing brackets
+    if (ch === '}' || ch === ']' || ch === ')') {
+      if (currentLine.trim()) {
+        addLine(currentLine);
+        currentLine = '';
+      }
+      if (level > 0) level--;
+      currentLine += ch;
+      // Check if next char suggests continuing (e.g., "} else {", "});")
+      let j = i + 1;
+      while (j < code.length && code[j] === ' ') j++;
+      const ahead2 = code.substring(j, j + 4);
+      if (ahead2.startsWith('else') || ahead2.startsWith('catch') || ahead2.startsWith('finally') || ch === ')') {
+        // Keep on same line - add space
+        // For else/catch/finally, continue on same line
+        if (ahead2.startsWith('else') || ahead2.startsWith('catch') || ahead2.startsWith('finally')) {
+          currentLine += ' ';
+        }
+      } else {
+        addLine(currentLine);
+        currentLine = '';
+      }
+      i++; continue;
+    }
+
+    // Handle semicolons
+    if (ch === ';') {
+      currentLine += ch;
+      // Check for 'for' statement - don't break
+      let j = i + 1;
+      while (j < code.length && code[j] === ' ') j++;
+      if (currentLine.trim().startsWith('for')) {
+        currentLine += ' ';
+      } else {
+        addLine(currentLine);
+        currentLine = '';
+      }
+      i++; continue;
+    }
+
+    // Handle commas in certain contexts
+    if (ch === ',') {
+      currentLine += ch;
+      // Add space after comma if not in object/array context that should break
+      const nextNonWS = code.substring(i + 1).trimStart()[0];
+      if (nextNonWS === '\n' || nextNonWS === undefined) {
+        // Will be handled by newline
+      } else {
+        currentLine += ' ';
+      }
+      i++; continue;
+    }
+
+    currentLine += ch;
+    i++;
+  }
+
+  // Flush remaining
+  if (currentLine.trim()) {
+    addLine(currentLine);
+  }
+
+  // Clean up multiple blank lines
+  result = result.replace(/\n{3,}/g, '\n\n').trim();
+  return result;
+}
+
+function syntaxHighlightJS(code) {
+  const keywords = ['const','let','var','function','return','if','else','for','while','do','switch','case','break','continue','new','this','class','extends','super','import','export','default','from','async','await','try','catch','finally','throw','typeof','instanceof','in','of','void','delete','yield','static','get','set'];
+  return code
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/(\/\/[^\n]*)/g, '<span class="js-comment">$1</span>')
+    .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="js-comment">$1</span>')
+    .replace(/(&quot;|"|')(.*?)(\1)/g, '<span class="js-string">$1$2$3</span>')
+    .replace(/\b(\d+\.?\d*)\b/g, '<span class="js-number">$1</span>')
+    .replace(new RegExp('\\b(' + keywords.join('|') + ')\\b', 'g'), '<span class="js-keyword">$1</span>')
+    .replace(/\b([a-zA-Z_$][\w$]*)\s*\(/g, '<span class="js-func">$1</span>(');
+}
+
+function doFormat() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const formatted = formatJS(inp, indentSize);
+    $('#output').innerHTML = syntaxHighlightJS(formatted);
+    $('#toolbar').querySelector('.gz-status')?.remove();
+    const s = document.createElement('span');
+    s.className = 'gz-status';
+    s.style.cssText = 'margin-left:8px;font-size:.85em;color:var(--gz-success)';
+    s.textContent = t('formatted');
+    $('#toolbar').appendChild(s);
+  } catch(e) {
+    $('#output').textContent = 'Error: ' + e.message;
+  }
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#toolbar').querySelector('.gz-status')?.remove(); }
+
+function loadExample() {
+  $('#input').value = 'const fetchData=async(url)=>{try{const response=await fetch(url);if(!response.ok){throw new Error(`HTTP error! status: ${response.status}`);}const data=await response.json();return data.filter(item=>item.active).map(item=>({id:item.id,name:item.name.toUpperCase(),score:Math.round(item.score*100)/100}));}catch(error){console.error("Fetch failed:",error);return[];}};class DataStore{constructor(){this.items=[];this.listeners=new Map();}add(item){this.items.push(item);this.notify("add",item);}notify(event,data){const cbs=this.listeners.get(event)||[];cbs.forEach(cb=>cb(data));}}';
+  doFormat();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">${t('format')}</button>
+  <select class="gz-select" onchange="indentSize=+this.value;doFormat()">
+    <option value="2">2 ${t('indent')}</option>
+    <option value="4">4 ${t('indent')}</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📜', href:'/dev/js-minifier.html', name:'JS Minifier'},
+    {icon:'📄', href:'/dev/html-formatter.html', name:'HTML Formatter'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
