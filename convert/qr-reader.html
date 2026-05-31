@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>QR Code Reader - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Read and decode QR codes from images for free. Upload a QR code image and instantly extract the URL, text, or data. Works entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/qr-reader.html">
+  <meta property="og:title" content="QR Code Reader - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Read and decode QR codes from images for free. Upload a QR code image and instantly extract the URL, text, or data. Works entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/qr-reader.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="QR Code Reader - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;background:var(--glass)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass2)}
+.drop-zone p{color:var(--text2);margin:8px 0}
+#preview-area{text-align:center;margin:16px 0}
+#preview-area img{max-width:300px;max-height:300px;border-radius:12px;border:1px solid var(--border)}
+#result-box{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px;word-break:break-all}
+#result-box a{color:var(--accent)}
+#status{font-size:.85em;margin-top:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Code Reader","description":"Read and decode QR codes from images for free. Upload a QR code image and instantly extract the URL, text, or data. Works entirely in your browser.","url":"https://tools.gamezipper.com/convert/qr-reader.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I read a QR code from an image?","acceptedAnswer":{"@type":"Answer","text":"Upload or drag and drop an image containing a QR code. The tool will automatically detect and decode the QR code, showing you the embedded text or URL."}},{"@type":"Question","name":"Is my QR code data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All QR code reading happens locally in your browser using the jsQR library. Your images and data never leave your device."}},{"@type":"Question","name":"What types of QR codes can this read?","acceptedAnswer":{"@type":"Answer","text":"This tool can read standard QR codes containing URLs, plain text, email addresses, phone numbers, Wi-Fi credentials, vCards, and any other text-based data."}},{"@type":"Question","name":"Can I scan a QR code with my camera?","acceptedAnswer":{"@type":"Answer","text":"Currently this tool supports image file uploads only. Take a screenshot or photo of the QR code and upload it for decoding."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/qr-reader.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/qr-reader.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/qr-reader.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="drop-zone">
+      <p id="drop-text" style="font-size:1.1em;font-weight:600"></p>
+      <p id="drop-sub" style="font-size:.85em"></p>
+      <input type="file" id="file-input" accept="image/*" style="display:none">
+    </div>
+    <div id="preview-area"></div>
+    <div id="result-box" style="display:none"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'QR Code Reader',
+    toolDesc: 'Read and decode QR codes from images — upload any QR code and instantly extract URLs, text, or data.',
+    dropText: '📁 Drop a QR code image here or click to select',
+    dropSub: 'Supports JPG, PNG, WebP, GIF',
+    step1: 'Upload or drag and drop an image containing a QR code',
+    step2: 'The tool automatically detects and decodes the QR code',
+    step3: 'View the decoded text, URL, or data',
+    step4: 'Click Copy to copy the decoded content',
+  },
+  zh: {
+    toolTitle: 'QR 码识别器',
+    toolDesc: '从图片中读取和解码 QR 码 — 上传任意二维码，即时提取网址、文字或数据。',
+    dropText: '📁 拖拽二维码图片到此处或点击选择',
+    dropSub: '支持 JPG、PNG、WebP、GIF 格式',
+    step1: '上传或拖拽包含二维码的图片',
+    step2: '工具自动检测并解码 QR 码',
+    step3: '查看解码后的文字、网址或数据',
+    step4: '点击「复制」复制解码内容',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#drop-text').textContent = t('dropText');
+$('#drop-sub').textContent = t('dropSub');
+
+const dz = $('#drop-zone');
+const fi = $('#file-input');
+
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+});
+fi.addEventListener('change', () => { if (fi.files.length) processFile(fi.files[0]); });
+
+function processFile(file) {
+  if (!file.type.startsWith('image/')) {
+    $('#status').innerHTML = '<span style="color:var(--gz-accent)">Please upload an image file.</span>';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    $('#preview-area').innerHTML = `<img src="${dataUrl}" alt="QR Code">`;
+    decodeQR(dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+function decodeQR(dataUrl) {
+  $('#status').innerHTML = '<span style="color:var(--accent)">⏳ Scanning...</span>';
+  $('#result-box').style.display = 'none';
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+    if (code) {
+      const data = code.data;
+      const isUrl = /^https?:\/\//i.test(data);
+      const display = isUrl ? `<a href="${data}" target="_blank" rel="noopener">${data}</a>` : data.replace(/</g,'&lt;');
+      $('#result-box').innerHTML = `<strong>Result:</strong><br>${display}`;
+      $('#result-box').style.display = '';
+      $('#status').innerHTML = '<span style="color:var(--gz-success)">✓ QR code decoded!</span>';
+    } else {
+      $('#status').innerHTML = '<span style="color:var(--gz-accent)">✗ No QR code found in this image. Try a clearer image.</span>';
+      $('#result-box').style.display = 'none';
+    }
+  };
+  img.src = dataUrl;
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+
+function clearAll() {
+  $('#preview-area').innerHTML = '';
+  $('#result-box').style.display = 'none';
+  $('#result-box').innerHTML = '';
+  $('#status').innerHTML = '';
+  fi.value = '';
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📱', href:'/convert/qrcode.html', name:'QR Code Generator'},
+    {icon:'📊', href:'/convert/barcode.html', name:'Barcode Generator'},
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'🖼️', href:'/convert/image-to-pdf.html', name:'Image to PDF'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
