@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>CSV Viewer - View CSV Data as Table Online | GameZipper Tools</title>
+  <meta name="description" content="Paste CSV data and view it as a formatted, sortable table online. Free CSV viewer with search, sort, and export — no upload needed.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/csv-viewer.html">
+  <meta property="og:title" content="CSV Viewer - View CSV Data as Table Online | GameZipper Tools">
+  <meta property="og:description" content="Paste CSV data and view it as a formatted, sortable table online. Free CSV viewer with search, sort, and export — no upload needed.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/csv-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV Viewer - View CSV Data as Table Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{height:160px;font-family:monospace;font-size:.85em}
+#table-wrap{margin-top:12px;overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+#csv-table{width:100%;border-collapse:collapse;font-size:.85em}
+#csv-table th{background:var(--accent);color:#fff;padding:8px 12px;text-align:left;cursor:pointer;white-space:nowrap;position:sticky;top:0}
+#csv-table th:hover{opacity:.85}
+#csv-table td{padding:6px 12px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis}
+#csv-table tr:nth-child(even){background:var(--glass)}
+#csv-table tr:hover{background:var(--glass2)}
+.sort-arrow{margin-left:4px;font-size:.7em}
+#table-info{font-size:.85em;opacity:.7;margin-top:6px}
+#search-box{width:100%;max-width:400px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:inherit;font-size:.9em;margin-bottom:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV Viewer","description":"Paste CSV data and view it as a formatted, sortable table online. Free CSV viewer with search and sort — no upload needed.","url":"https://tools.gamezipper.com/convert/csv-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I view CSV data as a table?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSV data into the input area and click View Table. The tool parses the CSV and displays it as a formatted, sortable HTML table instantly."}}, {"@type": "Question", "name": "Can I sort the table columns?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click any column header to sort ascending. Click again to sort descending. The sort arrow indicator shows the current sort direction."}}, {"@type": "Question", "name": "Does the tool support quoted CSV fields?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The CSV parser handles quoted fields with commas inside, escaped quotes, and multi-line values correctly."}}, {"@type": "Question", "name": "What delimiter formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool auto-detects comma, semicolon, and tab delimiters. You can also manually select the delimiter from the dropdown."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false"></textarea>
+    <input type="text" id="search-box" style="display:none" />
+    <div id="table-wrap"><table id="csv-table"></table></div>
+    <div id="table-info"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV Viewer & Table',
+    toolDesc: 'Paste CSV data and view it as a formatted, sortable, searchable table — no upload needed.',
+    step1: 'Paste your CSV data into the input area',
+    step2: 'Select the delimiter (auto, comma, semicolon, tab)',
+    step3: 'Click View Table to render the data',
+    step4: 'Click column headers to sort, or use search to filter rows',
+    rows: 'rows',
+    cols: 'columns',
+    search: 'Search rows...',
+  },
+  zh: {
+    toolTitle: 'CSV 表格查看器',
+    toolDesc: '粘贴 CSV 数据，即时渲染为可排序、可搜索的表格 — 无需上传。',
+    step1: '在输入区粘贴 CSV 数据',
+    step2: '选择分隔符（自动、逗号、分号、制表符）',
+    step3: '点击「查看表格」渲染数据',
+    step4: '点击列标题排序，或使用搜索过滤行',
+    rows: '行',
+    cols: '列',
+    search: '搜索行...',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let parsedRows = [], headers = [], sortCol = -1, sortAsc = true;
+
+function parseCSV(text, delim) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else inQuotes = false; }
+      else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === delim) { row.push(field.trim()); field = ''; }
+      else if (c === '\n' || (c === '\r' && text[i+1] === '\n')) { if (c === '\r') i++; row.push(field.trim()); if (row.some(f=>f)) rows.push(row); row = []; field = ''; }
+      else field += c;
+    }
+  }
+  row.push(field.trim());
+  if (row.some(f=>f)) rows.push(row);
+  return rows;
+}
+
+function detectDelim(text) {
+  const first = text.split('\n')[0] || '';
+  const counts = {',':0,';':0,'\t':0};
+  for (const c of first) if (c in counts) counts[c]++;
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+function renderTable() {
+  const text = $('#input').value.trim();
+  if (!text) { $('#csv-table').innerHTML=''; $('#table-info').textContent=''; $('#search-box').style.display='none'; return; }
+  const delim = $('#delim').value === 'auto' ? detectDelim(text) : $('#delim').value;
+  const allRows = parseCSV(text, delim);
+  if (allRows.length === 0) return;
+  headers = allRows[0];
+  parsedRows = allRows.slice(1);
+  sortCol = -1;
+  applyFilter();
+  $('#search-box').style.display = 'block';
+}
+
+function applyFilter() {
+  const q = ($('#search-box').value || '').toLowerCase();
+  let filtered = parsedRows;
+  if (q) filtered = parsedRows.filter(row => row.some(cell => cell.toLowerCase().includes(q)));
+
+  let sorted = [...filtered];
+  if (sortCol >= 0) {
+    sorted.sort((a, b) => {
+      const va = (a[sortCol] || '').toLowerCase();
+      const vb = (b[sortCol] || '').toLowerCase();
+      const na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return sortAsc ? na - nb : nb - na;
+      return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+  }
+
+  let html = '<thead><tr>';
+  headers.forEach((h, i) => {
+    const arrow = sortCol === i ? (sortAsc ? ' ▲' : ' ▼') : '';
+    html += `<th onclick="doSort(${i})">${escHtml(h)}<span class="sort-arrow">${arrow}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+  sorted.forEach(row => {
+    html += '<tr>';
+    for (let i = 0; i < headers.length; i++) html += `<td title="${escHtml(row[i]||'')}">${escHtml(row[i]||'')}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  $('#csv-table').innerHTML = html;
+  $('#table-info').textContent = `${sorted.length} ${t('rows')} × ${headers.length} ${t('cols')}`;
+}
+
+function doSort(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  applyFilter();
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function loadExample() {
+  $('#input').value = 'Name,Role,Email,Score\nAlice Johnson,Developer,alice@example.com,95\nBob Smith,Designer,bob@example.com,88\nCarol White,Manager,carol@example.com,92\nDave Brown,Developer,dave@example.com,78\nEve Davis,QA Lead,eve@example.com,91';
+  renderTable();
+}
+
+function doClear() { $('#input').value=''; $('#csv-table').innerHTML=''; $('#table-info').textContent=''; $('#search-box').style.display='none'; $('#search-box').value=''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="renderTable()">${t('view')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>
+  <select class="gz-select" id="delim" onchange="renderTable()">
+    <option value="auto">Auto-detect</option>
+    <option value=",">Comma (,)</option>
+    <option value=";">Semicolon (;)</option>
+    <option value="\t">Tab</option>
+  </select>`;
+
+$('#search-box').placeholder = t('search');
+$('#search-box').addEventListener('input', applyFilter);
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📊', href:'/convert/json-to-csv.html', name:'JSON to CSV'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📄', href:'/convert/yaml-json.html', name:'YAML ↔ JSON'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

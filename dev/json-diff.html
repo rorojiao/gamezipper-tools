@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>JSON Diff - Compare Two JSON Online | GameZipper Tools</title>
+  <meta name="description" content="Compare two JSON objects side by side and highlight differences. Free online JSON diff tool — find added, removed and changed keys instantly.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-diff.html">
+  <meta property="og:title" content="JSON Diff - Compare Two JSON Online | GameZipper Tools">
+  <meta property="og:description" content="Compare two JSON objects side by side and highlight differences. Free online JSON diff tool — find added, removed and changed keys instantly.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-diff.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON Diff - Compare Two JSON Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-split textarea{height:220px;font-family:monospace;font-size:.85em}
+#result{margin-top:12px;padding:12px;border-radius:12px;background:var(--glass);border:1px solid var(--border);font-family:monospace;font-size:.85em;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow:auto}
+.diff-add{background:rgba(0,214,114,.15);color:#00d672}
+.diff-del{background:rgba(233,69,96,.15);color:#e94560}
+.diff-change{background:rgba(255,193,7,.15);color:#ffc107}
+.diff-same{opacity:.5}
+.legend{display:flex;gap:12px;margin-bottom:8px;font-size:.8em;flex-wrap:wrap}
+.legend span{padding:2px 8px;border-radius:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Diff Tool","description":"Compare two JSON objects side by side and highlight differences. Free online JSON diff — find added, removed and changed keys.","url":"https://tools.gamezipper.com/dev/json-diff.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I compare two JSON files?", "acceptedAnswer": {"@type": "Answer", "text": "Paste the first JSON in the left textarea and the second JSON in the right textarea. Click Compare to see highlighted differences — added, removed and changed keys are color-coded."}}, {"@type": "Question", "name": "What types of differences are detected?", "acceptedAnswer": {"@type": "Answer", "text": "The tool detects added keys (only in second JSON), removed keys (only in first JSON), and changed values (same key but different value). All differences are color-coded green, red and yellow."}}, {"@type": "Question", "name": "Does the tool work with nested JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool recursively compares nested objects and arrays, showing the full path to each difference using dot notation."}}, {"@type": "Question", "name": "Is my JSON data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All comparison happens entirely in your browser. Your JSON data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-diff.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-diff.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-diff.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input1" spellcheck="false" placeholder="Paste first JSON here..."></textarea></div>
+      <div><label id="lbl-in2"></label><textarea id="input2" spellcheck="false" placeholder="Paste second JSON here..."></textarea></div>
+    </div>
+    <div id="result" style="display:none"></div>
+    <div id="legend" class="legend" style="display:none">
+      <span class="diff-add">+ Added</span>
+      <span class="diff-del">− Removed</span>
+      <span class="diff-change">~ Changed</span>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Diff & Compare',
+    toolDesc: 'Compare two JSON objects side by side — find added, removed and changed keys with color-coded diffs.',
+    lblLeft: 'JSON A (Original)',
+    lblRight: 'JSON B (Modified)',
+    step1: 'Paste the original JSON in the left input',
+    step2: 'Paste the modified JSON in the right input',
+    step3: 'Click Compare to see highlighted differences',
+    step4: 'Review color-coded results: green=added, red=removed, yellow=changed',
+    noDiff: '✓ The two JSON objects are identical.',
+    parseError: 'JSON parse error',
+    diffCount: 'differences found',
+  },
+  zh: {
+    toolTitle: 'JSON 对比工具',
+    toolDesc: '并排对比两个 JSON 对象 — 用颜色标记新增、删除和变更的字段。',
+    lblLeft: 'JSON A（原始）',
+    lblRight: 'JSON B（修改后）',
+    step1: '在左侧输入原始 JSON',
+    step2: '在右侧输入修改后的 JSON',
+    step3: '点击「对比」查看高亮差异',
+    step4: '查看颜色标记的结果：绿色=新增，红色=删除，黄色=变更',
+    noDiff: '✓ 两个 JSON 对象完全相同。',
+    parseError: 'JSON 解析错误',
+    diffCount: '处差异',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function deepDiff(a, b, path = '') {
+  const diffs = [];
+  if (a === b) return diffs;
+  if (typeof a !== typeof b || a === null || b === null || typeof a !== 'object') {
+    if (a !== b) diffs.push({ type: 'change', path, oldVal: a, newVal: b });
+    return diffs;
+  }
+  if (Array.isArray(a) !== Array.isArray(b)) {
+    diffs.push({ type: 'change', path, oldVal: a, newVal: b });
+    return diffs;
+  }
+  const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of allKeys) {
+    const p = path ? `${path}.${key}` : key;
+    if (!(key in a)) diffs.push({ type: 'add', path: p, newVal: b[key] });
+    else if (!(key in b)) diffs.push({ type: 'del', path: p, oldVal: a[key] });
+    else diffs.push(...deepDiff(a[key], b[key], p));
+  }
+  return diffs;
+}
+
+function formatVal(v) {
+  if (v === undefined) return 'undefined';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+
+function compare() {
+  const $result = $('#result');
+  const $legend = $('#legend');
+  const v1 = $('#input1').value.trim();
+  const v2 = $('#input2').value.trim();
+  if (!v1 || !v2) { $result.style.display = 'none'; $legend.style.display = 'none'; return; }
+  let a, b;
+  try { a = JSON.parse(v1); } catch(e) { $result.style.display = 'block'; $result.innerHTML = `<span style="color:var(--gz-accent)">${t('parseError')} A: ${e.message}</span>`; $legend.style.display='none'; return; }
+  try { b = JSON.parse(v2); } catch(e) { $result.style.display = 'block'; $result.innerHTML = `<span style="color:var(--gz-accent)">${t('parseError')} B: ${e.message}</span>`; $legend.style.display='none'; return; }
+
+  const diffs = deepDiff(a, b);
+  $result.style.display = 'block';
+  $legend.style.display = 'flex';
+
+  if (diffs.length === 0) {
+    $result.innerHTML = `<span style="color:var(--gz-success)">${t('noDiff')}</span>`;
+    $legend.style.display = 'none';
+    return;
+  }
+
+  let html = `<div style="margin-bottom:8px;opacity:.8">${diffs.length} ${t('diffCount')}</div>`;
+  for (const d of diffs) {
+    const cls = d.type === 'add' ? 'diff-add' : d.type === 'del' ? 'diff-del' : 'diff-change';
+    const prefix = d.type === 'add' ? '+' : d.type === 'del' ? '−' : '~';
+    if (d.type === 'add') {
+      html += `<div class="${cls}">${prefix} <strong>${d.path}</strong>: ${formatVal(d.newVal)}</div>`;
+    } else if (d.type === 'del') {
+      html += `<div class="${cls}">${prefix} <strong>${d.path}</strong>: ${formatVal(d.oldVal)}</div>`;
+    } else {
+      html += `<div class="${cls}">${prefix} <strong>${d.path}</strong>: ${formatVal(d.oldVal)} → ${formatVal(d.newVal)}</div>`;
+    }
+  }
+  $result.innerHTML = html;
+}
+
+function loadExample() {
+  $('#input1').value = JSON.stringify({"name":"GameZipper","version":"1.0","features":["tools","games"],"config":{"theme":"dark","lang":"en","debug":false}}, null, 2);
+  $('#input2').value = JSON.stringify({"name":"GameZipper","version":"2.0","features":["tools","games","api"],"config":{"theme":"light","lang":"en"},"newField":true}, null, 2);
+  compare();
+}
+
+function doClear() {
+  $('#input1').value = '';
+  $('#input2').value = '';
+  $('#result').style.display = 'none';
+  $('#legend').style.display = 'none';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="compare()">${t('compare')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('lblLeft');
+$('#lbl-in2').textContent = t('lblRight');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌳', href:'/dev/json-tree.html', name:'JSON Tree'},
+    {icon:'📊', href:'/text/diff.html', name:'Text Diff'},
+    {icon:'📄', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
