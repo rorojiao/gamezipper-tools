@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Network Speed Test - Free Online Tool | GameZipper Tools</title>
+<meta name="description" content="Test your internet download speed, latency, and connection quality directly in the browser. Free, no-install network speed test tool with real-time results.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/speed-test.html">
+<meta property="og:title" content="Network Speed Test - Free Online Tool | GameZipper Tools">
+<meta property="og:description" content="Test your internet download speed, latency, and connection quality directly in the browser. Free, no-install speed test.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/speed-test.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Network Speed Test - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.speed-display{text-align:center;padding:30px 20px;margin:20px 0}
+.speed-number{font-size:4em;font-weight:900;background:linear-gradient(135deg,var(--accent),#00d672);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.speed-unit{font-size:1em;color:var(--text2);margin-top:4px}
+.speed-label{font-size:1.1em;font-weight:600;margin-top:8px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0}
+.result-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.result-card .val{font-size:1.6em;font-weight:700;color:var(--accent)}
+.result-card .lbl{font-size:.75em;color:var(--text2);margin-top:4px}
+.progress-ring{width:200px;height:200px;margin:0 auto}
+.progress-ring circle{transition:stroke-dashoffset 0.5s}
+.server-info{font-size:.8em;color:var(--text3);text-align:center;margin:10px 0}
+#test-log{font-size:.8em;color:var(--text3);margin-top:10px;max-height:100px;overflow-y:auto}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Network Speed Test","description":"Test your internet download speed, latency, and connection quality directly in the browser. Free, no-install network speed test tool.","url":"https://tools.gamezipper.com/dev/speed-test.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the speed test work?","acceptedAnswer":{"@type":"Answer","text":"The tool downloads test data from public CDN servers and measures the time taken to calculate your download speed in Mbps. It also measures latency (ping) by timing small requests."}},{"@type":"Question","name":"How accurate is this speed test?","acceptedAnswer":{"@type":"Answer","text":"The test provides a good estimate of your current connection speed. Results may vary based on network conditions, browser, and server distance. For best results, close other tabs and downloads."}},{"@type":"Question","name":"Does this test upload my data?","acceptedAnswer":{"@type":"Answer","text":"No. The test only downloads publicly available test files to measure your speed. No personal data is collected or uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/speed-test.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/speed-test.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/speed-test.html">
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area" style="text-align:center">
+<div class="gz-toolbar" id="toolbar" style="justify-content:center"></div>
+<div class="speed-display" id="speed-display">
+<svg class="progress-ring" viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="88" fill="none" stroke="var(--border)" stroke-width="6"/>
+<circle id="progress-circle" cx="100" cy="100" r="88" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="553" transform="rotate(-90 100 100)"/>
+<text x="100" y="90" text-anchor="middle" fill="var(--text)" font-size="36" font-weight="900" id="speed-text">0</text>
+<text x="100" y="115" text-anchor="middle" fill="var(--text2)" font-size="14" id="speed-unit-text">Mbps</text>
+<text x="100" y="140" text-anchor="middle" fill="var(--text3)" font-size="11" id="speed-status"></text>
+</svg>
+</div>
+<div class="result-grid" id="results" style="display:none">
+<div class="result-card"><div class="val" id="r-download">-</div><div class="lbl" id="r-download-lbl">Download</div></div>
+<div class="result-card"><div class="val" id="r-latency">-</div><div class="lbl" id="r-latency-lbl">Latency</div></div>
+<div class="result-card"><div class="val" id="r-jitter">-</div><div class="lbl" id="r-jitter-lbl">Jitter</div></div>
+<div class="result-card"><div class="val" id="r-conn">-</div><div class="lbl" id="r-conn-lbl">Connection</div></div>
+</div>
+<div class="server-info" id="server-info"></div>
+<div id="test-log"></div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Network Speed Test',
+toolDesc:'Test your internet download speed, latency, and connection quality directly in the browser.',
+btnStart:'Start Test',
+btnStop:'Stop',
+statusReady:'Ready',
+statusPing:'Testing Latency...',
+statusDownload:'Testing Download...',
+statusDone:'Test Complete!',
+rDownload:'Download',
+rLatency:'Latency',
+rJitter:'Jitter',
+rConn:'Connection',
+connType:'Type',
+mbps:'Mbps',
+ms:'ms',
+good:'Excellent',
+fair:'Good',
+slow:'Slow',
+step1:'Close other tabs and downloads for accurate results',
+step2:'Click Start Test to begin the speed measurement',
+step3:'Wait for the latency and download tests to complete',
+step4:'Review your download speed, ping, and connection type',
+},
+zh:{
+toolTitle:'网络速度测试',
+toolDesc:'在浏览器中直接测试网络下载速度、延迟和连接质量。',
+btnStart:'开始测试',
+btnStop:'停止',
+statusReady:'就绪',
+statusPing:'正在测试延迟...',
+statusDownload:'正在测试下载速度...',
+statusDone:'测试完成！',
+rDownload:'下载',
+rLatency:'延迟',
+rJitter:'抖动',
+rConn:'连接',
+connType:'类型',
+mbps:'Mbps',
+ms:'ms',
+good:'优秀',
+fair:'良好',
+slow:'较慢',
+step1:'关闭其他标签页和下载任务以获得准确结果',
+step2:'点击「开始测试」启动速度测量',
+step3:'等待延迟和下载测试完成',
+step4:'查看下载速度、延迟和连接类型',
+}
+});
+
+const { $, t } = GZ;
+let isRunning = false;
+let abortController = null;
+
+const testFiles = [
+  {url:'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js',size:89000},
+  {url:'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',size:73000},
+  {url:'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',size:227000},
+];
+
+function log(msg) {
+  const el = $('#test-log');
+  el.innerHTML += msg + '<br>';
+  el.scrollTop = el.scrollHeight;
+}
+
+function getConnType() {
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn) {
+    return {type: conn.effectiveType || conn.type || 'unknown', downlink: conn.downlink};
+  }
+  return {type: 'unknown'};
+}
+
+async function runPingTest() {
+  $('#speed-status').textContent = t('statusPing');
+  const pings = [];
+  for (let i = 0; i < 5; i++) {
+    try {
+      const start = performance.now();
+      const ctrl = new AbortController();
+      await fetch(testFiles[0].url + '?_=' + Date.now() + Math.random(), {cache:'no-store',signal:ctrl.signal,mode:'cors'});
+      const end = performance.now();
+      pings.push(end - start);
+      // Abort immediately, we only needed the connection time
+      ctrl.abort();
+    } catch(e) {
+      // Connection established but abort - still count
+    }
+  }
+  if (pings.length === 0) return {latency: 0, jitter: 0};
+  pings.sort((a,b) => a - b);
+  const latency = pings[Math.floor(pings.length / 2)];
+  const jitter = Math.round(pings.reduce((sum, v, i) => i > 0 ? sum + Math.abs(v - pings[i-1]) : 0, 0) / (pings.length - 1));
+  return {latency: Math.round(latency), jitter};
+}
+
+async function runDownloadTest() {
+  $('#speed-status').textContent = t('statusDownload');
+  const speeds = [];
+  const totalRounds = 3;
+  
+  for (let round = 0; round < totalRounds && isRunning; round++) {
+    for (const file of testFiles) {
+      if (!isRunning) break;
+      try {
+        const start = performance.now();
+        const resp = await fetch(file.url + '?_=' + Date.now() + Math.random(), {cache:'no-store',mode:'cors'});
+        const buf = await resp.arrayBuffer();
+        const end = performance.now();
+        const duration = (end - start) / 1000; // seconds
+        const bits = buf.byteLength * 8;
+        const mbps = (bits / duration) / 1000000;
+        speeds.push(mbps);
+        
+        // Update display
+        const currentSpeed = speeds[speeds.length - 1];
+        updateSpeedGauge(currentSpeed);
+        log(`Round ${round+1}: ${(currentSpeed).toFixed(1)} Mbps`);
+      } catch(e) {
+        log('Test chunk error: ' + e.message);
+      }
+    }
+  }
+  
+  if (speeds.length === 0) return 0;
+  // Use median speed
+  speeds.sort((a,b) => a - b);
+  return speeds[Math.floor(speeds.length / 2)];
+}
+
+function updateSpeedGauge(speed) {
+  const maxSpeed = 200;
+  const pct = Math.min(speed / maxSpeed, 1);
+  const circumference = 553;
+  const offset = circumference * (1 - pct);
+  document.getElementById('progress-circle').style.strokeDashoffset = offset;
+  document.getElementById('speed-text').textContent = speed.toFixed(1);
+  
+  let color = '#e94560';
+  if (speed > 50) color = '#00d672';
+  else if (speed > 10) color = '#ffd93d';
+  document.getElementById('progress-circle').style.stroke = color;
+}
+
+async function startTest() {
+  if (isRunning) return;
+  isRunning = true;
+  abortController = new AbortController();
+  
+  // Reset
+  $('#test-log').innerHTML = '';
+  document.getElementById('progress-circle').style.strokeDashoffset = 553;
+  document.getElementById('speed-text').textContent = '0';
+  document.getElementById('speed-status').textContent = '';
+  $('#results').style.display = 'none';
+  
+  $('#toolbar').innerHTML = `<button class="gz-btn" onclick="stopTest()">${t('btnStop')}</button>`;
+  
+  log('Starting speed test...');
+  $('#server-info').textContent = 'CDN: jsdelivr.net';
+  
+  // Ping test
+  const {latency, jitter} = await runPingTest();
+  log(`Latency: ${latency}ms, Jitter: ${jitter}ms`);
+  
+  // Download test
+  const downloadSpeed = await runDownloadTest();
+  
+  // Done
+  isRunning = false;
+  document.getElementById('speed-status').textContent = t('statusDone');
+  updateSpeedGauge(downloadSpeed);
+  
+  // Show results
+  const conn = getConnType();
+  $('#results').style.display = 'grid';
+  $('#r-download').textContent = downloadSpeed.toFixed(1) + ' ' + t('mbps');
+  $('#r-latency').textContent = latency + ' ' + t('ms');
+  $('#r-jitter').textContent = jitter + ' ' + t('ms');
+  $('#r-conn').textContent = (conn.type || 'N/A').toUpperCase();
+  $('#r-download-lbl').textContent = t('rDownload');
+  $('#r-latency-lbl').textContent = t('rLatency');
+  $('#r-jitter-lbl').textContent = t('rJitter');
+  $('#r-conn-lbl').textContent = t('rConn');
+  
+  $('#toolbar').innerHTML = `<button class="gz-btn" onclick="startTest()">${t('btnStart')}</button>`;
+  
+  log('Test complete!');
+}
+
+function stopTest() {
+  isRunning = false;
+  document.getElementById('speed-status').textContent = t('statusDone');
+  $('#toolbar').innerHTML = `<button class="gz-btn" onclick="startTest()">${t('btnStart')}</button>`;
+}
+
+document.getElementById('speed-status').textContent = t('statusReady');
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="startTest()">${t('btnStart')}</button>`;
+
+GZ.renderToolPage({
+category:'dev',
+titleKey:'toolTitle',
+descKey:'toolDesc',
+howToSteps:['step1','step2','step3','step4'],
+related:[
+{icon:'🌐',href:'/dev/browser-info.html',name:'Browser Info'},
+{icon:'🖥️',href:'/dev/screen-resolution.html',name:'Screen Resolution'},
+{icon:'📡',href:'/dev/http-headers.html',name:'HTTP Headers'},
+{icon:'🌐',href:'/dev/dns-lookup.html',name:'DNS Lookup'},
+]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
