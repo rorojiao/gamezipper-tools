@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Base64 to Image Decoder - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Decode Base64 strings to images instantly. Paste a Base64 encoded image string and preview or download as PNG, JPG, GIF or WebP — all in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/base64-to-image.html">
+  <meta property="og:title" content="Base64 to Image Decoder - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Decode Base64 strings to images instantly. Paste a Base64 encoded image string and preview or download as PNG, JPG, GIF or WebP — all in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/base64-to-image.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Base64 to Image Decoder - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#preview{text-align:center;margin-top:16px}
+#preview img{max-width:100%;max-height:500px;border-radius:12px;border:1px solid var(--border)}
+.info-bar{display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:.85rem;color:var(--text2);flex-wrap:wrap}
+.gz-toolbar{margin-bottom:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Base64 to Image Decoder","description":"Decode Base64 strings to images instantly. Paste a Base64 encoded image string and preview or download as PNG, JPG, GIF or WebP — all in your browser.","url":"https://tools.gamezipper.com/convert/base64-to-image.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I decode Base64 to an image?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your Base64 encoded image string into the input area. The tool automatically detects the format and shows a preview. Click Download to save the image."}}, {"@type": "Question", "name": "What Base64 formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports Base64 strings with or without the data URI prefix (data:image/...;base64,...). It can decode PNG, JPG, GIF, WebP, SVG, BMP and ICO formats."}}, {"@type": "Question", "name": "Is my data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All decoding happens entirely in your browser using the built-in atob() function and Canvas API. No data is ever uploaded."}}, {"@type": "Question", "name": "Can I decode multiple images at once?", "acceptedAnswer": {"@type": "Answer", "text": "Currently the tool processes one Base64 string at a time. You can paste a new string to decode another image."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/base64-to-image.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/base64-to-image.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/base64-to-image.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" style="width:100%;min-height:150px;font-family:monospace;font-size:.8rem;resize:vertical" spellcheck="false" placeholder="Paste Base64 string here (with or without data:image/... prefix)"></textarea>
+    <div id="preview"></div>
+    <div id="status" style="text-align:center;margin:8px 0;font-size:.85rem;color:var(--text2)"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Base64 to Image Decoder',
+    toolDesc: 'Paste a Base64 string and instantly preview or download the decoded image.',
+    decodeBtn: 'Decode Image',
+    download: 'Download',
+    clear: 'Clear',
+    example: 'Load Example',
+    invalidBase64: 'Invalid Base64 string. Please check your input.',
+    format: 'Format',
+    size: 'Size',
+    dimensions: 'Dimensions',
+    step1: 'Paste a Base64 encoded image string into the text area',
+    step2: 'Click "Decode Image" to convert the Base64 to an image',
+    step3: 'Preview the decoded image with format and size details',
+    step4: 'Click Download to save the image to your device',
+  },
+  zh: {
+    toolTitle: 'Base64 转图片解码器',
+    toolDesc: '粘贴 Base64 字符串，即时预览或下载解码后的图片。',
+    decodeBtn: '解码图片',
+    download: '下载',
+    clear: '清空',
+    example: '加载示例',
+    invalidBase64: '无效的 Base64 字符串，请检查输入内容。',
+    format: '格式',
+    size: '大小',
+    dimensions: '尺寸',
+    step1: '将 Base64 编码的图片字符串粘贴到文本框',
+    step2: '点击「解码图片」将 Base64 转换为图片',
+    step3: '预览解码后的图片，查看格式和大小信息',
+    step4: '点击下载将图片保存到本地',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="decodeImage()">${t('decodeBtn')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>
+`;
+
+function detectMime(base64) {
+  const prefix = base64.substring(0, 20);
+  if (prefix.includes('iVBOR')) return 'image/png';
+  if (prefix.includes('/9j/')) return 'image/jpeg';
+  if (prefix.includes('R0lGOD')) return 'image/gif';
+  if (prefix.includes('UklGR')) return 'image/webp';
+  if (prefix.includes('PHN2Zy') || prefix.includes('PD94bW')) return 'image/svg+xml';
+  if (prefix.includes('Qk')) return 'image/bmp';
+  return 'image/png';
+}
+
+function decodeImage() {
+  let val = $('#input').value.trim();
+  if (!val) return;
+
+  // Remove data URI prefix if present
+  let mime = '';
+  if (val.startsWith('data:')) {
+    const match = val.match(/^data:(image\/[a-z+]+);base64,/i);
+    if (match) {
+      mime = match[1];
+      val = val.replace(/^data:[^;]+;base64,/, '');
+    }
+  }
+
+  if (!mime) mime = detectMime(val);
+
+  try {
+    const dataUrl = `data:${mime};base64,${val}`;
+    const img = new Image();
+    img.onload = function() {
+      const ext = mime.split('/')[1] === 'jpeg' ? 'jpg' : mime.split('/')[1];
+      // Calculate approximate size
+      const byteSize = Math.round(val.length * 3 / 4);
+      const sizeStr = byteSize < 1024 ? byteSize + ' B' : byteSize < 1048576 ? (byteSize/1024).toFixed(1) + ' KB' : (byteSize/1048576).toFixed(2) + ' MB';
+
+      $('#preview').innerHTML = `
+        <img src="${dataUrl}" alt="Decoded image">
+        <div class="info-bar">
+          <span>${t('format')}: ${mime}</span>
+          <span>${t('dimensions')}: ${img.naturalWidth} × ${img.naturalHeight}</span>
+          <span>${t('size')}: ${sizeStr}</span>
+        </div>
+        <div style="margin-top:12px">
+          <button class="gz-btn" onclick="dlImage('${dataUrl}','decoded-image.${ext}')">${t('download')}</button>
+        </div>
+      `;
+      $('#status').textContent = '✓ ' + t('format') + ': ' + mime + ' — ' + img.naturalWidth + '×' + img.naturalHeight;
+    };
+    img.onerror = function() {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidBase64')}</span>`;
+      $('#preview').innerHTML = '';
+    };
+    img.src = dataUrl;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidBase64')}</span>`;
+    $('#preview').innerHTML = '';
+  }
+}
+
+function dlImage(dataUrl, filename) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  a.click();
+}
+
+function loadExample() {
+  // A tiny 10x10 red PNG as base64
+  $('#input').value = 'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFklEQVQYV2P4z8BQz0BhwEiKAqgZAhMBAD0kBwW+CSxsAAAAAElFTkSuQmCC';
+  decodeImage();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#preview').innerHTML = '';
+  $('#status').textContent = '';
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/image-to-base64.html', name:'Image to Base64'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64 Encoder'},
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
