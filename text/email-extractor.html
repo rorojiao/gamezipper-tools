@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Email Extractor - Extract Emails from Text Free Online | GameZipper Tools</title>
+  <meta name="description" content="Extract all email addresses from any text instantly. Paste text, HTML, or documents and get a clean list of unique emails. Free, no signup, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/email-extractor.html">
+  <meta property="og:title" content="Email Extractor - Extract Emails from Text Free Online | GameZipper Tools">
+  <meta property="og:description" content="Extract all email addresses from any text instantly. Paste text, HTML, or documents and get a clean list of unique emails.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/email-extractor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Email Extractor - Extract Emails from Text Free Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.8}
+#status{margin-top:8px;font-size:.85em}
+.gz-output{min-height:120px}
+.email-tag{display:inline-block;background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:2px 8px;margin:2px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Email Extractor","description":"Extract all email addresses from any text instantly. Paste text, HTML, or documents and get a clean list of unique emails. Free online tool.","url":"https://tools.gamezipper.com/text/email-extractor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I extract emails from text?","acceptedAnswer":{"@type":"Answer","text":"Paste your text into the input area and click Extract. The tool finds all email addresses and displays them as a clean, deduplicated list."}},{"@type":"Question","name":"Does the tool remove duplicate emails?","acceptedAnswer":{"@type":"Answer","text":"Yes. By default, the tool removes duplicates and shows each unique email only once. You can toggle this option to keep duplicates."}},{"@type":"Question","name":"Is my text data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All processing happens entirely in your browser. No text is ever sent to any server."}},{"@type":"Question","name":"What text formats are supported?","acceptedAnswer":{"@type":"Answer","text":"The tool works with any plain text, HTML content, log files, CSV data, or any text containing email addresses. It uses a comprehensive regex pattern to find emails."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/email-extractor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/email-extractor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/email-extractor.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Email Extractor',
+    toolDesc: 'Extract all email addresses from any text. Removes duplicates and sorts results.',
+    inputLabel: 'Paste Text with Emails',
+    outputLabel: 'Extracted Emails',
+    extract: 'Extract',
+    emailsFound: 'emails found',
+    uniqueEmails: 'unique emails',
+    removeDuplicates: 'Remove duplicates',
+    sortAlpha: 'Sort A-Z',
+    separatorComma: 'Comma separated',
+    noEmails: 'No email addresses found in the input text.',
+    step1: 'Paste or type text containing email addresses',
+    step2: 'Click "Extract" to find all emails',
+    step3: 'Toggle options: remove duplicates, sort, or change format',
+    step4: 'Copy the email list to clipboard',
+  },
+  zh: {
+    toolTitle: '邮箱提取器',
+    toolDesc: '从任意文本中提取所有邮箱地址，自动去重和排序。',
+    inputLabel: '粘贴包含邮箱的文本',
+    outputLabel: '提取的邮箱',
+    extract: '提取',
+    emailsFound: '个邮箱已找到',
+    uniqueEmails: '个不重复邮箱',
+    removeDuplicates: '去除重复',
+    sortAlpha: '按字母排序',
+    separatorComma: '逗号分隔',
+    noEmails: '输入文本中未找到邮箱地址。',
+    step1: '粘贴或输入包含邮箱地址的文本',
+    step2: '点击「提取」查找所有邮箱',
+    step3: '切换选项：去重、排序或更改格式',
+    step4: '复制邮箱列表到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let extractedEmails = [];
+
+function doExtract() {
+  const inp = $('#input').value;
+  if (!inp.trim()) return;
+
+  // Comprehensive email regex
+  const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+  let emails = inp.match(emailRegex) || [];
+
+  const removeDupes = $('#dupes-check').checked;
+  const sortAz = $('#sort-check').checked;
+  const commaSep = $('#comma-check').checked;
+
+  if (removeDupes) {
+    const seen = new Set();
+    emails = emails.filter(e => {
+      const lower = e.toLowerCase();
+      if (seen.has(lower)) return false;
+      seen.add(lower);
+      return true;
+    });
+  }
+
+  if (sortAz) {
+    emails.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  }
+
+  extractedEmails = emails;
+
+  if (emails.length === 0) {
+    $('#output').innerHTML = `<span style="color:var(--text2)">${t('noEmails')}</span>`;
+    $('#status').innerHTML = '';
+    return;
+  }
+
+  if (commaSep) {
+    $('#output').textContent = emails.join(', ');
+  } else {
+    $('#output').innerHTML = emails.map(e => `<span class="email-tag">${e}</span>`).join(' ');
+  }
+
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${emails.length} ${removeDupes ? t('uniqueEmails') : t('emailsFound')}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = `Contact Information:
+
+Sales Team: sales@example.com
+Support: support@example.com
+Marketing: marketing@example.com
+General Inquiries: info@example.com
+
+Team Members:
+- John Doe (john.doe@example.com)
+- Jane Smith (jane.smith@example.com)
+- Bob Wilson (bob.wilson+tag@example.co.uk)
+
+Note: You can also reach us at SALES@EXAMPLE.COM (same as sales team).
+For partnerships, email partnerships@example.com or partner@example.com.
+
+HTML content example:
+<a href="mailto:webmaster@example.com">Webmaster</a>
+<div>Contact: admin@example.org</div>
+
+Invalid examples (not matched): user@, @domain.com, user@.com`;
+  doExtract();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; extractedEmails = []; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doExtract()">${t('extract')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" id="dupes-check" checked onchange="doExtract()"> ${t('removeDuplicates')}</label>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" id="sort-check" checked onchange="doExtract()"> ${t('sortAlpha')}</label>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" id="comma-check" onchange="doExtract()"> ${t('separatorComma')}</label>
+  <button class="gz-btn" onclick="copyText(extractedEmails.join('\\n'))">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', doExtract);
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/text/slug.html', name:'Slug Generator'},
+    {icon:'🧹', href:'/text/remove-duplicates.html', name:'Remove Duplicates'},
+    {icon:'🔤', href:'/text/case-converter.html', name:'Case Converter'},
+    {icon:'📝', href:'/text/word-counter.html', name:'Word Counter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
