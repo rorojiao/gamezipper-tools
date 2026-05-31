@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>XML Formatter & Validator - Free Online Tool | GameZipper Tools</title>
+<meta name="description" content="Format, beautify, validate and minify XML online. Free XML formatter with syntax highlighting — paste XML and get clean, readable output instantly.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/xml-formatter.html">
+<meta property="og:title" content="XML Formatter & Validator - Free Online Tool | GameZipper Tools">
+<meta property="og:description" content="Format, beautify, validate and minify XML online. Free XML formatter with syntax highlighting — paste XML and get clean, readable output instantly.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/xml-formatter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="XML Formatter & Validator - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Format, beautify, validate and minify XML online. Free XML formatter with syntax highlighting.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.xml-tag{color:#e94560}.xml-attr{color:#61afef}.xml-val{color:#00d672}.xml-comment{color:#888;font-style:italic}.xml-decl{color:#d19a66}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"XML Formatter & Validator","description":"Format, beautify, validate and minify XML online with syntax highlighting.","url":"https://tools.gamezipper.com/dev/xml-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I format XML online?","acceptedAnswer":{"@type":"Answer","text":"Paste your XML data into the input area and click the Format button. The tool will instantly beautify your XML with proper indentation and syntax highlighting."}},{"@type":"Question","name":"Is my XML data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All XML processing happens entirely in your browser. No data is ever sent to any server."}},{"@type":"Question","name":"Can I validate XML with this tool?","acceptedAnswer":{"@type":"Answer","text":"Yes. The tool uses the browser's built-in DOMParser to validate your XML and shows detailed error messages if the XML is invalid."}},{"@type":"Question","name":"What is XML minification?","acceptedAnswer":{"@type":"Answer","text":"XML minification removes all unnecessary whitespace and line breaks to compress XML data into the smallest possible size, useful for APIs and data transfer."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/xml-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/xml-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/xml-formatter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" placeholder="<?xml version='1.0'?>&#10;<root>&#10;  <item>Hello</item>&#10;</root>"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'XML Formatter & Validator',
+    toolDesc:'Format, beautify, validate and minify XML data with syntax highlighting.',
+    indent:'spaces',
+    xmlValid:'✓ Valid XML',
+    xmlInvalid:'✗ Invalid XML',
+    step1:'Paste or type your XML in the input area',
+    step2:'Click Format to beautify with syntax highlighting',
+    step3:'Click Minify to compress XML to one line',
+    step4:'Use Copy to copy the result to clipboard',
+  },
+  zh:{
+    toolTitle:'XML 格式化工具',
+    toolDesc:'即时格式化、美化和验证 XML 数据，支持语法高亮和压缩。',
+    indent:'空格',
+    xmlValid:'✓ XML 有效',
+    xmlInvalid:'✗ XML 无效',
+    step1:'在输入区粘贴或输入 XML',
+    step2:'点击「格式化」美化并高亮显示',
+    step3:'点击「压缩」将 XML 压缩为一行',
+    step4:'点击「复制」将结果复制到剪贴板',
+  }
+});
+
+let indent = 2;
+const { $, copyText, t } = GZ;
+
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function syntaxHighlight(xml) {
+  return escapeHtml(xml)
+    .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="xml-comment">$1</span>')
+    .replace(/(&lt;\?[\s\S]*?\?&gt;)/g, '<span class="xml-decl">$1</span>')
+    .replace(/(&lt;\/?)([\w:.-]+)/g, '$1<span class="xml-tag">$2</span>')
+    .replace(/([\w:.-]+)(=)(&quot;|&#39;|")(.*?)\3/g, '<span class="xml-attr">$1</span>$2$3<span class="xml-val">$4</span>$3');
+}
+
+function formatXML(xml, indentSize) {
+  const PADDING = ' '.repeat(indentSize);
+  let formatted = '';
+  let pad = 0;
+  xml = xml.replace(/(>)(<)(\/*)/g, '$1\n$2$3');
+  xml.split('\n').forEach(node => {
+    node = node.trim();
+    if (!node) return;
+    if (node.match(/^<\/\w/)) pad--;
+    formatted += PADDING.repeat(Math.max(0, pad)) + node + '\n';
+    if (node.match(/^<\w[^>]*[^/]>.*$/) && !node.match(/^<\w[^>]*>.*<\/\w/)) pad++;
+  });
+  return formatted.trim();
+}
+
+function minifyXML(xml) {
+  return xml.replace(/>\s+</g, '><').replace(/\n/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
+function doFormat() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(inp, 'text/xml');
+    const err = doc.querySelector('parsererror');
+    if (err) throw new Error(err.textContent.substring(0, 200));
+    const formatted = formatXML(inp, indent);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('xmlValid')}</span>`;
+  } catch(e) { showError(e); }
+}
+
+function doMinify() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(inp, 'text/xml');
+    const err = doc.querySelector('parsererror');
+    if (err) throw new Error(err.textContent.substring(0, 200));
+    const minified = minifyXML(inp);
+    $('#output').textContent = minified;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('xmlValid')}</span>`;
+  } catch(e) { showError(e); }
+}
+
+function showError(e) {
+  $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('xmlInvalid')}: ${escapeHtml(e.message)}</span>`;
+  $('#output').innerHTML = `<span style="color:var(--gz-accent)">${escapeHtml(e.message)}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = `<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <book id="1">
+    <title>GameZipper Tools Guide</title>
+    <author>Dev Team</author>
+    <year>2026</year>
+    <price currency="USD">29.99</price>
+    <categories>
+      <category>Web Development</category>
+      <category>Utilities</category>
+    </categories>
+  </book>
+  <book id="2">
+    <title>JSON for Beginners</title>
+    <author>Jane Doe</author>
+    <year>2025</year>
+    <price currency="USD">19.99</price>
+  </book>
+</catalog>`;
+  doFormat();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="indent=+this.value;doFormat()">
+    <option value="2">2 ${t('indent')}</option>
+    <option value="4">4 ${t('indent')}</option>
+  </select>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📊', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'📄', href:'/dev/html-encode.html', name:'HTML Encode'},
+    {icon:'🔗', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
