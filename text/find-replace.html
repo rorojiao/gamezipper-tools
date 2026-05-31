@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Find & Replace Online - Free Text Tool | GameZipper Tools</title>
+<meta name="description" content="Find and replace text online with support for case sensitivity, whole word matching and regex. Process text instantly in your browser for free.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/find-replace.html">
+<meta property="og:title" content="Find & Replace Online - Free Text Tool | GameZipper Tools">
+<meta property="og:description" content="Find and replace text online with support for case sensitivity, whole word matching and regex. Process text instantly in your browser for free.">
+<meta property="og:url" content="https://tools.gamezipper.com/text/find-replace.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Find & Replace Online - Free Text Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-find-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.gz-find-bar input{flex:1;min-width:120px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--gz-text);font-size:.9em}
+.gz-find-bar label{display:flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer;white-space:nowrap}
+.match-count{font-size:.85em;color:var(--gz-success);margin-left:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Find & Replace Online","description":"Find and replace text online with support for case sensitivity, whole word matching and regex. Process text instantly in your browser for free.","url":"https://tools.gamezipper.com/text/find-replace.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is my text sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All text processing happens entirely in your browser. Your data never leaves your device."}}, {"@type": "Question", "name": "Can I use regular expressions for find and replace?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enable the Regex option to use regular expression patterns for searching. You can also use capture groups in the replacement string with $1, $2, etc."}}, {"@type": "Question", "name": "How do I replace all occurrences at once?", "acceptedAnswer": {"@type": "Answer", "text": "Enter your find and replace text, then click Replace All. Every occurrence will be replaced instantly and the match count will be shown."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/find-replace.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/find-replace.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/find-replace.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-find-bar">
+      <input id="findInput" placeholder="Find...">
+      <input id="replaceInput" placeholder="Replace with...">
+      <button class="gz-btn" onclick="doReplace()">${t ? t('replaceAll') : 'Replace All'}</button>
+      <button class="gz-btn gz-btn-secondary" onclick="doHighlight()">${t ? t('highlight') : 'Highlight'}</button>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output" style="white-space:pre-wrap;word-break:break-all"></div></div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Find & Replace Online',
+    toolDesc: 'Find and replace text with support for case sensitivity, whole words and regex. Instant processing in your browser.',
+    find: 'Find', replaceWith: 'Replace with', replaceAll: 'Replace All', highlight: 'Highlight',
+    caseSensitive: 'Case sensitive', wholeWord: 'Whole word', regex: 'Regex',
+    matchesFound: 'matches found', noMatches: 'No matches found',
+    step1: 'Paste or type your text in the input area',
+    step2: 'Enter the text to find and the replacement',
+    step3: 'Toggle options: case sensitive, whole word, or regex',
+    step4: 'Click Replace All or Highlight to see matches',
+  },
+  zh: {
+    toolTitle: '在线查找替换',
+    toolDesc: '支持区分大小写、全词匹配和正则表达式的在线查找替换工具，浏览器本地处理。',
+    find: '查找', replaceWith: '替换为', replaceAll: '全部替换', highlight: '高亮',
+    caseSensitive: '区分大小写', wholeWord: '全词匹配', regex: '正则表达式',
+    matchesFound: '个匹配', noMatches: '无匹配',
+    step1: '在输入区粘贴或输入文本',
+    step2: '输入要查找的文本和替换内容',
+    step3: '选择选项：区分大小写、全词匹配或正则',
+    step4: '点击「全部替换」或「高亮」查看匹配',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function getFlags() {
+  let f = 'g';
+  if (!$('#caseChk').checked) f += 'i';
+  return f;
+}
+
+function buildPattern() {
+  const find = $('#findInput').value;
+  if (!find) return null;
+  try {
+    let pattern;
+    if ($('#regexChk').checked) {
+      pattern = new RegExp(find, getFlags());
+    } else {
+      const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let src = escaped;
+      if ($('#wordChk').checked) src = `\\b${escaped}\\b`;
+      pattern = new RegExp(src, getFlags());
+    }
+    return pattern;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Regex error: ${e.message}</span>`;
+    return null;
+  }
+}
+
+function doReplace() {
+  const text = $('#input').value;
+  const replace = $('#replaceInput').value;
+  const pattern = buildPattern();
+  if (!pattern) return;
+  const result = text.replace(pattern, replace);
+  const matches = text.match(pattern);
+  const count = matches ? matches.length : 0;
+  $('#output').textContent = result;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${count} ${t('matchesFound')}</span>`;
+}
+
+function doHighlight() {
+  const text = $('#input').value;
+  const pattern = buildPattern();
+  if (!pattern) return;
+  const matches = text.match(pattern);
+  const count = matches ? matches.length : 0;
+  if (count === 0) {
+    $('#output').textContent = text;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noMatches')}</span>`;
+    return;
+  }
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const hl = $('#findInput').value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${hl})`, getFlags().replace('g',''));
+  // rebuild pattern for highlight
+  let hp;
+  if ($('#regexChk').checked) {
+    hp = new RegExp(`(${$('#findInput').value})`, getFlags().replace('g',''));
+  } else {
+    let src = $('#findInput').value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if ($('#wordChk').checked) src = `\\b(${src})\\b`;
+    hp = new RegExp(src, getFlags().replace('g',''));
+  }
+  const highlighted = escaped.replace(new RegExp(hp.source, getFlags()), '<mark style="background:#ffe066;color:#000;border-radius:2px;padding:0 2px">$1</mark>');
+  $('#output').innerHTML = highlighted;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${count} ${t('matchesFound')}</span>`;
+}
+
+// Rebuild toolbar with i18n
+$('#toolbar').innerHTML = `
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="caseChk"> ${t('caseSensitive')}</label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="wordChk"> ${t('wholeWord')}</label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="regexChk"> ${t('regex')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').textContent='';$('#status').innerHTML=''">${t('clear')}</button>`;
+
+// Rebind find bar buttons
+document.querySelector('.gz-find-bar button.gz-btn').textContent = t('replaceAll');
+document.querySelector('.gz-find-bar button.gz-btn-secondary').textContent = t('highlight');
+$('#findInput').placeholder = t('find');
+$('#replaceInput').placeholder = t('replaceWith');
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/text/diff.html', name:'Text Diff'},
+    {icon:'🧹', href:'/text/remove-duplicates.html', name:'Remove Duplicates'},
+    {icon:'➕', href:'/text/add-prefix-suffix.html', name:'Add Prefix/Suffix'},
+    {icon:'🔤', href:'/text/case-converter.html', name:'Case Converter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
