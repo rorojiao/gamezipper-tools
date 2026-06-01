@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSS Specificity Calculator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Calculate CSS selector specificity online. Visualize and compare the specificity weight (a, b, c) of any CSS selector — IDs, classes, elements and more.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/css-specificity.html">
+  <meta property="og:title" content="CSS Specificity Calculator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Calculate CSS selector specificity online. Visualize and compare the specificity weight of any CSS selector.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/css-specificity.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS Specificity Calculator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#input{min-height:140px;font-family:monospace}
+#selectors{display:grid;gap:10px;margin:14px 0}
+.sel-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.sel-card .sel{font-family:monospace;font-size:1.05em;word-break:break-all;color:var(--text)}
+.sel-card .meta{font-size:.78em;color:var(--text2);margin-top:4px}
+.sel-card .weights{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.weight{display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.3);padding:6px 10px;border-radius:8px;min-width:54px}
+.weight .num{font-size:1.3em;font-weight:700;color:var(--gz-accent)}
+.weight .lbl{font-size:.65em;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.winner{border:1px solid var(--gz-success);box-shadow:0 0 0 1px var(--gz-success) inset}
+.note{background:rgba(255,217,61,.08);border-left:3px solid #ffd93d;padding:8px 12px;border-radius:6px;font-size:.85em;margin-top:10px}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:.9em}
+table th,table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+table th{color:var(--text2);font-weight:600;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS Specificity Calculator","description":"Calculate CSS selector specificity online. Visualize and compare the specificity weight (a, b, c) of any CSS selector.","url":"https://tools.gamezipper.com/dev/css-specificity.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is CSS specificity?", "acceptedAnswer": {"@type": "Answer", "text": "CSS specificity is the algorithm browsers use to determine which CSS rule wins when multiple rules target the same element. It's a 3-part value (a, b, c) where a is the number of IDs, b is the number of classes/attributes/pseudo-classes, and c is the number of elements/pseudo-elements."}}, {"@type": "Question", "name": "How is the specificity score calculated?", "acceptedAnswer": {"@type": "Answer", "text": "The score has three parts: (a) count of #id selectors, (b) count of .class, [attr], and :pseudo-class selectors, (c) count of element and ::pseudo-element selectors. They are compared in order: a first, then b, then c."}}, {"@type": "Question", "name": "What is the highest CSS specificity?", "acceptedAnswer": {"@type": "Answer", "text": "The theoretical maximum is (0, 0, 0) for an empty rule. The practical maximum grows with selector complexity. Inline styles and !important rules override specificity entirely."}}, {"@type": "Question", "name": "Does !important affect specificity?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. !important flags always beat non-important rules regardless of specificity. Among !important rules, the higher specificity wins. Use !important sparingly."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/css-specificity.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/css-specificity.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/css-specificity.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder="Enter one CSS selector per line, e.g.&#10;#header .nav a:hover&#10;.btn.btn-primary&#10;ul > li:nth-child(2)"></textarea>
+    <div id="selectors"></div>
+    <div class="note" id="winnerNote" style="display:none"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSS Specificity Calculator',
+    toolDesc: 'Calculate and compare the specificity weight of any CSS selector. See the (a, b, c) breakdown for IDs, classes and elements — perfect for debugging CSS conflicts.',
+    placeholder: 'Enter one CSS selector per line, e.g.\n#header .nav a:hover\n.btn.btn-primary\nul > li:nth-child(2)',
+    labelA: 'IDs', labelB: 'Classes', labelC: 'Elements', labelTotal: 'Score',
+    winner: '🏆 Highest specificity: ',
+    pseudoElems: ' (pseudo-element)',
+    pseudoClass: ' (pseudo-class)',
+    attr: ' (attribute selector)',
+    inline: '[inline style adds (1, 0, 0, 0)]',
+    important: '[!important beats all normal rules]',
+    step1: 'Paste one or more CSS selectors, one per line',
+    step2: 'See the (a, b, c) breakdown and total score for each',
+    step3: 'The highest specificity rule wins — highlighted in green',
+    step4: 'Use this to debug style conflicts and refactor messy selectors',
+  },
+  zh: {
+    toolTitle: 'CSS 优先级计算器',
+    toolDesc: '计算和比较任意 CSS 选择器的优先级权重。查看 ID、类、元素的 (a, b, c) 分解 — 排查 CSS 冲突的利器。',
+    placeholder: '每行输入一个 CSS 选择器，例如：\n#header .nav a:hover\n.btn.btn-primary\nul > li:nth-child(2)',
+    labelA: 'ID', labelB: '类', labelC: '元素', labelTotal: '分数',
+    winner: '🏆 优先级最高：',
+    pseudoElems: ' (伪元素)',
+    pseudoClass: ' (伪类)',
+    attr: ' (属性选择器)',
+    inline: '[内联样式增加 (1, 0, 0, 0)]',
+    important: '[!important 胜过所有普通规则]',
+    step1: '粘贴一个或多个 CSS 选择器，每行一个',
+    step2: '查看每个选择器的 (a, b, c) 分解和总分',
+    step3: '优先级最高的规则胜出 — 用绿色高亮显示',
+    step4: '用于调试样式冲突和重构复杂选择器',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function calcSpecificity(selector) {
+  // Strip leading/trailing whitespace
+  selector = selector.trim();
+  if (!selector) return null;
+  let a = 0, b = 0, c = 0;
+  // Count IDs (#id) — but exclude # inside attribute values
+  // First, temporarily replace attribute selectors to avoid counting # inside them
+  const attrParts = [];
+  const attrPlaceholder = '\u0000ATTR_\u0000';
+  selector = selector.replace(/\[([^\]]*)\]/g, (m) => { attrParts.push(m); return attrPlaceholder + (attrParts.length - 1) + '\u0001'; });
+  // Count IDs
+  const idMatches = selector.match(/#[\w-]+/g) || [];
+  a = idMatches.length;
+  // Remove IDs from selector for further processing
+  selector = selector.replace(/#[\w-]+/g, '');
+  // Count classes, pseudo-classes, attributes
+  const classMatches = selector.match(/\.[\w-]+/g) || [];
+  // Pseudo-classes (not pseudo-elements which start with ::)
+  const pseudoClassMatches = selector.match(/:(?!:)[a-zA-Z-]+(\([^)]*\))?/g) || [];
+  b = classMatches.length + pseudoClassMatches.length + attrParts.length;
+  // Remove classes and pseudo-classes
+  selector = selector.replace(/\.[\w-]+/g, '');
+  selector = selector.replace(/:(?!:)[a-zA-Z-]+(\([^)]*\))?/g, '');
+  // Restore attribute selectors (already counted in b)
+  // Count pseudo-elements (::before, ::after, ::placeholder etc.)
+  const pseudoElemMatches = selector.match(/::[a-zA-Z-]+/g) || [];
+  c = pseudoElemMatches.length;
+  // Count element selectors and the universal * (which is 0)
+  // Remove pseudo-elements, attribute placeholders, combinators, * and grouping
+  selector = selector.replace(/::[a-zA-Z-]+/g, '');
+  // Remove * (universal selector) — counts as 0
+  // We need to count remaining element names (word chars not in pseudo)
+  // Strip combinators and grouping
+  const cleaned = selector.replace(/[>+~\s,]+/g, ' ');
+  // Count element words (a-zA-Z followed by optional word chars)
+  const elemWords = cleaned.match(/\b[a-zA-Z][\w-]*\b/g) || [];
+  c += elemWords.length;
+  return { a, b, c, score: a * 10000 + b * 100 + c };
+}
+
+function renderSelectors() {
+  const lines = $('#input').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const out = $('#selectors');
+  if (lines.length === 0) { out.innerHTML = ''; $('#winnerNote').style.display = 'none'; return; }
+  const results = lines.map(l => ({ sel: l, ...calcSpecificity(l) }));
+  const maxScore = Math.max(...results.map(r => r.score));
+  out.innerHTML = results.map(r => {
+    const isWinner = r.score === maxScore && results.length > 1;
+    return `<div class="sel-card ${isWinner ? 'winner' : ''}">
+      <div>
+        <div class="sel">${r.sel.replace(/</g, '&lt;')}</div>
+        <div class="meta">${t('labelTotal')}: ${r.a},${r.b},${r.c} · ${r.score}</div>
+      </div>
+      <div class="weights">
+        <div class="weight"><div class="num">${r.a}</div><div class="lbl">${t('labelA')}</div></div>
+        <div class="weight"><div class="num">${r.b}</div><div class="lbl">${t('labelB')}</div></div>
+        <div class="weight"><div class="num">${r.c}</div><div class="lbl">${t('labelC')}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  if (results.length > 1) {
+    const w = results.find(r => r.score === maxScore);
+    $('#winnerNote').innerHTML = `<strong>${t('winner')}</strong> <code>${w.sel.replace(/</g, '&lt;')}</code> — (${w.a},${w.b},${w.c})`;
+    $('#winnerNote').style.display = '';
+  } else {
+    $('#winnerNote').style.display = 'none';
+  }
+}
+
+function loadExample() {
+  $('#input').value = `#header .nav a:hover\n.btn.btn-primary[data-active]\nul > li:nth-child(2)\ndiv.content p:first-child\nbody.home .post a\n*`;
+  renderSelectors();
+}
+
+$('#input').addEventListener('input', renderSelectors);
+$('#input').placeholder = t('placeholder');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example') || 'Example'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';renderSelectors()">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#input').value)">${t('copy')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/css-tools/css-formatter.html', name:'CSS Formatter'},
+    {icon:'📄', href:'/dev/html-formatter.html', name:'HTML Formatter'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

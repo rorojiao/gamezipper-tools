@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>CSS 优先级计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线计算 CSS 选择器优先级。可视化和比较任意 CSS 选择器的 (a, b, c) 权重 — ID、类、元素等。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/css-specificity.html">
+  <meta property="og:title" content="CSS 优先级计算器 - 免费在线工具 | GameZipper 工具箱">
+  <meta property="og:description" content="在线计算 CSS 选择器优先级。可视化和比较任意 CSS 选择器的权重。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/css-specificity.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS 优先级计算器 - 免费在线工具 | GameZipper 工具箱">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#input{min-height:140px;font-family:monospace}
+#selectors{display:grid;gap:10px;margin:14px 0}
+.sel-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.sel-card .sel{font-family:monospace;font-size:1.05em;word-break:break-all;color:var(--text)}
+.sel-card .meta{font-size:.78em;color:var(--text2);margin-top:4px}
+.sel-card .weights{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.weight{display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.3);padding:6px 10px;border-radius:8px;min-width:54px}
+.weight .num{font-size:1.3em;font-weight:700;color:var(--gz-accent)}
+.weight .lbl{font-size:.65em;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.winner{border:1px solid var(--gz-success);box-shadow:0 0 0 1px var(--gz-success) inset}
+.note{background:rgba(255,217,61,.08);border-left:3px solid #ffd93d;padding:8px 12px;border-radius:6px;font-size:.85em;margin-top:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS 优先级计算器","description":"在线计算 CSS 选择器优先级，可视化和比较 (a, b, c) 权重。","url":"https://tools.gamezipper.com/zh/dev/css-specificity.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "什么是 CSS 优先级？", "acceptedAnswer": {"@type": "Answer", "text": "CSS 优先级是浏览器用来决定当多条规则匹配同一元素时哪条胜出的算法。它是一个 (a, b, c) 三部分值：a 是 ID 数量，b 是类/属性/伪类数量，c 是元素/伪元素数量。"}}, {"@type": "Question", "name": "如何计算优先级分数？", "acceptedAnswer": {"@type": "Answer", "text": "分数由三部分组成：(a) #id 选择器数量、(b) .class、[attr] 和 :伪类 选择器数量、(c) 元素和 ::伪元素 选择器数量。比较时先比 a，再比 b，最后比 c。"}}, {"@type": "Question", "name": "CSS 优先级的最大值是多少？", "acceptedAnswer": {"@type": "Answer", "text": "理论最大值取决于选择器复杂度。空规则的优先级为 (0, 0, 0)。内联样式和 !important 规则完全凌驾于普通优先级之上。"}}, {"@type": "Question", "name": "!important 是否影响优先级？", "acceptedAnswer": {"@type": "Answer", "text": "是的。!important 标志始终胜过非 !important 规则。在 !important 规则中，优先级高者胜出。请谨慎使用 !important。"}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/css-specificity.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/css-specificity.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/css-specificity.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder="每行输入一个 CSS 选择器，例如：&#10;#header .nav a:hover&#10;.btn.btn-primary&#10;ul > li:nth-child(2)"></textarea>
+    <div id="selectors"></div>
+    <div class="note" id="winnerNote" style="display:none"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  zh: {
+    toolTitle: 'CSS 优先级计算器',
+    toolDesc: '计算和比较任意 CSS 选择器的优先级权重。查看 ID、类、元素的 (a, b, c) 分解 — 排查 CSS 冲突的利器。',
+    placeholder: '每行输入一个 CSS 选择器，例如：\n#header .nav a:hover\n.btn.btn-primary\nul > li:nth-child(2)',
+    labelA: 'ID', labelB: '类', labelC: '元素', labelTotal: '分数',
+    winner: '🏆 优先级最高：',
+    step1: '粘贴一个或多个 CSS 选择器，每行一个',
+    step2: '查看每个选择器的 (a, b, c) 分解和总分',
+    step3: '优先级最高的规则胜出 — 用绿色高亮显示',
+    step4: '用于调试样式冲突和重构复杂选择器',
+  },
+  en: {
+    toolTitle: 'CSS Specificity Calculator',
+    toolDesc: 'Calculate and compare the specificity weight of any CSS selector. See the (a, b, c) breakdown for IDs, classes and elements — perfect for debugging CSS conflicts.',
+    placeholder: 'Enter one CSS selector per line, e.g.\n#header .nav a:hover\n.btn.btn-primary\nul > li:nth-child(2)',
+    labelA: 'IDs', labelB: 'Classes', labelC: 'Elements', labelTotal: 'Score',
+    winner: '🏆 Highest specificity: ',
+    step1: 'Paste one or more CSS selectors, one per line',
+    step2: 'See the (a, b, c) breakdown and total score for each',
+    step3: 'The highest specificity rule wins — highlighted in green',
+    step4: 'Use this to debug style conflicts and refactor messy selectors',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function calcSpecificity(selector) {
+  selector = selector.trim();
+  if (!selector) return null;
+  let a = 0, b = 0, c = 0;
+  const attrParts = [];
+  const attrPlaceholder = '\u0000ATTR_\u0000';
+  selector = selector.replace(/\[([^\]]*)\]/g, (m) => { attrParts.push(m); return attrPlaceholder + (attrParts.length - 1) + '\u0001'; });
+  const idMatches = selector.match(/#[\w-]+/g) || [];
+  a = idMatches.length;
+  selector = selector.replace(/#[\w-]+/g, '');
+  const classMatches = selector.match(/\.[\w-]+/g) || [];
+  const pseudoClassMatches = selector.match(/:(?!:)[a-zA-Z-]+(\([^)]*\))?/g) || [];
+  b = classMatches.length + pseudoClassMatches.length + attrParts.length;
+  selector = selector.replace(/\.[\w-]+/g, '');
+  selector = selector.replace(/:(?!:)[a-zA-Z-]+(\([^)]*\))?/g, '');
+  const pseudoElemMatches = selector.match(/::[a-zA-Z-]+/g) || [];
+  c = pseudoElemMatches.length;
+  selector = selector.replace(/::[a-zA-Z-]+/g, '');
+  const cleaned = selector.replace(/[>+~\s,]+/g, ' ');
+  const elemWords = cleaned.match(/\b[a-zA-Z][\w-]*\b/g) || [];
+  c += elemWords.length;
+  return { a, b, c, score: a * 10000 + b * 100 + c };
+}
+
+function renderSelectors() {
+  const lines = $('#input').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const out = $('#selectors');
+  if (lines.length === 0) { out.innerHTML = ''; $('#winnerNote').style.display = 'none'; return; }
+  const results = lines.map(l => ({ sel: l, ...calcSpecificity(l) }));
+  const maxScore = Math.max(...results.map(r => r.score));
+  out.innerHTML = results.map(r => {
+    const isWinner = r.score === maxScore && results.length > 1;
+    return `<div class="sel-card ${isWinner ? 'winner' : ''}">
+      <div>
+        <div class="sel">${r.sel.replace(/</g, '&lt;')}</div>
+        <div class="meta">${t('labelTotal')}: ${r.a},${r.b},${r.c} · ${r.score}</div>
+      </div>
+      <div class="weights">
+        <div class="weight"><div class="num">${r.a}</div><div class="lbl">${t('labelA')}</div></div>
+        <div class="weight"><div class="num">${r.b}</div><div class="lbl">${t('labelB')}</div></div>
+        <div class="weight"><div class="num">${r.c}</div><div class="lbl">${t('labelC')}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  if (results.length > 1) {
+    const w = results.find(r => r.score === maxScore);
+    $('#winnerNote').innerHTML = `<strong>${t('winner')}</strong> <code>${w.sel.replace(/</g, '&lt;')}</code> — (${w.a},${w.b},${w.c})`;
+    $('#winnerNote').style.display = '';
+  } else {
+    $('#winnerNote').style.display = 'none';
+  }
+}
+
+function loadExample() {
+  $('#input').value = `#header .nav a:hover\n.btn.btn-primary[data-active]\nul > li:nth-child(2)\ndiv.content p:first-child\nbody.home .post a\n*`;
+  renderSelectors();
+}
+
+$('#input').addEventListener('input', renderSelectors);
+$('#input').placeholder = t('placeholder');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example') || 'Example'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';renderSelectors()">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#input').value)">${t('copy')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/css-tools/css-formatter.html', name:'CSS Formatter'},
+    {icon:'📄', href:'/dev/html-formatter.html', name:'HTML Formatter'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
