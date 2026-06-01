@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>电子签名生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线手写签名，支持鼠标和触屏，自定义墨水颜色和粗细，下载为透明背景 PNG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/signature-generator.html">
+  <meta property="og:title" content="电子签名生成器">
+  <meta property="og:description" content="在线手写签名，支持鼠标和触屏，自定义墨水颜色和粗细，下载为透明背景 PNG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/signature-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="电子签名生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.sig-canvas-wrap{position:relative;border:2px dashed var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px;background:repeating-conic-gradient(var(--glass) 0% 25%, transparent 0% 50%) 50%/20px 20px}
+.sig-canvas-wrap canvas{display:block;cursor:crosshair;width:100%;touch-action:none}
+.sig-options{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.sig-options label{display:flex;align-items:center;gap:6px;font-size:.9rem;color:var(--text2)}
+.sig-options input[type=range]{width:100px}
+.sig-options input[type=color]{width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Signature Generator","description":"Draw your signature online with your mouse or touchscreen, customize color and thickness, then download as a transparent PNG. Free, no signup.","url": "https://tools.gamezipper.com/zh/image/signature-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Can I use this signature legally?", "acceptedAnswer": {"@type": "Answer", "text": "This tool creates a visual representation of your handwritten signature. Whether it is legally binding depends on your jurisdiction and the type of document. Always check local regulations."}}, {"@type": "Question", "name": "Does the downloaded signature have a transparent background?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The signature is rendered on a transparent canvas and downloaded as a PNG file with alpha transparency, so you can overlay it on any document."}}, {"@type": "Question", "name": "Can I change the ink color and thickness?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the color picker and thickness slider above the canvas to customize your pen before or while drawing."}}, {"@type": "Question", "name": "Does my signature data leave my device?", "acceptedAnswer": {"@type": "Answer", "text": "No. All drawing and image generation happens entirely in your browser. No data is uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/signature-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/signature-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/signature-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="sig-options">
+      <label><span data-i18n="inkColor"></span> <input type="color" id="ink-color" value="#000000"></label>
+      <label><span data-i18n="thickness"></span> <input type="range" id="ink-thickness" min="1" max="8" value="3"></label>
+      <label><span data-i18n="bgWhite"></span> <input type="checkbox" id="bg-white"></label>
+    </div>
+    <div class="sig-canvas-wrap">
+      <canvas id="sig-canvas" width="800" height="300"></canvas>
+    </div>
+  </div>
+
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Signature Generator',
+    toolDesc: 'Draw your signature online with mouse or touch, customize ink color and thickness, then download as a transparent PNG.',
+    inkColor: 'Ink Color',
+    thickness: 'Thickness',
+    bgWhite: 'White BG',
+    clear: 'Clear',
+    downloadPNG: 'Download PNG',
+    downloadSVG: 'Download SVG',
+    step1: 'Draw your signature on the canvas using mouse or touchscreen',
+    step2: 'Adjust the ink color and line thickness as needed',
+    step3: 'Toggle white background if you need a solid background',
+    step4: 'Click Download PNG to save your signature image',
+  },
+  zh: {
+    toolTitle: '电子签名生成器',
+    toolDesc: '在线手写签名，支持鼠标和触屏，自定义墨水颜色和粗细，下载为透明背景 PNG。',
+    inkColor: '墨水颜色',
+    thickness: '粗细',
+    bgWhite: '白色背景',
+    clear: '清除',
+    downloadPNG: '下载 PNG',
+    downloadSVG: '下载 SVG',
+    step1: '用鼠标或触屏在画布上绘制签名',
+    step2: '根据需要调整墨水颜色和线条粗细',
+    step3: '如需纯色背景，勾选「白色背景」',
+    step4: '点击「下载 PNG」保存签名图片',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const canvas = $('#sig-canvas');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+let paths = []; // store all strokes for redraw
+
+function resizeCanvas() {
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.style.width = w + 'px';
+  canvas.style.height = Math.round(w * 0.375) + 'px';
+  canvas.width = w * ratio;
+  canvas.height = Math.round(w * 0.375) * ratio;
+  ctx.scale(ratio, ratio);
+  redraw();
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+function startDraw(e) {
+  e.preventDefault();
+  drawing = true;
+  const pos = getPos(e);
+  paths.push({ color: $('#ink-color').value, width: parseInt($('#ink-thickness').value), points: [pos] });
+}
+
+function moveDraw(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const pos = getPos(e);
+  const current = paths[paths.length - 1];
+  current.points.push(pos);
+  redraw();
+  // draw last segment
+  const pts = current.points;
+  if (pts.length >= 2) {
+    ctx.beginPath();
+    ctx.strokeStyle = current.color;
+    ctx.lineWidth = current.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const prev = pts[pts.length - 2];
+    ctx.moveTo(prev.x, prev.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  }
+}
+
+function endDraw(e) {
+  if (!drawing) return;
+  drawing = false;
+}
+
+function redraw() {
+  const w = parseInt(canvas.style.width);
+  const h = parseInt(canvas.style.height);
+  ctx.clearRect(0, 0, w, h);
+  for (const path of paths) {
+    if (path.points.length < 2) continue;
+    ctx.beginPath();
+    ctx.strokeStyle = path.color;
+    ctx.lineWidth = path.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.moveTo(path.points[0].x, path.points[0].y);
+    for (let i = 1; i < path.points.length; i++) {
+      ctx.lineTo(path.points[i].x, path.points[i].y);
+    }
+    ctx.stroke();
+  }
+}
+
+function doClear() {
+  paths = [];
+  redraw();
+}
+
+function downloadPNG() {
+  const bgWhite = $('#bg-white').checked;
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = canvas.width;
+  tmpCanvas.height = canvas.height;
+  const tmpCtx = tmpCanvas.getContext('2d');
+  const ratio = window.devicePixelRatio || 1;
+  tmpCtx.scale(ratio, ratio);
+  if (bgWhite) {
+    tmpCtx.fillStyle = '#ffffff';
+    tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+  }
+  for (const path of paths) {
+    if (path.points.length < 2) continue;
+    tmpCtx.beginPath();
+    tmpCtx.strokeStyle = path.color;
+    tmpCtx.lineWidth = path.width;
+    tmpCtx.lineCap = 'round';
+    tmpCtx.lineJoin = 'round';
+    tmpCtx.moveTo(path.points[0].x, path.points[0].y);
+    for (let i = 1; i < path.points.length; i++) {
+      tmpCtx.lineTo(path.points[i].x, path.points[i].y);
+    }
+    tmpCtx.stroke();
+  }
+  const a = document.createElement('a');
+  a.href = tmpCanvas.toDataURL('image/png');
+  a.download = 'signature.png';
+  a.click();
+}
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', moveDraw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mouseleave', endDraw);
+canvas.addEventListener('touchstart', startDraw, { passive: false });
+canvas.addEventListener('touchmove', moveDraw, { passive: false });
+canvas.addEventListener('touchend', endDraw);
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="downloadPNG()">📥 ${t('downloadPNG')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">↺ ${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'💦', href:'/image/watermark.html', name:'Watermark'},
+    {icon:'🎨', href:'/image/pixel-art-editor.html', name:'Pixel Art'},
+    {icon:'🖼️', href:'/image/placeholder.html', name:'Placeholder'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

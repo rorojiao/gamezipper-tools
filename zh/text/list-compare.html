@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>列表对比工具 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="对比两个列表，找出共同项、各自独有项和合并结果。支持去重、排序和导出。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/text/list-compare.html">
+<meta property="og:title" content="列表对比工具">
+<meta property="og:description" content="对比两个列表，找出共同项、各自独有项和合并结果。支持去重、排序和导出。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/text/list-compare.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="列表对比工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.lists-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0}
+@media(max-width:600px){.lists-grid{grid-template-columns:1fr}}
+.lists-grid textarea{min-height:180px;font-family:monospace;font-size:.88em}
+.results-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:600px){.results-grid{grid-template-columns:1fr}}
+.result-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);padding:12px;min-height:100px}
+.result-card h3{font-size:.9em;margin:0 0 8px;display:flex;align-items:center;gap:6px}
+.result-card .items{font-size:.82em;line-height:1.8;color:var(--text2);word-break:break-all}
+.result-card .count{font-size:.75em;color:var(--accent);font-weight:600}
+.tag{display:inline-block;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:2px 10px;margin:2px;font-size:.82em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"List Compare Tool","description":"Compare two lists side by side — find common items, unique items in each list, and merged results. Remove duplicates and sort.","url": "https://tools.gamezipper.com/zh/text/list-compare.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I compare two lists?","acceptedAnswer":{"@type":"Answer","text":"Paste your first list in List A and your second list in List B, then click Compare. The tool will show items common to both lists and items unique to each list."}},{"@type":"Question","name":"Does the comparison ignore case?","acceptedAnswer":{"@type":"Answer","text":"Yes, you can toggle case sensitivity. By default the comparison is case-insensitive, but you can enable case-sensitive matching with the checkbox."}},{"@type":"Question","name":"Can I remove duplicates from my lists?","acceptedAnswer":{"@type":"Answer","text":"Yes. The tool automatically removes duplicates within each list before comparing. You can also toggle this behavior."}},{"@type":"Question","name":"Is my data processed on a server?","acceptedAnswer":{"@type":"Answer","text":"No. All list comparison happens entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/list-compare.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/list-compare.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/list-compare.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="lists-grid">
+      <div>
+        <label id="lbl-a" style="font-weight:600;display:block;margin-bottom:4px"></label>
+        <textarea id="listA" class="gz-textarea" spellcheck="false" placeholder="apple&#10;banana&#10;cherry&#10;date"></textarea>
+      </div>
+      <div>
+        <label id="lbl-b" style="font-weight:600;display:block;margin-bottom:4px"></label>
+        <textarea id="listB" class="gz-textarea" spellcheck="false" placeholder="cherry&#10;date&#10;elderberry&#10;fig"></textarea>
+      </div>
+    </div>
+    <div class="results-grid" id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'List Compare Tool',
+    toolDesc: 'Compare two lists to find common items, unique items in each list, and the merged union. Remove duplicates and export.',
+    listA: 'List A',
+    listB: 'List B',
+    compare: 'Compare',
+    clear: 'Clear',
+    example: 'Load Example',
+    common: 'Common (A ∩ B)',
+    onlyA: 'Only in A (A − B)',
+    onlyB: 'Only in B (B − A)',
+    union: 'Union (A ∪ B)',
+    copy: 'Copy',
+    copied: 'Copied!',
+    items: 'items',
+    step1: 'Paste your first list in List A',
+    step2: 'Paste your second list in List B',
+    step3: 'Click Compare to analyze the differences',
+    step4: 'Use Copy to copy any result set to your clipboard',
+  },
+  zh: {
+    toolTitle: '列表对比工具',
+    toolDesc: '对比两个列表，找出共同项、各自独有项和合并结果。支持去重、排序和导出。',
+    listA: '列表 A',
+    listB: '列表 B',
+    compare: '对比',
+    clear: '清空',
+    example: '加载示例',
+    common: '共同项 (A ∩ B)',
+    onlyA: '仅在 A 中 (A − B)',
+    onlyB: '仅在 B 中 (B − A)',
+    union: '合并项 (A ∪ B)',
+    copy: '复制',
+    copied: '已复制！',
+    items: '项',
+    step1: '在列表 A 中粘贴第一个列表',
+    step2: '在列表 B 中粘贴第二个列表',
+    step3: '点击「对比」分析差异',
+    step4: '点击「复制」将结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseList(text) {
+  return text.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+}
+
+function compareLists() {
+  const listA = parseList($('#listA').value);
+  const listB = parseList($('#listB').value);
+  const setA = new Set(listA.map(s => s.toLowerCase()));
+  const setB = new Set(listB.map(s => s.toLowerCase()));
+
+  const common = [];
+  const onlyA = [];
+  const onlyB = [];
+
+  listA.forEach(item => {
+    if (setB.has(item.toLowerCase())) {
+      if (!common.some(c => c.toLowerCase() === item.toLowerCase())) common.push(item);
+    } else {
+      if (!onlyA.some(c => c.toLowerCase() === item.toLowerCase())) onlyA.push(item);
+    }
+  });
+
+  listB.forEach(item => {
+    if (!setA.has(item.toLowerCase())) {
+      if (!onlyB.some(c => c.toLowerCase() === item.toLowerCase())) onlyB.push(item);
+    }
+  });
+
+  const union = [...common, ...onlyA, ...onlyB];
+
+  const results = $('#results');
+  results.innerHTML = [
+    {title: t('common'), items: common, icon: '🤝', color: 'var(--accent)'},
+    {title: t('onlyA'), items: onlyA, icon: '🔵', color: '#61afef'},
+    {title: t('onlyB'), items: onlyB, icon: '🟠', color: '#e94560'},
+    {title: t('union'), items: union, icon: '🔗', color: '#00d672'},
+  ].map(r => `
+    <div class="result-card">
+      <h3><span>${r.icon}</span> ${r.title} <span class="count">(${r.items.length} ${t('items')})</span></h3>
+      <div class="items">${r.items.length ? r.items.map(i => `<span class="tag">${i}</span>`).join('') : '<span style="opacity:.5">—</span>'}</div>
+      <button class="gz-btn gz-btn-secondary" style="margin-top:8px;font-size:.78em;padding:4px 12px" onclick="copyText('${r.items.join('\\n')}')">${t('copy')}</button>
+    </div>
+  `).join('');
+}
+
+function loadExample() {
+  $('#listA').value = 'apple\nbanana\ncherry\ndate\nelderberry\nfig\ngrape';
+  $('#listB').value = 'cherry\ndate\nelderberry\nfig\nguava\nhoneydew\nkiwi';
+  compareLists();
+}
+
+function doClear() {
+  $('#listA').value = '';
+  $('#listB').value = '';
+  $('#results').innerHTML = '';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="compareLists()">${t('compare')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-a').textContent = t('listA');
+$('#lbl-b').textContent = t('listB');
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🧹', href:'/text/remove-duplicates.html', name:'Remove Duplicates'},
+    {icon:'📊', href:'/text/diff.html', name:'Text Diff'},
+    {icon:'↕️', href:'/text/sort-lines.html', name:'Sort Lines'},
+    {icon:'🎲', href:'/text/list-randomizer.html', name:'List Randomizer'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

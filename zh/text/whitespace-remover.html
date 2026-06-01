@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>空白字符清理工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="一键移除多余空格、制表符、换行符，修剪粘贴的混乱文本。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/whitespace-remover.html">
+  <meta property="og:title" content="空白字符清理工具">
+  <meta property="og:description" content="一键移除多余空格、制表符、换行符，修剪粘贴的混乱文本。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/whitespace-remover.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="空白字符清理工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{height:200px}
+#stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:.85em;opacity:.8}
+#stats span{background:var(--glass);padding:4px 10px;border-radius:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Whitespace Remover","description":"Remove extra whitespace, tabs, line breaks, and leading/trailing spaces from text online. Free and instant cleanup tool.","url": "https://tools.gamezipper.com/zh/text/whitespace-remover.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I remove extra spaces from text?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your text into the input area, select the cleanup options you want (trim leading/trailing, collapse multiple spaces, remove tabs, remove line breaks), and click Clean. The result appears instantly in the output area."}}, {"@type": "Question", "name": "What is the difference between trimming and collapsing whitespace?", "acceptedAnswer": {"@type": "Answer", "text": "Trimming removes whitespace at the beginning and end of each line. Collapsing replaces multiple consecutive spaces with a single space."}}, {"@type": "Question", "name": "Is my text data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All text processing happens entirely in your browser. No data is ever sent to any server."}}, {"@type": "Question", "name": "Can I remove all line breaks from text?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enable the 'Remove all line breaks' option to join all lines into a single paragraph. You can optionally replace line breaks with a space or custom character."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/whitespace-remover.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/whitespace-remover.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/whitespace-remover.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" readonly spellcheck="false"></textarea></div>
+    </div>
+    <div id="stats"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Whitespace Remover',
+    toolDesc: 'Remove extra spaces, tabs, line breaks and trim messy pasted text instantly.',
+    step1: 'Paste your messy text in the input area',
+    step2: 'Toggle the cleanup options you need',
+    step3: 'Click Clean to process — result appears instantly',
+    step4: 'Copy the cleaned text or download as file',
+    optTrim: 'Trim leading/trailing',
+    optCollapse: 'Collapse multiple spaces',
+    optTabs: 'Replace tabs with spaces',
+    optBreaks: 'Remove line breaks',
+    optNonBreaking: 'Remove non-breaking spaces',
+    charsRemoved: 'chars removed',
+    saved: 'saved',
+  },
+  zh: {
+    toolTitle: '空白字符清理工具',
+    toolDesc: '一键移除多余空格、制表符、换行符，修剪粘贴的混乱文本。',
+    step1: '在输入区粘贴混乱的文本',
+    step2: '选择需要的清理选项',
+    step3: '点击「清理」按钮，结果即时显示',
+    step4: '复制清理后的文本或下载为文件',
+    optTrim: '去除首尾空白',
+    optCollapse: '合并多个空格',
+    optTabs: '将制表符替换为空格',
+    optBreaks: '移除换行符',
+    optNonBreaking: '移除不换行空格',
+    charsRemoved: '字符已移除',
+    saved: '已节省',
+  }
+});
+
+const { $, copyText, t, downloadText } = GZ;
+const $input = $('#input'), $output = $('#output');
+
+function processText() {
+  let text = $input.value;
+  const origLen = text.length;
+  if (!text) { $output.value = ''; $('#stats').innerHTML = ''; return; }
+
+  const trim = $('#opt-trim').checked;
+  const collapse = $('#opt-collapse').checked;
+  const tabs = $('#opt-tabs').checked;
+  const breaks = $('#opt-breaks').checked;
+  const nbsp = $('#opt-nbsp').checked;
+
+  let lines = text.split('\n');
+
+  if (nbsp) lines = lines.map(l => l.replace(/\u00A0/g, ' '));
+  if (tabs) lines = lines.map(l => l.replace(/\t/g, '  '));
+  if (trim) lines = lines.map(l => l.trim());
+  if (collapse) lines = lines.map(l => l.replace(/ {2,}/g, ' '));
+  if (breaks) lines = [lines.join(' ').replace(/ {2,}/g, ' ')];
+
+  const result = lines.join('\n');
+  $output.value = result;
+
+  const diff = origLen - result.length;
+  const pct = origLen ? ((diff / origLen) * 100).toFixed(1) : 0;
+  $('#stats').innerHTML = `<span>${diff} ${t('charsRemoved')}</span><span>${pct}% ${t('saved')}</span>`;
+}
+
+function doClear() { $input.value = ''; $output.value = ''; $('#stats').innerHTML = ''; }
+function loadExample() {
+  $input.value = '   Hello    World!   \n\n\tThis   is   a   test.   \n   Too    many    spaces    here.   \n\n\t\tTabbed   content  \n   End.   ';
+  processText();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="processText()">${t('clean')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($output.value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadText($output.value,'cleaned.txt')">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>
+  <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:10px;font-size:.85em">
+    <label><input type="checkbox" id="opt-trim" checked onchange="processText()"> ${t('optTrim')}</label>
+    <label><input type="checkbox" id="opt-collapse" checked onchange="processText()"> ${t('optCollapse')}</label>
+    <label><input type="checkbox" id="opt-tabs" checked onchange="processText()"> ${t('optTabs')}</label>
+    <label><input type="checkbox" id="opt-breaks" onchange="processText()"> ${t('optBreaks')}</label>
+    <label><input type="checkbox" id="opt-nbsp" onchange="processText()"> ${t('optNonBreaking')}</label>
+  </div>`;
+
+$input.addEventListener('input', processText);
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⬜', href:'/text/remove-empty-lines.html', name:'Remove Empty Lines'},
+    {icon:'🧹', href:'/text/remove-duplicates.html', name:'Remove Duplicates'},
+    {icon:'🔍', href:'/text/find-replace.html', name:'Find & Replace'},
+    {icon:'🔢', href:'/text/word-counter.html', name:'Word Counter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

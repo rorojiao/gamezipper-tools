@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>cURL to Code Converter - Free Online Tool | GameZipper Tools</title>
+<meta name="description" content="Convert cURL commands to Python, JavaScript, Node.js, PHP, Go and Java code instantly. Paste a curl command and get ready-to-use code in your language.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/curl-to-code.html">
+<meta property="og:title" content="cURL to Code Converter - Free Online Tool | GameZipper Tools">
+<meta property="og:description" content="Convert cURL commands to Python, JavaScript, Node.js, PHP, Go and Java code instantly. Paste a curl command and get ready-to-use code.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/curl-to-code.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="cURL to Code Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#input{font-family:monospace;min-height:100px}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.84em;line-height:1.6;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;max-height:400px;overflow:auto}
+.lang-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.lang-tabs button{padding:4px 14px;border-radius:16px;border:1px solid var(--border);background:var(--glass);cursor:pointer;font-size:.82em;color:var(--text2);transition:all .2s}
+.lang-tabs button.active,.lang-tabs button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cURL to Code Converter","description":"Convert cURL commands to Python, JavaScript, Node.js, PHP, Go and Java code instantly. Paste a curl command and get ready-to-use code.","url":"https://tools.gamezipper.com/dev/curl-to-code.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert a cURL command to Python?","acceptedAnswer":{"@type":"Answer","text":"Paste your cURL command in the input area, select Python as the target language, and the tool will generate equivalent Python code using the requests library instantly."}},{"@type":"Question","name":"What programming languages are supported?","acceptedAnswer":{"@type":"Answer","text":"This tool supports converting cURL commands to Python (requests), JavaScript (fetch), Node.js (axios), PHP (curl), Go (net/http), and Java (HttpURLConnection)."}},{"@type":"Question","name":"Does this tool handle POST requests with JSON body?","acceptedAnswer":{"@type":"Answer","text":"Yes. The converter parses -d/--data and -H/--header flags including Content-Type headers, and generates code that properly sends POST data and JSON payloads."}},{"@type":"Question","name":"Is my data sent to any server?","acceptedAnswer":{"@type":"Answer","text":"No. All cURL parsing and code generation happens entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/curl-to-code.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/curl-to-code.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/curl-to-code.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label id="lbl-in" style="font-weight:600;display:block;margin-bottom:4px"></label>
+    <textarea id="input" class="gz-textarea" spellcheck="false" placeholder="curl https://api.example.com/data -H 'Authorization: Bearer token' -d '{&quot;key&quot;:&quot;value&quot;}'"></textarea>
+    <div class="lang-tabs" id="langTabs"></div>
+    <label id="lbl-out" style="font-weight:600;display:block;margin:12px 0 4px"></label>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'cURL to Code Converter',
+    toolDesc: 'Convert cURL commands to Python, JavaScript, PHP, Go and Java code instantly.',
+    curlInput: 'Paste your cURL command',
+    codeOutput: 'Generated Code',
+    convert: 'Convert',
+    copy: 'Copy Code',
+    clear: 'Clear',
+    example: 'Load Example',
+    step1: 'Copy a cURL command from your browser DevTools or terminal',
+    step2: 'Paste it into the input area above',
+    step3: 'Select your target programming language',
+    step4: 'Copy the generated code into your project',
+  },
+  zh: {
+    toolTitle: 'cURL 转代码转换器',
+    toolDesc: '将 cURL 命令即时转换为 Python、JavaScript、PHP、Go 和 Java 代码。',
+    curlInput: '粘贴你的 cURL 命令',
+    codeOutput: '生成的代码',
+    convert: '转换',
+    copy: '复制代码',
+    clear: '清空',
+    example: '加载示例',
+    step1: '从浏览器开发者工具或终端复制 cURL 命令',
+    step2: '粘贴到上方的输入区域',
+    step3: '选择目标编程语言',
+    step4: '将生成的代码复制到你的项目中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let currentLang = 'python';
+
+const languages = [
+  {id:'python',label:'Python',icon:'🐍'},
+  {id:'javascript',label:'JavaScript',icon:'🌐'},
+  {id:'nodejs',label:'Node.js',icon:'📦'},
+  {id:'php',label:'PHP',icon:'🐘'},
+  {id:'go',label:'Go',icon:'🐹'},
+  {id:'java',label:'Java',icon:'☕'},
+];
+
+function parseCurl(cmd) {
+  const result = {url:'',method:'GET',headers:{},data:''};
+  cmd = cmd.replace(/\\\n/g, ' ').replace(/\s+/g, ' ').trim();
+  if (cmd.startsWith('curl')) cmd = cmd.substring(4).trim();
+
+  const args = [];
+  let current = '', inQuote = false, quoteChar = '';
+  for (let i = 0; i < cmd.length; i++) {
+    const ch = cmd[i];
+    if (inQuote) {
+      if (ch === quoteChar) inQuote = false;
+      else current += ch;
+    } else if (ch === '"' || ch === "'") {
+      inQuote = true; quoteChar = ch;
+    } else if (ch === ' ') {
+      if (current) args.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  if (current) args.push(current);
+
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '-X' || a === '--request') {
+      result.method = args[++i]?.toUpperCase() || 'GET';
+    } else if (a === '-H' || a === '--header') {
+      const h = args[++i] || '';
+      const colonIdx = h.indexOf(':');
+      if (colonIdx > 0) {
+        result.headers[h.substring(0, colonIdx).trim()] = h.substring(colonIdx + 1).trim();
+      }
+    } else if (a === '-d' || a === '--data' || a === '--data-raw' || a === '--data-binary' || a === '--data-ascii') {
+      result.data = args[++i] || '';
+      if (result.method === 'GET') result.method = 'POST';
+    } else if (a === '-F' || a === '--form') {
+      const f = args[++i] || '';
+      result.data = result.data ? result.data + '&' + f : f;
+      if (result.method === 'GET') result.method = 'POST';
+    } else if (!a.startsWith('-') && !result.url) {
+      result.url = a;
+    }
+  }
+  return result;
+}
+
+function toPython(r) {
+  const hasHeaders = Object.keys(r.headers).length > 0;
+  const hasData = !!r.data;
+  let code = 'import requests\n\n';
+  code += `url = "${r.url}"\n`;
+  if (hasHeaders) {
+    code += 'headers = {\n';
+    for (const [k,v] of Object.entries(r.headers)) code += `    "${k}": "${v.replace(/"/g,'\\"')}",\n`;
+    code += '}\n';
+  }
+  if (hasData) {
+    const isJson = Object.entries(r.headers).some(([k,v]) => k.toLowerCase()==='content-type' && v.includes('json'));
+    if (isJson) {
+      code += `payload = ${r.data}\n`;
+      code += `response = requests.${r.method.toLowerCase()}(url, headers=${hasHeaders?'headers':'{}'}, json=payload)\n`;
+    } else {
+      code += `data = "${r.data.replace(/"/g,'\\"')}"\n`;
+      code += `response = requests.${r.method.toLowerCase()}(url, headers=${hasHeaders?'headers':'{}'}, data=data)\n`;
+    }
+  } else {
+    code += `response = requests.${r.method.toLowerCase()}(url, headers=${hasHeaders?'headers':'{}'})\n`;
+  }
+  code += '\nprint(response.status_code)\nprint(response.text)';
+  return code;
+}
+
+function toJavaScript(r) {
+  const hasHeaders = Object.keys(r.headers).length > 0;
+  const hasData = !!r.data;
+  let code = `const url = "${r.url}";\n`;
+  const opts = [];
+  if (r.method !== 'GET') opts.push(`  method: "${r.method}"`);
+  if (hasHeaders) {
+    let h = '  headers: {\n';
+    for (const [k,v] of Object.entries(r.headers)) h += `    "${k}": "${v.replace(/"/g,'\\"')}",\n`;
+    h += '  }';
+    opts.push(h);
+  }
+  if (hasData) opts.push(`  body: JSON.stringify(${r.data})`);
+  if (opts.length) {
+    code += `\nconst options = {\n${opts.join(',\n')}\n};\n\n`;
+    code += `fetch(url, options)\n  .then(res => res.json())\n  .then(data => console.log(data))\n  .catch(err => console.error(err));`;
+  } else {
+    code += `\nfetch(url)\n  .then(res => res.json())\n  .then(data => console.log(data))\n  .catch(err => console.error(err));`;
+  }
+  return code;
+}
+
+function toNodejs(r) {
+  const hasHeaders = Object.keys(r.headers).length > 0;
+  const hasData = !!r.data;
+  let code = `const axios = require('axios');\n\n`;
+  code += `const config = {\n  method: '${r.method.toLowerCase()}',\n  url: '${r.url}',`;
+  if (hasHeaders) {
+    code += '\n  headers: {';
+    for (const [k,v] of Object.entries(r.headers)) code += `\n    '${k}': '${v.replace(/'/g,"\\'")}',`;
+    code += '\n  },';
+  }
+  if (hasData) {
+    const isJson = Object.entries(r.headers).some(([k,v]) => k.toLowerCase()==='content-type' && v.includes('json'));
+    if (isJson) code += `\n  data: ${r.data},`;
+    else code += `\n  data: '${r.data.replace(/'/g,"\\'")}',`;
+  }
+  code += '\n};\n\n';
+  code += 'axios(config)\n  .then(res => console.log(res.data))\n  .catch(err => console.error(err));';
+  return code;
+}
+
+function toPhp(r) {
+  const hasHeaders = Object.keys(r.headers).length > 0;
+  const hasData = !!r.data;
+  let code = `<?php\n\n$ch = curl_init();\n\ncurl_setopt($ch, CURLOPT_URL, '${r.url}');\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\n`;
+  if (r.method === 'POST') code += `curl_setopt($ch, CURLOPT_POST, true);\n`;
+  else if (r.method !== 'GET') code += `curl_setopt($ch, CURLOPT_CUSTOMREQUEST, '${r.method}');\n`;
+  if (hasHeaders) {
+    code += 'curl_setopt($ch, CURLOPT_HTTPHEADER, [\n';
+    for (const [k,v] of Object.entries(r.headers)) code += `    '${k}: ${v.replace(/'/g,"\\'")}',\n`;
+    code += ']);\n';
+  }
+  if (hasData) code += `curl_setopt($ch, CURLOPT_POSTFIELDS, '${r.data.replace(/'/g,"\\'")}');\n`;
+  code += `\n$response = curl_exec($ch);\ncurl_close($ch);\n\necho $response;\n`;
+  return code;
+}
+
+function toGo(r) {
+  const hasHeaders = Object.keys(r.headers).length > 0;
+  const hasData = !!r.data;
+  let code = 'package main\n\nimport (\n\t"fmt"\n\t"io"\n\t"net/http"';
+  if (hasData) code += '\n\t"strings"';
+  code += '\n)\n\nfunc main() {\n';
+  if (hasData) {
+    code += `\tbody := strings.NewReader(\`${r.data}\`)\n`;
+    code += `\treq, err := http.NewRequest("${r.method}", "${r.url}", body)\n`;
+  } else {
+    code += `\treq, err := http.NewRequest("${r.method}", "${r.url}", nil)\n`;
+  }
+  code += '\tif err != nil {\n\t\tpanic(err)\n\t}\n';
+  if (hasHeaders) {
+    for (const [k,v] of Object.entries(r.headers)) code += `\treq.Header.Set("${k}", "${v.replace(/"/g,'\\"')}")\n`;
+  }
+  code += '\tclient := &http.Client{}\n\tresp, err := client.Do(req)\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\tdefer resp.Body.Close()\n\n\tbodyBytes, _ := io.ReadAll(resp.Body)\n\tfmt.Println(string(bodyBytes))\n}';
+  return code;
+}
+
+function toJava(r) {
+  const hasHeaders = Object.keys(r.headers).length > 0;
+  const hasData = !!r.data;
+  let code = 'import java.io.*;\nimport java.net.*;\nimport java.nio.charset.StandardCharsets;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n';
+  code += `        URL url = new URL("${r.url}");\n`;
+  code += `        HttpURLConnection conn = (HttpURLConnection) url.openConnection();\n`;
+  code += `        conn.setRequestMethod("${r.method}");\n`;
+  if (hasHeaders) {
+    for (const [k,v] of Object.entries(r.headers)) code += `        conn.setRequestProperty("${k}", "${v.replace(/"/g,'\\"')}");\n`;
+  }
+  if (hasData) {
+    code += `        conn.setDoOutput(true);\n`;
+    code += `        try (OutputStream os = conn.getOutputStream()) {\n`;
+    code += `            byte[] input = "${r.data.replace(/"/g,'\\"')}".getBytes(StandardCharsets.UTF_8);\n`;
+    code += `            os.write(input, 0, input.length);\n        }\n`;
+  }
+  code += `\n        int code = conn.getResponseCode();\n        System.out.println("Response code: " + code);\n`;
+  code += `        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {\n`;
+  code += `            String line;\n            while ((line = br.readLine()) != null) {\n                System.out.println(line);\n            }\n        }\n    }\n}`;
+  return code;
+}
+
+function convert() {
+  const input = $('#input').value.trim();
+  if (!input) { $('#output').textContent = ''; return; }
+  try {
+    const parsed = parseCurl(input);
+    const generators = {python:toPython,javascript:toJavaScript,nodejs:toNodejs,php:toPhp,go:toGo,java:toJava};
+    const code = (generators[currentLang] || toPython)(parsed);
+    $('#output').textContent = code;
+  } catch(e) {
+    $('#output').textContent = 'Error: ' + e.message;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `curl https://api.example.com/users \\
+  -H 'Authorization: Bearer your_token_here' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"name":"John","email":"john@example.com"}'`;
+  convert();
+}
+
+function renderLangTabs() {
+  $('#langTabs').innerHTML = languages.map(l =>
+    `<button class="${l.id===currentLang?'active':''}" onclick="setLang('${l.id}',this)">${l.icon} ${l.label}</button>`
+  ).join('');
+}
+
+function setLang(lang, btn) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  convert();
+}
+
+renderLangTabs();
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').textContent=''">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('curlInput');
+$('#lbl-out').textContent = t('codeOutput');
+$('#input').addEventListener('input', convert);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'📄', href:'/dev/html-encode.html', name:'HTML Encode'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

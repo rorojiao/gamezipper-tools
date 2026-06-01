@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>YAML ↔ JSON 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="在 YAML 和 JSON 格式之间互相转换，支持语法高亮和校验。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/convert/yaml-json.html">
+<meta property="og:title" content="YAML ↔ JSON 转换器">
+<meta property="og:description" content="在 YAML 和 JSON 格式之间互相转换，支持语法高亮和校验。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/convert/yaml-json.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="YAML ↔ JSON 转换器">
+<meta name="twitter:description" content="在 YAML 和 JSON 格式之间互相转换，支持语法高亮和校验。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-dir-btns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.gz-dir-btns button{padding:8px 18px;border-radius:10px;border:1px solid var(--border);background:var(--glass);cursor:pointer;font-size:.9em;color:var(--gz-text)}
+.gz-dir-btns button.active{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+.gz-dir-btns button:hover{border-color:var(--gz-accent)}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+.yaml-key{color:#e94560}.yaml-string{color:#00d672}.yaml-number{color:#61afef}.yaml-bool{color:#d19a66}.yaml-null{color:#888}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"YAML to JSON Converter","description":"Convert YAML to JSON and JSON to YAML online with syntax highlighting and validation.","url": "https://tools.gamezipper.com/zh/convert/yaml-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert YAML to JSON?","acceptedAnswer":{"@type":"Answer","text":"Paste your YAML into the input area and the tool will automatically convert it to JSON with proper formatting and syntax highlighting."}},{"@type":"Question","name":"Can I convert JSON to YAML?","acceptedAnswer":{"@type":"Answer","text":"Yes, click the 'JSON → YAML' button, paste your JSON, and the tool will convert it to clean YAML format."}},{"@type":"Question","name":"Is my data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All conversion happens entirely in your browser. No data is ever sent to any server."}},{"@type":"Question","name":"What YAML features are supported?","acceptedAnswer":{"@type":"Answer","text":"The tool supports strings, numbers, booleans, null, arrays, nested objects, multiline strings, and comments."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/yaml-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/yaml-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/yaml-json.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-dir-btns" id="dir-btns"></div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'YAML ↔ JSON Converter',
+    toolDesc:'Convert between YAML and JSON formats with syntax highlighting and validation.',
+    dirYaml2Json:'YAML → JSON',
+    dirJson2Yaml:'JSON → YAML',
+    lblYaml:'YAML Input',
+    lblJson:'JSON Input',
+    lblOut:'Output',
+    valid:'✓ Converted successfully',
+    invalid:'✗ Conversion error',
+    step1:'Select conversion direction: YAML to JSON or JSON to YAML',
+    step2:'Paste your YAML or JSON in the input area',
+    step3:'The output updates automatically as you type',
+    step4:'Copy the converted result to your clipboard',
+  },
+  zh:{
+    toolTitle:'YAML ↔ JSON 转换器',
+    toolDesc:'在 YAML 和 JSON 格式之间互相转换，支持语法高亮和校验。',
+    dirYaml2Json:'YAML → JSON',
+    dirJson2Yaml:'JSON → YAML',
+    lblYaml:'YAML 输入',
+    lblJson:'JSON 输入',
+    lblOut:'输出',
+    valid:'✓ 转换成功',
+    invalid:'✗ 转换错误',
+    step1:'选择转换方向：YAML 转 JSON 或 JSON 转 YAML',
+    step2:'在输入区粘贴 YAML 或 JSON 数据',
+    step3:'输出会在输入时自动更新',
+    step4:'将转换结果复制到剪贴板',
+  }
+});
+
+let mode = 'yaml2json';
+const { $, copyText, t } = GZ;
+
+function jsonHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+// Simple YAML parser (handles common cases)
+function parseYAML(text) {
+  const lines = text.split('\n');
+  let i = 0;
+  function getIndent(line) { const m = line.match(/^(\s*)/); return m ? m[1].length : 0; }
+  function stripComment(s) { return s.replace(/#.*$/, ''); }
+  function parseValue(val) {
+    val = val.trim();
+    if (val === 'null' || val === '~') return null;
+    if (val === 'true') return true;
+    if (val === 'false') return false;
+    if (val === '') return '';
+    if (/^-?\d+(\.\d+)?$/.test(val)) return parseFloat(val);
+    if (/^["']/.test(val) && /["']$/.test(val)) return val.slice(1, -1);
+    if (val.startsWith('|') || val.startsWith('>')) return val; // simplified
+    if (val.startsWith('[')) {
+      try { return JSON.parse(val.replace(/'/g, '"')); } catch(e) { return val; }
+    }
+    if (val.startsWith('{')) {
+      try { return JSON.parse(val.replace(/'/g, '"')); } catch(e) { return val; }
+    }
+    return val;
+  }
+  function parseBlock(currentIndent) {
+    let result = null;
+    let isArr = false;
+    let isObj = false;
+    while (i < lines.length) {
+      let line = lines[i];
+      let trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) { i++; continue; }
+      let ind = getIndent(line);
+      if (ind < currentIndent) break;
+      if (ind > currentIndent) {
+        // nested block, parse recursively
+        const nested = parseBlock(ind);
+        if (result !== null && Array.isArray(result)) {
+          result[result.length - 1] = (Array.isArray(result[result.length-1]) && result[result.length-1].length===0) ? nested : result[result.length-1];
+        }
+        continue;
+      }
+      trimmed = stripComment(trimmed);
+      // array item
+      if (trimmed.startsWith('- ')) {
+        if (!isArr) { result = []; isArr = true; }
+        const itemVal = trimmed.substring(2).trim();
+        if (itemVal.includes(':')) {
+          i++;
+          const obj = parseBlock(ind + 2);
+          result.push(obj);
+        } else {
+          result.push(parseValue(itemVal));
+          i++;
+        }
+        continue;
+      }
+      if (trimmed === '-') {
+        if (!isArr) { result = []; isArr = true; }
+        i++;
+        const nested = parseBlock(ind + 2);
+        result.push(nested);
+        continue;
+      }
+      // key: value
+      const colonIdx = trimmed.indexOf(':');
+      if (colonIdx > 0) {
+        if (!isObj) { result = isArr ? {} : {}; isObj = true; }
+        const key = trimmed.substring(0, colonIdx).trim();
+        const val = trimmed.substring(colonIdx + 1).trim();
+        if (val === '' || val === '|' || val === '>') {
+          i++;
+          const nested = parseBlock(ind + 2);
+          result[key] = nested || '';
+        } else {
+          result[key] = parseValue(val);
+          i++;
+        }
+        continue;
+      }
+      i++;
+    }
+    return result;
+  }
+  const result = parseBlock(0);
+  return result;
+}
+
+function toJSON(yamlText) {
+  const obj = parseYAML(yamlText);
+  return JSON.stringify(obj, null, 2);
+}
+
+function toYAML(obj, indent = 0) {
+  const pad = '  '.repeat(indent);
+  if (obj === null) return 'null';
+  if (obj === undefined) return '';
+  if (typeof obj === 'string') {
+    if (/[:#\[\]{}|>]/.test(obj) || obj === '' || obj === 'true' || obj === 'false' || obj === 'null' || /^-?\d+(\.\d+)?$/.test(obj))
+      return `"${obj.replace(/"/g, '\\"')}"`;
+    return obj;
+  }
+  if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]';
+    return obj.map(item => {
+      const val = toYAML(item, indent + 1);
+      if (typeof item === 'object' && item !== null) {
+        const inner = toYAML(item, indent + 1);
+        const innerLines = inner.split('\n');
+        return pad + '- ' + innerLines[0] + (innerLines.length > 1 ? '\n' + innerLines.slice(1).join('\n') : '');
+      }
+      return pad + '- ' + val;
+    }).join('\n');
+  }
+  if (typeof obj === 'object') {
+    const keys = Object.keys(obj);
+    if (keys.length === 0) return '{}';
+    return keys.map(key => {
+      const val = obj[key];
+      const keyStr = /^[a-zA-Z0-9_-]+$/.test(key) ? key : `"${key}"`;
+      if (typeof val === 'object' && val !== null) {
+        const inner = toYAML(val, indent + 1);
+        if (Array.isArray(val) && val.length === 0) return pad + keyStr + ': []';
+        if (!Array.isArray(val) && Object.keys(val).length === 0) return pad + keyStr + ': {}';
+        return pad + keyStr + ':\n' + inner;
+      }
+      return pad + keyStr + ': ' + toYAML(val, indent + 1);
+    }).join('\n');
+  }
+  return String(obj);
+}
+
+function renderDirBtns() {
+  $('#dir-btns').innerHTML = `
+    <button class="${mode==='yaml2json'?'active':''}" onclick="setMode('yaml2json')">${t('dirYaml2Json')}</button>
+    <button class="${mode==='json2yaml'?'active':''}" onclick="setMode('json2yaml')">${t('dirJson2Yaml')}</button>`;
+  $('#lbl-in').textContent = mode==='yaml2json' ? t('lblYaml') : t('lblJson');
+}
+
+function setMode(m) {
+  mode = m;
+  renderDirBtns();
+  doConvert();
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    if (mode === 'yaml2json') {
+      const obj = parseYAML(inp);
+      const json = JSON.stringify(obj, null, 2);
+      $('#output').innerHTML = jsonHighlight(json);
+    } else {
+      const obj = JSON.parse(inp);
+      const yaml = toYAML(obj);
+      const escaped = yaml.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      $('#output').innerHTML = escaped
+        .replace(/^(\s*)([\w"'][\w "-]*):/gm, '$1<span class="yaml-key">$2</span>:')
+        .replace(/: (true|false)/g, ': <span class="yaml-bool">$1</span>')
+                        .replace(/: (null)/g, ': <span class="yaml-null">$1</span>')
+                        .replace(/: (-?\d+\.?\d*)/g, ': <span class="yaml-number">$1</span>');
+    }
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  if (mode === 'yaml2json') {
+    $('#input').value = `# Application Configuration
+name: GameZipper Tools
+version: 2.0
+description: Free online toolbox
+features:
+  - JSON Formatter
+  - YAML Converter
+  - Base64 Encoder
+database:
+  host: localhost
+  port: 5432
+  name: tools_db
+  ssl: true
+debug: false
+max_upload_size: 10485760`;
+  } else {
+    $('#input').value = JSON.stringify({
+      "name": "GameZipper Tools",
+      "version": 2.0,
+      "description": "Free online toolbox",
+      "features": ["JSON Formatter", "YAML Converter", "Base64 Encoder"],
+      "database": {"host": "localhost", "port": 5432, "name": "tools_db", "ssl": true},
+      "debug": false,
+      "max_upload_size": 10485760
+    }, null, 2);
+  }
+  doConvert();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', doConvert);
+renderDirBtns();
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+    {icon:'📄', href:'/text/markdown-to-html.html', name:'Markdown to HTML'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

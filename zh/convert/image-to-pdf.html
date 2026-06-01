@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片转 PDF 工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在浏览器中将图片转为 PDF — 拖拽 JPG、PNG、WebP 或 SVG 图片，下载为单个 PDF 文件。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/image-to-pdf.html">
+  <meta property="og:title" content="图片转 PDF 工具">
+  <meta property="og:description" content="免费在浏览器中将图片转为 PDF — 拖拽 JPG、PNG、WebP 或 SVG 图片，下载为单个 PDF 文件。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/image-to-pdf.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片转 PDF 工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;background:var(--glass)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass2)}
+.drop-zone p{color:var(--text2);margin:8px 0}
+.img-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin:12px 0}
+.img-thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:1;background:var(--glass)}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-thumb .remove{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.img-thumb .remove:hover{background:var(--gz-accent,#e94560)}
+.img-thumb .order{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;font-size:.7em;padding:2px 6px;border-radius:6px}
+#status{font-size:.85em;margin-top:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image to PDF Converter","description":"Convert images to PDF for free in your browser. Drag and drop JPG, PNG, WebP or SVG images and merge them into a single PDF document. No upload required.","url": "https://tools.gamezipper.com/zh/convert/image-to-pdf.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert images to PDF?","acceptedAnswer":{"@type":"Answer","text":"Drag and drop or select your images (JPG, PNG, WebP, SVG), arrange them in the desired order, and click Convert to PDF. The file downloads instantly."}},{"@type":"Question","name":"Are my images uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All image-to-PDF conversion happens entirely in your browser. Your images never leave your device."}},{"@type":"Question","name":"How many images can I convert at once?","acceptedAnswer":{"@type":"Answer","text":"You can add multiple images — each image becomes a separate page in the PDF. There is no hard limit, but very large numbers of high-res images may affect browser performance."}},{"@type":"Question","name":"What image formats are supported?","acceptedAnswer":{"@type":"Answer","text":"This tool supports JPG, JPEG, PNG, WebP, and SVG image formats."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/image-to-pdf.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/image-to-pdf.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/image-to-pdf.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="drop-zone">
+      <p id="drop-text" style="font-size:1.1em;font-weight:600"></p>
+      <p id="drop-sub" style="font-size:.85em"></p>
+      <input type="file" id="file-input" multiple accept="image/*" style="display:none">
+    </div>
+    <div class="img-list" id="img-list"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image to PDF Converter',
+    toolDesc: 'Convert images to PDF for free in your browser — drag and drop JPG, PNG, WebP or SVG and download as a single PDF.',
+    dropText: '📁 Drop images here or click to select',
+    dropSub: 'Supports JPG, PNG, WebP, SVG',
+    convert: 'Convert to PDF',
+    step1: 'Drag and drop images or click to browse',
+    step2: 'Arrange images by dragging thumbnails',
+    step3: 'Click Convert to PDF to generate the document',
+    step4: 'The PDF downloads automatically to your device',
+  },
+  zh: {
+    toolTitle: '图片转 PDF 工具',
+    toolDesc: '免费在浏览器中将图片转为 PDF — 拖拽 JPG、PNG、WebP 或 SVG 图片，下载为单个 PDF 文件。',
+    dropText: '📁 拖拽图片到此处或点击选择',
+    dropSub: '支持 JPG、PNG、WebP、SVG 格式',
+    convert: '转换为 PDF',
+    step1: '拖拽图片到页面或点击浏览选择',
+    step2: '拖动缩略图调整图片顺序',
+    step3: '点击「转换为 PDF」生成文档',
+    step4: 'PDF 文件将自动下载到你的设备',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const images = [];
+
+$('#drop-text').textContent = t('dropText');
+$('#drop-sub').textContent = t('dropSub');
+
+const dz = $('#drop-zone');
+const fi = $('#file-input');
+
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fi.addEventListener('change', () => handleFiles(fi.files));
+
+function handleFiles(files) {
+  for (const f of files) {
+    if (!f.type.startsWith('image/')) continue;
+    const reader = new FileReader();
+    reader.onload = e => {
+      images.push({ name: f.name, data: e.target.result });
+      renderList();
+    };
+    reader.readAsDataURL(f);
+  }
+}
+
+function renderList() {
+  const list = $('#img-list');
+  list.innerHTML = images.map((img, i) =>
+    `<div class="img-thumb"><img src="${img.data}" alt="${img.name}"><button class="remove" onclick="removeImg(${i})">✕</button><span class="order">#${i+1}</span></div>`
+  ).join('');
+  updateToolbar();
+}
+
+function removeImg(i) {
+  images.splice(i, 1);
+  renderList();
+}
+
+function updateToolbar() {
+  const hasImages = images.length > 0;
+  $('#toolbar').innerHTML = `
+    <button class="gz-btn" onclick="convertToPDF()" ${hasImages ? '' : 'disabled'}>${t('convert')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="clearAll()" ${hasImages ? '' : 'disabled'}>${t('clear')}</button>
+    <span style="font-size:.85em;color:var(--text2)">${images.length} image(s)</span>`;
+}
+
+async function convertToPDF() {
+  if (!images.length) return;
+  $('#status').innerHTML = '<span style="color:var(--accent)">⏳ Converting...</span>';
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  for (let i = 0; i < images.length; i++) {
+    if (i > 0) pdf.addPage();
+    const img = new Image();
+    img.src = images[i].data;
+    await new Promise(r => { img.onload = r; });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const ratio = Math.min(pageW / img.width, pageH / img.height) * 0.9;
+    const w = img.width * ratio;
+    const h = img.height * ratio;
+    const x = (pageW - w) / 2;
+    const y = (pageH - h) / 2;
+
+    pdf.addImage(images[i].data, 'JPEG', x, y, w, h);
+  }
+
+  pdf.save('images.pdf');
+  $('#status').innerHTML = '<span style="color:var(--gz-success)">✓ PDF downloaded!</span>';
+}
+
+function clearAll() {
+  images.length = 0;
+  renderList();
+  $('#status').innerHTML = '';
+}
+
+updateToolbar();
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'📄', href:'/convert/pdf-merger.html', name:'PDF Merger'},
+    {icon:'🖼️', href:'/image/resizer.html', name:'Image Resizer'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

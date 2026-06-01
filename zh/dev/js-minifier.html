@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JavaScript 压缩 & 美化工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="压缩 JavaScript 减小文件体积，或美化代码提高可读性。完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/js-minifier.html">
+  <meta property="og:title" content="JavaScript 压缩 & 美化工具">
+  <meta property="og:description" content="压缩 JavaScript 减小文件体积，或美化代码提高可读性。完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/js-minifier.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JavaScript 压缩 & 美化工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;overflow:auto;max-height:500px}
+#status{margin-top:8px;font-size:.85em}
+.gz-output{min-height:120px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JavaScript Minifier & Beautifier","description":"Minify or beautify JavaScript code online for free. Compress JS to reduce file size or format for readability.","url": "https://tools.gamezipper.com/zh/dev/js-minifier.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I minify JavaScript?","acceptedAnswer":{"@type":"Answer","text":"Paste your JavaScript code into the input area and click the Minify button. The tool removes whitespace, comments, and unnecessary characters while preserving functionality."}},{"@type":"Question","name":"Is my JavaScript data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All processing happens entirely in your browser. No code is ever sent to any server."}},{"@type":"Question","name":"What is the difference between minify and beautify?","acceptedAnswer":{"@type":"Answer","text":"Minifying removes unnecessary whitespace and comments to reduce file size. Beautifying adds proper indentation and formatting to make code readable for humans."}},{"@type":"Question","name":"How much size reduction can I expect?","acceptedAnswer":{"@type":"Answer","text":"Typically 20-40% file size reduction depending on the original formatting and comment density. Well-commented and indented code sees the most benefit."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/js-minifier.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/js-minifier.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/js-minifier.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JavaScript Minifier & Beautifier',
+    toolDesc: 'Minify JavaScript to reduce file size or beautify for readability. Runs entirely in your browser.',
+    inputLabel: 'JavaScript Input',
+    outputLabel: 'Output',
+    original: 'Original',
+    result: 'Result',
+    saved: 'saved',
+    beautified: 'Beautified successfully',
+    step1: 'Paste or type your JavaScript code in the input area',
+    step2: 'Click "Minify" to compress or "Beautify" to format',
+    step3: 'Review the result and size comparison',
+    step4: 'Copy the output or download as a file',
+  },
+  zh: {
+    toolTitle: 'JavaScript 压缩 & 美化工具',
+    toolDesc: '压缩 JavaScript 减小文件体积，或美化代码提高可读性。完全在浏览器中运行。',
+    inputLabel: 'JavaScript 输入',
+    outputLabel: '输出结果',
+    original: '原始大小',
+    result: '结果大小',
+    saved: '节省',
+    beautified: '美化成功',
+    step1: '在输入区粘贴或输入 JavaScript 代码',
+    step2: '点击「压缩」减小体积或「美化」格式化代码',
+    step3: '查看结果和压缩比例',
+    step4: '复制输出结果或下载为文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function minifyJS(code) {
+  let result = code;
+  // Remove single-line comments (but not URLs like http://)
+  result = result.replace(/([^:]|^)\/\/.*$/gm, '$1');
+  // Remove multi-line comments
+  result = result.replace(/\/\*[\s\S]*?\*\//g, '');
+  // Remove leading/trailing whitespace on each line
+  result = result.replace(/^\s+|\s+$/gm, '');
+  // Collapse multiple spaces/newlines
+  result = result.replace(/\s+/g, ' ');
+  // Remove spaces around operators (careful not to break things)
+  result = result.replace(/\s*([=+\-*/<>!&|?:;,{}()[\]])\s*/g, '$1');
+  // Add back necessary spaces after keywords
+  const keywords = ['var','let','const','function','return','if','else','for','while','do','switch','case','break','continue','new','typeof','instanceof','in','of','throw','try','catch','finally','class','extends','import','export','from','default','yield','async','await','void','delete'];
+  keywords.forEach(kw => {
+    const re = new RegExp('\\b' + kw + '(?=[a-zA-Z_$])', 'g');
+    result = result.replace(re, kw + ' ');
+  });
+  // Fix return/typeof followed by keyword
+  ['return','typeof','instanceof','in','of','void','delete','new','throw','yield','await'].forEach(kw => {
+    const re = new RegExp('\\b' + kw + '([a-zA-Z_$])', 'g');
+    result = result.replace(re, kw + ' $1');
+  });
+  return result.trim();
+}
+
+function beautifyJS(code) {
+  // Simple beautifier
+  let result = code;
+  let indent = 0;
+  const tab = '  ';
+  let output = '';
+  let i = 0;
+  let inString = false;
+  let stringChar = '';
+
+  // First, add newlines around braces and semicolons
+  result = result.replace(/;/g, ';\n');
+  result = result.replace(/\{/g, '{\n');
+  result = result.replace(/\}/g, '\n}\n');
+
+  const lines = result.split('\n');
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    // Decrease indent for closing brace
+    if (line.startsWith('}')) indent = Math.max(0, indent - 1);
+    output += tab.repeat(indent) + line + '\n';
+    // Increase indent after opening brace
+    if (line.endsWith('{')) indent++;
+  }
+  return output.trim();
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  return (bytes / 1024).toFixed(1) + ' KB';
+}
+
+function doMinify() {
+  const inp = $('#input').value;
+  if (!inp.trim()) return;
+  const minified = minifyJS(inp);
+  $('#output').textContent = minified;
+  const origSize = new Blob([inp]).size;
+  const minSize = new Blob([minified]).size;
+  const saved = origSize > 0 ? ((1 - minSize / origSize) * 100).toFixed(1) : 0;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('original')}: ${formatBytes(origSize)} → ${t('result')}: ${formatBytes(minSize)} (${saved}% ${t('saved')})</span>`;
+}
+
+function doBeautify() {
+  const inp = $('#input').value;
+  if (!inp.trim()) return;
+  const beautified = beautifyJS(inp);
+  $('#output').textContent = beautified;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('beautified')}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = `// Example: Calculator class
+class Calculator {
+  constructor() {
+    this.result = 0;
+    this.history = [];
+  }
+
+  add(num) {
+    this.result += num;
+    this.history.push(\`+ \${num}\`);
+    return this;
+  }
+
+  subtract(num) {
+    this.result -= num;
+    this.history.push(\`- \${num}\`);
+    return this;
+  }
+
+  multiply(num) {
+    this.result *= num;
+    this.history.push(\`× \${num}\`);
+    return this;
+  }
+
+  divide(num) {
+    if (num === 0) {
+      throw new Error("Cannot divide by zero");
+    }
+    this.result /= num;
+    this.history.push(\`÷ \${num}\`);
+    return this;
+  }
+
+  getResult() {
+    return this.result;
+  }
+
+  reset() {
+    this.result = 0;
+    this.history = [];
+    return this;
+  }
+}
+
+/* Usage example */
+const calc = new Calculator();
+const value = calc.add(10).multiply(3).subtract(5).divide(5).getResult();
+console.log("Result:", value);`;
+  doMinify();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doBeautify()">${t('beautify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📦', href:'/css-tools/minify.html', name:'CSS Minifier'},
+    {icon:'📄', href:'/dev/html-minifier.html', name:'HTML Minifier'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JSON 转 CSV 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 JSON 数组转换为 CSV 格式，支持嵌套对象扁平化和正确的字符转义。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/json-to-csv.html">
+  <meta property="og:title" content="JSON 转 CSV 转换器">
+  <meta property="og:description" content="将 JSON 数组转换为 CSV 格式，支持嵌套对象扁平化和正确的字符转义。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/json-to-csv.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 转 CSV 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+.gz-output{min-height:120px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to CSV Converter","description":"Convert JSON data to CSV format online for free. Paste JSON arrays or objects and get clean CSV output with proper escaping.","url": "https://tools.gamezipper.com/zh/convert/json-to-csv.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert JSON to CSV?","acceptedAnswer":{"@type":"Answer","text":"Paste your JSON array of objects into the input area and click Convert. The tool extracts all keys as column headers and values as rows, outputting standard CSV format."}},{"@type":"Question","name":"What JSON formats are supported?","acceptedAnswer":{"@type":"Answer","text":"The tool supports JSON arrays of objects, single objects wrapped in an array, and nested objects (which are flattened to dot-notation keys)."}},{"@type":"Question","name":"Is my data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All conversion happens entirely in your browser. No data is ever sent to any server."}},{"@type":"Question","name":"How are special characters handled in CSV?","acceptedAnswer":{"@type":"Answer","text":"Fields containing commas, double quotes, or newlines are automatically wrapped in double quotes. Double quotes within fields are escaped as double-double quotes per CSV standard."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/json-to-csv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/json-to-csv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/json-to-csv.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to CSV Converter',
+    toolDesc: 'Convert JSON arrays to CSV format with proper escaping and nested object flattening.',
+    inputLabel: 'JSON Input',
+    outputLabel: 'CSV Output',
+    convert: 'Convert',
+    rowsExported: 'rows exported',
+    columns: 'columns',
+    errorInvalidJSON: 'Invalid JSON',
+    errorNotArray: 'Input must be a JSON array or object',
+    separator: 'Separator',
+    flatten: 'Flatten nested',
+    step1: 'Paste your JSON data (array of objects) in the input area',
+    step2: 'Choose separator (comma, tab, semicolon) and options',
+    step3: 'Click "Convert" to generate CSV output',
+    step4: 'Copy or download the CSV result',
+  },
+  zh: {
+    toolTitle: 'JSON 转 CSV 转换器',
+    toolDesc: '将 JSON 数组转换为 CSV 格式，支持嵌套对象扁平化和正确的字符转义。',
+    inputLabel: 'JSON 输入',
+    outputLabel: 'CSV 输出',
+    convert: '转换',
+    rowsExported: '行已导出',
+    columns: '列',
+    errorInvalidJSON: 'JSON 格式无效',
+    errorNotArray: '输入必须是 JSON 数组或对象',
+    separator: '分隔符',
+    flatten: '扁平化嵌套',
+    step1: '在输入区粘贴 JSON 数据（对象数组）',
+    step2: '选择分隔符（逗号、制表符、分号）和选项',
+    step3: '点击「转换」生成 CSV 输出',
+    step4: '复制或下载 CSV 结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let sep = ',';
+
+function flatten(obj, prefix = '') {
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      Object.assign(result, flatten(value, newKey));
+    } else {
+      result[newKey] = Array.isArray(value) ? JSON.stringify(value) : value;
+    }
+  }
+  return result;
+}
+
+function escapeCSV(val, separator) {
+  const str = val === null || val === undefined ? '' : String(val);
+  if (str.includes(separator) || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    let data = JSON.parse(inp);
+    if (!Array.isArray(data)) {
+      if (typeof data === 'object' && data !== null) {
+        data = [data];
+      } else {
+        $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('errorNotArray')}</span>`;
+        return;
+      }
+    }
+
+    const shouldFlatten = $('#flatten-check').checked;
+    const processed = data.map(item => {
+      if (typeof item !== 'object' || item === null) return { value: item };
+      return shouldFlatten ? flatten(item) : item;
+    });
+
+    // Collect all headers
+    const headers = new Set();
+    processed.forEach(item => Object.keys(item).forEach(k => headers.add(k)));
+    const headerArr = [...headers];
+
+    // Build CSV
+    let csv = headerArr.map(h => escapeCSV(h, sep)).join(sep) + '\n';
+    processed.forEach(item => {
+      csv += headerArr.map(h => escapeCSV(item[h], sep)).join(sep) + '\n';
+    });
+
+    $('#output').textContent = csv.trim();
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${processed.length} ${t('rowsExported')}, ${headerArr.length} ${t('columns')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('errorInvalidJSON')}: ${e.message}</span>`;
+    $('#output').textContent = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify([
+    {"name":"Alice","age":30,"city":"New York","department":{"team":"Engineering","role":"Senior Developer"}},
+    {"name":"Bob","age":25,"city":"San Francisco","department":{"team":"Design","role":"UI Designer"}},
+    {"name":"Charlie","age":35,"city":"London","department":{"team":"Engineering","role":"Tech Lead"}},
+    {"name":"Diana","age":28,"city":"Tokyo","department":{"team":"Marketing","role":"Content Strategist"}},
+    {"name":"Eve","age":32,"city":"Berlin","department":{"team":"Engineering","role":"Backend Developer"}}
+  ], null, 2);
+  $('#flatten-check').checked = true;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+function downloadCSV() {
+  const csv = $('#output').textContent;
+  if (!csv) return;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="sep=this.value;doConvert()">
+    <option value=",">${t('separator')}: ,</option>
+    <option value="\t">${t('separator')}: Tab</option>
+    <option value=";">${t('separator')}: ;</option>
+  </select>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" id="flatten-check" checked onchange="doConvert()"> ${t('flatten')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadCSV()">CSV ↓</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔄', href:'/convert/yaml-json.html', name:'YAML ↔ JSON'},
+    {icon:'🔢', href:'/convert/number-base.html', name:'Number Base'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

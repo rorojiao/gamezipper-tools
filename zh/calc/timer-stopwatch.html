@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>在线计时器 & 秒表 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在线倒计时器和秒表，支持分圈记录。设置任意时长，倒计时结束自动响铃提醒。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/timer-stopwatch.html">
+  <meta property="og:title" content="在线计时器 & 秒表">
+  <meta property="og:description" content="免费在线倒计时器和秒表，支持分圈记录。设置任意时长，倒计时结束自动响铃提醒。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/timer-stopwatch.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线计时器 & 秒表">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.mode-tabs{display:flex;gap:8px;margin-bottom:20px}
+.mode-tabs button{flex:1;padding:12px;font-size:1rem;font-weight:700;border-radius:12px;cursor:pointer;border:2px solid var(--border);background:var(--glass);color:var(--text);transition:all .2s}
+.mode-tabs button.active{border-color:var(--accent);background:var(--accent);color:#000}
+.timer-display{text-align:center;font-size:4rem;font-weight:900;font-variant-numeric:tabular-nums;margin:24px 0;letter-spacing:2px;color:var(--text)}
+.timer-display.running{color:var(--accent)}
+.timer-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.timer-inputs{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.timer-inputs input{width:70px;padding:10px;text-align:center;font-size:1.2rem;font-weight:700;border-radius:10px;border:2px solid var(--border);background:var(--glass);color:var(--text)}
+.timer-inputs span{color:var(--text2);font-weight:700}
+.lap-list{max-height:200px;overflow-y:auto;margin-top:12px}
+.lap-item{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);font-size:.9rem}
+.lap-item .lap-num{color:var(--accent);font-weight:700}
+.lap-item .lap-time{font-variant-numeric:tabular-nums;font-weight:600}
+@media(max-width:500px){.timer-display{font-size:2.5rem}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Timer & Stopwatch","description":"Free online timer and stopwatch. Start a countdown timer or use the stopwatch to measure elapsed time with lap tracking. No signup required.","url": "https://tools.gamezipper.com/zh/calc/timer-stopwatch.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does the timer work when the tab is in the background?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The timer uses timestamp-based calculation, so it remains accurate even when the browser tab is in the background or minimized."}}, {"@type": "Question", "name": "Can I track laps with the stopwatch?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click the Lap button while the stopwatch is running to record lap times. Each lap shows the split time and total elapsed time."}}, {"@type": "Question", "name": "Does the timer make a sound when it ends?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. When the countdown reaches zero, a notification sound plays using the Web Audio API. Make sure your device is not muted."}}, {"@type": "Question", "name": "Is this timer accurate?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The timer uses Date.now() for precise time measurement, accurate to within a few milliseconds regardless of browser performance."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/timer-stopwatch.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/timer-stopwatch.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/timer-stopwatch.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="mode-tabs">
+      <button id="tab-timer" class="active" onclick="switchMode('timer')">⏱️ <span data-i18n="timerTab"></span></button>
+      <button id="tab-stopwatch" onclick="switchMode('stopwatch')">⏱ <span data-i18n="stopwatchTab"></span></button>
+    </div>
+
+    <!-- Timer Mode -->
+    <div id="timer-section">
+      <div class="timer-inputs" id="timer-inputs">
+        <input type="number" id="inp-h" min="0" max="99" value="0" placeholder="h">
+        <span>:</span>
+        <input type="number" id="inp-m" min="0" max="59" value="5" placeholder="m">
+        <span>:</span>
+        <input type="number" id="inp-s" min="0" max="59" value="0" placeholder="s">
+      </div>
+      <div class="timer-display" id="timer-display">00:05:00</div>
+      <div class="timer-controls">
+        <button class="gz-btn" id="btn-timer-start" onclick="timerStart()">▶ <span data-i18n="start"></span></button>
+        <button class="gz-btn gz-btn-secondary" id="btn-timer-pause" onclick="timerPause()" style="display:none">⏸ <span data-i18n="pause"></span></button>
+        <button class="gz-btn gz-btn-secondary" onclick="timerReset()">↺ <span data-i18n="reset"></span></button>
+      </div>
+    </div>
+
+    <!-- Stopwatch Mode -->
+    <div id="stopwatch-section" style="display:none">
+      <div class="timer-display" id="sw-display">00:00:00.000</div>
+      <div class="timer-controls">
+        <button class="gz-btn" id="btn-sw-start" onclick="swStart()">▶ <span data-i18n="start"></span></button>
+        <button class="gz-btn gz-btn-secondary" id="btn-sw-pause" onclick="swPause()" style="display:none">⏸ <span data-i18n="pause"></span></button>
+        <button class="gz-btn gz-btn-secondary" id="btn-sw-lap" onclick="swLap()" style="display:none">🏁 <span data-i18n="lap"></span></button>
+        <button class="gz-btn gz-btn-secondary" onclick="swReset()">↺ <span data-i18n="reset"></span></button>
+      </div>
+      <div class="lap-list" id="lap-list"></div>
+    </div>
+  </div>
+
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Timer & Stopwatch',
+    toolDesc: 'Free online countdown timer and stopwatch with lap tracking. Set any duration and get an audible alert when time is up.',
+    timerTab: 'Timer',
+    stopwatchTab: 'Stopwatch',
+    start: 'Start',
+    pause: 'Pause',
+    resume: 'Resume',
+    reset: 'Reset',
+    lap: 'Lap',
+    lapN: 'Lap',
+    split: 'Split',
+    total: 'Total',
+    hours: 'h',
+    minutes: 'm',
+    seconds: 's',
+    timesUp: '⏰ Time\'s up!',
+    step1: 'Choose Timer for countdown or Stopwatch to measure elapsed time',
+    step2: 'Set the countdown hours, minutes and seconds (Timer mode)',
+    step3: 'Press Start — switch tabs or minimize, the timer stays accurate',
+    step4: 'Use Lap (Stopwatch) to record split times, or wait for the alert (Timer)',
+  },
+  zh: {
+    toolTitle: '在线计时器 & 秒表',
+    toolDesc: '免费在线倒计时器和秒表，支持分圈记录。设置任意时长，倒计时结束自动响铃提醒。',
+    timerTab: '计时器',
+    stopwatchTab: '秒表',
+    start: '开始',
+    pause: '暂停',
+    resume: '继续',
+    reset: '重置',
+    lap: '计圈',
+    lapN: '圈',
+    split: '分段',
+    total: '总计',
+    hours: '时',
+    minutes: '分',
+    seconds: '秒',
+    timesUp: '⏰ 时间到！',
+    step1: '选择「计时器」倒计时或「秒表」测量经过时间',
+    step2: '设置倒计时的小时、分钟和秒数（计时器模式）',
+    step3: '按「开始」— 切换标签页或最小化，计时器依然准确',
+    step4: '使用「计圈」（秒表）记录分段，或等待提醒（计时器）',
+  }
+});
+
+const { $, t } = GZ;
+let mode = 'timer';
+
+function switchMode(m) {
+  mode = m;
+  $('#tab-timer').classList.toggle('active', m === 'timer');
+  $('#tab-stopwatch').classList.toggle('active', m === 'stopwatch');
+  $('#timer-section').style.display = m === 'timer' ? '' : 'none';
+  $('#stopwatch-section').style.display = m === 'stopwatch' ? '' : 'none';
+}
+
+// Format helpers
+function pad2(n) { return String(n).padStart(2, '0'); }
+function fmtTimer(ms) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+}
+function fmtSw(ms) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const ms_ = ms % 1000;
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}.${String(ms_).padStart(3, '0')}`;
+}
+
+// === TIMER ===
+let timerTotal = 0, timerEnd = 0, timerRunning = false, timerRaf = null;
+function updateTimerInputs() {
+  const h = parseInt($('#inp-h').value) || 0;
+  const m = parseInt($('#inp-m').value) || 0;
+  const s = parseInt($('#inp-s').value) || 0;
+  timerTotal = (h * 3600 + m * 60 + s) * 1000;
+  $('#timer-display').textContent = fmtTimer(timerTotal);
+}
+$('#inp-h').addEventListener('input', updateTimerInputs);
+$('#inp-m').addEventListener('input', updateTimerInputs);
+$('#inp-s').addEventListener('input', updateTimerInputs);
+
+function timerStart() {
+  if (timerRunning) return;
+  if (timerEnd === 0) {
+    updateTimerInputs();
+    if (timerTotal <= 0) return;
+    timerEnd = Date.now() + timerTotal;
+  } else {
+    timerEnd = Date.now() + (timerEnd - Date.now());
+  }
+  timerRunning = true;
+  $('#timer-display').classList.add('running');
+  $('#btn-timer-start').style.display = 'none';
+  $('#btn-timer-pause').style.display = '';
+  $('#btn-timer-pause').innerHTML = '⏸ ' + t('pause');
+  $('#timer-inputs').style.opacity = '0.4';
+  $('#timer-inputs').style.pointerEvents = 'none';
+  timerTick();
+}
+function timerPause() {
+  timerRunning = false;
+  cancelAnimationFrame(timerRaf);
+  $('#btn-timer-pause').style.display = 'none';
+  $('#btn-timer-start').style.display = '';
+  $('#btn-timer-start').innerHTML = '▶ ' + t('resume');
+}
+function timerReset() {
+  timerRunning = false;
+  cancelAnimationFrame(timerRaf);
+  timerEnd = 0;
+  $('#timer-display').classList.remove('running');
+  $('#btn-timer-start').style.display = '';
+  $('#btn-timer-start').innerHTML = '▶ ' + t('start');
+  $('#btn-timer-pause').style.display = 'none';
+  $('#timer-inputs').style.opacity = '';
+  $('#timer-inputs').style.pointerEvents = '';
+  updateTimerInputs();
+}
+function timerTick() {
+  if (!timerRunning) return;
+  const remaining = timerEnd - Date.now();
+  $('#timer-display').textContent = fmtTimer(remaining);
+  if (remaining <= 0) {
+    timerRunning = false;
+    $('#timer-display').textContent = fmtTimer(0);
+    $('#timer-display').classList.remove('running');
+    $('#btn-timer-pause').style.display = 'none';
+    $('#btn-timer-start').style.display = '';
+    $('#btn-timer-start').innerHTML = '▶ ' + t('start');
+    timerEnd = 0;
+    $('#timer-inputs').style.opacity = '';
+    $('#timer-inputs').style.pointerEvents = '';
+    playAlarm();
+    return;
+  }
+  timerRaf = requestAnimationFrame(timerTick);
+}
+function playAlarm() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep(freq, start, dur) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur);
+    }
+    for (let i = 0; i < 3; i++) {
+      beep(880, i * 0.4, 0.3);
+      beep(1100, i * 0.4 + 0.15, 0.2);
+    }
+  } catch(e) {}
+}
+
+// === STOPWATCH ===
+let swStart_time = 0, swElapsed = 0, swRunning = false, swRaf = null, swLaps = [];
+function swNow() { return swElapsed + (swRunning ? Date.now() - swStart_time : 0); }
+function swStart() {
+  if (swRunning) return;
+  swStart_time = Date.now();
+  swRunning = true;
+  $('#sw-display').classList.add('running');
+  $('#btn-sw-start').style.display = 'none';
+  $('#btn-sw-pause').style.display = '';
+  $('#btn-sw-pause').innerHTML = '⏸ ' + t('pause');
+  $('#btn-sw-lap').style.display = '';
+  swTick();
+}
+function swPause() {
+  swElapsed += Date.now() - swStart_time;
+  swRunning = false;
+  cancelAnimationFrame(swRaf);
+  $('#btn-sw-pause').style.display = 'none';
+  $('#btn-sw-start').style.display = '';
+  $('#btn-sw-start').innerHTML = '▶ ' + t('resume');
+}
+function swReset() {
+  swRunning = false;
+  cancelAnimationFrame(swRaf);
+  swElapsed = 0;
+  swStart_time = 0;
+  swLaps = [];
+  $('#sw-display').textContent = fmtSw(0);
+  $('#sw-display').classList.remove('running');
+  $('#btn-sw-start').style.display = '';
+  $('#btn-sw-start').innerHTML = '▶ ' + t('start');
+  $('#btn-sw-pause').style.display = 'none';
+  $('#btn-sw-lap').style.display = 'none';
+  $('#lap-list').innerHTML = '';
+}
+function swTick() {
+  if (!swRunning) return;
+  $('#sw-display').textContent = fmtSw(swNow());
+  swRaf = requestAnimationFrame(swTick);
+}
+function swLap() {
+  if (!swRunning) return;
+  const now = swNow();
+  const prevLap = swLaps.length > 0 ? swLaps[swLaps.length - 1].total : 0;
+  swLaps.push({ split: now - prevLap, total: now });
+  renderLaps();
+}
+function renderLaps() {
+  $('#lap-list').innerHTML = swLaps.map((l, i) =>
+    `<div class="lap-item"><span class="lap-num">${t('lapN')} ${i + 1}</span><span class="lap-time">${fmtSw(l.split)}</span><span class="lap-time">${fmtSw(l.total)}</span></div>`
+  ).reverse().join('');
+}
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📅', href:'/calc/date-calculator.html', name:'Date Calculator'},
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp'},
+    {icon:'⏲️', href:'/dev/cron.html', name:'Cron'},
+    {icon:'⚖️', href:'/calc/bmi-calculator.html', name:'BMI Calculator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
