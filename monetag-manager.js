@@ -1,11 +1,16 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v3 (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v4 (Poki-style)
  * ────────────────────────────────────────────────
- * Poki-model: Smart frequency control, minimal disruption
+ * Poki-model: Smart frequency control, glass overlay + progress bar
+ * 
+ * v4 Changes (aligned with gamezipper.com v5):
+ *   - Vignette → Poki-style glass overlay with progress bar + brand text
+ *   - Frequency control aligned: 45s interval, 20/30min, 60/day
+ *   - First ad delay 45s (new-user friendly)
  * 
  * Zones (MultiTag):
  *   - In-Page Push:     11012010 (banners, containers)
- *   - Vignette Banner:  11012011 (interstitials)
+ *   - Vignette Banner:  11012011 (Poki-style overlay)
  *   - Popunder:         11012009 (click-triggered only)
  *   - Push:             11012012 (disabled per user request)
  */
@@ -26,21 +31,26 @@
 
   var CONFIG = {
     AD_PROVIDER: 'https://a.magsrv.com/ad-provider.js',
+    // 频率控制 — 对齐 gamezipper.com v5
     FREQUENCY: {
-      minBetweenAds: 30 * 1000,         // 30s between any ads (optimized from 40s)
+      minBetweenAds: 45 * 1000,         // 45s between any ads (对标 Poki 克制策略)
+      firstAdDelay: 45 * 1000,          // 45s before first ad (新用户友好)
       popunderInterval: 25 * 60 * 1000,  // 25 min between popunders
-      sessionMaxAds: 30,                 // max 30 per session (optimized from 15)
-      sessionWindowMs: 30 * 60 * 1000,
-      dailyMaxAds: 100,                 // max 100 per day (new)
+      sessionMaxAds: 20,                 // max 20 per 30-min session (对标 Poki)
+      sessionWindowMs: 30 * 60 * 1000,   // 30-min rolling window
+      dailyMaxAds: 60,                   // max 60 per day (对标 Poki)
     },
     TIMING: {
-      containerAdDelay: 3000,           // 3s (optimized from 3.5s)
-      vignetteHubDelay: 15 * 1000,      // 15s on hub pages (optimized from 20s)
-      vignetteToolDelay: 30 * 1000,     // 30s on tool pages (optimized from 35s)
+      containerAdDelay: 3000,           // 3s
+      vignetteHubDelay: 20 * 1000,      // 20s on hub pages
+      vignetteToolDelay: 35 * 1000,     // 35s on tool pages
+      vignetteSkipAfter: 5000,          // 5s skip countdown for Poki overlay
+      vignetteMaxDuration: 8000,        // 8s auto-dismiss
       popunderInteractionDelay: 5000,  // 5s after first interaction
       adLoadTimeout: 5000,
     },
-    STORAGE_PREFIX: 'gzt3_',
+    STORAGE_PREFIX: 'gzt4_',
+    BC_CHANNEL: 'gzt4-tools-sync',
   };
 
   var state = {
@@ -57,37 +67,46 @@
   function storageGet(k) { try { return JSON.parse(localStorage.getItem(CONFIG.STORAGE_PREFIX + k)); } catch(e) { return null; } }
   function storageSet(k, v) { try { localStorage.setItem(CONFIG.STORAGE_PREFIX + k, JSON.stringify(v)); } catch(e) {} }
 
+  // ==================== 频率控制 (Poki-model) ====================
   function canShowAd() {
     var ts = storageGet('ad_ts') || [];
     var n = now();
-    // Clean old timestamps (keep last 24h)
+    // 清理超过24h的时间戳
     ts = ts.filter(function(t) { return (n - t) < 24 * 60 * 60 * 1000; });
-    // Check daily max
+    // 每日上限
     if (ts.length >= CONFIG.FREQUENCY.dailyMaxAds) return false;
-    // Clean session window
-    ts = ts.filter(function(t) { return (n - t) < CONFIG.FREQUENCY.sessionWindowMs; });
-    if (ts.length >= CONFIG.FREQUENCY.sessionMaxAds) return false;
-    if (ts.length > 0 && (n - Math.max.apply(null, ts)) < CONFIG.FREQUENCY.minBetweenAds) return false;
+    // 30分钟 session 上限
+    var sessionTs = ts.filter(function(t) { return (n - t) < CONFIG.FREQUENCY.sessionWindowMs; });
+    if (sessionTs.length >= CONFIG.FREQUENCY.sessionMaxAds) return false;
+    // 最小间隔
+    if (ts.length > 0) {
+      var lastAd = Math.max.apply(null, ts);
+      var minGap = ts.length <= 2 ? CONFIG.FREQUENCY.firstAdDelay : CONFIG.FREQUENCY.minBetweenAds;
+      if (n - lastAd < minGap) return false;
+    }
     return true;
   }
 
   function markShown() {
     var ts = storageGet('ad_ts') || [];
     ts.push(now());
-    storageSet('ad_ts', ts.slice(-50));
-    if (state.channel) try { state.channel.postMessage(now()); } catch(e) {}
+    storageSet('ad_ts', ts.slice(-100));
+    if (state.channel) try { state.channel.postMessage({ type: 'ad_shown', time: now() }); } catch(e) {}
   }
 
-  // BroadcastChannel
+  // ==================== BroadcastChannel (跨标签页同步) ====================
   try {
-    state.channel = new BroadcastChannel('gz4-tools-sync');
+    state.channel = new BroadcastChannel(CONFIG.BC_CHANNEL);
     state.channel.onmessage = function(e) {
-      var ts = storageGet('ad_ts') || [];
-      ts.push(e.data);
-      storageSet('ad_ts', ts.slice(-50));
+      if (e.data && e.data.type === 'ad_shown') {
+        var ts = storageGet('ad_ts') || [];
+        ts.push(e.data.time);
+        storageSet('ad_ts', ts.slice(-100));
+      }
     };
   } catch(e) {}
 
+  // ==================== 广告加载 ====================
   function loadZone(zoneId, targetEl) {
     return new Promise(function(resolve, reject) {
       var timeout = setTimeout(function() { reject(new Error('timeout')); }, CONFIG.TIMING.adLoadTimeout);
@@ -109,7 +128,7 @@
     state.isToolPage = !state.isHubPage && path.length > 1;
   }
 
-  // Container ad (below tool results)
+  // ==================== Container ad (工具结果下方) ====================
   function showContainerAd() {
     var container = document.getElementById('gz-tools-ad-below');
     if (!container) return;
@@ -125,17 +144,109 @@
     }, CONFIG.TIMING.containerAdDelay);
   }
 
-  // Vignette banner (delayed, non-blocking)
-  function showVignette() {
+  // ==================== Poki-style Glass Overlay (替代 Vignette) ====================
+  // 对标 Poki: 毛玻璃 + 品牌文案 + 进度条
+  function showPokiOverlay() {
     if (!canShowAd()) return;
     var delay = state.isHubPage ? CONFIG.TIMING.vignetteHubDelay : CONFIG.TIMING.vignetteToolDelay;
+
     setTimeout(function() {
       if (!canShowAd()) return;
-      loadZone(ZONES.vignette).then(function() { markShown(); }).catch(function() {});
+
+      // 创建毛玻璃覆盖层 (Poki-style)
+      var overlay = document.createElement('div');
+      overlay.id = 'gz-tools-overlay';
+      overlay.style.cssText = [
+        'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999',
+        'display:flex;flex-direction:column;align-items:center;justify-content:center',
+        'background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+        'transition:opacity 0.4s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
+      ].join(';');
+
+      // 品牌区域 — 顶部
+      var brandDiv = document.createElement('div');
+      brandDiv.style.cssText = 'position:absolute;top:24px;left:0;right:0;text-align:center;';
+      var brandText = document.createElement('div');
+      brandText.style.cssText = 'font-size:14px;font-weight:600;color:#4F8EFF;letter-spacing:0.5px;';
+      brandText.textContent = '🛠️ GameZipper Tools';
+      brandDiv.appendChild(brandText);
+      overlay.appendChild(brandDiv);
+
+      // 中央提示
+      var centerDiv = document.createElement('div');
+      centerDiv.style.cssText = 'text-align:center;margin-bottom:20px;';
+      var msgLine1 = document.createElement('div');
+      msgLine1.style.cssText = 'font-size:16px;font-weight:600;color:#fff;margin-bottom:8px;';
+      msgLine1.textContent = "We'll be right back after this short break";
+      var msgLine2 = document.createElement('div');
+      msgLine2.style.cssText = 'font-size:12px;color:#5D6B84;';
+      msgLine2.textContent = 'Loading...';
+      centerDiv.appendChild(msgLine1);
+      centerDiv.appendChild(msgLine2);
+      overlay.appendChild(centerDiv);
+
+      // 底部进度条 (Poki-style: 蓝色填充 #4F8EFF, 5px 高度)
+      var progressContainer = document.createElement('div');
+      progressContainer.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:5px;background:rgba(255,255,255,0.1);';
+      var progressBar = document.createElement('div');
+      progressBar.style.cssText = 'height:100%;width:0%;background:linear-gradient(90deg,#4F8EFF,#00D4FF);border-radius:0 3px 3px 0;transition:width 0.3s linear;';
+      progressContainer.appendChild(progressBar);
+      overlay.appendChild(progressContainer);
+
+      // 跳过按钮 (倒计时后显示)
+      var skipBtn = document.createElement('button');
+      var skipSeconds = Math.ceil(CONFIG.TIMING.vignetteSkipAfter / 1000);
+      skipBtn.style.cssText = [
+        'position:absolute;bottom:20px;right:20px',
+        'padding:8px 20px;background:rgba(255,255,255,0.12);color:#fff',
+        'border:1px solid rgba(255,255,255,0.2);border-radius:20px;font-size:13px',
+        'cursor:pointer;backdrop-filter:blur(4px);display:none;',
+      ].join(';');
+      skipBtn.textContent = 'Continue in ' + skipSeconds + 's...';
+      overlay.appendChild(skipBtn);
+
+      document.body.appendChild(overlay);
+
+      // 进度条动画 (总时长 = vignetteMaxDuration)
+      var progressStart = now();
+      var progressInterval = setInterval(function() {
+        var elapsed = now() - progressStart;
+        var pct = Math.min(100, (elapsed / CONFIG.TIMING.vignetteMaxDuration) * 100);
+        progressBar.style.width = pct + '%';
+        if (pct >= 100) clearInterval(progressInterval);
+      }, 100);
+
+      // 倒计时
+      var remaining = skipSeconds;
+      var countdownTimer = setInterval(function() {
+        remaining--;
+        if (remaining > 0) {
+          skipBtn.textContent = 'Continue in ' + remaining + 's...';
+        } else {
+          clearInterval(countdownTimer);
+          skipBtn.textContent = '✕ Continue';
+          skipBtn.style.display = 'block';
+          skipBtn.onclick = function() { finishOverlay(); };
+        }
+      }, 1000);
+
+      // 自动关闭
+      var maxTimer = setTimeout(function() { finishOverlay(); }, CONFIG.TIMING.vignetteMaxDuration);
+
+      // 加载广告
+      loadZone(ZONES.vignette).catch(function() {});
+
+      function finishOverlay() {
+        clearInterval(progressInterval);
+        clearInterval(countdownTimer);
+        clearTimeout(maxTimer);
+        if (overlay.parentNode) overlay.remove();
+        markShown();
+      }
     }, delay);
   }
 
-  // Popunder (click-triggered, with frequency control)
+  // ==================== Popunder (点击触发, 频率控制) ====================
   function initPopunder() {
     var lastPopunder = storageGet('popunder_last') || 0;
     if (now() - lastPopunder < CONFIG.FREQUENCY.popunderInterval) return;
@@ -168,7 +279,7 @@
     }
   }
 
-  // In-Page Push (lightweight, all pages)
+  // ==================== In-Page Push (轻量级, 所有页面) ====================
   function showInPagePush() {
     if (!canShowAd()) return;
     setTimeout(function() {
@@ -177,7 +288,7 @@
     }, 3000);
   }
 
-  // Init
+  // ==================== 初始化 ====================
   // Preconnect to ad provider for faster loading
   ['https://a.magsrv.com', 'https://static.magsrv.com'].forEach(function(origin) {
     try {
@@ -191,7 +302,7 @@
 
   detectPage();
   showContainerAd();
-  showVignette();
+  showPokiOverlay();    // v4: Poki-style glass overlay 替代 vignette
   initPopunder();
   showInPagePush();
 
