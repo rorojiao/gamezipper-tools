@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON Schema Generator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Generate JSON Schema from JSON data instantly. Paste your JSON and get a valid JSON Schema with proper types, required fields and nested structures.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-schema.html">
+  <meta property="og:title" content="JSON Schema Generator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Generate JSON Schema from JSON data instantly. Paste your JSON and get a valid JSON Schema with proper types, required fields and nested structures.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-schema.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON Schema Generator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Schema Generator","description":"Generate JSON Schema from JSON data instantly. Paste your JSON and get a valid JSON Schema with proper types, required fields and nested structures.","url":"https://tools.gamezipper.com/dev/json-schema.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is JSON Schema?","acceptedAnswer":{"@type":"Answer","text":"JSON Schema is a vocabulary that allows you to annotate and validate JSON documents. It describes the structure, types and constraints of your JSON data."}},{"@type":"Question","name":"How does the JSON Schema Generator work?","acceptedAnswer":{"@type":"Answer","text":"Paste your JSON data into the input area. The tool analyzes the structure and generates a corresponding JSON Schema with correct types, required fields and nested object definitions."}},{"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All processing happens entirely in your browser. No data is ever uploaded to any server."}},{"@type":"Question","name":"What JSON Schema version does this generate?","acceptedAnswer":{"@type":"Answer","text":"The tool generates JSON Schema Draft-07 ($schema: http://json-schema.org/draft-07/schema#) which is widely supported by validators and tools."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-schema.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-schema.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-schema.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Schema Generator',
+    toolDesc: 'Paste JSON data and instantly generate a valid JSON Schema (Draft-07) with types, required fields and nested definitions.',
+    generate: 'Generate',
+    jsonValid: '✓ Valid JSON — Schema generated',
+    jsonInvalid: '✗ Invalid JSON',
+    step1: 'Paste or type your JSON data in the input area',
+    step2: 'Click Generate to create the JSON Schema',
+    step3: 'Review the generated schema with proper types and constraints',
+    step4: 'Copy the schema to use in your project or validation',
+  },
+  zh: {
+    toolTitle: 'JSON Schema 生成器',
+    toolDesc: '粘贴 JSON 数据，即时生成有效的 JSON Schema（Draft-07），包含类型、必填字段和嵌套定义。',
+    generate: '生成',
+    jsonValid: '✓ JSON 有效 — Schema 已生成',
+    jsonInvalid: '✗ JSON 无效',
+    step1: '在输入区粘贴或输入 JSON 数据',
+    step2: '点击「生成」创建 JSON Schema',
+    step3: '查看生成的 Schema，包含正确的类型和约束',
+    step4: '复制 Schema 到您的项目中使用',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function inferType(val) {
+  if (val === null) return 'null';
+  if (Array.isArray(val)) return 'array';
+  return typeof val;
+}
+
+function generateSchema(val) {
+  const type = inferType(val);
+
+  if (type === 'null') return { type: 'null' };
+  if (type === 'string') {
+    const schema = { type: 'string' };
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) schema.format = 'date-time';
+    if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(val)) schema.format = 'email';
+    if (/^https?:\/\//.test(val)) schema.format = 'uri';
+    return schema;
+  }
+  if (type === 'number') {
+    const schema = { type: Number.isInteger(val) ? 'integer' : 'number' };
+    return schema;
+  }
+  if (type === 'boolean') return { type: 'boolean' };
+
+  if (type === 'array') {
+    if (val.length === 0) return { type: 'array' };
+    const itemSchemas = val.map(item => generateSchema(item));
+    const firstType = itemSchemas[0].type;
+    const allSameType = itemSchemas.every(s => s.type === firstType);
+    if (allSameType) {
+      if (firstType === 'object') {
+        return { type: 'array', items: mergeObjectSchemas(itemSchemas) };
+      }
+      return { type: 'array', items: itemSchemas[0] };
+    }
+    return { type: 'array', items: {} };
+  }
+
+  if (type === 'object') {
+    const properties = {};
+    const required = [];
+    for (const [key, v] of Object.entries(val)) {
+      properties[key] = generateSchema(v);
+      required.push(key);
+    }
+    const schema = { type: 'object', properties };
+    if (required.length > 0) schema.required = required;
+    return schema;
+  }
+  return {};
+}
+
+function mergeObjectSchemas(schemas) {
+  if (schemas.length === 0) return {};
+  if (schemas.length === 1) return schemas[0];
+  const merged = { type: 'object', properties: {} };
+  const allKeys = new Set();
+  schemas.forEach(s => { if (s.properties) Object.keys(s.properties).forEach(k => allKeys.add(k)); });
+  for (const key of allKeys) {
+    const subSchemas = schemas.filter(s => s.properties && s.properties[key]).map(s => s.properties[key]);
+    if (subSchemas.length === 0) continue;
+    if (subSchemas[0].type === 'object' && subSchemas.length > 1) {
+      merged.properties[key] = mergeObjectSchemas(subSchemas);
+    } else {
+      merged.properties[key] = subSchemas[0];
+    }
+  }
+  return merged;
+}
+
+function doGenerate() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const data = JSON.parse(inp);
+    const schema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      ...generateSchema(data)
+    };
+    const formatted = JSON.stringify(schema, null, 2);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('jsonValid')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('jsonInvalid')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "name": "GameZipper Tools",
+    "url": "https://tools.gamezipper.com",
+    "version": 2.1,
+    "isOpenSource": true,
+    "tags": ["json", "formatter", "tools"],
+    "author": {
+      "name": "Dev Team",
+      "email": "dev@gamezipper.com"
+    },
+    "features": [
+      { "id": 1, "title": "JSON Formatter", "enabled": true },
+      { "id": 2, "title": "Base64 Encoder", "enabled": true }
+    ]
+  }, null, 2);
+  doGenerate();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#output').textContent = '';
+  $('#status').innerHTML = '';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', () => {
+  clearTimeout($('#input')._timer);
+  $('#input')._timer = setTimeout(doGenerate, 500);
+});
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌳', href:'/dev/json-tree.html', name:'JSON Tree Viewer'},
+    {icon:'⚖️', href:'/dev/json-diff.html', name:'JSON Diff'},
+    {icon:'📄', href:'/convert/json-to-xml.html', name:'JSON to XML'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
