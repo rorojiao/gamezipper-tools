@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>XML to JSON Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert XML to JSON online instantly. Paste XML and get clean JSON with proper nesting, attributes and CDATA support. Free, no signup required.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/xml-to-json.html">
+  <meta property="og:title" content="XML to JSON Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert XML to JSON online instantly. Paste XML and get clean JSON with proper nesting, attributes and CDATA support. Free, no signup required.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/xml-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="XML to JSON Converter - Free Online Tool | GameZipper Tools">
+  <meta name="twitter:description" content="Convert XML to JSON online instantly. Paste XML and get clean JSON with proper nesting, attributes and CDATA support. Free, no signup required.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+.gz-option{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:.85em}
+.gz-option input[type=checkbox]{accent-color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"XML to JSON Converter","description":"Convert XML to JSON online instantly. Paste XML and get clean JSON with proper nesting, attributes and CDATA support. Free, no signup required.","url":"https://tools.gamezipper.com/convert/xml-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert XML to JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your XML data into the input area and click Convert. The tool parses the XML and generates clean JSON output with proper nesting and structure."}}, {"@type": "Question", "name": "Are XML attributes preserved?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. When enabled, XML attributes are stored in a special @attributes object within each element. You can toggle this option on or off."}}, {"@type": "Question", "name": "What happens to duplicate XML tags?", "acceptedAnswer": {"@type": "Answer", "text": "Duplicate sibling tags are automatically converted to JSON arrays to preserve all values."}}, {"@type": "Question", "name": "Is my data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All conversion happens in your browser. Your XML data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/xml-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/xml-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/xml-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-option">
+      <input type="checkbox" id="opt-attrs" checked><label for="opt-attrs" id="lbl-attrs"></label>
+      <input type="checkbox" id="opt-text" checked><label for="opt-text" id="lbl-text"></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'XML to JSON Converter',
+    toolDesc: 'Convert XML to JSON instantly with attribute support, proper nesting and clean output.',
+    includeAttrs: 'Include attributes (@attr)',
+    includeText: 'Include text content (#text)',
+    xmlValid: '✓ Conversion successful',
+    xmlInvalid: '✗ Invalid XML',
+    step1: 'Paste your XML data into the input area',
+    step2: 'Toggle options for attributes and text nodes',
+    step3: 'Click Convert to generate JSON output',
+    step4: 'Use Copy to copy the JSON result',
+  },
+  zh: {
+    toolTitle: 'XML 转 JSON 转换器',
+    toolDesc: '即时将 XML 转换为 JSON，支持属性、嵌套结构和整洁输出。',
+    includeAttrs: '包含属性（@attr）',
+    includeText: '包含文本内容（#text）',
+    xmlValid: '✓ 转换成功',
+    xmlInvalid: '✗ XML 无效',
+    step1: '在输入区粘贴 XML 数据',
+    step2: '切换选项控制属性和文本节点',
+    step3: '点击「转换」生成 JSON 输出',
+    step4: '点击「复制」复制 JSON 结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#lbl-attrs').textContent = t('includeAttrs');
+$('#lbl-text').textContent = t('includeText');
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function xmlToJson(node) {
+  const obj = {};
+  const includeAttrs = $('#opt-attrs').checked;
+  const includeText = $('#opt-text').checked;
+
+  if (includeAttrs && node.attributes && node.attributes.length) {
+    obj['@attributes'] = {};
+    for (let i = 0; i < node.attributes.length; i++) {
+      obj['@attributes'][node.attributes[i].nodeName] = node.attributes[i].nodeValue;
+    }
+  }
+
+  if (node.hasChildNodes()) {
+    for (let i = 0; i < node.childNodes.length; i++) {
+      const child = node.childNodes[i];
+      if (child.nodeType === 3 && includeText) {
+        const text = child.nodeValue.trim();
+        if (text) obj['#text'] = text;
+      } else if (child.nodeType === 1) {
+        const name = child.nodeName;
+        const val = xmlToJson(child);
+        if (obj[name] !== undefined) {
+          if (!Array.isArray(obj[name])) obj[name] = [obj[name]];
+          obj[name].push(val);
+        } else {
+          obj[name] = val;
+        }
+      }
+    }
+  }
+
+  // If only text node and no attrs
+  if (Object.keys(obj).length === 0) return '';
+  if (Object.keys(obj).length === 1 && obj['#text']) return obj['#text'];
+  return obj;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(inp, 'text/xml');
+    const errorNode = xmlDoc.querySelector('parsererror');
+    if (errorNode) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('xmlInvalid')}: ${errorNode.textContent.substring(0,200)}</span>`;
+      $('#output').textContent = '';
+      return;
+    }
+    const result = {};
+    result[xmlDoc.documentElement.nodeName] = xmlToJson(xmlDoc.documentElement);
+    const json = JSON.stringify(result, null, 2);
+    $('#output').innerHTML = syntaxHighlight(json);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('xmlValid')}</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('xmlInvalid')}: ${e.message}</span>`;
+    $('#output').textContent = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = `<?xml version="1.0" encoding="UTF-8"?>
+<bookstore>
+  <book category="fiction">
+    <title lang="en">The Great Gatsby</title>
+    <author>F. Scott Fitzgerald</author>
+    <year>1925</year>
+    <price>10.99</price>
+  </book>
+  <book category="science">
+    <title lang="en">A Brief History of Time</title>
+    <author>Stephen Hawking</author>
+    <year>1988</year>
+    <price>14.99</price>
+  </book>
+</bookstore>`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')||'Convert'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/json-to-xml.html', name:'JSON to XML'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+    {icon:'🔄', href:'/convert/yaml-json.html', name:'YAML ↔ JSON'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
