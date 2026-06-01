@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>表情包生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在线制作表情包。上传图片或选择模板，添加文字，无水印下载。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/meme-generator.html">
+  <meta property="og:title" content="表情包生成器">
+  <meta property="og:description" content="免费在线制作表情包。上传图片或选择模板，添加文字，无水印下载。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/meme-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="表情包生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#canvas-wrap{display:flex;justify-content:center;margin:12px 0;background:var(--glass2);border-radius:12px;padding:16px;overflow:auto}
+canvas{max-width:100%;border-radius:8px;display:block}
+.meme-controls{display:grid;gap:10px;grid-template-columns:1fr 1fr;padding:0}
+.meme-controls label{display:flex;flex-direction:column;gap:4px;font-size:.85em;font-weight:600}
+.meme-controls input,.meme-controls select{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9em}
+.color-wrap{display:flex;align-items:center;gap:6px}
+.color-wrap input[type=color]{width:40px;height:34px;border:none;border-radius:6px;cursor:pointer;background:none}
+#topText,#bottomText{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9em}
+.template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin:10px 0}
+.template-grid button{background:var(--glass2);border:2px solid transparent;border-radius:8px;padding:4px;cursor:pointer;font-size:.75em;color:var(--text);transition:border-color .2s}
+.template-grid button:hover,.template-grid button.active{border-color:var(--accent)}
+.template-grid button img{width:100%;border-radius:4px;display:block}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Meme Generator","description":"Create memes online for free. Add text to images, choose popular meme templates or upload your own. Download as PNG instantly. No watermark.","url": "https://tools.gamezipper.com/zh/image/meme-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I make a meme?","acceptedAnswer":{"@type":"Answer","text":"Choose a template or upload your own image, add top and bottom text, customize font size and color, then click Download to save your meme as PNG."}},{"@type":"Question","name":"Is there a watermark on generated memes?","acceptedAnswer":{"@type":"Answer","text":"No. Memes generated with this tool have no watermark. The image is yours to download and share freely."}},{"@type":"Question","name":"Can I use my own image?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click the Upload Image button to use any image from your device as a meme template."}},{"@type":"Question","name":"What image formats are supported?","acceptedAnswer":{"@type":"Answer","text":"You can upload JPG, PNG, WebP, and GIF images. The output is always a high-quality PNG file."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/meme-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/meme-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/meme-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="canvas-wrap"><canvas id="canvas" width="500" height="500"></canvas></div>
+    <div class="meme-controls" id="controls">
+      <label><span id="lbl-top"></span><input id="topText" placeholder="TOP TEXT GOES HERE"></label>
+      <label><span id="lbl-bottom"></span><input id="bottomText" placeholder="BOTTOM TEXT GOES HERE"></label>
+      <label><span id="lbl-fontsize"></span><input type="range" id="fontSize" min="16" max="80" value="40"><span id="fontSizeVal">40px</span></label>
+      <label><span id="lbl-fontcolor"></span><div class="color-wrap"><input type="color" id="fontColor" value="#ffffff"><span>#ffffff</span></div></label>
+      <label><span id="lbl-stroke"></span><div class="color-wrap"><input type="color" id="strokeColor" value="#000000"><span>#000000</span></div></label>
+      <label><span id="lbl-stroke-w"></span><input type="range" id="strokeWidth" min="0" max="10" value="3"><span id="strokeVal">3px</span></label>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Meme Generator',
+    toolDesc: 'Create memes online for free. Add text to images, use templates or upload your own. No watermark.',
+    upload: 'Upload Image',
+    download: 'Download Meme',
+    topText: 'Top Text',
+    bottomText: 'Bottom Text',
+    fontSize: 'Font Size',
+    fontColor: 'Text Color',
+    stroke: 'Outline Color',
+    strokeWidth: 'Outline Width',
+    step1: 'Choose a template below or upload your own image',
+    step2: 'Type your top and bottom text',
+    step3: 'Customize font size, color, and outline',
+    step4: 'Click Download to save your meme as PNG',
+  },
+  zh: {
+    toolTitle: '表情包生成器',
+    toolDesc: '免费在线制作表情包。上传图片或选择模板，添加文字，无水印下载。',
+    upload: '上传图片',
+    download: '下载表情包',
+    topText: '顶部文字',
+    bottomText: '底部文字',
+    fontSize: '字体大小',
+    fontColor: '文字颜色',
+    stroke: '描边颜色',
+    strokeWidth: '描边宽度',
+    step1: '选择下方模板或上传自己的图片',
+    step2: '输入顶部和底部文字',
+    step3: '调整字体大小、颜色和描边',
+    step4: '点击「下载」将表情包保存为 PNG',
+  }
+});
+
+const { $, t } = GZ;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+let img = null;
+
+const TEMPLATES = [
+  {name:'Drake',w:500,h:500,colors:['#f5deb3','#e0c090']},
+  {name:'Distracted BF',w:500,h:500,colors:['#ff9999','#99ccff']},
+  {name:'Change My Mind',w:500,h:400,colors:['#a8d8ea','#f0f0f0']},
+  {name:'Two Buttons',w:500,h:500,colors:['#ffcccb','#b0e0e6']},
+  {name:'This Is Fine',w:500,h:400,colors:['#ff6600','#ffaa00']},
+  {name:'Expanding Brain',w:500,h:600,colors:['#2a1a4a','#4a2a6a']},
+  {name:'Surprised Pikachu',w:500,h:400,colors:['#ffdd00','#ffcc00']},
+  {name:'Stonks',w:500,h:400,colors:['#00cc66','#003322']},
+];
+
+function drawPlaceholder(w, h, colors) {
+  canvas.width = w; canvas.height = h;
+  const grad = ctx.createLinearGradient(0,0,w,h);
+  grad.addColorStop(0, colors?colors[0]:'#2a2a3a');
+  grad.addColorStop(1, colors?colors[1]:'#1a1a2a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,w,h);
+  ctx.fillStyle = '#ffffff44';
+  ctx.font = 'bold 24px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Meme Template', w/2, h/2);
+}
+
+function render() {
+  if (!img) {
+    drawPlaceholder(canvas.width, canvas.height);
+  } else {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+  }
+  const top = $('#topText').value;
+  const bottom = $('#bottomText').value;
+  const size = parseInt($('#fontSize').value);
+  const color = $('#fontColor').value;
+  const stroke = $('#strokeColor').value;
+  const sw = parseInt($('#strokeWidth').value);
+
+  ctx.font = `bold ${size}px Impact, 'Arial Black', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = color;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = sw;
+  ctx.lineJoin = 'round';
+
+  const maxW = canvas.width * 0.9;
+  const x = canvas.width / 2;
+
+  if (top) {
+    wrapText(top, x, 10, maxW, size * 1.15);
+  }
+  if (bottom) {
+    ctx.textBaseline = 'bottom';
+    wrapText(bottom, x, canvas.height - 10, maxW, size * 1.15);
+  }
+}
+
+function wrapText(text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line + (line ? ' ' : '') + w;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  lines.push(line);
+
+  const isBottom = ctx.textBaseline === 'bottom';
+  if (isBottom) {
+    lines.reverse();
+    for (let i = 0; i < lines.length; i++) {
+      const ly = y - i * lineH;
+      if (sw > 0) ctx.strokeText(lines[i], x, ly);
+      ctx.fillText(lines[i], x, ly);
+    }
+  } else {
+    for (let i = 0; i < lines.length; i++) {
+      const ly = y + i * lineH;
+      if (sw > 0) ctx.strokeText(lines[i], x, ly);
+      ctx.fillText(lines[i], x, ly);
+    }
+  }
+}
+
+function loadImage(src) {
+  const i = new Image();
+  i.crossOrigin = 'anonymous';
+  i.onload = () => { img = i; render(); };
+  i.src = src;
+}
+
+function doUpload() {
+  const f = document.createElement('input');
+  f.type = 'file'; f.accept = 'image/*';
+  f.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => loadImage(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+  f.click();
+}
+
+function doDownload() {
+  const a = document.createElement('a');
+  a.download = 'meme.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+// Build template selector
+const tplDiv = document.createElement('div');
+tplDiv.className = 'template-grid';
+tplDiv.style.cssText = 'margin:8px 0 16px;padding:0 4px';
+TEMPLATES.forEach((tpl, idx) => {
+  const btn = document.createElement('button');
+  btn.textContent = tpl.name;
+  btn.onclick = () => {
+    document.querySelectorAll('.template-grid button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    drawPlaceholder(tpl.w, tpl.h, tpl.colors);
+    img = null;
+    render();
+  };
+  tplDiv.appendChild(btn);
+});
+$('#controls').after(tplDiv);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doUpload()">${t('upload')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')}</button>`;
+
+$('#lbl-top').textContent = t('topText');
+$('#lbl-bottom').textContent = t('bottomText');
+$('#lbl-fontsize').textContent = t('fontSize');
+$('#lbl-fontcolor').textContent = t('fontColor');
+$('#lbl-stroke').textContent = t('stroke');
+$('#lbl-stroke-w').textContent = t('strokeWidth');
+
+$('#topText').addEventListener('input', render);
+$('#bottomText').addEventListener('input', render);
+$('#fontSize').addEventListener('input', e => { $('#fontSizeVal').textContent = e.target.value + 'px'; render(); });
+$('#fontColor').addEventListener('input', e => { e.target.nextElementSibling.textContent = e.target.value; render(); });
+$('#strokeColor').addEventListener('input', e => { e.target.nextElementSibling.textContent = e.target.value; render(); });
+$('#strokeWidth').addEventListener('input', e => { $('#strokeVal').textContent = e.target.value + 'px'; render(); });
+
+drawPlaceholder(500, 500, ['#2a2a3a','#1a1a2a']);
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/placeholder.html', name:'Placeholder Image'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'💦', href:'/image/watermark.html', name:'Watermark'},
+    {icon:'🖼️', href:'/image/converter.html', name:'Image Converter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

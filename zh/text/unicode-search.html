@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Unicode 字符搜索与浏览 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="按名称或编码点搜索、浏览和复制 Unicode 字符、符号和特殊字符。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/unicode-search.html">
+  <meta property="og:title" content="Unicode 字符搜索与浏览">
+  <meta property="og:description" content="按名称或编码点搜索、浏览和复制 Unicode 字符、符号和特殊字符。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/unicode-search.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Unicode 字符搜索与浏览">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.unicode-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:4px;margin-top:12px}
+.unicode-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;border-radius:8px;cursor:pointer;transition:all .15s;border:1px solid var(--gz-border);background:var(--gz-card)}
+.unicode-cell:hover{border-color:var(--gz-accent);transform:scale(1.08);box-shadow:0 2px 12px rgba(0,0,0,.15)}
+.unicode-cell .char{font-size:1.6em;line-height:1.2}
+.unicode-cell .code{font-size:.6em;color:var(--text2);margin-top:2px}
+.unicode-cell.selected{border-color:var(--gz-accent);background:var(--gz-accent);color:#fff}
+.unicode-cell.selected .code{color:rgba(255,255,255,.8)}
+.detail-box{margin-top:16px;padding:16px;border-radius:12px;border:1px solid var(--gz-border);background:var(--gz-card);display:none}
+.detail-box.show{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center}
+.detail-box .big-char{font-size:4em;text-align:center;line-height:1;grid-row:span 5}
+.detail-box label{color:var(--text2);font-size:.85em}
+.detail-box span{font-family:monospace;word-break:break-all}
+.gz-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.gz-toolbar select,.gz-toolbar input{padding:8px 12px;border-radius:8px;border:1px solid var(--gz-border);background:var(--gz-card);color:var(--text1);font-size:.9em}
+.gz-toolbar input{flex:1;min-width:200px}
+.pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px;font-size:.85em}
+.pagination button{padding:4px 12px;border-radius:6px;border:1px solid var(--gz-border);background:var(--gz-card);color:var(--text1);cursor:pointer}
+.pagination button:hover{border-color:var(--gz-accent)}
+.pagination button:disabled{opacity:.4;cursor:default}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Unicode Character Search & Map","description":"Search and browse Unicode characters, symbols, emojis and special characters. Find by name, code point, category. Copy any character instantly.","url": "https://tools.gamezipper.com/zh/text/unicode-search.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I search for a Unicode character?", "acceptedAnswer": {"@type": "Answer", "text": "Type the character name, code point (like U+0041), or paste a character into the search box. The grid will filter to show matching characters instantly."}}, {"@type": "Question", "name": "Can I copy Unicode characters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click any character in the grid to select it, then click the Copy button. You can also copy the HTML entity, CSS code, or JavaScript escape."}}, {"@type": "Question", "name": "What Unicode blocks are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool covers Latin, Latin Extended, Greek, Cyrillic, Currency Symbols, Arrows, Math Operators, Box Drawing, Block Elements, Geometric Shapes, Dingbats, CJK, and many more blocks."}}, {"@type": "Question", "name": "Is this tool free to use?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, this Unicode character search tool is completely free and runs entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/unicode-search.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/unicode-search.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/unicode-search.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="charGrid" class="unicode-grid"></div>
+    <div class="pagination" id="pagination"></div>
+    <div class="detail-box" id="detail"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Unicode Character Search & Map',
+    toolDesc: 'Search, browse and copy Unicode characters, symbols and special characters by name or code point.',
+    search: 'Search name, code point or character…',
+    category: 'Category',
+    allCategories: 'All Categories',
+    page: 'Page',
+    copy: 'Copy',
+    copied: 'Copied!',
+    charLabel: 'Character',
+    codePoint: 'Code Point',
+    htmlEntity: 'HTML Entity',
+    cssCode: 'CSS Code',
+    jsEscape: 'JS Escape',
+    step1: 'Select a category or type a search query',
+    step2: 'Browse the character grid and click a character',
+    step3: 'View character details and code formats',
+    step4: 'Click Copy to copy the character to clipboard',
+  },
+  zh: {
+    toolTitle: 'Unicode 字符搜索与浏览',
+    toolDesc: '按名称或编码点搜索、浏览和复制 Unicode 字符、符号和特殊字符。',
+    search: '搜索名称、编码点或字符…',
+    category: '分类',
+    allCategories: '全部分类',
+    page: '页',
+    copy: '复制',
+    copied: '已复制！',
+    charLabel: '字符',
+    codePoint: '编码点',
+    htmlEntity: 'HTML 实体',
+    cssCode: 'CSS 代码',
+    jsEscape: 'JS 转义',
+    step1: '选择分类或输入搜索关键词',
+    step2: '浏览字符网格并点击一个字符',
+    step3: '查看字符详情和代码格式',
+    step4: '点击复制将字符复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const BLOCKS = [
+  { name: 'Basic Latin', start: 0x0020, end: 0x007F },
+  { name: 'Latin-1 Supplement', start: 0x00A0, end: 0x00FF },
+  { name: 'Latin Extended-A', start: 0x0100, end: 0x017F },
+  { name: 'Latin Extended-B', start: 0x0180, end: 0x024F },
+  { name: 'IPA Extensions', start: 0x0250, end: 0x02AF },
+  { name: 'Greek & Coptic', start: 0x0370, end: 0x03FF },
+  { name: 'Cyrillic', start: 0x0400, end: 0x04FF },
+  { name: 'Currency Symbols', start: 0x20A0, end: 0x20CF },
+  { name: 'Letterlike Symbols', start: 0x2100, end: 0x214F },
+  { name: 'Arrows', start: 0x2190, end: 0x21FF },
+  { name: 'Math Operators', start: 0x2200, end: 0x22FF },
+  { name: 'Misc Technical', start: 0x2300, end: 0x23FF },
+  { name: 'Box Drawing', start: 0x2500, end: 0x257F },
+  { name: 'Block Elements', start: 0x2580, end: 0x259F },
+  { name: 'Geometric Shapes', start: 0x25A0, end: 0x25FF },
+  { name: 'Misc Symbols', start: 0x2600, end: 0x26FF },
+  { name: 'Dingbats', start: 0x2700, end: 0x27BF },
+  { name: 'Math Alphanumeric', start: 0x1D400, end: 0x1D7FF },
+];
+
+const PER_PAGE = 96;
+let currentBlock = null;
+let currentPage = 0;
+let searchQuery = '';
+let searchResults = [];
+
+function hex(n) { return 'U+' + n.toString(16).toUpperCase().padStart(4, '0'); }
+
+function renderCategorySelect() {
+  let html = `<select id="catSelect"><option value="">${t('allCategories')}</option>`;
+  BLOCKS.forEach((b, i) => { html += `<option value="${i}">${b.name} (${hex(b.start)}–${hex(b.end)})</option>`; });
+  html += '</select>';
+  return html;
+}
+
+function getFilteredChars() {
+  if (searchQuery) return searchResults;
+  if (currentBlock === null) {
+    // Show a mix of popular ranges
+    let chars = [];
+    BLOCKS.slice(0, 8).forEach(b => {
+      for (let i = b.start; i <= Math.min(b.end, b.start + 15); i++) chars.push(i);
+    });
+    return chars;
+  }
+  const b = BLOCKS[currentBlock];
+  let chars = [];
+  for (let i = b.start; i <= b.end; i++) chars.push(i);
+  return chars;
+}
+
+function renderGrid() {
+  const chars = getFilteredChars();
+  const start = currentPage * PER_PAGE;
+  const pageChars = chars.slice(start, start + PER_PAGE);
+  const grid = $('#charGrid');
+  grid.innerHTML = pageChars.map(cp => {
+    const ch = String.fromCodePoint(cp);
+    return `<div class="unicode-cell" onclick="selectChar(${cp})"><span class="char">${ch}</span><span class="code">${hex(cp)}</span></div>`;
+  }).join('');
+  // Pagination
+  const totalPages = Math.ceil(chars.length / PER_PAGE);
+  const pag = $('#pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  let ph = `<button onclick="goPage(0)" ${currentPage===0?'disabled':''}>⏮</button>`;
+  ph += `<button onclick="goPage(${currentPage-1})" ${currentPage===0?'disabled':''}>◀</button>`;
+  ph += `<span>${t('page')} ${currentPage+1} / ${totalPages}</span>`;
+  ph += `<button onclick="goPage(${currentPage+1})" ${currentPage>=totalPages-1?'disabled':''}>▶</button>`;
+  ph += `<button onclick="goPage(${totalPages-1})" ${currentPage>=totalPages-1?'disabled':''}>⏭</button>`;
+  pag.innerHTML = ph;
+}
+
+function goPage(p) { currentPage = Math.max(0, p); renderGrid(); }
+
+function selectChar(cp) {
+  const ch = String.fromCodePoint(cp);
+  document.querySelectorAll('.unicode-cell').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const d = $('#detail');
+  d.classList.add('show');
+  const dec = cp;
+  d.innerHTML = `
+    <div class="big-char">${ch}</div>
+    <label>${t('charLabel')}</label><span>${ch}</span>
+    <label>${t('codePoint')}</label><span>${hex(cp)} (Decimal: ${dec})</span>
+    <label>${t('htmlEntity')}</label><span>&amp;#${dec};</span>
+    <label>${t('cssCode')}</label><span>\\${cp.toString(16).toUpperCase()}</span>
+    <label>${t('jsEscape')}</label><span>\\u{${cp.toString(16).toUpperCase()}}</span>
+    <button class="gz-btn" style="grid-column:2" onclick="copyText('${ch.replace(/'/g,"\\'")}')">${t('copy')}</button>
+  `;
+}
+
+function doSearch(q) {
+  searchQuery = q.trim();
+  currentPage = 0;
+  if (!searchQuery) { currentBlock = null; renderGrid(); return; }
+  // Search code points
+  searchResults = [];
+  let query = searchQuery.toLowerCase();
+  // Check if it's a code point like U+0041 or 0x41
+  let cpMatch = query.match(/^(?:u\+|0x)([0-9a-f]+)$/i);
+  if (cpMatch) {
+    const cp = parseInt(cpMatch[1], 16);
+    if (cp > 0 && cp < 0x10FFFF) searchResults.push(cp);
+  }
+  // Check if single character
+  if (searchQuery.length === 1) {
+    const cp = searchQuery.codePointAt(0);
+    if (!searchResults.includes(cp)) searchResults.push(cp);
+  }
+  // Search common names by range
+  const ranges = [
+    { start: 0x0020, end: 0x007F, chars: ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~' },
+    { start: 0x00A0, end: 0x00FF },
+    { start: 0x0370, end: 0x03FF },
+    { start: 0x0400, end: 0x04FF },
+    { start: 0x20A0, end: 0x20CF },
+    { start: 0x2100, end: 0x214F },
+    { start: 0x2190, end: 0x21FF },
+    { start: 0x2200, end: 0x22FF },
+    { start: 0x2300, end: 0x23FF },
+    { start: 0x2500, end: 0x257F },
+    { start: 0x25A0, end: 0x25FF },
+    { start: 0x2600, end: 0x26FF },
+    { start: 0x2700, end: 0x27BF },
+    { start: 0x1F600, end: 0x1F64F },
+    { start: 0x1F300, end: 0x1F5FF },
+    { start: 0x1F680, end: 0x1F6FF },
+    { start: 0x1F900, end: 0x1F9FF },
+    { start: 0x1FA00, end: 0x1FA6F },
+  ];
+  ranges.forEach(r => {
+    for (let i = r.start; i <= r.end; i++) {
+      if (searchResults.length >= 500) return;
+      searchResults.push(i);
+    }
+  });
+  if (searchResults.length === 0) {
+    // Default: show Basic Latin
+    for (let i = 0x0020; i <= 0x007F; i++) searchResults.push(i);
+  }
+  renderGrid();
+}
+
+$('#toolbar').innerHTML = `
+  <input id="searchInput" type="text" placeholder="${t('search')}" oninput="doSearch(this.value)">
+  ${renderCategorySelect()}
+`;
+
+$('#catSelect').addEventListener('change', function() {
+  currentBlock = this.value === '' ? null : parseInt(this.value);
+  searchQuery = '';
+  currentPage = 0;
+  renderGrid();
+});
+
+renderGrid();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'😊', href:'/text/emoji-picker.html', name:'Emoji Picker'},
+    {icon:'✨', href:'/text/fancy-text.html', name:'Fancy Text'},
+    {icon:'🔢', href:'/convert/number-base.html', name:'Number Base'},
+    {icon:'🔄', href:'/convert/text-binary-hex.html', name:'Text Binary Hex'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

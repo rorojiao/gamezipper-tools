@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Time Zone Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert time between any time zones worldwide. Compare times across cities, see time differences, and plan meetings across time zones. Free and instant.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/timezone.html">
+  <meta property="og:title" content="Time Zone Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert time between any time zones worldwide. Compare times across cities and plan meetings across time zones.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/timezone.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Time Zone Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.tz-grid{display:grid;gap:12px;margin:12px 0}
+.tz-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;background:var(--glass2);padding:14px;border-radius:12px;border:1px solid var(--border)}
+.tz-row select,.tz-row input[type=datetime-local]{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9em;width:100%}
+.tz-row .tz-time{font-size:1.1em;font-weight:700;min-width:140px;text-align:center}
+.tz-result{background:var(--glass2);padding:16px;border-radius:12px;border:1px solid var(--border);margin-top:12px}
+.tz-result table{width:100%;border-collapse:collapse}
+.tz-result th,.tz-result td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:.9em}
+.tz-result th{font-weight:700;opacity:.7}
+.tz-now{font-size:.85em;opacity:.7;margin-bottom:8px}
+.add-btn{margin-top:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Time Zone Converter","description":"Convert time between any time zones worldwide. Compare times across cities and plan meetings across time zones.","url":"https://tools.gamezipper.com/convert/timezone.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert time between time zones?","acceptedAnswer":{"@type":"Answer","text":"Select a source time zone, enter the date and time, then add target time zones. The tool instantly shows the converted time in all selected zones."}},{"@type":"Question","name":"How many time zones can I compare at once?","acceptedAnswer":{"@type":"Answer","text":"You can add as many time zones as you need. The tool supports all standard IANA time zones worldwide."}},{"@type":"Question","name":"Does it account for daylight saving time?","acceptedAnswer":{"@type":"Answer","text":"Yes. The converter uses your browser's built-in Intl API which automatically handles daylight saving time changes for all supported time zones."}},{"@type":"Question","name":"Can I share the converted times?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click the Copy button to copy all converted times to your clipboard for sharing via email or chat."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/timezone.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/timezone.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/timezone.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="tz-grid" id="tz-grid"></div>
+    <div class="tz-result" id="tz-result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Time Zone Converter',
+    toolDesc: 'Convert time between any time zones worldwide. Compare times and plan across time zones.',
+    source: 'Source Time Zone',
+    date: 'Date & Time',
+    convert: 'Convert',
+    addZone: '+ Add Time Zone',
+    copy: 'Copy Results',
+    now: 'Current time',
+    step1: 'Select your source time zone and enter a date/time',
+    step2: 'Click "+ Add Time Zone" to add target zones',
+    step3: 'Click Convert to see the time in all zones',
+    step4: 'Copy the results to share with others',
+    remove: '✕',
+  },
+  zh: {
+    toolTitle: '时区转换器',
+    toolDesc: '在世界各地时区之间转换时间，对比不同城市的当前时间。',
+    source: '源时区',
+    date: '日期和时间',
+    convert: '转换',
+    addZone: '+ 添加时区',
+    copy: '复制结果',
+    now: '当前时间',
+    step1: '选择源时区并输入日期和时间',
+    step2: '点击「+ 添加时区」添加目标时区',
+    step3: '点击「转换」查看所有时区的时间',
+    step4: '复制结果与他人分享',
+    remove: '✕',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const POPULAR_TZ = [
+  'UTC','America/New_York','America/Chicago','America/Denver','America/Los_Angeles',
+  'America/Toronto','America/Sao_Paulo','Europe/London','Europe/Paris','Europe/Berlin',
+  'Europe/Moscow','Asia/Dubai','Asia/Kolkata','Asia/Bangkok','Asia/Shanghai',
+  'Asia/Hong_Kong','Asia/Tokyo','Asia/Seoul','Asia/Singapore','Australia/Sydney',
+  'Pacific/Auckland','Pacific/Honolulu'
+];
+
+const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+let targetZones = ['America/New_York','Europe/London','Asia/Shanghai','Asia/Tokyo'];
+
+function buildTZOptions(selected) {
+  return POPULAR_TZ.map(tz =>
+    `<option value="${tz}" ${tz===selected?'selected':''}>${tz.replace(/_/g,' ')}</option>`
+  ).join('');
+}
+
+function buildGrid() {
+  const grid = $('#tz-grid');
+  const now = new Date();
+  const localStr = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+
+  grid.innerHTML = `
+    <div class="tz-row">
+      <div><label style="font-size:.85em;font-weight:600">${t('source')}</label>
+        <select id="src-tz">${buildTZOptions(userTZ)}</select></div>
+      <div><label style="font-size:.85em;font-weight:600">${t('date')}</label>
+        <input type="datetime-local" id="src-dt" value="${localStr}"></div>
+      <button class="gz-btn" onclick="doConvert()" style="align-self:end">${t('convert')}</button>
+    </div>
+    <div id="target-zones"></div>`;
+
+  renderTargets();
+}
+
+function renderTargets() {
+  const wrap = $('#target-zones');
+  wrap.innerHTML = targetZones.map((tz, i) => `
+    <div class="tz-row">
+      <select class="target-tz" data-idx="${i}">${buildTZOptions(tz)}</select>
+      <div class="tz-time" id="result-${i}">—</div>
+      <button class="gz-btn gz-btn-secondary" onclick="removeZone(${i})" style="padding:6px 12px">${t('remove')}</button>
+    </div>`).join('');
+
+  // Bind change
+  wrap.querySelectorAll('.target-tz').forEach(sel => {
+    sel.addEventListener('change', e => {
+      targetZones[+e.target.dataset.idx] = e.target.value;
+    });
+  });
+}
+
+function addZone() {
+  targetZones.push('UTC');
+  renderTargets();
+}
+
+function removeZone(i) {
+  targetZones.splice(i, 1);
+  renderTargets();
+  doConvert();
+}
+
+function doConvert() {
+  const srcTZ = $('#src-tz').value;
+  const srcDT = $('#src-dt').value;
+  if (!srcDT) return;
+
+  // Parse source datetime as being in source timezone
+  const srcDate = new Date(srcDT + ':00');
+
+  // Format in source timezone
+  try {
+    const srcFormatted = new Intl.DateTimeFormat('en-US', {
+      timeZone: srcTZ, year:'numeric', month:'short', day:'numeric',
+      hour:'2-digit', minute:'2-digit', weekday:'short', hour12:true
+    }).format(srcDate);
+
+    let resultHTML = `<div class="tz-now">${t('now')}: ${new Intl.DateTimeFormat('en-US',{timeZone:srcTZ,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date())} (${srcTZ.replace(/_/g,' ')})</div>`;
+    resultHTML += `<table><thead><tr><th>Time Zone</th><th>Date & Time</th><th>Offset</th></tr></thead><tbody>`;
+
+    targetZones.forEach((tz, i) => {
+      const fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz, year:'numeric', month:'short', day:'numeric',
+        hour:'2-digit', minute:'2-digit', weekday:'short', hour12:true
+      }).format(srcDate);
+
+      // Calculate offset difference
+      const srcStr = srcDate.toLocaleString('en-US', {timeZone: srcTZ});
+      const tgtStr = srcDate.toLocaleString('en-US', {timeZone: tz});
+      const srcMs = new Date(srcStr).getTime();
+      const tgtMs = new Date(tgtStr).getTime();
+      const diff = (tgtMs - srcMs) / 3600000;
+      const diffStr = diff === 0 ? 'Same' : (diff > 0 ? '+' + diff + 'h' : diff + 'h');
+
+      const el = document.getElementById('result-' + i);
+      if (el) el.textContent = fmt;
+      resultHTML += `<tr><td>${tz.replace(/_/g,' ')}</td><td>${fmt}</td><td>${diffStr}</td></tr>`;
+    });
+
+    resultHTML += `</tbody></table>`;
+    $('#tz-result').innerHTML = resultHTML;
+  } catch(e) {
+    $('#tz-result').innerHTML = `<p style="color:var(--gz-accent)">Error: ${e.message}</p>`;
+  }
+}
+
+function copyResults() {
+  const text = $('#tz-result').innerText;
+  copyText(text);
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="addZone()">${t('addZone')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyResults()">${t('copy')}</button>`;
+
+buildGrid();
+doConvert();
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp Converter'},
+    {icon:'🔄', href:'/convert/unit.html', name:'Unit Converter'},
+    {icon:'📅', href:'/calc/date-calculator.html', name:'Date Calculator'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

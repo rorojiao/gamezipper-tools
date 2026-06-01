@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>CSV 转 SQL 工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 CSV 数据转换为 SQL INSERT 语句，自动检测数据类型。即时生成 CREATE TABLE 和 INSERT 查询。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/csv-to-sql.html">
+  <meta property="og:title" content="CSV 转 SQL 工具">
+  <meta property="og:description" content="将 CSV 数据转换为 SQL INSERT 语句，自动检测数据类型。即时生成 CREATE TABLE 和 INSERT 查询。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/csv-to-sql.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV 转 SQL 工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;background:var(--glass);padding:12px;border-radius:8px;min-height:200px;border:1px solid var(--border)}
+.gz-options{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:.85em}
+.gz-options label{color:var(--text2);display:flex;align-items:center;gap:4px}
+.gz-options input[type="text"]{padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--glass2);color:var(--text);font-size:.9em;width:120px}
+.gz-options input[type="checkbox"]{accent-color:var(--accent)}
+.sql-kw{color:#61afef;font-weight:bold}.sql-str{color:#00d672}.sql-num{color:#d19a66}.sql-comment{color:#888;font-style:italic}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV to SQL Converter","description":"Convert CSV data to SQL INSERT statements instantly. Supports CREATE TABLE generation, custom table names, and proper data type detection.","url": "https://tools.gamezipper.com/zh/convert/csv-to-sql.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert CSV to SQL?","acceptedAnswer":{"@type":"Answer","text":"Paste your CSV data into the input area, set your table name, and click Convert. The tool generates INSERT statements and optionally a CREATE TABLE statement."}},{"@type":"Question","name":"What SQL dialect does this generate?","acceptedAnswer":{"@type":"Answer","text":"The tool generates standard ANSI SQL INSERT statements that work with MySQL, PostgreSQL, SQLite, SQL Server and most other databases."}},{"@type":"Question","name":"How are data types detected?","acceptedAnswer":{"@type":"Answer","text":"The tool analyzes your CSV data to detect integers, decimals, booleans and dates. Text columns use VARCHAR with detected max length."}},{"@type":"Question","name":"Is my data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens locally in your browser. No CSV data is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-to-sql.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-to-sql.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-to-sql.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-options" id="options"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV to SQL Converter',
+    toolDesc: 'Convert CSV data to SQL INSERT statements with automatic type detection. Generate CREATE TABLE and INSERT queries instantly.',
+    convert: 'Convert',
+    tableName: 'Table name',
+    createTable: 'Include CREATE TABLE',
+    rowsGenerated: (n) => `${n} rows converted`,
+    step1: 'Paste your CSV data (with headers) in the input area',
+    step2: 'Set the table name and options',
+    step3: 'Click Convert to generate SQL statements',
+    step4: 'Copy the SQL and use it in your database',
+  },
+  zh: {
+    toolTitle: 'CSV 转 SQL 工具',
+    toolDesc: '将 CSV 数据转换为 SQL INSERT 语句，自动检测数据类型。即时生成 CREATE TABLE 和 INSERT 查询。',
+    convert: '转换',
+    tableName: '表名',
+    createTable: '包含 CREATE TABLE',
+    rowsGenerated: (n) => `已转换 ${n} 行`,
+    step1: '在输入区粘贴 CSV 数据（含表头）',
+    step2: '设置表名和选项',
+    step3: '点击「转换」生成 SQL 语句',
+    step4: '复制 SQL 并在数据库中使用',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#options').innerHTML = `
+  <label>${t('tableName')}: <input type="text" id="tbl-name" value="my_table"></label>
+  <label><input type="checkbox" id="inc-create" checked> ${t('createTable')}</label>`;
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const result = [];
+  for (const line of lines) {
+    const row = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+        else if (ch === '"') inQuotes = false;
+        else current += ch;
+      } else {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ',') { row.push(current.trim()); current = ''; }
+        else current += ch;
+      }
+    }
+    row.push(current.trim());
+    result.push(row);
+  }
+  return result;
+}
+
+function detectType(values) {
+  let isInt = true, isNum = true, isBool = true, isDate = true, maxLen = 0;
+  for (const v of values) {
+    if (v === '' || v === null) continue;
+    maxLen = Math.max(maxLen, v.length);
+    if (!/^-?\d+$/.test(v)) isInt = false;
+    if (!/^-?\d+(\.\d+)?$/.test(v)) isNum = false;
+    if (!/^(true|false|0|1)$/i.test(v)) isBool = false;
+    if (!/^\d{4}[-/]\d{2}[-/]\d{2}/.test(v)) isDate = false;
+  }
+  if (isInt) return 'INT';
+  if (isNum) return 'DECIMAL(10,2)';
+  if (isBool) return 'BOOLEAN';
+  if (isDate) return 'DATE';
+  return maxLen > 255 ? 'TEXT' : `VARCHAR(${Math.max(maxLen, 50)})`;
+}
+
+function escSql(val) {
+  if (val === '' || val === null || val === undefined) return 'NULL';
+  return "'" + val.replace(/'/g, "''") + "'";
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const table = $('#tbl-name').value.replace(/[^a-zA-Z0-9_]/g, '_') || 'my_table';
+    const rows = parseCSV(inp);
+    if (rows.length < 2) { $('#status').innerHTML = '<span style="color:var(--gz-accent)">Need at least a header row and one data row</span>'; return; }
+    const headers = rows[0];
+    const dataRows = rows.slice(1).filter(r => r.length === headers.length && r.some(c => c !== ''));
+    const colTypes = headers.map((_, i) => detectType(dataRows.map(r => r[i])));
+    let sql = '';
+
+    if ($('#inc-create').checked) {
+      sql += `-- CREATE TABLE statement\nCREATE TABLE ${table} (\n`;
+      sql += headers.map((h, i) => `  ${h.replace(/[^a-zA-Z0-9_]/g, '_')} ${colTypes[i]}`).join(',\n');
+      sql += '\n);\n\n';
+    }
+
+    for (const row of dataRows) {
+      const cols = headers.map(h => h.replace(/[^a-zA-Z0-9_]/g, '_')).join(', ');
+      const vals = row.map((v, i) => {
+        if (v === '' || v === null) return 'NULL';
+        if (colTypes[i] === 'INT' || colTypes[i].startsWith('DECIMAL')) return v;
+        if (colTypes[i] === 'BOOLEAN') return /^(true|1)$/i.test(v) ? 'TRUE' : 'FALSE';
+        return escSql(v);
+      }).join(', ');
+      sql += `INSERT INTO ${table} (${cols}) VALUES (${vals});\n`;
+    }
+
+    const highlighted = sql
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/--(.*)/g, '<span class="sql-comment">--$1</span>')
+      .replace(/\b(CREATE TABLE|INSERT INTO|VALUES|INT|VARCHAR|TEXT|BOOLEAN|DATE|DECIMAL|TRUE|FALSE|NULL)\b/gi, '<span class="sql-kw">$1</span>')
+      .replace(/'([^']*)'/g, '<span class="sql-str">\'$1\'</span>');
+
+    $('#output').innerHTML = highlighted;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('rowsGenerated')(dataRows.length)}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `id,name,email,age,salary,active\n1,Alice Johnson,alice@example.com,28,75000.50,true\n2,Bob Smith,bob@example.com,35,82000.00,true\n3,Charlie Brown,charlie@example.com,42,91000.75,false\n4,Diana Prince,diana@example.com,30,68000.00,true`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'📊', href:'/convert/json-to-csv.html', name:'JSON to CSV'},
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>SVG 查看器与编辑器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="在线查看、编辑和优化 SVG 文件 — 粘贴代码或上传文件，实时预览，导出为 PNG。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/svg-editor.html">
+<meta property="og:title" content="SVG 查看器与编辑器">
+<meta property="og:description" content="在线查看、编辑和优化 SVG 文件 — 粘贴代码或上传文件，实时预览，导出为 PNG。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/svg-editor.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SVG 查看器与编辑器">
+<meta name="twitter:description" content="在线查看、编辑和优化 SVG 文件 — 粘贴代码或上传文件，实时预览，导出为 PNG。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.gz-split{grid-template-columns:1fr}}
+#svgInput{width:100%;min-height:300px;font-family:monospace;font-size:.85em;resize:vertical}
+#svgPreview{min-height:300px;border:1px dashed var(--gz-border,#333);border-radius:12px;display:flex;align-items:center;justify-content:center;background:#fff;padding:20px;overflow:auto;position:relative}
+#svgPreview svg{max-width:100%;height:auto}
+.svg-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.export-size{display:flex;align-items:center;gap:8px;font-size:.85em}
+.export-size input{width:80px}
+.svg-info{margin-top:12px;font-size:.85em;opacity:.8}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SVG Viewer & Editor","description":"View, edit and optimize SVG files online. Paste SVG code or upload files, preview instantly, optimize paths, and export as PNG. Free and private.","url": "https://tools.gamezipper.com/zh/dev/svg-editor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can I edit SVG files online?","acceptedAnswer":{"@type":"Answer","text":"Yes! Paste your SVG code into the editor, make changes in the code editor, and see the result update live in the preview panel. You can also upload SVG files directly."}},{"@type":"Question","name":"Is my SVG data safe?","acceptedAnswer":{"@type":"Answer","text":"All processing happens entirely in your browser. No SVG files are uploaded to any server."}},{"@type":"Question","name":"Can I export SVG as PNG?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click the Export as PNG button and set the desired output size. The SVG will be rendered to a canvas and downloaded as a PNG file."}},{"@type":"Question","name":"What SVG optimizations are available?","acceptedAnswer":{"@type":"Answer","text":"The optimizer removes unnecessary whitespace, comments, metadata, and empty attributes to reduce SVG file size without changing the visual output."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/svg-editor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/svg-editor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/svg-editor.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="svg-actions" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-code"></label>
+        <textarea id="svgInput" spellcheck="false" placeholder="Paste SVG code here..."></textarea>
+        <div class="svg-info" id="svgInfo"></div>
+      </div>
+      <div>
+        <label id="lbl-preview"></label>
+        <div id="svgPreview"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SVG Viewer & Editor',
+    toolDesc: 'View, edit and optimize SVG files online — paste code or upload, preview live, export as PNG.',
+    lblCode: 'SVG Code',
+    lblPreview: 'Live Preview',
+    loadExample: 'Example',
+    uploadFile: 'Upload SVG',
+    optimize: 'Optimize',
+    exportPng: 'Export PNG',
+    copyCode: 'Copy Code',
+    clear: 'Clear',
+    format: 'Format',
+    copied: 'Copied!',
+    sizeLabel: 'Size:',
+    sizeInfo: 'Original: {orig} | Optimized: {opt} ({saved} saved)',
+    sizeOrig: 'Size: {size}',
+    step1: 'Paste SVG code or upload an SVG file',
+    step2: 'Edit the SVG code — preview updates live',
+    step3: 'Click Optimize to clean up and reduce file size',
+    step4: 'Export as PNG or copy the optimized SVG code',
+  },
+  zh: {
+    toolTitle: 'SVG 查看器与编辑器',
+    toolDesc: '在线查看、编辑和优化 SVG 文件 — 粘贴代码或上传文件，实时预览，导出为 PNG。',
+    lblCode: 'SVG 代码',
+    lblPreview: '实时预览',
+    loadExample: '示例',
+    uploadFile: '上传 SVG',
+    optimize: '优化',
+    exportPng: '导出 PNG',
+    copyCode: '复制代码',
+    clear: '清空',
+    format: '格式化',
+    copied: '已复制！',
+    sizeLabel: '尺寸：',
+    sizeInfo: '原始：{orig} | 优化后：{opt}（节省 {saved}）',
+    sizeOrig: '大小：{size}',
+    step1: '粘贴 SVG 代码或上传 SVG 文件',
+    step2: '编辑 SVG 代码 — 预览实时更新',
+    step3: '点击「优化」清理和压缩文件',
+    step4: '导出为 PNG 或复制优化后的 SVG 代码',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const exampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#g)"/>
+  <text x="100" y="115" text-anchor="middle" fill="white"
+        font-family="Arial, sans-serif" font-size="48" font-weight="bold">SVG</text>
+  <circle cx="50" cy="50" r="15" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="150" cy="50" r="10" fill="rgba(255,255,255,0.2)"/>
+</svg>`;
+
+function updatePreview() {
+  const code = $('#svgInput').value.trim();
+  if (!code) {
+    $('#svgPreview').innerHTML = `<span style="color:#999">${t('lblPreview')}</span>`;
+    $('#svgInfo').textContent = '';
+    return;
+  }
+  $('#svgPreview').innerHTML = code;
+  const size = new Blob([code]).size;
+  $('#svgInfo').textContent = t('sizeOrig').replace('{size}', formatBytes(size));
+  const svg = $('#svgPreview').querySelector('svg');
+  if (svg) {
+    const w = svg.getAttribute('width') || svg.viewBox?.baseVal?.width || '?';
+    const h = svg.getAttribute('height') || svg.viewBox?.baseVal?.height || '?';
+    $('#svgInfo').textContent = `${t('sizeLabel')} ${w} × ${h} | ${t('sizeOrig').replace('{size}', formatBytes(size))}`;
+  }
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  return (b / 1024).toFixed(1) + ' KB';
+}
+
+function loadExample() {
+  $('#svgInput').value = exampleSvg;
+  updatePreview();
+}
+
+function uploadFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.svg';
+  inp.onchange = () => {
+    const file = inp.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      $('#svgInput').value = reader.result;
+      updatePreview();
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+function optimizeSvg() {
+  let code = $('#svgInput').value.trim();
+  if (!code) return;
+  const origSize = new Blob([code]).size;
+  // Basic optimizations
+  code = code.replace(/>\s+</g, '><');           // Remove whitespace between tags
+  code = code.replace(/\s{2,}/g, ' ');           // Collapse multiple spaces
+  code = code.replace(/\s*\/>/g, '/>');          // Remove space before self-closing
+  code = code.replace(/<!--[\s\S]*?-->/g, '');    // Remove comments
+  code = code.replace(/xmlns:[a-z]+="[^"]*"\s*/g, ''); // Remove unused xmlns
+  code = code.replace(/id="[^"]*"/g, (m, offset) => {
+    // Keep id if referenced by url()
+    const before = code.substring(0, offset + m.length);
+    const name = m.match(/id="([^"]+)"/)[1];
+    const after = code.substring(offset);
+    if (after.includes('url(#' + name + ')') || after.includes(`url("#${name}")`)) return m;
+    return '';
+  });
+  code = code.trim();
+  $('#svgInput').value = code;
+  updatePreview();
+  const optSize = new Blob([code]).size;
+  const saved = ((1 - optSize / origSize) * 100).toFixed(1);
+  $('#svgInfo').textContent = t('sizeInfo')
+    .replace('{orig}', formatBytes(origSize))
+    .replace('{opt}', formatBytes(optSize))
+    .replace('{saved}', saved + '%');
+}
+
+function exportPng() {
+  const code = $('#svgInput').value.trim();
+  if (!code) return;
+  const svg = $('#svgPreview').querySelector('svg');
+  if (!svg) return;
+  const w = parseInt(svg.getAttribute('width') || svg.viewBox?.baseVal?.width || 400);
+  const h = parseInt(svg.getAttribute('height') || svg.viewBox?.baseVal?.height || 400);
+  const scale = parseInt($('#exportScale')?.value || 2);
+  const canvas = document.createElement('canvas');
+  canvas.width = w * scale;
+  canvas.height = h * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  const img = new Image();
+  const blob = new Blob([code], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.download = 'svg-export.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.src = url;
+}
+
+function doCopy() {
+  copyText($('#svgInput').value);
+  const btn = $('#toolbar').querySelector('[data-action="copy"]');
+  btn.textContent = t('copied');
+  setTimeout(() => btn.textContent = t('copyCode'), 1500);
+}
+
+function doClear() {
+  $('#svgInput').value = '';
+  $('#svgPreview').innerHTML = '';
+  $('#svgInfo').textContent = '';
+}
+
+$('#svgInput').addEventListener('input', updatePreview);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('loadExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="uploadFile()">${t('uploadFile')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="optimizeSvg()">${t('optimize')}</button>
+  <button class="gz-btn" onclick="doCopy()" data-action="copy">${t('copyCode')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportPng()">${t('exportPng')}</button>
+  <span class="export-size">
+    <label>${t('exportPng')}</label>
+    <select id="exportScale">
+      <option value="1">1x</option>
+      <option value="2" selected>2x</option>
+      <option value="3">3x</option>
+      <option value="4">4x</option>
+    </select>
+  </span>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/svg-to-png.html', name:'SVG to PNG'},
+    {icon:'📄', href:'/dev/html-formatter.html', name:'HTML Formatter'},
+    {icon:'📐', href:'/css-tools/svg-blob.html', name:'SVG Blob'},
+    {icon:'📐', href:'/css-tools/svg-pattern.html', name:'SVG Pattern'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
