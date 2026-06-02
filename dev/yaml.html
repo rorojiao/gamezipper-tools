@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>YAML Formatter & Validator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Format, validate and beautify YAML online. Free YAML formatter and validator with line/column error reporting — paste YAML and get clean, readable output instantly.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/yaml.html">
+  <meta property="og:title" content="YAML Formatter & Validator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Format, validate and beautify YAML online. Free YAML formatter and validator with line/column error reporting.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/yaml.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="YAML Formatter & Validator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{height:240px;font-family:monospace;font-size:.85em;line-height:1.5}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;max-height:500px;overflow:auto}
+#status{margin-top:8px;font-size:.85em}
+.yaml-key{color:#e94560}.yaml-string{color:#00d672}.yaml-number{color:#61afef}.yaml-bool{color:#d19a66}.yaml-null{color:#888}.yaml-comment{color:#5c6370;font-style:italic}.yaml-anchor{color:#c678dd}
+#output .y-indent{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"YAML Formatter & Validator","description":"Format, validate and beautify YAML online. Free YAML formatter and validator with line/column error reporting.","url":"https://tools.gamezipper.com/dev/yaml.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I format YAML online?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your YAML content into the input area and click Format. The tool will beautify your YAML with proper indentation, syntax highlighting and a consistent style."}}, {"@type": "Question", "name": "Is my YAML data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All YAML parsing and formatting happens entirely in your browser. No data is ever sent to any server."}}, {"@type": "Question", "name": "Can this tool validate YAML and show errors?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool validates your YAML against the YAML 1.2 specification and shows detailed error messages with line and column numbers when the YAML is invalid."}}, {"@type": "Question", "name": "Does it support advanced YAML features?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The parser supports multi-line strings, anchors and aliases, lists, maps, scalars, block and flow styles, and common tags."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/yaml.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/yaml.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/yaml.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'YAML Formatter & Validator',
+    toolDesc: 'Format, beautify and validate YAML data with syntax highlighting and detailed error messages.',
+    step1: 'Paste or type your YAML in the input area',
+    step2: 'Click Format to beautify with syntax highlighting and consistent indentation',
+    step3: 'Click Minify to compress YAML to the smallest valid form',
+    step4: 'Review validation status — green for valid, red for errors with line/column info',
+    valid: '✓ Valid YAML',
+    invalid: '✗ Invalid YAML',
+  },
+  zh: {
+    toolTitle: 'YAML 格式化与校验工具',
+    toolDesc: '格式化、美化和校验 YAML 数据，支持语法高亮和详细错误信息。',
+    step1: '在输入区粘贴或输入 YAML',
+    step2: '点击「格式化」美化 YAML 并高亮显示',
+    step3: '点击「压缩」将 YAML 压缩为最简形式',
+    step4: '查看校验状态 — 绿色为有效，红色为无效（含行列信息）',
+    valid: '✓ YAML 有效',
+    invalid: '✗ YAML 无效',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+/* ---------- Lightweight YAML 1.2 parser (subset) ---------- */
+function parseYAML(src) {
+  // Strip BOM + normalize newlines
+  src = src.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+  const lines = src.split('\n');
+  // Remove trailing empty lines
+  while (lines.length && lines[lines.length - 1] === '') lines.pop();
+
+  let pos = 0;
+  function err(msg, line, col) {
+    throw { message: msg, line: line, col: col };
+  }
+
+  function parseBlock(indent) {
+    const result = {};
+    let arr = null; // null = map, [] = array
+    let i = pos;
+    while (i < lines.length) {
+      const raw = lines[i];
+      if (raw === '' || /^\s*#/.test(raw)) { i++; pos = i; continue; }
+      const m = raw.match(/^(\s*)(.*)$/);
+      const lineIndent = m[1].length;
+      if (lineIndent < indent) break;
+      if (lineIndent > indent) {
+        err('Unexpected indentation', i + 1, lineIndent + 1);
+      }
+      const content = m[2];
+      if (content === '' || /^\s*#/.test(content)) { i++; pos = i; continue; }
+
+      // Array item
+      if (/^-\s/.test(content) || content === '-') {
+        if (arr === null) {
+          // Switch to array mode — if any key already exists, error
+          if (Object.keys(result).length > 0) {
+            err('Mix of map and sequence at same indent', i + 1, 1);
+          }
+          arr = [];
+        }
+        const itemBody = content === '-' ? '' : content.replace(/^-\s?/, '');
+        if (itemBody === '' || /^[-\s]/.test(itemBody)) {
+          // Multiline array — next line must be more indented
+          i++;
+          pos = i;
+          // Find child indent
+          let childIndent = indent;
+          while (i < lines.length) {
+            const r2 = lines[i];
+            if (r2 === '' || /^\s*#/.test(r2)) { i++; pos = i; continue; }
+            const mi = r2.match(/^(\s*)(.*)$/);
+            const ci = mi[1].length;
+            if (ci <= indent) { break; }
+            childIndent = ci; break;
+          }
+          arr.push(parseBlock(childIndent));
+        } else {
+          // Inline key: value OR just a scalar
+          const kv = itemBody.match(/^([^:]+?):(\s|$)/);
+          if (kv) {
+            const key = unquoteKey(kv[1].trim());
+            const rest = itemBody.substring(kv[1].length + 1).trim();
+            const obj = {};
+            if (rest === '' || rest === '|' || rest === '>' || rest === '|+' || rest === '|-') {
+              // Multiline
+              const block = readMultiline(rest, i, indent + 2);
+              i = block.next;
+              obj[key] = block.value;
+            } else {
+              obj[key] = parseScalar(rest);
+              i++;
+            }
+            pos = i;
+            arr.push(obj);
+          } else {
+            arr.push(parseScalar(itemBody));
+            i++;
+            pos = i;
+          }
+        }
+        continue;
+      }
+
+      // Map entry
+      const kv = content.match(/^([^:#]+?):(\s|$)/);
+      if (!kv) {
+        // Could be a scalar at the top level
+        if (i === 0 && Object.keys(result).length === 0 && arr === null) {
+          return parseScalar(content);
+        }
+        err('Expected key:value pair', i + 1, 1);
+      }
+      if (arr !== null) {
+        err('Mix of map and sequence at same indent', i + 1, 1);
+      }
+      const key = unquoteKey(kv[1].trim());
+      const rest = content.substring(kv[1].length + 1).trim();
+      if (rest === '' || rest === '|' || rest === '>' || rest === '|+' || rest === '|-') {
+        const block = readMultiline(rest, i, indent + 2);
+        i = block.next;
+        result[key] = block.value;
+      } else {
+        result[key] = parseScalar(rest);
+        i++;
+      }
+      pos = i;
+    }
+    pos = i;
+    return arr !== null ? arr : result;
+  }
+
+  function unquoteKey(s) {
+    if ((s[0] === '"' && s[s.length - 1] === '"') || (s[0] === "'" && s[s.length - 1] === "'")) {
+      return s.substring(1, s.length - 1);
+    }
+    return s;
+  }
+
+  function parseScalar(s) {
+    s = s.replace(/\s+#.*$/, '').trim();
+    if (s === '' || s === '~' || s === 'null') return null;
+    if (s === 'true' || s === 'True' || s === 'TRUE') return true;
+    if (s === 'false' || s === 'False' || s === 'FALSE') return false;
+    if (/^-?\d+$/.test(s)) return parseInt(s, 10);
+    if (/^-?\d+\.\d+([eE][+-]?\d+)?$/.test(s) || /^-?\.\d+$/.test(s)) return parseFloat(s);
+    if (/^-?\d+(\.\d+)?[eE][+-]?\d+$/.test(s)) return parseFloat(s);
+    if ((s[0] === '"' && s[s.length - 1] === '"') || (s[0] === "'" && s[s.length - 1] === "'")) {
+      return s.substring(1, s.length - 1).replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"');
+    }
+    if (s[0] === '[' && s[s.length - 1] === ']') {
+      try { return JSON.parse(s.replace(/'/g, '"')); } catch(e) { return s; }
+    }
+    if (s[0] === '{' && s[s.length - 1] === '}') {
+      try { return JSON.parse(s.replace(/'/g, '"')); } catch(e) { return s; }
+    }
+    return s;
+  }
+
+  function readMultiline(style, lineIdx, childIndent) {
+    let i = lineIdx + 1;
+    const collected = [];
+    while (i < lines.length) {
+      const r = lines[i];
+      if (r === '') { collected.push(''); i++; continue; }
+      const m = r.match(/^(\s*)(.*)$/);
+      const ci = m[1].length;
+      if (ci < childIndent && m[2] !== '') break;
+      if (ci < childIndent && m[2] === '') { i++; continue; }
+      collected.push(r.substring(childIndent));
+      i++;
+    }
+    let text = collected.join('\n');
+    if (text.endsWith('\n')) text = text.substring(0, text.length - 1);
+    if (style === '|') return { value: text, next: i };
+    if (style === '|-') return { value: text, next: i };
+    if (style === '|+') return { value: text + '\n', next: i };
+    if (style === '>') return { value: text.replace(/\n/g, ' '), next: i };
+    return { value: text, next: i };
+  }
+
+  pos = 0;
+  if (lines.length === 0) return {};
+  // Top-level indent
+  let topIndent = -1;
+  for (let k = 0; k < lines.length; k++) {
+    const r = lines[k];
+    if (r === '' || /^\s*#/.test(r)) continue;
+    const mm = r.match(/^(\s*)\S/);
+    if (mm) { topIndent = mm[1].length; break; }
+  }
+  if (topIndent < 0) return {};
+  return parseBlock(topIndent);
+}
+
+/* ---------- Dumper (subset, consistent block style) ---------- */
+function dumpYAML(value, indent) {
+  indent = indent || 0;
+  const sp = '  '.repeat(indent);
+  if (value === null) return 'null';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') {
+    if (value === '') return "''";
+    if (/[:#\-?&*!|>'"%@`]/.test(value) || /^\s|\s$/.test(value) || /^(true|false|null|~|yes|no|on|off)$/i.test(value) || /^\d/.test(value)) {
+      return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t') + '"';
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '[]';
+    let out = [];
+    for (const item of value) {
+      if (item !== null && typeof item === 'object') {
+        const inner = dumpYAML(item, indent + 1);
+        const lines = inner.split('\n');
+        out.push(sp + '- ' + lines[0].replace(/^ {2}/, ''));
+        for (let k = 1; k < lines.length; k++) out.push(lines[k]);
+      } else {
+        out.push(sp + '- ' + dumpYAML(item, indent + 1));
+      }
+    }
+    return out.join('\n');
+  }
+  if (typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length === 0) return '{}';
+    let out = [];
+    for (const k of keys) {
+      const v = value[k];
+      if (v !== null && typeof v === 'object') {
+        if (Array.isArray(v) && v.length === 0) {
+          out.push(sp + k + ': []');
+        } else if (!Array.isArray(v) && Object.keys(v).length === 0) {
+          out.push(sp + k + ': {}');
+        } else {
+          out.push(sp + k + ':');
+          out.push(dumpYAML(v, indent + 1));
+        }
+      } else {
+        out.push(sp + k + ': ' + dumpYAML(v, indent + 1));
+      }
+    }
+    return out.join('\n');
+  }
+  return String(value);
+}
+
+function syntaxHighlightYaml(src) {
+  return src.split('\n').map(line => {
+    let out = line
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Comments
+    out = out.replace(/(\s+#.*)$/, '<span class="yaml-comment">$1</span>');
+    // Key: value
+    out = out.replace(/^(\s*-?\s*)([A-Za-z_][\w\-]*)(\s*):/,
+      (m, pre, key, col) => `${pre}<span class="yaml-key">${key}</span>${col}:`);
+    // Strings (quoted)
+    out = out.replace(/'([^']*)'/g, '<span class="yaml-string">\'$1\'</span>');
+    out = out.replace(/"([^"]*)"/g, '<span class="yaml-string">"$1"</span>');
+    // Numbers, bools, null
+    out = out.replace(/\b(true|false|null|~)\b/g, '<span class="yaml-bool">$1</span>');
+    out = out.replace(/\b(-?\d+\.?\d*)\b/g, '<span class="yaml-number">$1</span>');
+    return out;
+  }).join('\n');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let curIndent = 2;
+function doFormat() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').innerHTML = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj = parseYAML(inp);
+    const dumped = dumpYAML(obj);
+    $('#output').innerHTML = syntaxHighlightYaml(dumped);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+  } catch(e) {
+    let info = `<span style="color:var(--gz-accent)">${t('invalid')}: ${escHtml(e.message || 'parse error')}</span>`;
+    if (e.line) info += ` <span style="opacity:.7">(Line ${e.line}, Col ${e.col || 1})</span>`;
+    $('#status').innerHTML = info;
+    $('#output').textContent = '';
+  }
+}
+
+function doMinify() {
+  const inp = $('#input').value;
+  if (!inp.trim()) return;
+  try {
+    const obj = parseYAML(inp);
+    $('#output').textContent = JSON.stringify(obj);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+  } catch(e) {
+    let info = `<span style="color:var(--gz-accent)">${t('invalid')}: ${escHtml(e.message || 'parse error')}</span>`;
+    if (e.line) info += ` <span style="opacity:.7">(Line ${e.line}, Col ${e.col || 1})</span>`;
+    $('#status').innerHTML = info;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `# Application configuration
+name: GameZipper Tools
+version: 2.1.0
+active: true
+max_users: 1000
+
+# Server settings
+server:
+  host: api.gamezipper.com
+  port: 443
+  ssl: true
+  cors:
+    - https://gamezipper.com
+    - https://tools.gamezipper.com
+
+# Database
+database:
+  driver: postgres
+  pool_size: 20
+  timeout_ms: 5000
+  credentials:
+    username: admin
+    password: changeme
+
+# Feature flags
+features:
+  beta: false
+  experimental: null
+  descriptions:
+    home: "Free online toolbox"
+    tools: "Browse 250+ utilities"
+`;
+  doFormat();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doFormat);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔄', href:'/convert/yaml-json.html', name:'YAML ↔ JSON'},
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

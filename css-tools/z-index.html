@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>CSS Z-Index Visualizer & Stacking Context Tool | GameZipper Tools</title>
+  <meta name="description" content="Visualize CSS z-index and stacking contexts. Drag layered boxes to see which element appears on top, learn how position, opacity and transforms create stacking contexts.">
+  <link rel="canonical" href="https://tools.gamezipper.com/css-tools/z-index.html">
+  <meta property="og:title" content="CSS Z-Index Visualizer & Stacking Context Tool | GameZipper Tools">
+  <meta property="og:description" content="Visualize CSS z-index and stacking contexts. Drag layered boxes to see which element appears on top.">
+  <meta property="og:url" content="https://tools.gamezipper.com/css-tools/z-index.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS Z-Index Visualizer & Stacking Context Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.zv-layout{display:grid;grid-template-columns:1fr 320px;gap:18px;margin-top:8px}
+@media(max-width:900px){.zv-layout{grid-template-columns:1fr}}
+.zv-stage{position:relative;background:var(--glass);border:1px solid var(--border);border-radius:14px;height:480px;overflow:hidden;user-select:none}
+.zv-box{position:absolute;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;cursor:grab;box-shadow:0 4px 12px rgba(0,0,0,.2);transition:box-shadow .15s;border:2px solid rgba(255,255,255,.2)}
+.zv-box.dragging{cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.zv-box .zv-z{position:absolute;top:6px;right:8px;background:rgba(0,0,0,.4);padding:2px 8px;border-radius:6px;font-size:.7rem}
+.zv-box .zv-pos{position:absolute;bottom:6px;left:8px;background:rgba(0,0,0,.4);padding:2px 8px;border-radius:6px;font-size:.65rem;font-family:monospace}
+.zv-side{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;max-height:480px;overflow-y:auto}
+.zv-item{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px}
+.zv-item h4{margin:0 0 6px;font-size:.85rem;display:flex;align-items:center;gap:6px}
+.zv-item .dot{width:12px;height:12px;border-radius:4px;flex-shrink:0}
+.zv-item label{display:block;font-size:.7rem;color:var(--text2);margin:6px 0 2px;font-weight:600}
+.zv-item input,.zv-item select{width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.8rem;font-family:inherit}
+.zv-info{margin-top:18px;background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:18px;font-size:.85rem;line-height:1.6}
+.zv-info h3{font-size:1rem;margin-bottom:10px;color:var(--accent)}
+.zv-info code{background:var(--glass2);padding:1px 6px;border-radius:4px;font-size:.85em}
+.zv-stack{margin-top:14px;font-family:monospace;font-size:.78rem;background:var(--glass2);padding:10px;border-radius:8px;line-height:1.6}
+.zv-stack .top{color:var(--gz-success);font-weight:700}
+.zv-stack .mid{color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS Z-Index Visualizer","description":"Visualize CSS z-index and stacking contexts. Drag layered boxes to see which element appears on top.","url":"https://tools.gamezipper.com/css-tools/z-index.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is CSS z-index?", "acceptedAnswer": {"@type": "Answer", "text": "Z-index is a CSS property that controls the vertical stacking order of positioned elements (those with position set to relative, absolute, fixed, or sticky). Higher z-index values appear on top of lower values."}}, {"@type": "Question", "name": "Why isn't my z-index working?", "acceptedAnswer": {"@type": "Answer", "text": "Z-index only works on positioned elements (position: relative/absolute/fixed/sticky). Also, a new stacking context is created when an element has opacity < 1, transform, filter, isolation, or a z-index value. The element will only stack relative to siblings within its own stacking context."}}, {"@type": "Question", "name": "What is a stacking context?", "acceptedAnswer": {"@type": "Answer", "text": "A stacking context is a 3D concept where elements form a stacking hierarchy. Inside a context, z-indexes are relative. Common stacking-context triggers: position with z-index, opacity < 1, transform != none, filter != none, isolation: isolate, and will-change with certain properties."}}, {"@type": "Question", "name": "Can I drag elements to see them overlap?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click and drag any box in the visualization to move it around the stage. Adjust z-index, position type, opacity, and transforms to see how they affect the stacking order in real time."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/css-tools/z-index.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/css-tools/z-index.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/css-tools/z-index.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="zv-layout">
+      <div class="zv-stage" id="stage"></div>
+      <div class="zv-side" id="controls"></div>
+    </div>
+    <div class="zv-info">
+      <h3>📚 Stacking Order Rules</h3>
+      <ol style="margin:0;padding-left:20px">
+        <li>Background and borders of the root element</li>
+        <li>Non-positioned descendants (in document order)</li>
+        <li>Floats and their contents</li>
+        <li>Non-positioned inline descendants</li>
+        <li><strong>Positioned elements</strong> (relative/absolute/fixed/sticky) with <code>z-index: auto</code> or <code>z-index: 0</code></li>
+        <li>Positioned elements with positive z-index, in ascending order</li>
+      </ol>
+      <div class="zv-stack" id="stackInfo"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSS Z-Index Visualizer',
+    toolDesc: 'Visualize CSS z-index and stacking contexts. Drag boxes, change z-index/position/opacity, and see live stacking order.',
+    step1: 'Look at the layered boxes in the stage on the left',
+    step2: 'Drag any box to overlap with another — z-index controls which is on top',
+    step3: 'Adjust z-index, position, opacity or transform in the right panel',
+    step4: 'Watch the stacking order in the bottom panel update in real time',
+    box: 'Box', z: 'z-index', position: 'position',
+    opacity: 'opacity', transform: 'transform', reset: 'Reset',
+    stackOrder: 'Current Stacking Order (top to bottom)',
+  },
+  zh: {
+    toolTitle: 'CSS Z-Index 可视化工具',
+    toolDesc: '可视化 CSS z-index 和堆叠上下文。拖动方块，调整 z-index/定位/不透明度，实时查看堆叠顺序。',
+    step1: '查看左侧舞台中的层叠方块',
+    step2: '拖动任意方块与另一个重叠 — z-index 决定谁在上方',
+    step3: '在右侧面板调整 z-index、定位、不透明度或 transform',
+    step4: '底部面板会实时显示堆叠顺序',
+    box: '方块', z: 'z-index', position: 'position',
+    opacity: '不透明度', transform: '变换', reset: '重置',
+    stackOrder: '当前堆叠顺序（自上而下）',
+  }
+});
+
+const { $, t } = GZ;
+
+const BOXES = [
+  { id: 'a', color: '#e94560', x: 40, y: 40, w: 160, h: 120, z: 1, pos: 'absolute', opacity: 1, transform: 'none' },
+  { id: 'b', color: '#4ecdc4', x: 140, y: 100, w: 160, h: 120, z: 2, pos: 'absolute', opacity: 1, transform: 'none' },
+  { id: 'c', color: '#ffd93d', x: 240, y: 60, w: 160, h: 120, z: 3, pos: 'absolute', opacity: 1, transform: 'none' },
+  { id: 'd', color: '#7b68ee', x: 80, y: 220, w: 160, h: 120, z: 0, pos: 'absolute', opacity: 1, transform: 'none' },
+];
+
+function render() {
+  const stage = $('#stage');
+  stage.innerHTML = '';
+  for (const b of BOXES) {
+    const el = document.createElement('div');
+    el.className = 'zv-box';
+    el.style.background = b.color;
+    el.style.left = b.x + 'px';
+    el.style.top = b.y + 'px';
+    el.style.width = b.w + 'px';
+    el.style.height = b.h + 'px';
+    el.style.zIndex = b.z;
+    el.style.position = b.pos;
+    el.style.opacity = b.opacity;
+    el.style.transform = b.transform !== 'none' ? b.transform : '';
+    el.dataset.id = b.id;
+    el.innerHTML = `<span class="zv-z">z:${b.z}</span><span>${b.id.toUpperCase()}</span><span class="zv-pos">${b.pos}${b.opacity < 1 ? ' / op:' + b.opacity : ''}${b.transform !== 'none' ? ' / tf' : ''}</span>`;
+    makeDraggable(el, b);
+    stage.appendChild(el);
+  }
+  renderControls();
+  updateStackInfo();
+}
+
+function renderControls() {
+  const c = $('#controls');
+  c.innerHTML = '';
+  for (const b of BOXES) {
+    const item = document.createElement('div');
+    item.className = 'zv-item';
+    item.innerHTML = `
+      <h4><span class="dot" style="background:${b.color}"></span>${t('box')} ${b.id.toUpperCase()}</h4>
+      <label>${t('z')}</label>
+      <input type="number" value="${b.z}" min="-100" max="100" onchange="updateBox('${b.id}','z',this.value)">
+      <label>${t('position')}</label>
+      <select onchange="updateBox('${b.id}','pos',this.value)">
+        <option value="static" ${b.pos==='static'?'selected':''}>static</option>
+        <option value="relative" ${b.pos==='relative'?'selected':''}>relative</option>
+        <option value="absolute" ${b.pos==='absolute'?'selected':''}>absolute</option>
+        <option value="fixed" ${b.pos==='fixed'?'selected':''}>fixed</option>
+        <option value="sticky" ${b.pos==='sticky'?'selected':''}>sticky</option>
+      </select>
+      <label>${t('opacity')}</label>
+      <input type="number" value="${b.opacity}" min="0" max="1" step="0.1" onchange="updateBox('${b.id}','opacity',this.value)">
+      <label>${t('transform')}</label>
+      <select onchange="updateBox('${b.id}','transform',this.value)">
+        <option value="none" ${b.transform==='none'?'selected':''}>none</option>
+        <option value="translate(10px,10px)" ${b.transform.includes('translate')?'selected':''}>translate</option>
+        <option value="rotate(15deg)" ${b.transform.includes('rotate')?'selected':''}>rotate</option>
+        <option value="scale(0.85)" ${b.transform.includes('scale')?'selected':''}>scale</option>
+      </select>`;
+    c.appendChild(item);
+  }
+}
+
+window.updateBox = function(id, prop, val) {
+  const b = BOXES.find(x => x.id === id);
+  if (!b) return;
+  if (prop === 'z') b.z = parseInt(val) || 0;
+  else if (prop === 'pos') b.pos = val;
+  else if (prop === 'opacity') b.opacity = Math.max(0, Math.min(1, parseFloat(val) || 1));
+  else if (prop === 'transform') b.transform = val;
+  render();
+};
+
+function makeDraggable(el, b) {
+  let startX, startY, origX, origY, dragging = false;
+  el.addEventListener('mousedown', e => {
+    dragging = true; el.classList.add('dragging');
+    startX = e.clientX; startY = e.clientY;
+    origX = b.x; origY = b.y;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const stage = $('#stage').getBoundingClientRect();
+    b.x = Math.max(0, Math.min(stage.width - b.w, origX + dx));
+    b.y = Math.max(0, Math.min(stage.height - b.h, origY + dy));
+    el.style.left = b.x + 'px';
+    el.style.top = b.y + 'px';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; el.classList.remove('dragging'); });
+  // touch
+  el.addEventListener('touchstart', e => {
+    dragging = true; el.classList.add('dragging');
+    const touch = e.touches[0];
+    startX = touch.clientX; startY = touch.clientY;
+    origX = b.x; origY = b.y;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    const stage = $('#stage').getBoundingClientRect();
+    b.x = Math.max(0, Math.min(stage.width - b.w, origX + dx));
+    b.y = Math.max(0, Math.min(stage.height - b.h, origY + dy));
+    el.style.left = b.x + 'px';
+    el.style.top = b.y + 'px';
+  }, { passive: true });
+  document.addEventListener('touchend', () => { dragging = false; el.classList.remove('dragging'); });
+}
+
+function updateStackInfo() {
+  // Sort by effective stacking: positioned-with-z first, then by z desc
+  const positioned = BOXES.filter(b => b.pos !== 'static' && (b.z !== 0 || b.z === 'auto' && false));
+  // For simplicity, sort all by z desc
+  const sorted = [...BOXES].sort((a, b) => {
+    const ap = a.pos !== 'static' ? 1 : 0;
+    const bp = b.pos !== 'static' ? 1 : 0;
+    if (ap !== bp) return bp - ap;
+    return b.z - a.z;
+  });
+  let html = '<strong>' + t('stackOrder') + ':</strong>\n';
+  sorted.forEach((b, i) => {
+    const cls = i === 0 ? 'top' : 'mid';
+    html += `<span class="${cls}">${i + 1}. Box ${b.id.toUpperCase()} (z:${b.z}, ${b.pos}${b.opacity < 1 ? ', op<1' : ''}${b.transform !== 'none' ? ', tf' : ''})</span>\n`;
+  });
+  $('#stackInfo').innerHTML = html;
+}
+
+function resetBoxes() {
+  BOXES[0] = { id: 'a', color: '#e94560', x: 40, y: 40, w: 160, h: 120, z: 1, pos: 'absolute', opacity: 1, transform: 'none' };
+  BOXES[1] = { id: 'b', color: '#4ecdc4', x: 140, y: 100, w: 160, h: 120, z: 2, pos: 'absolute', opacity: 1, transform: 'none' };
+  BOXES[2] = { id: 'c', color: '#ffd93d', x: 240, y: 60, w: 160, h: 120, z: 3, pos: 'absolute', opacity: 1, transform: 'none' };
+  BOXES[3] = { id: 'd', color: '#7b68ee', x: 80, y: 220, w: 160, h: 120, z: 0, pos: 'absolute', opacity: 1, transform: 'none' };
+  render();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="resetBoxes()">${t('reset')}</button>`;
+
+GZ.renderToolPage({
+  category: 'css',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📦', href:'/css-tools/box-model.html', name:'Box Model'},
+    {icon:'🎨', href:'/css-tools/gradient.html', name:'Gradient'},
+    {icon:'🔲', href:'/css-tools/flexbox.html', name:'Flexbox'},
+    {icon:'🌫️', href:'/css-tools/backdrop-filter.html', name:'Backdrop Filter'},
+  ]
+});
+
+render();
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
