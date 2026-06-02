@@ -1,7 +1,13 @@
 /* GameZipper Tools — i18n system */
 const GZI18n = (function(){
   const T = { en: {}, zh: {} };
-  let lang = localStorage.getItem('gz-lang') || (navigator.language && navigator.language.startsWith('zh') ? 'zh' : 'en');
+  // URL-path based language takes priority: /zh/... always resolves to zh before any storage/navigator fallback.
+  // This fixes the race where the inline localStorage.setItem runs AFTER i18n.js loads and the
+  // user-agent's navigator.language is en (e.g. Kachilu headless / non-Chinese browsers).
+  const pathLang = location.pathname.startsWith('/zh/') || location.pathname === '/zh' ? 'zh' : null;
+  let lang = pathLang
+    || localStorage.getItem('gz-lang')
+    || (navigator.language && navigator.language.startsWith('zh') ? 'zh' : 'en');
 
   function t(k) { return (T[lang] && T[lang][k]) || T.en[k] || k; }
   function setLang(l) { lang = l; localStorage.setItem('gz-lang', l); document.documentElement.lang = l; location.reload(); }
