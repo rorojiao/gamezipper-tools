@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>URL 解析器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将任意 URL 解析为组成部分 — 协议、主机名、端口、路径、查询参数和哈希片段。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/url-parser.html">
+  <meta property="og:title" content="URL 解析器">
+  <meta property="og:description" content="将任意 URL 解析为组成部分 — 协议、主机名、端口、路径、查询参数和哈希片段。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/url-parser.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="URL 解析器">
+<meta name="twitter:description" content="将任意 URL 解析为组成部分 — 协议、主机名、端口、路径、查询参数和哈希片段。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.url-input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1rem;font-family:monospace;margin-bottom:14px}
+.url-input:focus{outline:none;border-color:var(--accent)}
+.url-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.85rem}
+.url-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;white-space:nowrap;width:160px}
+.url-table td{padding:8px 12px;border-bottom:1px solid var(--border);word-break:break-all;font-family:monospace}
+.url-table tr:hover td{background:var(--glass2)}
+.query-list{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.query-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;background:var(--glass);padding:6px 10px;border-radius:6px;font-family:monospace;font-size:.85em}
+.query-row .k{color:var(--accent);font-weight:600;word-break:break-all}
+.query-row .v{word-break:break-all}
+.query-row button{background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.8em}
+.url-error{color:var(--gz-accent);padding:14px;background:var(--glass2);border-radius:10px;margin-top:12px}
+.url-ok{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center;padding:8px 12px;background:rgba(0,214,114,.08);border-radius:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"URL Parser","description":"Parse and analyze any URL online. Extract protocol, hostname, port, path, query parameters and hash instantly.","url": "https://tools.gamezipper.com/zh/dev/url-parser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a URL parser?","acceptedAnswer":{"@type":"Answer","text":"A URL parser breaks down a URL into its components: protocol (https), hostname (example.com), port (:443), path (/path), query parameters (?key=value), and hash fragment (#section). It is useful for debugging, analytics and building URL-aware applications."}},{"@type":"Question","name":"How do I extract query parameters from a URL?","acceptedAnswer":{"@type":"Answer","text":"Paste the full URL into the input. The parser automatically splits the query string into key-value pairs and displays each parameter on its own row with copy buttons."}},{"@type":"Question","name":"Does this tool work with relative URLs?","acceptedAnswer":{"@type":"Answer","text":"The parser is designed for absolute URLs (e.g. https://example.com/path). Relative paths like /about can be parsed with respect to a base URL — just enter the full URL."}},{"@type":"Question","name":"Is my URL sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing happens entirely in your browser using the standard URL API. No data is uploaded or logged."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/url-parser.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/url-parser.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/url-parser.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <input type="text" id="urlInput" class="url-input" spellcheck="false" placeholder="https://example.com:8080/path/to/page?id=42&sort=desc#section">
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'URL Parser',
+    toolDesc: 'Parse any URL into its components — protocol, hostname, port, path, query parameters and hash fragment.',
+    example: 'Load Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    protocol: 'Protocol',
+    username: 'Username',
+    password: 'Password',
+    hostname: 'Hostname',
+    port: 'Port',
+    pathname: 'Pathname',
+    search: 'Query String',
+    hash: 'Hash',
+    origin: 'Origin',
+    host: 'Host',
+    queryParams: 'Query Parameters',
+    noQuery: 'No query parameters',
+    invalidUrl: 'Invalid URL — please enter a valid absolute URL (e.g. https://example.com)',
+    copyValue: 'Copy value',
+    value: 'value',
+    step1: 'Paste any absolute URL into the input box above',
+    step2: 'View the parsed components table and query parameters',
+    step3: 'Click any copy button to grab the value',
+    step4: 'Use Load Example to see a sample URL in action',
+  },
+  zh: {
+    toolTitle: 'URL 解析器',
+    toolDesc: '将任意 URL 解析为组成部分 — 协议、主机名、端口、路径、查询参数和哈希片段。',
+    example: '加载示例',
+    clear: '清空',
+    copy: '复制',
+    protocol: '协议',
+    username: '用户名',
+    password: '密码',
+    hostname: '主机名',
+    port: '端口',
+    pathname: '路径',
+    search: '查询字符串',
+    hash: '哈希',
+    origin: '源',
+    host: '主机',
+    queryParams: '查询参数',
+    noQuery: '无查询参数',
+    invalidUrl: 'URL 无效 — 请输入合法的绝对 URL（如 https://example.com）',
+    copyValue: '复制值',
+    value: '值',
+    step1: '将任意绝对 URL 粘贴到上方输入框',
+    step2: '查看解析后的组件表格和查询参数',
+    step3: '点击任意复制按钮获取对应值',
+    step4: '点击「加载示例」查看演示 URL',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function parseUrl() {
+  const url = $('#urlInput').value.trim();
+  const output = $('#output');
+  if (!url) { output.innerHTML = ''; return; }
+  let u;
+  try {
+    u = new URL(url);
+  } catch (e) {
+    output.innerHTML = `<div class="url-error">${t('invalidUrl')}<br><small>${escapeHtml(e.message)}</small></div>`;
+    return;
+  }
+  const rows = [
+    [t('protocol'), u.protocol],
+    [t('username'), u.username || '—'],
+    [t('password'), u.password || '—'],
+    [t('hostname'), u.hostname],
+    [t('port'), u.port || '(default)'],
+    [t('host'), u.host],
+    [t('origin'), u.origin],
+    [t('pathname'), u.pathname],
+    [t('search'), u.search || '—'],
+    [t('hash'), u.hash || '—'],
+  ];
+  let html = '<div class="url-ok">✓ ' + t('value') + ': ' + escapeHtml(u.href) + '</div>';
+  html += '<table class="url-table"><tbody>';
+  for (const [k, v] of rows) {
+    html += `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  html += `<h3 style="margin-top:18px;font-size:1rem">${t('queryParams')}</h3>`;
+  const params = [...u.searchParams.entries()];
+  if (!params.length) {
+    html += `<div style="opacity:.7;font-size:.85em;padding:8px 0">${t('noQuery')}</div>`;
+  } else {
+    html += '<div class="query-list">';
+    for (const [k, v] of params) {
+      const encV = encodeURIComponent(v);
+      html += `<div class="query-row"><div class="k">${escapeHtml(k)}</div><div class="v" data-v="${encV}">${escapeHtml(v)}</div><button onclick="copyText(decodeURIComponent(this.previousElementSibling.dataset.v))">${t('copy')}</button></div>`;
+    }
+    html += '</div>';
+  }
+  output.innerHTML = html;
+}
+
+function loadExample() {
+  $('#urlInput').value = 'https://user:pass@www.example.com:8080/blog/post/2026?lang=zh&sort=desc&page=2#comments';
+  parseUrl();
+}
+
+function clearAll() {
+  $('#urlInput').value = '';
+  $('#output').innerHTML = '';
+}
+
+$('#urlInput').addEventListener('input', parseUrl);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🌍', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

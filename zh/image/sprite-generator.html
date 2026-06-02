@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>CSS Sprite 精灵图生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="上传多张图片，合并为一张 CSS Sprite 精灵图，自动生成 background-position CSS 代码。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/sprite-generator.html">
+  <meta property="og:title" content="CSS Sprite 精灵图生成器">
+  <meta property="og:description" content="上传多张图片，合并为一张 CSS Sprite 精灵图，自动生成 background-position CSS 代码。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/sprite-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS Sprite 精灵图生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--gz-accent);background:rgba(79,70,229,.05)}
+.drop-zone .icon{font-size:2em;margin-bottom:8px}
+.opts{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.opts label{font-size:.85em;display:flex;align-items:center;gap:4px}
+.opts select,.opts input[type=number]{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9em}
+.sprite-preview{background:repeating-conic-gradient(var(--glass) 0% 25%, transparent 0% 50%) 50%/20px 20px;border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:16px;display:flex;justify-content:center}
+.sprite-preview canvas{max-width:100%;image-rendering:auto;border-radius:6px}
+.css-output{background:var(--gz-surface);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:monospace;font-size:.82em;line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;margin-bottom:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS Sprite Sheet Generator","description":"Free CSS sprite sheet generator. Upload multiple images, combine into a single sprite sheet with CSS background-position code.","url": "https://tools.gamezipper.com/zh/image/sprite-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a CSS sprite sheet?", "acceptedAnswer": {"@type": "Answer", "text": "A CSS sprite sheet combines multiple small images into a single larger image. You use CSS background-position to display only the part you need, reducing HTTP requests and improving page load speed."}}, {"@type": "Question", "name": "What layout options are available?", "acceptedAnswer": {"@type": "Answer", "text": "You can arrange images vertically (top-to-bottom), horizontally (left-to-right), or in a grid. Vertical is most common for icon sets."}}, {"@type": "Question", "name": "What image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "PNG, JPG, GIF, WebP and SVG. The output sprite is always PNG for transparency support."}}, {"@type": "Question", "name": "Are my images uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens in your browser. Images are loaded into canvas elements locally and never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/sprite-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/sprite-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/sprite-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="dropZone">
+      <div class="icon">📁</div>
+      <div>Drop images here or click to browse<br><small style="opacity:.6">PNG, JPG, GIF, WebP, SVG</small></div>
+      <input type="file" id="fileIn" multiple accept="image/*" style="display:none">
+    </div>
+    <div class="opts">
+      <label>Layout: <select id="layout"><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option><option value="grid">Grid</option></select></label>
+      <label>Padding: <input type="number" id="padPx" value="0" min="0" max="100" style="width:60px"> px</label>
+      <label>Scale: <input type="number" id="scale" value="1" min="0.1" max="4" step="0.1" style="width:60px">x</label>
+      <label><input type="checkbox" id="uniformSize"> Uniform Size</label>
+    </div>
+    <div id="previewArea"></div>
+    <div class="css-output" id="cssOut" style="display:none"></div>
+  </div>
+
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSS Sprite Sheet Generator',
+    toolDesc: 'Upload multiple images and combine them into a single CSS sprite sheet with auto-generated background-position code.',
+    step1: 'Drop or upload multiple images (PNG, JPG, GIF, WebP, SVG)',
+    step2: 'Choose layout: vertical, horizontal, or grid',
+    step3: 'Adjust padding and scale as needed',
+    step4: 'Download the sprite image and copy the generated CSS',
+  },
+  zh: {
+    toolTitle: 'CSS Sprite 精灵图生成器',
+    toolDesc: '上传多张图片，合并为一张 CSS Sprite 精灵图，自动生成 background-position CSS 代码。',
+    step1: '拖拽或上传多张图片（PNG、JPG、GIF、WebP、SVG）',
+    step2: '选择布局方式：垂直、水平或网格排列',
+    step3: '根据需要调整间距和缩放比例',
+    step4: '下载精灵图并复制生成的 CSS 代码',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let images = [];
+
+const dropZone = $('#dropZone');
+const fileIn = $('#fileIn');
+
+dropZone.addEventListener('click', () => fileIn.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fileIn.addEventListener('change', e => handleFiles(e.target.files));
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const name = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '-');
+        images.push({ img, name, w: img.naturalWidth, h: img.naturalHeight });
+        renderSprite();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderSprite() {
+  if (!images.length) { $('#previewArea').innerHTML = ''; $('#cssOut').style.display = 'none'; return; }
+
+  const pad = parseInt($('#padPx').value) || 0;
+  const scale = parseFloat($('#scale').value) || 1;
+  const layout = $('#layout').value;
+  const uniform = $('#uniformSize').checked;
+
+  // Scale images
+  const scaled = images.map(i => ({
+    ...i, sw: Math.round(i.w * scale), sh: Math.round(i.h * scale)
+  }));
+
+  // Determine uniform size
+  let maxW = 0, maxH = 0;
+  scaled.forEach(i => { maxW = Math.max(maxW, i.sw); maxH = Math.max(maxH, i.sh); });
+
+  const final = scaled.map(i => ({
+    ...i, fw: uniform ? maxW : i.sw, fh: uniform ? maxH : i.sh
+  }));
+
+  let canvasW, canvasH, positions = [];
+  const cols = layout === 'grid' ? Math.ceil(Math.sqrt(final.length)) : (layout === 'horizontal' ? final.length : 1);
+
+  if (layout === 'vertical') {
+    canvasW = Math.max(...final.map(i => i.fw)) + pad * 2;
+    canvasH = final.reduce((s, i) => s + i.fh + pad, pad);
+    let y = pad;
+    final.forEach(i => { positions.push({ x: pad, y, ...i }); y += i.fh + pad; });
+  } else if (layout === 'horizontal') {
+    canvasW = final.reduce((s, i) => s + i.fw + pad, pad);
+    canvasH = Math.max(...final.map(i => i.fh)) + pad * 2;
+    let x = pad;
+    final.forEach(i => { positions.push({ x, y: pad, ...i }); x += i.fw + pad; });
+  } else { // grid
+    canvasW = cols * (maxW + pad) + pad;
+    canvasH = Math.ceil(final.length / cols) * (maxH + pad) + pad;
+    final.forEach((i, idx) => {
+      const col = idx % cols, row = Math.floor(idx / cols);
+      positions.push({ x: pad + col * (maxW + pad), y: pad + row * (maxH + pad), ...i });
+    });
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  const ctx = canvas.getContext('2d');
+
+  positions.forEach(p => {
+    const dx = p.x + (p.fw - p.sw) / 2;
+    const dy = p.y + (p.fh - p.sh) / 2;
+    ctx.drawImage(p.img, dx, dy, p.sw, p.sh);
+  });
+
+  // Render preview
+  const previewArea = $('#previewArea');
+  previewArea.innerHTML = '<div class="sprite-preview"></div>';
+  previewArea.querySelector('.sprite-preview').appendChild(canvas);
+  canvas.style.maxWidth = '100%';
+
+  // Generate CSS
+  let css = `.sprite {\n  background-image: url('sprite-sheet.png');\n  background-repeat: no-repeat;\n}\n\n`;
+  positions.forEach(p => {
+    css += `.sprite-${p.name} {\n  width: ${p.fw}px;\n  height: ${p.fh}px;\n  background-position: -${p.x}px -${p.y}px;\n}\n\n`;
+  });
+
+  const cssOut = $('#cssOut');
+  cssOut.textContent = css;
+  cssOut.style.display = 'block';
+
+  // Store for download
+  window._spriteCanvas = canvas;
+  window._spriteCSS = css;
+}
+
+['#layout','#padPx','#scale','#uniformSize'].forEach(sel => {
+  document.querySelector(sel).addEventListener('input', renderSprite);
+  document.querySelector(sel).addEventListener('change', renderSprite);
+});
+
+function downloadSprite() {
+  if (!window._spriteCanvas) return;
+  const a = document.createElement('a');
+  a.download = 'sprite-sheet.png';
+  a.href = window._spriteCanvas.toDataURL('image/png');
+  a.click();
+}
+
+function downloadCSS() {
+  if (!window._spriteCSS) return;
+  const blob = new Blob([window._spriteCSS], { type: 'text/css' });
+  const a = document.createElement('a');
+  a.download = 'sprite.css';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+}
+
+function clearAll() {
+  images = [];
+  window._spriteCanvas = null;
+  window._spriteCSS = null;
+  $('#fileIn').value = '';
+  renderSprite();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="downloadSprite()">⬇ Sprite PNG</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadCSS()">⬇ CSS</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText(window._spriteCSS||'')">${t('copy')} CSS</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'📐', href:'/image/resizer.html', name:'Image Resizer'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
