@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>LocalStorage / SessionStorage / Cookie Viewer - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="View, edit, search, export and clear LocalStorage, SessionStorage and cookies for the current site. Perfect for debugging web apps and inspecting client-side data.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/storage-viewer.html">
+  <meta property="og:title" content="LocalStorage / SessionStorage / Cookie Viewer - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="View, edit, search, export and clear LocalStorage, SessionStorage and cookies for the current site. Perfect for debugging web apps and inspecting client-side data.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/storage-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="LocalStorage / SessionStorage / Cookie Viewer - Free Online Tool | GameZipper Tools">
+  <meta name="twitter:description" content="View, edit, search, export and clear LocalStorage, SessionStorage and cookies for the current site. Perfect for debugging web apps and inspecting client-side data.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.sv-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.sv-tab{padding:8px 18px;border-radius:10px;background:var(--glass2);border:1px solid var(--border);color:var(--text2);cursor:pointer;font-size:.88rem;font-weight:600;transition:all .15s}
+.sv-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.sv-tab .count{background:rgba(255,255,255,0.2);padding:1px 8px;border-radius:10px;font-size:.7rem;margin-left:6px}
+.sv-search{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.sv-search input{flex:1;min-width:180px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .8rem;color:var(--text);font-size:.85rem}
+.sv-search input:focus{outline:none;border-color:var(--accent)}
+.sv-table{width:100%;border-collapse:collapse;font-size:.85rem;background:var(--glass);border-radius:var(--radius);overflow:hidden}
+.sv-table th{background:var(--glass2);padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);font-size:.78rem;text-transform:uppercase;letter-spacing:.5px}
+.sv-table td{padding:10px 12px;border-top:1px solid var(--border);word-break:break-all;vertical-align:top}
+.sv-table td.k{color:var(--accent);font-family:monospace;font-weight:600;max-width:200px}
+.sv-table td.v{font-family:monospace;color:var(--text);max-width:360px;cursor:text;user-select:text}
+.sv-table tr:hover{background:var(--glass2)}
+.sv-empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:.95rem}
+.sv-actions{display:flex;gap:6px;flex-wrap:wrap}
+.sv-actions button{background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;font-weight:600;transition:all .15s}
+.sv-actions button:hover{background:var(--glass2);color:var(--text);border-color:var(--border2)}
+.sv-actions button.danger:hover{background:rgba(239,68,68,0.15);color:var(--danger);border-color:var(--danger)}
+.sv-add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:14px;padding:12px;background:var(--glass2);border-radius:var(--radius);border:1px solid var(--border)}
+.sv-add input,.sv-add textarea{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .8rem;color:var(--text);font-size:.85rem;font-family:monospace}
+.sv-add textarea{min-height:60px;resize:vertical}
+.sv-add input:focus,.sv-add textarea:focus{outline:none;border-color:var(--accent)}
+.sv-size{color:var(--text2);font-size:.78rem;margin-top:6px;text-align:right}
+.sv-size b{color:var(--accent)}
+.sv-note{color:var(--text2);font-size:.78rem;background:rgba(245,158,11,0.08);border-left:3px solid var(--warn);padding:8px 12px;border-radius:6px;margin-bottom:12px}
+.sv-edit{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s}
+.sv-edit.show{opacity:1;pointer-events:auto}
+.sv-edit-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:min(440px,90%);}
+.sv-edit-box h3{margin-bottom:12px}
+.sv-edit-box input,.sv-edit-box textarea{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .8rem;color:var(--text);font-family:monospace;font-size:.85rem;margin-bottom:10px}
+.sv-edit-box textarea{min-height:100px;resize:vertical}
+.sv-edit-btns{display:flex;gap:8px;justify-content:flex-end}
+@media(max-width:600px){.sv-add{grid-template-columns:1fr}.sv-table td.v{max-width:180px}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LocalStorage / SessionStorage / Cookie Viewer","description":"View, edit, search, export and clear LocalStorage, SessionStorage and cookies for the current site. Perfect for debugging web apps and inspecting client-side data.","url":"https://tools.gamezipper.com/dev/storage-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is LocalStorage?", "acceptedAnswer": {"@type": "Answer", "text": "LocalStorage is a browser API that lets websites store key-value pairs persistently in the user's browser. Data survives page reloads and browser restarts, and is shared across all tabs of the same origin."}}, {"@type": "Question", "name": "What is the difference between LocalStorage and SessionStorage?", "acceptedAnswer": {"@type": "Answer", "text": "LocalStorage data is persistent and shared across tabs. SessionStorage data lives only for the lifetime of the tab or window that created it and is cleared when the tab closes."}}, {"@type": "Question", "name": "Can this tool access my password cookies?", "acceptedAnswer": {"@type": "Answer", "text": "JavaScript can only read cookies that are not marked HttpOnly. Secure, HttpOnly, or same-site-only cookies are not exposed to scripts for security reasons and therefore cannot be shown by this tool."}}, {"@type": "Question", "name": "Is my data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. This tool runs entirely in your browser and uses only the standard Web Storage and document.cookie APIs. Nothing is sent to any backend."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/storage-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/storage-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/storage-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="sv-tabs" id="tabs"></div>
+    <div class="sv-note" id="note"></div>
+    <div id="add-area"></div>
+    <div class="sv-search">
+      <input type="text" id="search" placeholder="">
+    </div>
+    <div class="sv-size" id="size"></div>
+    <div id="table-wrap"></div>
+    <div class="gz-toolbar" id="toolbar" style="margin-top:14px"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<div class="sv-edit" id="edit-modal">
+  <div class="sv-edit-box">
+    <h3 id="edit-title"></h3>
+    <div><label style="font-size:.78rem;color:var(--text2);font-weight:600" id="lbl-key"></label>
+      <input type="text" id="edit-key"></div>
+    <div style="margin-top:8px"><label style="font-size:.78rem;color:var(--text2);font-weight:600" id="lbl-val"></label>
+      <textarea id="edit-val" spellcheck="false"></textarea></div>
+    <div class="sv-edit-btns">
+      <button class="gz-btn gz-btn-secondary" id="edit-cancel"></button>
+      <button class="gz-btn" id="edit-save"></button>
+    </div>
+  </div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'LocalStorage & Cookie Viewer',
+    toolDesc: 'View, search, edit, add, delete and export LocalStorage, SessionStorage and cookies — all client-side.',
+    tabLS: 'LocalStorage',
+    tabSS: 'SessionStorage',
+    tabCK: 'Cookies',
+    noteCK: '⚠️ HttpOnly and Secure cookies are not visible to JavaScript and cannot be shown here.',
+    noteSame: 'Note: storage data is shown for the tools.gamezipper.com origin. To inspect another site, run this tool on that domain.',
+    addKey: 'Key',
+    addVal: 'Value',
+    add: 'Add',
+    export: 'Export JSON',
+    clearAll: 'Clear All',
+    refresh: 'Refresh',
+    searchPH: '🔍 Search keys/values...',
+    empty: 'No entries found',
+    noRes: 'No matching entries',
+    del: 'Delete',
+    edit: 'Edit',
+    copy: 'Copy',
+    confirmClear: 'Clear all entries? This cannot be undone.',
+    editTitle: 'Edit Entry',
+    save: 'Save',
+    cancel: 'Cancel',
+    key: 'Key',
+    val: 'Value',
+    bytes: 'bytes',
+    items: 'items',
+    step1: 'Select a tab to view LocalStorage, SessionStorage, or cookies',
+    step2: 'Use the search box to filter entries by key or value',
+    step3: 'Edit or delete individual entries, or add new ones',
+    step4: 'Export the full list as JSON for debugging or backup',
+  },
+  zh: {
+    toolTitle: '本地存储 & Cookie 查看器',
+    toolDesc: '查看、搜索、编辑、添加、删除和导出 LocalStorage、SessionStorage 和 Cookie — 完全浏览器本地处理。',
+    tabLS: 'LocalStorage',
+    tabSS: 'SessionStorage',
+    tabCK: 'Cookie',
+    noteCK: '⚠️ HttpOnly 和 Secure Cookie 对 JavaScript 不可见，无法在此显示。',
+    noteSame: '提示：显示的是 tools.gamezipper.com 源下的存储数据。要查看其他网站的数据，请在该域名下运行本工具。',
+    addKey: '键',
+    addVal: '值',
+    add: '添加',
+    export: '导出 JSON',
+    clearAll: '清空全部',
+    refresh: '刷新',
+    searchPH: '🔍 搜索键或值...',
+    empty: '暂无条目',
+    noRes: '没有匹配的条目',
+    del: '删除',
+    edit: '编辑',
+    copy: '复制',
+    confirmClear: '确定清空所有条目？此操作不可撤销。',
+    editTitle: '编辑条目',
+    save: '保存',
+    cancel: '取消',
+    key: '键',
+    val: '值',
+    bytes: '字节',
+    items: '项',
+    step1: '选择 Tab 查看 LocalStorage、SessionStorage 或 Cookie',
+    step2: '使用搜索框按键或值过滤条目',
+    step3: '编辑或删除单个条目，或添加新条目',
+    step4: '导出完整列表为 JSON 用于调试或备份',
+  }
+});
+
+const { $, t, copyText, showToast } = GZ;
+let current = 'ls';
+let editing = null;
+
+function getStore(type) {
+  if (type === 'ls') return window.localStorage;
+  if (type === 'ss') return window.sessionStorage;
+  return null;
+}
+
+function getCookies() {
+  return document.cookie.split(';').map(c => {
+    const [k, ...v] = c.trim().split('=');
+    return { key: k || '', value: decodeURIComponent(v.join('=') || '') };
+  }).filter(c => c.key);
+}
+
+function setCookie(key, value) {
+  document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; path=/; max-age=2592000`;
+}
+
+function deleteCookie(key) {
+  document.cookie = `${encodeURIComponent(key)}=; path=/; max-age=0`;
+}
+
+function readAll(type) {
+  if (type === 'ck') return getCookies();
+  const store = getStore(type);
+  const out = [];
+  for (let i = 0; i < store.length; i++) {
+    const k = store.key(i);
+    out.push({ key: k, value: store.getItem(k) });
+  }
+  return out;
+}
+
+function setItem(type, key, value) {
+  if (type === 'ck') return setCookie(key, value);
+  return getStore(type).setItem(key, value);
+}
+
+function deleteItem(type, key) {
+  if (type === 'ck') return deleteCookie(key);
+  return getStore(type).removeItem(key);
+}
+
+function clearAll(type) {
+  if (type === 'ck') {
+    getCookies().forEach(c => deleteCookie(c.key));
+    return;
+  }
+  getStore(type).clear();
+}
+
+function estimateBytes() {
+  let total = '';
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i), v = localStorage.getItem(k);
+    total += k + v;
+  }
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i), v = sessionStorage.getItem(k);
+    total += k + v;
+  }
+  total += document.cookie;
+  return new Blob([total]).size;
+}
+
+function render() {
+  const data = readAll(current);
+  const q = $('#search').value.toLowerCase();
+  const filtered = data.filter(d => d.key.toLowerCase().includes(q) || (d.value||'').toLowerCase().includes(q));
+  const wrap = $('#table-wrap');
+  if (!data.length) {
+    wrap.innerHTML = `<div class="sv-empty">${t('empty')}</div>`;
+  } else if (!filtered.length) {
+    wrap.innerHTML = `<div class="sv-empty">${t('noRes')}</div>`;
+  } else {
+    wrap.innerHTML = `<table class="sv-table">
+      <thead><tr><th>${t('key')}</th><th>${t('val')}</th><th>${t('bytes')}</th><th></th></tr></thead>
+      <tbody>${filtered.map((d,i) => {
+        const sz = new Blob([d.value||'']).size;
+        return `<tr>
+          <td class="k">${escapeHtml(d.key)}</td>
+          <td class="v">${escapeHtml((d.value||'').slice(0,200))}${(d.value||'').length>200?'…':''}</td>
+          <td style="color:var(--text2);font-size:.78rem">${sz}</td>
+          <td class="sv-actions">
+            <button onclick="editRow('${escapeAttr(d.key)}')">${t('edit')}</button>
+            <button onclick="copyVal(${i})">${t('copy')}</button>
+            <button class="danger" onclick="delRow('${escapeAttr(d.key)}')">${t('del')}</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+  $('#size').innerHTML = `<b>${data.length}</b> ${t('items')} · ~<b>${estimateBytes()}</b> ${t('bytes')}`;
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function escapeAttr(s) { return String(s).replace(/['"\\&=;]/g, c => '\\' + c); }
+
+function switchTab(tab) {
+  current = tab;
+  document.querySelectorAll('.sv-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  $('#note').style.display = tab === 'ck' ? 'block' : 'none';
+  if (tab === 'ck') {
+    $('#add-area').innerHTML = `<div class="sv-add">
+      <input type="text" id="new-key" placeholder="${t('addKey')}">
+      <textarea id="new-val" placeholder="${t('addVal')}"></textarea>
+      <button class="gz-btn" onclick="addNew()">${t('add')}</button>
+    </div>`;
+  } else {
+    $('#add-area').innerHTML = `<div class="sv-add">
+      <input type="text" id="new-key" placeholder="${t('addKey')}">
+      <textarea id="new-val" placeholder="${t('addVal')}"></textarea>
+      <button class="gz-btn" onclick="addNew()">${t('add')}</button>
+    </div>`;
+  }
+  render();
+}
+
+function addNew() {
+  const k = $('#new-key').value.trim();
+  const v = $('#new-val').value;
+  if (!k) { showToast('⚠ ' + t('addKey')); return; }
+  try {
+    setItem(current, k, v);
+    $('#new-key').value = ''; $('#new-val').value = '';
+    render();
+    showToast('✓');
+  } catch (e) { showToast('⚠ ' + e.message); }
+}
+
+function editRow(key) {
+  const data = readAll(current);
+  const item = data.find(d => d.key === key);
+  if (!item) return;
+  editing = key;
+  $('#edit-key').value = key;
+  $('#edit-val').value = item.value;
+  $('#edit-modal').classList.add('show');
+}
+
+function saveEdit() {
+  const newK = $('#edit-key').value.trim();
+  const newV = $('#edit-val').value;
+  if (!newK) { showToast('⚠ ' + t('addKey')); return; }
+  try {
+    if (current === 'ck') {
+      deleteCookie(editing);
+      setCookie(newK, newV);
+    } else {
+      const store = getStore(current);
+      if (editing !== newK) store.removeItem(editing);
+      store.setItem(newK, newV);
+    }
+    editing = null;
+    $('#edit-modal').classList.remove('show');
+    render();
+    showToast('✓');
+  } catch (e) { showToast('⚠ ' + e.message); }
+}
+
+function delRow(key) {
+  if (current === 'ck') deleteCookie(key);
+  else getStore(current).removeItem(key);
+  render();
+  showToast('✓');
+}
+
+function copyVal(i) {
+  const data = readAll(current);
+  copyText(data[i].value);
+}
+
+function exportJson() {
+  const data = readAll(current);
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${current}_export.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+$('#search').addEventListener('input', render);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="exportJson()">${t('export')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="if(confirm(t('confirmClear'))){clearAll(current);render()}">${t('clearAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="render()">${t('refresh')}</button>`;
+
+$('#edit-title').textContent = t('editTitle');
+$('#lbl-key').textContent = t('key');
+$('#lbl-val').textContent = t('val');
+$('#edit-save').textContent = t('save');
+$('#edit-cancel').textContent = t('cancel');
+$('#edit-save').onclick = saveEdit;
+$('#edit-cancel').onclick = () => $('#edit-modal').classList.remove('show');
+$('#search').placeholder = t('searchPH');
+$('#note').textContent = t('noteSame') + ' ' + t('noteCK');
+
+// Build tabs
+const tabsData = [
+  { id: 'ls', key: 'tabLS' },
+  { id: 'ss', key: 'tabSS' },
+  { id: 'ck', key: 'tabCK' },
+];
+$('#tabs').innerHTML = tabsData.map(td => {
+  const cnt = td.id === 'ck' ? getCookies().length : readAll(td.id).length;
+  return `<button class="sv-tab ${td.id==='ls'?'active':''}" data-tab="${td.id}" onclick="switchTab('${td.id}')">${t(td.key)}<span class="count">${cnt}</span></button>`;
+}).join('');
+
+switchTab('ls');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/dev/user-agent-parser.html', name:'User Agent Parser'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
