@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Luhn 信用卡号验证器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用 Luhn（模 10）算法验证信用卡号或数字 ID。自动识别 Visa、Mastercard、Amex、Discover 等品牌。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/luhn-validator.html">
+  <meta property="og:title" content="Luhn 信用卡号验证器">
+  <meta property="og:description" content="使用 Luhn（模 10）算法验证信用卡号或数字 ID。自动识别 Visa、Mastercard、Amex、Discover 等品牌。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/luhn-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Luhn 信用卡号验证器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.luhn-input{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;color:var(--text);font-size:1.4em;font-family:monospace;letter-spacing:.15em;text-align:center;margin-bottom:14px}
+.luhn-input:focus{outline:none;border-color:var(--accent)}
+.luhn-input.is-valid{border-color:var(--gz-success);box-shadow:0 0 0 3px rgba(0,214,114,.15)}
+.luhn-input.is-invalid{border-color:#e94560;box-shadow:0 0 0 3px rgba(233,69,96,.15)}
+.result-card{background:var(--glass2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:14px 0}
+.result-card .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.result-card .row:last-child{border-bottom:none}
+.result-card .row .k{color:var(--text2);font-size:.9em}
+.result-card .row .v{font-family:monospace;font-weight:600}
+.row.ok .v{color:var(--gz-success)}
+.row.bad .v{color:#e94560}
+.brand-pill{display:inline-block;padding:4px 10px;border-radius:6px;background:var(--accent);color:#000;font-weight:700;font-size:.85em;margin-left:8px}
+.steps{margin-top:14px;background:rgba(0,0,0,.2);border-radius:8px;padding:12px;font-family:monospace;font-size:.85em;line-height:1.6;max-height:240px;overflow:auto;white-space:pre-wrap}
+.brands{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;justify-content:center}
+.brand-chip{background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.78em;color:var(--text2)}
+.notice{background:rgba(255,217,61,.1);border-left:3px solid #ffd93d;padding:10px 14px;border-radius:6px;font-size:.85em;margin-top:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Luhn Credit Card Validator","description":"Validate credit card numbers with the Luhn algorithm. Free online Luhn check for Visa, Mastercard, Amex, Discover and any numeric string.","url": "https://tools.gamezipper.com/zh/dev/luhn-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is the Luhn algorithm?", "acceptedAnswer": {"@type": "Answer", "text": "The Luhn algorithm (modulus 10) is a checksum formula used to validate credit card numbers, IMEI numbers, and other identification numbers. It detects most single-digit errors and almost all transpositions of adjacent digits."}}, {"@type": "Question", "name": "Does a valid Luhn number mean the card is real?", "acceptedAnswer": {"@type": "Answer", "text": "No. The Luhn check only verifies the number structure matches the algorithm. It does not confirm the card is issued, active, has funds, or belongs to the person presenting it. Only the issuing bank can validate the card for real transactions."}}, {"@type": "Question", "name": "Is it safe to enter a card number here?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All validation happens locally in your browser. No data is sent to any server. That said, for real card testing use sandbox card numbers from your payment processor, not real cards."}}, {"@type": "Question", "name": "Which card brands are detected?", "acceptedAnswer": {"@type": "Answer", "text": "The tool detects Visa (4xxx), Mastercard (51-55 or 2221-2720), American Express (34/37), Discover (6011/65), Diners Club (300-305/36/38), JCB (35) and UnionPay (62) by their IIN/BIN prefix."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/luhn-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/luhn-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/luhn-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <input type="text" class="luhn-input" id="cc" placeholder="4111 1111 1111 1111" maxlength="32" autocomplete="off" inputmode="numeric">
+    <div class="result-card" id="result" style="display:none"></div>
+    <div class="steps" id="steps" style="display:none"></div>
+    <div class="brands" id="brands"></div>
+    <div class="notice" id="notice"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Luhn Credit Card Validator',toolDesc:'Validate any credit card or numeric ID number using the Luhn (mod 10) algorithm. Detects Visa, Mastercard, Amex, Discover and more.',
+    step1:'Type or paste a card number (digits and spaces are fine)',step2:'The tool runs the Luhn algorithm in real time',step3:'See the detected brand, length and validity below',step4:'Use the test card numbers (e.g. 4111 1111 1111 1111) to try the tool safely',
+    kValid:'Luhn check',kBrand:'Detected brand',kLength:'Length',kIin:'IIN/BIN',kSum:'Checksum sum',
+    valValid:'✓ Valid',valInvalid:'✗ Invalid',valUnknown:'— Unknown / Not Luhn',
+    showSteps:'Show steps',hideSteps:'Hide steps',example:'Test card',clear:'Clear',
+    notice:'⚠️ This tool only checks the number structure. It does not verify a real card. Use only test card numbers (e.g. 4111 1111 1111 1111) — never enter real card data.',
+    brands:['Visa: starts with 4','Mastercard: 51-55 or 2221-2720','Amex: 34 or 37','Discover: 6011, 622126-622925, 644-649, 65','Diners Club: 300-305, 36, 38','JCB: 35','UnionPay: 62']},
+  zh:{toolTitle:'Luhn 信用卡号验证器',toolDesc:'使用 Luhn（模 10）算法验证信用卡号或数字 ID。自动识别 Visa、Mastercard、Amex、Discover 等品牌。',
+    step1:'输入或粘贴卡号（支持数字和空格）',step2:'工具实时运行 Luhn 算法',step3:'下方显示识别的品牌、长度和有效性',step4:'使用测试卡号（如 4111 1111 1111 1111）安全体验工具',
+    kValid:'Luhn 校验',kBrand:'识别品牌',kLength:'长度',kIin:'IIN/BIN',kSum:'校验和',
+    valValid:'✓ 有效',valInvalid:'✗ 无效',valUnknown:'— 不适用 Luhn',
+    showSteps:'显示步骤',hideSteps:'隐藏步骤',example:'测试卡',clear:'清空',
+    notice:'⚠️ 本工具仅检查卡号结构，不会校验真实卡片。请仅使用测试卡号（如 4111 1111 1111 1111），不要输入真实卡号。',
+    brands:['Visa：以 4 开头','Mastercard：51-55 或 2221-2720','Amex：34 或 37','Discover：6011、622126-622925、644-649、65','Diners Club：300-305、36、38','JCB：35','银联：62']}
+});
+const {$,t}=GZ;
+
+function detectBrand(num){
+  if(!num)return null;
+  if(/^4/.test(num))return{name:'Visa',color:'#1a1f71'};
+  if(/^(5[1-5]|2(2[2-9][1-9]|[3-6]\d{2}|7[01]\d|720))/.test(num))return{name:'Mastercard',color:'#eb001b'};
+  if(/^3[47]/.test(num))return{name:'American Express',color:'#006fcf'};
+  if(/^(6011|65|64[4-9]|622(12[6-9]|1[3-9]\d|[2-8]\d{2}|9[01]\d|92[0-5]))/.test(num))return{name:'Discover',color:'#ff6000'};
+  if(/^(36|30[0-5]|38|39)/.test(num))return{name:'Diners Club',color:'#0079be'};
+  if(/^35(2[89]|[3-8]\d)/.test(num))return{name:'JCB',color:'#0e4c96'};
+  if(/^62/.test(num))return{name:'UnionPay',color:'#d6230f'};
+  return null;
+}
+
+function luhnCheck(num){
+  const digits=num.replace(/\D/g,'');
+  if(digits.length<2)return{ok:false,sum:0,digits:0,steps:[]};
+  let sum=0;const steps=[];const arr=digits.split('').map(d=>+d).reverse();
+  for(let i=0;i<arr.length;i++){
+    let v=arr[i];
+    let op='keep';
+    if(i%2===1){
+      v=v*2;
+      if(v>9){v=v-9;op='double-9';}
+      else op='double';
+    }
+    sum+=v;
+    steps.push({pos:i+1,orig:arr[i],v,op});
+  }
+  return{ok:sum%10===0,sum,digits:digits.length,steps};
+}
+
+function render(){
+  const raw=$('#cc').value;
+  const digits=raw.replace(/\D/g,'');
+  if(!digits){$('#result').style.display='none';$('#steps').style.display='none';$('#cc').className='luhn-input';return;}
+  const r=luhnCheck(digits);
+  const brand=detectBrand(digits);
+  const isLuhnCandidate = /^[\d\s]+$/.test(raw);
+  let valText, valClass, valid;
+  if(r.digits>=2 && isLuhnCandidate){
+    valid=r.ok;
+    valText = r.ok ? t('valValid') : t('valInvalid');
+    valClass = r.ok ? 'ok' : 'bad';
+  }else{
+    valid=null;
+    valText = t('valUnknown');
+    valClass = '';
+  }
+  $('#cc').className='luhn-input '+(valid===true?'is-valid':valid===false?'is-invalid':'');
+  const iin = digits.slice(0,Math.min(6,digits.length));
+  const brandHTML = brand ? `<span class="brand-pill" style="background:${brand.color};color:#fff">${brand.name}</span>` : '—';
+  $('#result').innerHTML=`
+    <div class="row ${valClass}"><span class="k">${t('kValid')}</span><span class="v">${valText}</span></div>
+    <div class="row"><span class="k">${t('kBrand')}</span><span class="v">${brandHTML}</span></div>
+    <div class="row"><span class="k">${t('kLength')}</span><span class="v">${r.digits} digits</span></div>
+    <div class="row"><span class="k">${t('kIin')}</span><span class="v">${iin || '—'}</span></div>
+    <div class="row"><span class="k">${t('kSum')}</span><span class="v">${r.sum} (${r.sum%10===0?'0 mod 10':'≠ 0 mod 10'})</span></div>
+  `;
+  $('#result').style.display='block';
+  // Steps
+  const stepHTML=r.steps.slice(0,30).map(s=>`pos ${s.pos}: ${s.orig} → ${s.op} → ${s.v}`).join('\n')+(r.steps.length>30?'\n...':'');
+  $('#steps').textContent=`Luhn steps (right to left, doubling every 2nd digit):\n\n${stepHTML}\n\nTotal sum: ${r.sum} → ${r.sum%10===0?'sum % 10 == 0 ✓':'sum % 10 != 0 ✗'}`;
+}
+
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="$('#cc').value='4111 1111 1111 1111';render()">${t('example')}</button><button class="gz-btn gz-btn-secondary" onclick="$('#cc').value='5555 5555 5555 4444';render()">MC</button><button class="gz-btn gz-btn-secondary" onclick="$('#cc').value='3782 822463 10005';render()">Amex</button><button class="gz-btn gz-btn-secondary" onclick="$('#cc').value='';render()">${t('clear')}</button><button class="gz-btn" id="stepsBtn" onclick="toggleSteps()">${t('showSteps')}</button>`;
+
+let stepsShown=false;
+function toggleSteps(){
+  stepsShown=!stepsShown;
+  $('#steps').style.display = stepsShown?'block':'none';
+  $('#stepsBtn').textContent = stepsShown?t('hideSteps'):t('showSteps');
+}
+
+$('#cc').addEventListener('input',render);
+
+const brandsList=t('brands')||[];
+$('#brands').innerHTML = brandsList.map(b=>`<span class="brand-chip">${b}</span>`).join('');
+$('#notice').textContent = t('notice');
+
+GZ.renderToolPage({category:'dev',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'🔐',href:'/dev/base64.html',name:'Base64'},
+  {icon:'🔑',href:'/dev/password-generator.html',name:'Password Generator'},
+  {icon:'🔐',href:'/dev/password-strength-checker.html',name:'Password Strength'},
+  {icon:'🔍',href:'/dev/regex.html',name:'Regex Tester'},
+]});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>WiFi QR Code Generator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Generate QR codes for WiFi networks instantly. Free online WiFi QR code generator — share your network credentials by QR code, no app needed, supports WPA, WEP and open networks.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/wifi-qrcode.html">
+  <meta property="og:title" content="WiFi QR Code Generator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Generate QR codes for WiFi networks instantly. Share WiFi credentials by QR code — supports WPA, WEP and open networks.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/wifi-qrcode.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="WiFi QR Code Generator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.qr-area{display:flex;flex-direction:column;align-items:center;gap:1rem}
+canvas#qr{image-rendering:pixelated;border:16px solid #fff;border-radius:4px;max-width:100%;height:auto}
+.wifi-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:560px;margin:0 auto 18px}
+.wifi-form .full{grid-column:1 / -1}
+.wifi-form label{display:block;font-size:.82em;color:var(--text2);margin-bottom:4px}
+.wifi-form input,.wifi-form select{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.65rem .8rem;color:var(--text);font-size:.9rem}
+.wifi-form input:focus{outline:none;border-color:var(--accent)}
+.row-toggle{display:flex;align-items:center;gap:6px;font-size:.85em;color:var(--text2)}
+.wifi-info{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:.85em;margin-top:14px}
+.wifi-info code{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;font-size:.9em}
+@media(max-width:560px){.wifi-form{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"WiFi QR Code Generator","description":"Generate QR codes for WiFi networks instantly. Free online WiFi QR code generator — share your network credentials by QR code.","url":"https://tools.gamezipper.com/convert/wifi-qrcode.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the WiFi QR code work?", "acceptedAnswer": {"@type": "Answer", "text": "The QR code encodes a standard WIFI:T:WPA;S:NetworkName;P:Password;; string. When a phone camera scans it, the OS detects the WiFi credentials and offers to join the network automatically."}}, {"@type": "Question", "name": "Which security types are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The generator supports WPA/WPA2, WEP and open (no-password) networks. Most modern routers use WPA — choose that unless you know your router is using WEP."}}, {"@type": "Question", "name": "Is my WiFi password sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All QR generation happens entirely in your browser. Your network name and password never leave your device."}}, {"@type": "Question", "name": "Can I scan the QR code with any phone?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. iOS 11+ and most Android 10+ phones recognize WiFi QR codes natively. Older devices may need a third-party scanner app that supports the WIFI: format."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/wifi-qrcode.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/wifi-qrcode.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/wifi-qrcode.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="wifi-form">
+      <div class="full">
+        <label id="lbl-ssid">Network Name (SSID)</label>
+        <input type="text" id="ssid" placeholder="e.g. MyHomeWiFi" autocomplete="off">
+      </div>
+      <div>
+        <label id="lbl-security">Security Type</label>
+        <select id="security">
+          <option value="WPA">WPA / WPA2</option>
+          <option value="WEP">WEP</option>
+          <option value="nopass">No password (open)</option>
+        </select>
+      </div>
+      <div>
+        <label id="lbl-hidden">Hidden network</label>
+        <div class="row-toggle"><input type="checkbox" id="hidden"> <span id="lbl-hidden-hint">SSID not broadcast</span></div>
+      </div>
+      <div class="full">
+        <label id="lbl-pwd">Password</label>
+        <input type="text" id="password" placeholder="WiFi password" autocomplete="off">
+      </div>
+    </div>
+    <div class="qr-area"><canvas id="qr" width="256" height="256"></canvas></div>
+    <div class="wifi-info" id="info"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+// Minimal QR Code encoder (numeric/alphanumeric/byte, version 1-10, EC level M)
+(function(){
+const EC_M_CAPACITY=[0,16,28,44,64,86,108,124,154,182,216];
+const GF_EXP=new Uint8Array(512),GF_LOG=new Uint8Array(256);
+(function(){let x=1;for(let i=0;i<255;i++){GF_EXP[i]=x;GF_LOG[x]=i;x<<=1;if(x&256)x^=285;}for(let i=255;i<512;i++)GF_EXP[i]=GF_EXP[i-255];})();
+function gfMul(a,b){return a&&b?GF_EXP[GF_LOG[a]+GF_LOG[b]]:0;}
+function polyMul(a,b){const r=new Uint8Array(a.length+b.length-1);for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++)r[i+j]^=gfMul(a[i],b[j]);return r;}
+function genPoly(n){let p=new Uint8Array([1]);for(let i=0;i<n;i++)p=polyMul(p,new Uint8Array([1,GF_EXP[i]]));return p;}
+function ecBytes(data,ecCount){const gen=genPoly(ecCount);const msg=new Uint8Array(data.length+ecCount);msg.set(data);for(let i=0;i<data.length;i++){const c=msg[i];if(c)for(let j=0;j<gen.length;j++)msg[i+j]^=gfMul(gen[j],c);}return msg.slice(data.length);}
+const EC_CW=[0,10,16,26,18,24,16,18,22,22,26];
+const TOTAL_CW=[0,26,44,70,100,134,172,196,242,292,346];
+
+function makeQR(text){
+  const data=new TextEncoder().encode(text);
+  let ver=1;
+  for(;ver<=10;ver++)if(data.length<=EC_M_CAPACITY[ver])break;
+  if(ver>10){ver=10;}
+  const totalDC=TOTAL_CW[ver]-EC_CW[ver];
+  const bits=[];
+  function push(val,len){for(let i=len-1;i>=0;i--)bits.push((val>>i)&1);}
+  push(4,4);
+  push(data.length, ver<=9?8:16);
+  for(const b of data)push(b,8);
+  const cap=totalDC*8;
+  for(let i=0;i<4&&bits.length<cap;i++)bits.push(0);
+  while(bits.length%8)bits.push(0);
+  const pads=[0xEC,0x11];let pi=0;
+  while(bits.length<cap){bits.push(...Array.from({length:8},(_, k)=>(pads[pi]>>(7-k))&1));pi^=1;}
+  const codewords=new Uint8Array(totalDC);
+  for(let i=0;i<totalDC;i++){let v=0;for(let j=0;j<8;j++)v=(v<<1)|bits[i*8+j];codewords[i]=v;}
+  const ec=ecBytes(codewords,EC_CW[ver]);
+  const final=new Uint8Array(TOTAL_CW[ver]);
+  final.set(codewords);final.set(ec,totalDC);
+  const size=ver*4+17;
+  const matrix=Array.from({length:size},()=>new Int8Array(size));
+  const reserved=Array.from({length:size},()=>new Uint8Array(size));
+  function setMod(r,c,v){if(r>=0&&r<size&&c>=0&&c<size){matrix[r][c]=v?1:0;reserved[r][c]=1;}}
+  function finder(r,c){for(let dr=-1;dr<=7;dr++)for(let dc=-1;dc<=7;dc++){const v=(dr<0||dr>6||dc<0||dc>6)?0:(dr===0||dr===6||dc===0||dc===6||(dr>=2&&dr<=4&&dc>=2&&dc<=4))?1:0;setMod(r+dr,c+dc,v);}}
+  finder(0,0);finder(0,size-7);finder(size-7,0);
+  for(let i=8;i<size-8;i++){setMod(6,i,i%2===0);setMod(i,6,i%2===0);}
+  setMod(size-8,8,1);
+  for(let i=0;i<9;i++){if(!reserved[8][i])setMod(8,i,0);if(!reserved[i][8])setMod(i,8,0);}
+  for(let i=0;i<8;i++){if(!reserved[8][size-1-i])setMod(8,size-1-i,0);if(!reserved[size-1-i][8])setMod(size-1-i,8,0);}
+  if(ver>=2){const pos=[6,ver*4+10];
+    for(const r of pos)for(const c of pos){if(reserved[r][c])continue;
+      for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)setMod(r+dr,c+dc,(Math.abs(dr)===2||Math.abs(dc)===2||(!dr&&!dc))?1:0);}}
+  const allBits=[];
+  for(const b of final)for(let i=7;i>=0;i--)allBits.push((b>>i)&1);
+  let bi=0,up=true;
+  for(let col=size-1;col>=0;col-=2){
+    if(col===6)col--;
+    for(let row=0;row<size;row++){
+      const r=up?size-1-row:row;
+      for(const dc of [0,-1]){
+        const c=col+dc;
+        if(c>=0&&c<size&&!reserved[r][c]){matrix[r][c]=bi<allBits.length?allBits[bi++]:0;}
+      }
+    }
+    up=!up;
+  }
+  for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(!reserved[r][c]&&(r+c)%2===0)matrix[r][c]^=1;
+  const fmtBits=0b101010000010010;
+  function setFmt(i,v){
+    if(i<6)setMod(8,i,v);else if(i===6)setMod(8,7,v);else if(i===7)setMod(8,8,v);else if(i===8)setMod(7,8,v);else setMod(14-i,8,v);
+    if(i<8)setMod(size-1-i,8,v);else setMod(8,size-8+i-8,v);
+  }
+  for(let i=0;i<15;i++)setFmt(i,(fmtBits>>i)&1);
+  return {matrix,size};
+}
+
+function drawQR(canvas,text){
+  if(!text){const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);return;}
+  try{
+    const {matrix,size}=makeQR(text);
+    const scale=Math.floor(256/size);
+    canvas.width=canvas.height=size*scale;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#000';
+    for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(matrix[r][c])ctx.fillRect(c*scale,r*scale,scale,scale);
+  }catch(e){const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,256,256);ctx.fillStyle='#f00';ctx.font='14px sans-serif';ctx.fillText('Text too long',20,130);}
+}
+window.drawQR=drawQR;
+})();
+
+GZI18n.register({
+  en:{toolTitle:'WiFi QR Code Generator',toolDesc:'Generate a QR code for your WiFi network. Guests can scan to join — no typing required.',
+    step1:'Enter your WiFi network name (SSID) and password',
+    step2:'Choose the security type (WPA, WEP or open)',
+    step3:'The QR code is generated automatically in real time',
+    step4:'Print, download or share the QR code with guests',
+    lblSsid:'Network Name (SSID)',lblPwd:'Password',lblSec:'Security Type',lblHidden:'Hidden network',lblHiddenHint:'SSID not broadcast',
+    infoLine:'Format: <code>WIFI:T:WPA;S:NetworkName;P:Password;;</code> — recognized by iOS 11+ and most Android 10+ phones natively.'},
+  zh:{toolTitle:'WiFi 二维码生成器',toolDesc:'为你的 WiFi 网络生成二维码。访客扫码即可连接，无需手动输入密码。',
+    step1:'输入 WiFi 网络名称（SSID）和密码',
+    step2:'选择加密类型（WPA、WEP 或开放）',
+    step3:'二维码会自动实时生成',
+    step4:'打印、下载或分享二维码给访客',
+    lblSsid:'网络名称（SSID）',lblPwd:'密码',lblSec:'加密类型',lblHidden:'隐藏网络',lblHiddenHint:'不广播 SSID',
+    infoLine:'格式：<code>WIFI:T:WPA;S:网络名;P:密码;;</code> — iOS 11+ 和大部分 Android 10+ 手机原生支持识别。'}
+});
+const {$,t}=GZ;
+
+function escapeWifi(s){
+  return (s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/"/g,'\\"').replace(/:/g,'\\:');
+}
+
+function build(){
+  const ssid=$('#ssid').value.trim();
+  const pwd=$('#password').value;
+  const sec=$('#security').value;
+  const hidden=$('#hidden').checked;
+  if(!ssid){const c=$('#qr').getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,$('#qr').width,$('#qr').height);return;}
+  const T = sec==='nopass' ? 'nopass' : sec;
+  let str = `WIFI:T:${T};S:${escapeWifi(ssid)};`;
+  if(sec!=='nopass') str += `P:${escapeWifi(pwd)};`;
+  if(hidden) str += 'H:true;';
+  str += ';';
+  drawQR($('#qr'), str);
+}
+
+function dl(){
+  const a=document.createElement('a');
+  const ssid=$('#ssid').value.trim()||'wifi';
+  a.download=`wifi-${ssid.replace(/[^a-z0-9_-]+/gi,'_')}.png`;
+  a.href=$('#qr').toDataURL();
+  a.click();
+}
+
+$('#toolbar').innerHTML=`<button class="gz-btn gz-btn-secondary" onclick="$('#ssid').value='MyHomeWiFi';$('#password').value='MyPassword123';$('#security').value='WPA';build()">${t('example')}</button><button class="gz-btn" onclick="dl()">${t('download')}</button>`;
+$('#ssid').addEventListener('input',build);
+$('#password').addEventListener('input',build);
+$('#security').addEventListener('change',build);
+$('#hidden').addEventListener('change',build);
+$('#lbl-ssid').textContent = t('lblSsid');
+$('#lbl-pwd').textContent = t('lblPwd');
+$('#lbl-security').textContent = t('lblSec');
+$('#lbl-hidden').textContent = t('lblHidden');
+$('#lbl-hidden-hint').textContent = t('lblHiddenHint');
+$('#info').innerHTML = t('infoLine');
+build();
+
+GZ.renderToolPage({category:'convert',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'📱',href:'/convert/qrcode.html',name:'QR Code Generator'},
+  {icon:'📷',href:'/convert/qr-reader.html',name:'QR Code Reader'},
+  {icon:'🔐',href:'/dev/base64.html',name:'Base64'},
+  {icon:'🔗',href:'/dev/url-encode.html',name:'URL Encode'},
+]});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
