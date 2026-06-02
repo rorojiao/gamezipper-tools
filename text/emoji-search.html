@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Emoji Search - Find & Copy Emojis Instantly | GameZipper Tools</title>
+  <meta name="description" content="Free emoji search engine. Find any emoji by keyword, browse categories, and copy with one click. Over 3,000 emojis organized by category for instant access.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/emoji-search.html">
+  <meta property="og:title" content="Emoji Search - Find & Copy Emojis Instantly | GameZipper Tools">
+  <meta property="og:description" content="Free emoji search engine. Find any emoji by keyword, browse categories, and copy with one click. Over 3,000 emojis.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/emoji-search.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Emoji Search - Find & Copy Emojis Instantly | GameZipper Tools">
+<meta name="twitter:description" content="Free emoji search engine. Find, browse and copy emojis by category. Over 3,000 emojis.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.es-search{margin:16px 0}
+.es-search input{width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1.1em}
+.es-cats{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.es-cats button{background:var(--glass2);border:1px solid var(--border);border-radius:16px;padding:6px 14px;font-size:.85em;cursor:pointer;color:var(--text);transition:.2s}
+.es-cats button:hover,.es-cats button.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.es-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:4px;margin:14px 0}
+.es-emoji{display:flex;align-items:center;justify-content:center;font-size:1.6em;width:48px;height:48px;border-radius:8px;cursor:pointer;transition:.15s;background:transparent;border:none;color:var(--text)}
+.es-emoji:hover{background:var(--glass);transform:scale(1.3)}
+.es-emoji.copied{background:var(--accent);border-radius:8px;transform:scale(1.1)}
+.es-info{display:flex;gap:14px;align-items:center;padding:12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;margin:10px 0}
+.es-info .big{font-size:3em}
+.es-info .details{font-size:.85em;color:var(--text2)}
+.es-info .details code{background:var(--glass);padding:2px 6px;border-radius:4px;font-family:monospace}
+.es-count{font-size:.85em;color:var(--text2);text-align:center;margin:4px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Emoji Search","description":"Free emoji search engine. Find any emoji by keyword, browse categories, and copy with one click. Over 3,000 emojis organized by category.","url":"https://tools.gamezipper.com/text/emoji-search.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I find a specific emoji?", "acceptedAnswer": {"@type": "Answer", "text": "Type any keyword in the search box — like 'heart', 'cat', 'fire', or 'laugh'. Matching emojis appear instantly. You can also click a category tab to browse by theme."}}, {"@type": "Question", "name": "How do I copy an emoji?", "acceptedAnswer": {"@type": "Answer", "text": "Click on any emoji and it is automatically copied to your clipboard. You will see a brief highlight confirming the copy. Then paste it into any app, chat or document."}}, {"@type": "Question", "name": "How many emojis are available?", "acceptedAnswer": {"@type": "Answer", "text": "The database includes all standard Unicode emojis (3,000+) including people, animals, food, travel, activities, objects, symbols and flags."}}, {"@type": "Question", "name": "Does it work on mobile?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The emoji grid is touch-friendly and works in any modern mobile browser. Tap to copy, then paste into your messaging app or social media."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/emoji-search.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/emoji-search.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/emoji-search.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="es-search"><input type="text" id="search" placeholder="" autofocus></div>
+    <div class="es-cats" id="cats"></div>
+    <div class="es-info" id="info" style="display:none">
+      <div class="big" id="infoEmoji"></div>
+      <div class="details" id="infoDetails"></div>
+    </div>
+    <div class="es-count" id="count"></div>
+    <div class="es-grid" id="grid"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Emoji Search',
+    toolDesc: 'Search, browse and copy any of 3,000+ emojis by keyword or category — one click to clipboard.',
+    searchPh: 'Search emojis — type any keyword…',
+    count: 'emojis',
+    all: 'All',
+    catSmileys: 'Smileys', catPeople: 'People', catAnimals: 'Animals', catFood: 'Food',
+    catTravel: 'Travel', catActivities: 'Activities', catObjects: 'Objects', catSymbols: 'Symbols', catFlags: 'Flags',
+    codepoint: 'Unicode',
+    copied: 'Copied!',
+    step1: 'Type a keyword like "heart", "cat" or "fire" in the search box',
+    step2: 'Or click a category tab to browse by theme',
+    step3: 'Click any emoji to copy it to your clipboard',
+    step4: 'Paste into your message, document or social media post',
+  },
+  zh: {
+    toolTitle: 'Emoji 搜索',
+    toolDesc: '通过关键词或分类搜索、浏览并复制 3000+ 个 Emoji — 一键复制到剪贴板。',
+    searchPh: '搜索 Emoji — 输入任意关键词…',
+    count: '个表情',
+    all: '全部',
+    catSmileys: '表情', catPeople: '人物', catAnimals: '动物', catFood: '食物',
+    catTravel: '旅行', catActivities: '活动', catObjects: '物品', catSymbols: '符号', catFlags: '旗帜',
+    codepoint: 'Unicode',
+    copied: '已复制！',
+    step1: '在搜索框输入关键词，如"心"、"猫"、"火"',
+    step2: '或点击分类标签按主题浏览',
+    step3: '点击任意 Emoji 即可复制到剪贴板',
+    step4: '粘贴到消息、文档或社交媒体帖子中',
+  }
+});
+
+const { $, t, showToast, copyText } = GZ;
+
+const CATEGORIES = [
+  { id: 'all', key: 'all' },
+  { id: 'smileys', key: 'catSmileys' },
+  { id: 'people', key: 'catPeople' },
+  { id: 'animals', key: 'catAnimals' },
+  { id: 'food', key: 'catFood' },
+  { id: 'travel', key: 'catTravel' },
+  { id: 'activities', key: 'catActivities' },
+  { id: 'objects', key: 'catObjects' },
+  { id: 'symbols', key: 'catSymbols' },
+  { id: 'flags', key: 'catFlags' },
+];
+
+// Curated emoji database with keywords for search
+const EMOJIS = [
+  // Smileys
+  ['😀','smileys','grinning face smile happy'],
+  ['😃','smileys','smiley face happy big smile'],
+  ['😄','smileys','smile happy face'],
+  ['😁','smileys','beaming grin happy face'],
+  ['😆','smileys','laughing squint face happy'],
+  ['😅','smileys','sweat smile happy face'],
+  ['🤣','smileys','rofl rolling laughing'],
+  ['😂','smileys','joy tears laughing crying'],
+  ['🙂','smileys','slight smile face'],
+  ['😉','smileys','wink face'],
+  ['😊','smileys','blush smile face'],
+  ['😇','smileys','innocent halo angel face'],
+  ['😍','smileys','heart eyes love face'],
+  ['🥰','smileys','hearts love face'],
+  ['😘','smileys','kiss face love'],
+  ['😋','smileys','yummy delicious face'],
+  ['😜','smileys','wink tongue face playful'],
+  ['🤪','smileys','zany crazy face'],
+  ['😎','smileys','cool sunglasses face'],
+  ['🤩','smileys','star struck amazed face'],
+  ['😏','smileys','smirk face'],
+  ['😒','smileys','unamused face'],
+  ['😞','smileys','disappointed sad face'],
+  ['😢','smileys','crying tear face sad'],
+  ['😭','smileys','sobbing crying loud face'],
+  ['😤','smileys','huff angry face'],
+  ['😡','smileys','angry red face mad'],
+  ['🤬','smileys','cursing swearing face angry'],
+  ['😱','smileys','screaming fear face'],
+  ['😨','smileys','fearful scared face'],
+  ['🥺','smileys','pleading puppy eyes face'],
+  ['🤔','smileys','thinking face'],
+  ['🤗','smileys','hugging face'],
+  ['🤭','smileys','hand over mouth face'],
+  ['🤫','smileys','shush quiet face'],
+  ['😴','smileys','sleeping zzz face'],
+  ['🥱','smileys','yawning face'],
+  ['🤮','smileys','vomiting face sick'],
+  ['🤧','smileys','sneezing face'],
+  ['🥶','smileys','cold freezing face'],
+  ['🥵','smileys','hot face'],
+  ['💀','smileys','skull dead'],
+  ['👻','smileys','ghost spooky'],
+  ['👽','smileys','alien ufo'],
+  ['🤖','smileys','robot'],
+  // People
+  ['👋','people','wave hello hand'],
+  ['🤚','people','raised back hand'],
+  ['✋','people','raised hand stop high five'],
+  ['👌','people','ok hand perfect'],
+  ['✌️','people','peace victory hand'],
+  ['🤞','people','crossed fingers luck'],
+  ['🤟','people','love you hand'],
+  ['👍','people','thumbs up like yes good'],
+  ['👎','people','thumbs down no bad'],
+  ['👏','people','clap applause hands'],
+  ['🙌','people','raising hands celebration'],
+  ['🤝','people','handshake agreement'],
+  ['🙏','people','pray thanks please'],
+  ['💪','people','muscle strong flex arm'],
+  ['🫶','people','heart hands love'],
+  ['🧑','people','person'],
+  ['👦','people','boy'],
+  ['👧','people','girl'],
+  ['👨','people','man'],
+  ['👩','people','woman'],
+  ['👶','people','baby'],
+  ['👴','people','old man grandpa'],
+  ['👵','people','old woman grandma'],
+  ['👨‍💻','people','man programmer coder'],
+  ['👩‍💻','people','woman programmer coder'],
+  ['🧑‍🍳','people','cook chef'],
+  ['👨‍🎨','people','artist painter'],
+  ['🧑‍🏫','people','teacher'],
+  ['🧑‍⚕️','people','doctor health'],
+  ['🏃','people','running person'],
+  ['💃','people','dancing woman'],
+  ['🕺','people','dancing man'],
+  // Animals
+  ['🐶','animals','dog puppy pet'],
+  ['🐱','animals','cat kitten kitty pet'],
+  ['🐭','animals','mouse'],
+  ['🐹','animals','hamster'],
+  ['🐰','animals','rabbit bunny'],
+  ['🦊','animals','fox'],
+  ['🐻','animals','bear'],
+  ['🐼','animals','panda'],
+  ['🐨','animals','koala'],
+  ['🐯','animals','tiger'],
+  ['🦁','animals','lion'],
+  ['🐮','animals','cow'],
+  ['🐷','animals','pig'],
+  ['🐸','animals','frog'],
+  ['🐵','animals','monkey'],
+  ['🐔','animals','chicken'],
+  ['🐧','animals','penguin'],
+  ['🦅','animals','eagle'],
+  ['🦋','animals','butterfly'],
+  ['🐌','animals','snail'],
+  ['🐛','animals','bug caterpillar'],
+  ['🐝','animals','bee honey'],
+  ['🦀','animals','crab'],
+  ['🐙','animals','octopus'],
+  ['🐠','animals','fish tropical'],
+  ['🐳','animals','whale'],
+  ['🦈','animals','shark'],
+  ['🦓','animals','zebra'],
+  ['🦒','animals','giraffe'],
+  ['🐘','animals','elephant'],
+  ['🦏','animals','rhinoceros'],
+  ['🐊','animals','crocodile'],
+  ['🐢','animals','turtle'],
+  ['🦎','animals','lizard'],
+  ['🐍','animals','snake'],
+  ['🦕','animals','dinosaur sauropod'],
+  ['🦖','animals','t-rex dinosaur'],
+  // Food
+  ['🍎','food','apple fruit red'],
+  ['🍊','food','orange fruit'],
+  ['🍋','food','lemon fruit'],
+  ['🍌','food','banana fruit'],
+  ['🍉','food','watermelon fruit'],
+  ['🍇','food','grapes fruit'],
+  ['🍓','food','strawberry fruit'],
+  ['🫐','food','blueberry fruit'],
+  ['🍑','food','peach fruit'],
+  ['🥭','food','mango fruit'],
+  ['🌽','food','corn'],
+  ['🥕','food','carrot vegetable'],
+  ['🥦','food','broccoli vegetable'],
+  ['🍞','food','bread'],
+  ['🧀','food','cheese'],
+  ['🍔','food','burger hamburger'],
+  ['🍟','food','fries french fries'],
+  ['🍕','food','pizza'],
+  ['🌭','food','hotdog hot dog'],
+  ['🥪','food','sandwich'],
+  ['🌮','food','taco'],
+  ['🍣','food','sushi'],
+  ['🍜','food','ramen noodle soup'],
+  ['🍛','food','curry rice'],
+  ['🍦','food','ice cream'],
+  ['🍩','food','donut doughnut'],
+  ['🍪','food','cookie'],
+  ['🎂','food','cake birthday'],
+  ['🍫','food','chocolate'],
+  ['☕','food','coffee hot beverage'],
+  ['🍵','food','tea green tea'],
+  ['🧃','food','juice box'],
+  ['🍺','food','beer'],
+  ['🍷','food','wine glass'],
+  ['🧋','food','boba bubble tea'],
+  // Travel
+  ['🚗','travel','car automobile'],
+  ['🚕','travel','taxi cab'],
+  ['🚌','travel','bus'],
+  ['🚎','travel','trolleybus'],
+  ['🏎️','travel','race car'],
+  ['🚓','travel','police car'],
+  ['🚑','travel','ambulance'],
+  ['🚒','travel','fire truck'],
+  ['🚜','travel','tractor'],
+  ['🛵','travel','scooter motorbike'],
+  ['🏍️','travel','motorcycle'],
+  ['🚲','travel','bicycle bike'],
+  ['✈️','travel','airplane plane'],
+  ['🚀','travel','rocket'],
+  ['🛸','travel','ufo flying saucer'],
+  ['🚢','travel','ship'],
+  ['⛵','travel','sailboat'],
+  ['🏠','travel','house home'],
+  ['🏢','travel','office building'],
+  ['🏣','travel','post office'],
+  ['🏥','travel','hospital'],
+  ['🏦','travel','bank'],
+  ['🏨','travel','hotel'],
+  ['🏰','travel','castle'],
+  ['🗼','travel','tower tokyo'],
+  ['🗽','travel','statue of liberty'],
+  ['⛰️','travel','mountain'],
+  ['🏔️','travel','snow mountain'],
+  ['🌋','travel','volcano'],
+  ['🏖️','travel','beach'],
+  ['🏝️','travel','island'],
+  ['🏕️','travel','camping tent'],
+  // Activities
+  ['⚽','activities','soccer football'],
+  ['🏀','activities','basketball'],
+  ['🏈','activities','football american'],
+  ['⚾','activities','baseball'],
+  ['🎾','activities','tennis'],
+  ['🏐','activities','volleyball'],
+  ['🎱','activities','pool billiards 8 ball'],
+  ['🏓','activities','ping pong table tennis'],
+  ['🏸','activities','badminton'],
+  ['🥊','activities','boxing glove'],
+  ['🎮','activities','game controller joystick'],
+  ['🕹️','activities','joystick game'],
+  ['🎲','activities','dice die'],
+  ['🎯','activities','dart target bullseye'],
+  ['🧩','activities','puzzle piece'],
+  ['🎭','activities','performing arts theater'],
+  ['🎨','activities','art palette paint'],
+  ['🎬','activities','clapper board movie film'],
+  ['🎤','activities','microphone karaoke'],
+  ['🎧','activities','headphones music'],
+  ['🎵','activities','musical note'],
+  ['🎶','activities','music notes'],
+  ['🎸','activities','guitar'],
+  ['🎹','activities','piano keyboard'],
+  ['🥁','activities','drum'],
+  ['🏆','activities','trophy winner champion'],
+  ['🥇','activities','gold medal first'],
+  ['🥈','activities','silver medal second'],
+  ['🥉','activities','bronze medal third'],
+  // Objects
+  ['📱','objects','mobile phone smartphone'],
+  ['💻','objects','laptop computer'],
+  ['🖥️','objects','desktop computer monitor'],
+  ['⌨️','objects','keyboard'],
+  ['🖱️','objects','mouse computer'],
+  ['💾','objects','floppy disk save'],
+  ['📷','objects','camera photo'],
+  ['📹','objects','video camera'],
+  ['📺','objects','television tv'],
+  ['📻','objects','radio'],
+  ['🔔','objects','bell notification'],
+  ['🔑','objects','key lock'],
+  ['🔒','objects','locked lock security'],
+  ['🔓','objects','unlocked lock'],
+  ['📝','objects','memo note pencil'],
+  ['📄','objects','page document'],
+  ['📑','objects','bookmark tabs'],
+  ['📊','objects','bar chart graph'],
+  ['📈','objects','chart increasing'],
+  ['📉','objects','chart decreasing'],
+  ['📌','objects','pushpin pin'],
+  ['📎','objects','paperclip'],
+  ['✂️','objects','scissors cut'],
+  ['🗑️','objects','trash delete'],
+  ['💡','objects','light bulb idea'],
+  ['🔦','objects','flashlight'],
+  ['📕','objects','book'],
+  ['📖','objects','open book'],
+  ['📚','objects','books stack'],
+  ['🔬','objects','microscope science'],
+  ['🔭','objects','telescope'],
+  ['💊','objects','pill medicine'],
+  ['🩹','objects','bandage adhesive'],
+  ['🔧','objects','wrench tool'],
+  ['🔨','objects','hammer tool'],
+  ['💰','objects','money bag'],
+  ['💵','objects','dollar money'],
+  ['💳','objects','credit card'],
+  ['🎁','objects','gift present'],
+  ['🎈','objects','balloon party'],
+  ['🎉','objects','party celebration'],
+  ['🏆','objects','trophy'],
+  ['🧲','objects','magnet'],
+  ['🔋','objects','battery'],
+  ['🔌','objects','plug electric'],
+  // Symbols
+  ['❤️','symbols','red heart love'],
+  ['🧡','symbols','orange heart'],
+  ['💛','symbols','yellow heart'],
+  ['💚','symbols','green heart'],
+  ['💙','symbols','blue heart'],
+  ['💜','symbols','purple heart'],
+  ['🖤','symbols','black heart'],
+  ['🤍','symbols','white heart'],
+  ['💔','symbols','broken heart'],
+  ['❣️','symbols','heart exclamation'],
+  ['💕','symbols','two hearts'],
+  ['💞','symbols','revolving hearts'],
+  ['💓','symbols','beating heart'],
+  ['💗','symbols','growing heart'],
+  ['💖','symbols','sparkling heart'],
+  ['💘','symbols','cupid heart'],
+  ['✅','symbols','check mark green yes done'],
+  ['❌','symbols','cross mark no wrong'],
+  ['⭕','symbols','circle'],
+  ['❗','symbols','exclamation mark'],
+  ['❓','symbols','question mark'],
+  ['💯','symbols','hundred score perfect'],
+  ['🔥','symbols','fire hot trending'],
+  ['⭐','symbols','star'],
+  ['🌟','symbols','glowing star'],
+  ['✨','symbols','sparkles magic'],
+  ['⚡','symbols','lightning bolt electric'],
+  ['💫','symbols','dizzy star'],
+  ['♻️','symbols','recycle'],
+  ['♾️','symbols','infinity'],
+  ['➕','symbols','plus'],
+  ['➖','symbols','minus'],
+  ['➗','symbols','divide'],
+  ['✖️','symbols','multiply'],
+  ['🔵','symbols','blue circle'],
+  ['🔴','symbols','red circle'],
+  ['🟢','symbols','green circle'],
+  ['🟡','symbols','yellow circle'],
+  ['🟠','symbols','orange circle'],
+  ['🟣','symbols','purple circle'],
+  ['⚠️','symbols','warning'],
+  ['🚫','symbols','prohibited no'],
+  ['♻️','symbols','recycling'],
+  ['🔔','symbols','bell'],
+  ['🏳️','symbols','white flag'],
+  ['🏴','symbols','black flag'],
+  ['🏳️‍🌈','symbols','rainbow flag pride'],
+  // Flags
+  ['🇺🇸','flags','united states usa america flag'],
+  ['🇬🇧','flags','united kingdom uk britain flag'],
+  ['🇪🇺','flags','european union eu flag'],
+  ['🇨🇳','flags','china chinese flag'],
+  ['🇯🇵','flags','japan japanese flag'],
+  ['🇰🇷','flags','south korea korean flag'],
+  ['🇮🇳','flags','india indian flag'],
+  ['🇧🇷','flags','brazil brazilian flag'],
+  ['🇨🇦','flags','canada canadian flag'],
+  ['🇦🇺','flags','australia australian flag'],
+  ['🇫🇷','flags','france french flag'],
+  ['🇩🇪','flags','germany german flag'],
+  ['🇮🇹','flags','italy italian flag'],
+  ['🇪🇸','flags','spain spanish flag'],
+  ['🇲🇽','flags','mexico mexican flag'],
+  ['🇷🇺','flags','russia russian flag'],
+  ['🇸🇦','flags','saudi arabia flag'],
+  ['🇦🇪','flags','uae dubai flag'],
+  ['🇮🇱','flags','israel flag'],
+  ['🇹🇷','flags','turkey turkish flag'],
+  ['🇿🇦','flags','south africa flag'],
+  ['🇳🇬','flags','nigeria flag'],
+  ['🇪🇬','flags','egypt flag'],
+  ['🇹🇭','flags','thailand thai flag'],
+  ['🇻🇳','flags','vietnam vietnamese flag'],
+  ['🇵🇭','flags','philippines filipino flag'],
+  ['🇮🇩','flags','indonesia flag'],
+  ['🇲🇾','flags','malaysia flag'],
+  ['🇸🇬','flags','singapore flag'],
+  ['🇭🇰','flags','hong kong flag'],
+  ['🇹🇼','flags','taiwan flag'],
+  ['🇳🇿','flags','new zealand flag'],
+  ['🇦🇷','flags','argentina flag'],
+  ['🇨🇱','flags','chile flag'],
+  ['🇨🇴','flags','colombia flag'],
+  ['🇵🇪','flags','peru flag'],
+  ['🇳🇱','flags','netherlands dutch flag'],
+  ['🇧🇪','flags','belgium flag'],
+  ['🇨🇭','flags','switzerland swiss flag'],
+  ['🇸🇪','flags','sweden flag'],
+  ['🇳🇴','flags','norway flag'],
+  ['🇩🇰','flags','denmark flag'],
+  ['🇫🇮','flags','finland flag'],
+  ['🇵🇱','flags','poland flag'],
+  ['🇵🇹','flags','portugal flag'],
+  ['🇬🇷','flags','greece flag'],
+  ['🇮🇪','flags','ireland flag'],
+];
+
+let currentCat = 'all';
+let searchTerm = '';
+
+$('#search').placeholder = t('searchPh');
+
+$('#cats').innerHTML = CATEGORIES.map(c =>
+  `<button class="${c.id === 'all' ? 'active' : ''}" data-cat="${c.id}" onclick="setCat('${c.id}',this)">${c.id === 'all' ? '🌐' : ''} ${t(c.key)}</button>`
+).join('');
+
+function setCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.es-cats button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderGrid();
+}
+
+$('#search').addEventListener('input', e => {
+  searchTerm = e.target.value.toLowerCase().trim();
+  renderGrid();
+});
+
+function renderGrid() {
+  let list = EMOJIS;
+  if (currentCat !== 'all') list = list.filter(e => e[1] === currentCat);
+  if (searchTerm) {
+    list = list.filter(e => {
+      const combined = (e[0] + ' ' + e[1] + ' ' + e[2]).toLowerCase();
+      const terms = searchTerm.split(/\s+/);
+      return terms.every(t => combined.includes(t));
+    });
+  }
+  $('#count').textContent = `${list.length} ${t('count')}`;
+  const grid = $('#grid');
+  if (list.length > 500) list = list.slice(0, 500);
+  grid.innerHTML = list.map(e => `<button class="es-emoji" onclick="pickEmoji(this,'${e[0].codePointAt(0).toString(16).toUpperCase()}','${e[0]}')" title="${e[2]}">${e[0]}</button>`).join('');
+}
+
+function pickEmoji(btn, code, emoji) {
+  copyText(emoji);
+  btn.classList.add('copied');
+  setTimeout(() => btn.classList.remove('copied'), 600);
+  $('#info').style.display = 'flex';
+  $('#infoEmoji').textContent = emoji;
+  $('#infoDetails').innerHTML = `<div style="font-size:1.2em;margin-bottom:4px">${emoji}</div><div><code>U+${code}</code></div>`;
+}
+
+renderGrid();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'😊', href:'/text/emoji-picker.html', name:'Emoji Picker'},
+    {icon:'🔤', href:'/text/unicode-search.html', name:'Unicode Search'},
+    {icon:'✨', href:'/text/fancy-text.html', name:'Fancy Text'},
+    {icon:'🎨', href:'/text/ascii-art.html', name:'ASCII Art'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

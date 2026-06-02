@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Subnet Calculator - IP Subnet & CIDR Calculator | GameZipper Tools</title>
+  <meta name="description" content="Free online subnet calculator. Enter an IP address and CIDR prefix to calculate network address, broadcast, subnet mask, wildcard, host range, and total hosts. IPv4.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/subnet-calculator.html">
+  <meta property="og:title" content="Subnet Calculator - IP Subnet & CIDR Calculator | GameZipper Tools">
+  <meta property="og:description" content="Free online subnet calculator. Enter IP and CIDR to get network, broadcast, mask, wildcard, host range and total hosts.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/subnet-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Subnet Calculator - IP Subnet & CIDR Calculator | GameZipper Tools">
+<meta name="twitter:description" content="Free IPv4 subnet calculator. Network, broadcast, mask, wildcard, host range. No network calls.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.sub-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:16px 0}
+.sub-form label{display:flex;flex-direction:column;gap:4px;font-size:.85em;color:var(--text2);flex:1;min-width:200px}
+.sub-form input{padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text);font-size:1em;font-family:monospace}
+.sub-form button{padding:10px 20px}
+.sub-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:16px 0}
+.sub-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.sub-card .lbl{font-size:.75em;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.sub-card .val{font-family:monospace;font-size:1.05em;font-weight:600;color:var(--accent);word-break:break-all}
+.sub-card.full{grid-column:1/-1}
+.sub-binary{margin-top:8px;font-size:.8em;line-height:1.5;color:var(--text2);font-family:monospace;word-break:break-all}
+.sub-error{color:#e94560;font-size:.9em;padding:10px;background:rgba(233,69,96,.1);border:1px solid rgba(233,69,96,.3);border-radius:8px;margin:10px 0}
+.sub-presets{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.sub-presets button{background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.8em;cursor:pointer;color:var(--text);font-family:monospace}
+.sub-presets button:hover{background:var(--glass);border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Subnet Calculator","description":"Free online subnet calculator. Enter an IP address and CIDR prefix to calculate network address, broadcast, subnet mask, wildcard, host range, and total hosts.","url":"https://tools.gamezipper.com/dev/subnet-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a subnet mask?", "acceptedAnswer": {"@type": "Answer", "text": "A subnet mask is a 32-bit number that divides an IP address into the network portion and the host portion. Bits set to 1 identify the network, bits set to 0 identify the host. For example, /24 (255.255.255.0) means the first 24 bits are network and the last 8 bits are host."}}, {"@type": "Question", "name": "What is CIDR notation?", "acceptedAnswer": {"@type": "Answer", "text": "CIDR (Classless Inter-Domain Routing) notation writes the IP address followed by a slash and a number 0-32 indicating how many bits form the network prefix. For example, 192.168.1.0/24 means a 24-bit network prefix with up to 256 addresses."}}, {"@type": "Question", "name": "What is the difference between network address, broadcast address and host range?", "acceptedAnswer": {"@type": "Answer", "text": "The network address is the first address of the subnet (host bits all zero). The broadcast address is the last address (host bits all one). The host range is the addresses in between, available for devices. The first and last are reserved."}}, {"@type": "Question", "name": "Does this calculator work for IPv6?", "acceptedAnswer": {"@type": "Answer", "text": "No, this is an IPv4-only subnet calculator. IPv6 has a 128-bit address space and uses similar but separate math. Use a dedicated IPv6 calculator for those addresses."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/subnet-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/subnet-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/subnet-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="sub-form">
+      <label>
+        <span id="lblIp"></span>
+        <input type="text" id="ip" value="192.168.1.10" placeholder="192.168.1.10">
+      </label>
+      <label style="max-width:120px">
+        <span id="lblCidr"></span>
+        <input type="number" id="cidr" value="24" min="0" max="32">
+      </label>
+      <button class="gz-btn" id="calcBtn"></button>
+    </div>
+    <div class="sub-presets">
+      <button onclick="loadPreset('10.0.0.1','8')">10.0.0.1/8</button>
+      <button onclick="loadPreset('172.16.0.1','12')">172.16.0.1/12</button>
+      <button onclick="loadPreset('192.168.1.1','24')">192.168.1.1/24</button>
+      <button onclick="loadPreset('192.168.0.1','16')">192.168.0.1/16</button>
+      <button onclick="loadPreset('203.0.113.5','30')">203.0.113.5/30</button>
+    </div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Subnet Calculator',
+    toolDesc: 'Calculate IPv4 subnet details from any IP and CIDR prefix — network, broadcast, mask, host range and more.',
+    lblIp: 'IP Address', lblCidr: 'CIDR Prefix (0-32)',
+    calculate: 'Calculate',
+    errIp: 'Invalid IP address. Use format A.B.C.D with octets 0-255.',
+    errCidr: 'CIDR must be between 0 and 32.',
+    network: 'Network Address',
+    broadcast: 'Broadcast Address',
+    subnetMask: 'Subnet Mask',
+    wildcard: 'Wildcard Mask',
+    firstHost: 'First Usable Host',
+    lastHost: 'Last Usable Host',
+    totalHosts: 'Total Usable Hosts',
+    ipBinary: 'IP Binary',
+    maskBinary: 'Mask Binary',
+    classType: 'Address Class',
+    ipType: 'IP Type',
+    private: 'Private (RFC 1918)',
+    public: 'Public',
+    step1: 'Enter an IPv4 address (e.g. 192.168.1.10)',
+    step2: 'Set the CIDR prefix (0-32)',
+    step3: 'Click Calculate to see network, mask, host range',
+    step4: 'Use the quick presets for common ranges',
+  },
+  zh: {
+    toolTitle: '子网计算器',
+    toolDesc: '从任意 IP 和 CIDR 前缀计算 IPv4 子网详情 — 网络、广播、掩码、可用主机范围等。',
+    lblIp: 'IP 地址', lblCidr: 'CIDR 前缀 (0-32)',
+    calculate: '计算',
+    errIp: '无效的 IP 地址。请使用 A.B.C.D 格式，每段 0-255。',
+    errCidr: 'CIDR 必须在 0-32 之间。',
+    network: '网络地址',
+    broadcast: '广播地址',
+    subnetMask: '子网掩码',
+    wildcard: '反掩码',
+    firstHost: '第一个可用主机',
+    lastHost: '最后一个可用主机',
+    totalHosts: '可用主机总数',
+    ipBinary: 'IP 二进制',
+    maskBinary: '掩码二进制',
+    classType: '地址类别',
+    ipType: 'IP 类型',
+    private: '内网（RFC 1918）',
+    public: '公网',
+    step1: '输入一个 IPv4 地址（例如 192.168.1.10）',
+    step2: '设置 CIDR 前缀（0-32）',
+    step3: '点击「计算」查看网络、掩码、主机范围',
+    step4: '使用快捷预设查看常见网段',
+  }
+});
+
+const { $, t } = GZ;
+
+function ipToInt(ip) {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    const v = parseInt(p, 10);
+    if (isNaN(v) || v < 0 || v > 255 || p === '' || !/^\d+$/.test(p)) return null;
+    n = (n << 8) | v;
+  }
+  return n >>> 0;
+}
+
+function intToIp(n) {
+  return [(n>>>24)&255, (n>>>16)&255, (n>>>8)&255, n&255].join('.');
+}
+
+function intToBinary(n, bits) {
+  return n.toString(2).padStart(bits, '0').match(/.{1,8}/g).join('.');
+}
+
+function getClass(firstOctet) {
+  if (firstOctet < 128) return 'A';
+  if (firstOctet < 192) return 'B';
+  if (firstOctet < 224) return 'C';
+  if (firstOctet < 240) return 'D (Multicast)';
+  return 'E (Reserved)';
+}
+
+function isPrivate(n) {
+  const a = (n>>>24)&255, b = (n>>>16)&255;
+  if (a === 10) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 127) return true;
+  return false;
+}
+
+function calculate() {
+  const ipStr = $('#ip').value.trim();
+  const cidr = parseInt($('#cidr').value, 10);
+  if (isNaN(cidr) || cidr < 0 || cidr > 32) {
+    $('#output').innerHTML = `<div class="sub-error">${t('errCidr')}</div>`; return;
+  }
+  const ipInt = ipToInt(ipStr);
+  if (ipInt === null) {
+    $('#output').innerHTML = `<div class="sub-error">${t('errIp')}</div>`; return;
+  }
+  const mask = cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
+  const wildcard = (~mask) >>> 0;
+  const network = (ipInt & mask) >>> 0;
+  const broadcast = (network | wildcard) >>> 0;
+  const total = cidr === 32 ? 1 : cidr === 31 ? 2 : (broadcast - network - 1);
+  const firstHost = cidr >= 31 ? network : (network + 1) >>> 0;
+  const lastHost = cidr >= 31 ? broadcast : (broadcast - 1) >>> 0;
+  const className = getClass((ipInt >>> 24) & 255);
+  const ipType = isPrivate(ipInt) ? t('private') : t('public');
+  $('#output').innerHTML = `
+    <div class="sub-results">
+      <div class="sub-card"><div class="lbl">${t('network')}</div><div class="val">${intToIp(network)}/${cidr}</div></div>
+      <div class="sub-card"><div class="lbl">${t('broadcast')}</div><div class="val">${intToIp(broadcast)}</div></div>
+      <div class="sub-card"><div class="lbl">${t('subnetMask')}</div><div class="val">${intToIp(mask)}</div><div class="sub-binary">${intToBinary(mask, 32)}</div></div>
+      <div class="sub-card"><div class="lbl">${t('wildcard')}</div><div class="val">${intToIp(wildcard)}</div></div>
+      <div class="sub-card"><div class="lbl">${t('firstHost')}</div><div class="val">${intToIp(firstHost)}</div></div>
+      <div class="sub-card"><div class="lbl">${t('lastHost')}</div><div class="val">${intToIp(lastHost)}</div></div>
+      <div class="sub-card"><div class="lbl">${t('totalHosts')}</div><div class="val">${total.toLocaleString()}</div></div>
+      <div class="sub-card"><div class="lbl">${t('classType')} / ${t('ipType')}</div><div class="val">${className} · ${ipType}</div></div>
+      <div class="sub-card full"><div class="lbl">${t('ipBinary')}</div><div class="val">${intToIp(ipInt)}</div><div class="sub-binary">${intToBinary(ipInt, 32)}</div></div>
+    </div>`;
+}
+
+function loadPreset(ip, cidr) {
+  $('#ip').value = ip; $('#cidr').value = cidr; calculate();
+}
+
+$('#lblIp').textContent = t('lblIp');
+$('#lblCidr').textContent = t('lblCidr');
+$('#calcBtn').textContent = t('calculate');
+
+$('#calcBtn').addEventListener('click', calculate);
+$('#ip').addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+$('#cidr').addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+$('#ip').addEventListener('input', calculate);
+$('#cidr').addEventListener('input', calculate);
+
+calculate();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/ip-lookup.html', name:'IP Lookup'},
+    {icon:'🔍', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔗', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
