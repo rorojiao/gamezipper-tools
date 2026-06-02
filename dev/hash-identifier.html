@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Hash Type Identifier - Detect MD5, SHA-1, SHA-256 etc. | GameZipper Tools</title>
+  <meta name="description" content="Free online hash identifier. Detect the type of any hash string — MD5, SHA-1, SHA-256, SHA-512, bcrypt, NTLM and more. Pure browser, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/hash-identifier.html">
+  <meta property="og:title" content="Hash Type Identifier - Detect MD5, SHA-1, SHA-256 etc. | GameZipper Tools">
+  <meta property="og:description" content="Free online hash identifier. Detect the type of any hash string.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/hash-identifier.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Hash Type Identifier - Detect MD5, SHA-1, SHA-256 etc. | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#hashIn{font-family:monospace;width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.95em;box-sizing:border-box;min-height:80px;word-break:break-all}
+.results{margin-top:18px;display:grid;gap:10px}
+.match{background:var(--glass2);border:1px solid var(--border);border-left:4px solid var(--gz-accent);border-radius:10px;padding:12px 16px}
+.match.no-match{opacity:.4;border-left-color:var(--text3)}
+.match .name{font-weight:700;font-size:1.05em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.match .badge{font-size:.7em;padding:2px 8px;border-radius:10px;background:var(--gz-accent);color:#000;font-weight:700}
+.match .badge.weak{background:#ffd93d;color:#000}
+.match .badge.strong{background:#00d672;color:#000}
+.match .desc{font-size:.85em;color:var(--text2);margin-top:4px;line-height:1.5}
+.match .meta{font-size:.75em;color:var(--text3);margin-top:6px;font-family:monospace}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:14px;font-size:.8em}
+.legend div{background:var(--glass2);padding:6px 10px;border-radius:6px;border:1px solid var(--border)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hash Type Identifier","description":"Free online hash identifier. Detect the type of any hash string — MD5, SHA-1, SHA-256, SHA-512, bcrypt, NTLM and more.","url":"https://tools.gamezipper.com/dev/hash-identifier.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does hash type detection work?", "acceptedAnswer": {"@type": "Answer", "text": "Hash algorithms produce output of fixed length using a specific alphabet (usually hex). This tool inspects the length and character set of your string and matches it against the signatures of known hash algorithms."}}, {"@type": "Question", "name": "Can it always tell the exact algorithm?", "acceptedAnswer": {"@type": "Answer", "text": "No. Some algorithms share the same output length (for example MD5 and NTLM are both 32 hex chars). When multiple algorithms match, all possibilities are listed so you can verify by other means."}}, {"@type": "Question", "name": "Is my hash data sent anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. The detection runs entirely in your browser. Your hash string is never uploaded, logged or stored."}}, {"@type": "Question", "name": "What's the difference between MD5 and NTLM?", "acceptedAnswer": {"@type": "Answer", "text": "Both produce 32 hex character outputs. MD5 is a general cryptographic hash, while NTLM is Microsoft's password hash. Without context, length-based detection cannot distinguish them — try the original source or file format for clues."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/hash-identifier.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/hash-identifier.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/hash-identifier.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="hashIn" spellcheck="false" placeholder="Paste a hash string here (e.g. 5f4dcc3b5aa765d61d8327deb882cf99)"></textarea>
+    <div id="results" class="results"></div>
+    <div class="legend">
+      <div><b>Hex alphabet:</b> 0-9, a-f</div>
+      <div><b>Base64 alphabet:</b> A-Z, a-z, 0-9, +, /, =</div>
+      <div><b>Length</b> is the key signature</div>
+    </div>
+  </div>
+
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Hash Type Identifier',
+    toolDesc: 'Paste any hash string to identify its algorithm — MD5, SHA-1, SHA-256, SHA-512, bcrypt, NTLM, MySQL and many more.',
+    step1: 'Paste the hash string into the input field',
+    step2: 'Detection runs in real time as you type or paste',
+    step3: 'Read the matched algorithms, length, and security notes',
+    step4: 'Copy the hash to clipboard for further use',
+  },
+  zh: {
+    toolTitle: '哈希类型识别器',
+    toolDesc: '粘贴任意哈希字符串，自动识别其算法 — MD5、SHA-1、SHA-256、SHA-512、bcrypt、NTLM、MySQL 等。',
+    step1: '将哈希字符串粘贴到输入框中',
+    step2: '工具在输入或粘贴时实时检测',
+    step3: '查看匹配的算法、长度和安全建议',
+    step4: '点击「复制」按钮复制哈希字符串',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Catalog of hash types by length and alphabet
+const HASH_CATALOG = [
+  { name: 'MD5',        hexLen: 32,  family: 'hex',    security: 'weak',   desc: '128-bit cryptographic hash. Widely used for legacy checksums, no longer secure for passwords.' },
+  { name: 'MD4',        hexLen: 32,  family: 'hex',    security: 'weak',   desc: 'Predecessor of MD5, broken and obsolete.' },
+  { name: 'NTLM',       hexLen: 32,  family: 'hex',    security: 'medium', desc: 'Windows NT LAN Manager password hash. No salt, vulnerable to rainbow tables.' },
+  { name: 'LM Hash',    hexLen: 32,  family: 'hex',    security: 'weak',   desc: 'Legacy Windows LAN Manager hash. Disabled by default since Windows Vista.' },
+  { name: 'MySQL 3.x/4.x', hexLen: 16, family: 'hex', security: 'weak',   desc: 'Old MySQL password hash (16 hex chars). Easily cracked.' },
+  { name: 'CRC32',      hexLen: 8,   family: 'hex',    security: 'weak',   desc: '32-bit cyclic redundancy check. Used for error detection, not security.' },
+  { name: 'Half MD5',   hexLen: 16,  family: 'hex',    security: 'weak',   desc: 'Truncated MD5 — first or last 64 bits.' },
+  { name: 'SHA-1',      hexLen: 40,  family: 'hex',    security: 'medium', desc: '160-bit cryptographic hash. Deprecated for security uses; still common for git commit ids.' },
+  { name: 'SHA-224',    hexLen: 56,  family: 'hex',    security: 'medium', desc: 'Truncated SHA-256 with different IV.' },
+  { name: 'SHA-256',    hexLen: 64,  family: 'hex',    security: 'strong', desc: '256-bit SHA-2 family hash. Standard for TLS, Bitcoin, code signing.' },
+  { name: 'SHA-384',    hexLen: 96,  family: 'hex',    security: 'strong', desc: '384-bit SHA-2 family hash. Used in some TLS cipher suites.' },
+  { name: 'SHA-512',    hexLen: 128, family: 'hex',    security: 'strong', desc: '512-bit SHA-2 family hash. High-security applications.' },
+  { name: 'SHA3-224',   hexLen: 56,  family: 'hex',    security: 'strong', desc: 'Keccak-based SHA-3 with 224-bit output.' },
+  { name: 'SHA3-256',   hexLen: 64,  family: 'hex',    security: 'strong', desc: 'Keccak-based SHA-3 with 256-bit output.' },
+  { name: 'SHA3-384',   hexLen: 96,  family: 'hex',    security: 'strong', desc: 'Keccak-based SHA-3 with 384-bit output.' },
+  { name: 'SHA3-512',   hexLen: 128, family: 'hex',    security: 'strong', desc: 'Keccak-based SHA-3 with 512-bit output.' },
+  { name: 'BLAKE2b-256', hexLen: 64, family: 'hex',    security: 'strong', desc: 'Fast modern hash, used in Wireguard, IPFS, Zcash.' },
+  { name: 'BLAKE2b-512', hexLen: 128, family: 'hex',   security: 'strong', desc: 'BLAKE2 hash with 512-bit output.' },
+  { name: 'RIPEMD-160', hexLen: 40,  family: 'hex',    security: 'medium', desc: '160-bit European hash, used in Bitcoin addresses.' },
+  { name: 'Whirlpool',  hexLen: 128, family: 'hex',    security: 'strong', desc: '512-bit ISO/IEC 10118-3 hash.' },
+  { name: 'bcrypt',     hexLen: 60,  family: 'bcrypt', security: 'strong', desc: 'Blowfish-based adaptive password hash. Format: $2a$10$... (60 chars).' },
+  { name: 'Argon2',     hexLen: 0,   family: 'argon2', security: 'strong', desc: 'Modern memory-hard password hash. Format: $argon2id$v=19$m=...,t=...,p=...$' },
+  { name: 'PHPass (Wordpress)', hexLen: 0, family: 'phpass', security: 'strong', desc: 'Portable PHP password hash. Format: $P$ or $H$ prefix, 34+ chars.' },
+  { name: 'Base64 (raw)', base64Len: 24, family: 'base64', security: 'na', desc: 'Could be a base64-encoded value of any length. Check decoded content.' },
+  { name: 'Base64 SHA-256 (raw)', base64Len: 44, family: 'base64', security: 'strong', desc: 'Base64-encoded SHA-256 (32 bytes → 44 chars).' },
+  { name: 'Base64 SHA-1 (raw)', base64Len: 28, family: 'base64', security: 'medium', desc: 'Base64-encoded SHA-1 (20 bytes → 28 chars).' },
+  { name: 'Base64 MD5 (raw)', base64Len: 24, family: 'base64', security: 'weak', desc: 'Base64-encoded MD5 (16 bytes → 24 chars).' },
+];
+
+const HEX_RE = /^[0-9a-fA-F]+$/;
+const BCRYPT_RE = /^\$2[axyb]\$\d{2}\$[A-Za-z0-9./]{53}$/;
+const ARGON2_RE = /^\$argon2(id|i|d)\$v=\d+\$m=\d+,t=\d+,p=\d+\$/;
+const PHPASS_RE = /^\$[PH]\$/;
+
+function detect() {
+  const raw = $('#hashIn').value.trim();
+  const results = $('#results');
+  if (!raw) { results.innerHTML = ''; return; }
+
+  const len = raw.length;
+  const isHex = HEX_RE.test(raw);
+  const isBcrypt = BCRYPT_RE.test(raw);
+  const isArgon2 = ARGON2_RE.test(raw);
+  const isPhpass = PHPASS_RE.test(raw);
+  const isBase64ish = /^[A-Za-z0-9+/]+=*$/.test(raw) && !isHex;
+
+  // Quick format check
+  const fmt = [];
+  if (isBcrypt) fmt.push('bcrypt (BCrypt string format)');
+  if (isArgon2) fmt.push('Argon2 (memory-hard hash format)');
+  if (isPhpass) fmt.push('PHPass (Wordpress / phpBB)');
+  if (isHex) fmt.push('Hex string, ' + len + ' chars');
+  if (isBase64ish) fmt.push('Base64-like string, ' + len + ' chars');
+
+  // Match by length
+  const matches = HASH_CATALOG.map(h => {
+    let score = 0, reason = '';
+    if (h.family === 'hex' && isHex && h.hexLen === len) { score = 1; reason = 'length ' + len; }
+    if (h.family === 'base64' && isBase64ish && h.base64Len === len) { score = 1; reason = 'base64 length ' + len; }
+    if (h.family === 'bcrypt' && isBcrypt) { score = 1; reason = 'bcrypt format match'; }
+    if (h.family === 'argon2' && isArgon2) { score = 1; reason = 'argon2 format match'; }
+    if (h.family === 'phpass' && isPhpass) { score = 1; reason = 'phpass prefix'; }
+    return { ...h, match: !!score, reason };
+  });
+
+  const matched = matches.filter(m => m.match).sort((a,b) => {
+    const order = { strong: 0, medium: 1, weak: 2, na: 3 };
+    return (order[a.security] || 4) - (order[b.security] || 4);
+  });
+  const unmatched = matches.filter(m => !m.match);
+
+  let html = '';
+  if (matched.length === 0) {
+    html += `<div class="match"><div class="name">No known algorithm matched ⚠️</div><div class="meta">Length: ${len}, Hex: ${isHex}, Base64-ish: ${isBase64ish}</div></div>`;
+  } else {
+    html += `<div class="match"><div class="name">✓ ${matched.length} possible match${matched.length>1?'es':''}</div><div class="meta">${fmt.join(' • ') || ('Length ' + len)}</div></div>`;
+    matched.forEach(m => {
+      const sec = m.security === 'weak' ? 'weak' : m.security === 'strong' ? 'strong' : 'medium';
+      html += `<div class="match">
+        <div class="name">${m.name} <span class="badge ${sec}">${sec.toUpperCase()}</span></div>
+        <div class="desc">${m.desc}</div>
+        <div class="meta">${m.reason}</div>
+      </div>`;
+    });
+  }
+  if (unmatched.length > 0 && matched.length > 0) {
+    html += '<div style="margin-top:18px;font-size:.85em;color:var(--text2)">Other algorithms not matching this input:</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + unmatched.slice(0, 12).map(u => `<span style="background:var(--glass);border:1px solid var(--border);padding:3px 10px;border-radius:12px;font-size:.75em;opacity:.5">${u.name}</span>`).join('') + (unmatched.length > 12 ? `<span style="opacity:.5;font-size:.75em">+ ${unmatched.length - 12} more</span>` : '') + '</div>';
+  }
+  results.innerHTML = html;
+}
+
+$('#hashIn').addEventListener('input', detect);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#hashIn').value='';detect()">${t('clear')}</button>
+  <button class="gz-btn" onclick="copyText($('#hashIn').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#hashIn').value='5f4dcc3b5aa765d61d8327deb882cf99';detect()">${t('example')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'💳', href:'/dev/luhn-validator.html', name:'Luhn Validator'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
