@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>TOTP / 两步验证码生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="从密钥生成基于时间的一次性密码（TOTP）验证码。类似 Google Authenticator，完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/totp.html">
+  <meta property="og:title" content="TOTP / 两步验证码生成器">
+  <meta property="og:description" content="从密钥生成基于时间的一次性密码（TOTP）验证码。类似 Google Authenticator，完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/totp.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="TOTP / 两步验证码生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.totp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:600px){.totp-grid{grid-template-columns:1fr}}
+.totp-field{display:flex;flex-direction:column;gap:4px}
+.totp-field label{font-size:.85em;font-weight:600}
+.totp-field input,.totp-field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass);color:var(--text);font-size:.95em;box-sizing:border-box;font-family:monospace}
+.totp-field input:focus,.totp-field select:focus{outline:none;border-color:var(--gz-accent)}
+.totp-code-display{text-align:center;padding:30px 20px;background:var(--glass2);border:1px solid var(--border);border-radius:16px;margin:20px 0}
+.totp-code{font-size:3em;font-family:monospace;letter-spacing:.15em;font-weight:700;color:var(--gz-accent);cursor:pointer;user-select:all}
+.totp-code.small{font-size:2.2em}
+.totp-progress{width:100%;height:6px;background:var(--glass);border-radius:3px;margin-top:16px;overflow:hidden}
+.totp-progress-bar{height:100%;background:var(--gz-accent);border-radius:3px;transition:width .5s linear}
+.totp-timer{font-size:.85em;color:var(--text2);margin-top:8px}
+.totp-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:16px}
+.totp-info-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px}
+.totp-info-card .lbl{font-size:.75em;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.totp-info-card .val{font-family:monospace;font-size:.95em;font-weight:600;color:var(--gz-accent);word-break:break-all}
+.totp-warn{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);border-radius:10px;padding:12px 16px;font-size:.85em;margin-top:16px;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"TOTP / 2FA Code Generator","description":"Generate TOTP 2FA codes from any secret key. Free online authenticator — supports Base32 secrets, 6/8 digit codes, 30/60 second periods. Runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/totp.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is TOTP?","acceptedAnswer":{"@type":"Answer","text":"TOTP (Time-Based One-Time Password) is an algorithm that generates short-lived verification codes from a shared secret key and the current time. It is the standard used by Google Authenticator, Authy, and most 2FA systems (RFC 6238)."}},{"@type":"Question","name":"Is my secret key safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All computation happens entirely in your browser using JavaScript. Your secret key is never sent to any server, logged, or stored. The page works even offline."}},{"@type":"Question","name":"How do I find my secret key?","acceptedAnswer":{"@type":"Answer","text":"When setting up 2FA on a website, look for the option to 'enter key manually' instead of scanning a QR code. The secret key is usually a Base32 string (letters A-Z and digits 2-7) provided by the service."}},{"@type":"Question","name":"Can I use this instead of Google Authenticator?","acceptedAnswer":{"@type":"Answer","text":"Yes! This tool generates the exact same codes as Google Authenticator, Authy, or any other TOTP app. However, it does not store your secrets — bookmark this page and re-enter your key each time, or use a dedicated authenticator app for convenience."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/totp.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/totp.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/totp.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="totp-grid">
+      <div class="totp-field">
+        <label id="lbl-secret"></label>
+        <input type="text" id="secret" spellcheck="false" autocomplete="off" placeholder="JBSWY3DPEHPK3PXP">
+      </div>
+      <div class="totp-field">
+        <label id="lbl-digits"></label>
+        <select id="digits">
+          <option value="6">6 digits</option>
+          <option value="8">8 digits</option>
+        </select>
+      </div>
+      <div class="totp-field">
+        <label id="lbl-period"></label>
+        <select id="period">
+          <option value="30">30 seconds</option>
+          <option value="60">60 seconds</option>
+        </select>
+      </div>
+      <div class="totp-field">
+        <label id="lbl-algo"></label>
+        <select id="algo">
+          <option value="SHA-1">SHA-1 (default)</option>
+          <option value="SHA-256">SHA-256</option>
+          <option value="SHA-512">SHA-512</option>
+        </select>
+      </div>
+    </div>
+    <div class="totp-code-display" id="codeDisplay">
+      <div class="totp-code" id="totpCode" onclick="copyCode()">——</div>
+      <div class="totp-progress"><div class="totp-progress-bar" id="progressBar"></div></div>
+      <div class="totp-timer" id="timerText"></div>
+    </div>
+    <div class="totp-info" id="infoCards"></div>
+    <div class="totp-warn" id="warnMsg"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'TOTP / 2FA Code Generator',
+    toolDesc: 'Generate time-based one-time password (TOTP) codes from any secret key. Works like Google Authenticator — runs entirely in your browser.',
+    lblSecret: 'Secret Key (Base32)',
+    lblDigits: 'Digits',
+    lblPeriod: 'Time Period',
+    lblAlgo: 'Algorithm',
+    step1: 'Enter your Base32 secret key from the 2FA setup page',
+    step2: 'Choose 6 or 8 digit code length',
+    step3: 'Click the generated code to copy it',
+    step4: 'Code refreshes automatically every 30/60 seconds',
+    warnMsg: '⚠️ Your secret key stays in your browser. Nothing is sent to any server. This tool does not store secrets — clear the input when done.',
+    remaining: 'seconds remaining',
+    epoch: 'Current Epoch',
+    timeStep: 'Time Step Counter',
+    clickCopy: 'Click code to copy',
+    invalidSecret: 'Invalid Base32 secret. Use only letters A-Z and digits 2-7.',
+  },
+  zh: {
+    toolTitle: 'TOTP / 两步验证码生成器',
+    toolDesc: '从密钥生成基于时间的一次性密码（TOTP）验证码。类似 Google Authenticator，完全在浏览器中运行。',
+    lblSecret: '密钥（Base32）',
+    lblDigits: '位数',
+    lblPeriod: '时间周期',
+    lblAlgo: '算法',
+    step1: '输入 2FA 设置页面提供的 Base32 密钥',
+    step2: '选择 6 位或 8 位验证码长度',
+    step3: '点击生成的验证码即可复制',
+    step4: '验证码每 30/60 秒自动刷新',
+    warnMsg: '⚠️ 你的密钥只留在浏览器中，不会发送到任何服务器。本工具不会保存密钥 — 使用完毕后请清空输入。',
+    remaining: '秒后刷新',
+    epoch: '当前 Epoch',
+    timeStep: '时间步计数器',
+    clickCopy: '点击验证码复制',
+    invalidSecret: '无效的 Base32 密钥。仅允许字母 A-Z 和数字 2-7。',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let interval = null;
+
+function base32Decode(str) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  str = str.toUpperCase().replace(/[=\s]/g, '');
+  if (!/^[A-Z2-7]+$/.test(str)) return null;
+  let bits = '', bytes = [];
+  for (let i = 0; i < str.length; i++) bits += alphabet.indexOf(str[i]).toString(2).padStart(5, '0');
+  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.substr(i, 8), 2));
+  return new Uint8Array(bytes);
+}
+
+async function hmac(key, msg, algo) {
+  const c = { 'SHA-1': 'SHA-1', 'SHA-256': 'SHA-256', 'SHA-512': 'SHA-512' }[algo] || 'SHA-1';
+  const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: c }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, msg);
+  return new Uint8Array(sig);
+}
+
+async function generateTOTP() {
+  const secret = $('#secret').value.trim().toUpperCase().replace(/\s/g, '');
+  const digits = parseInt($('#digits').value);
+  const period = parseInt($('#period').value);
+  const algo = $('#algo').value;
+
+  if (!secret) {
+    $('#totpCode').textContent = '——';
+    $('#totpCode').classList.remove('small');
+    $('#progressBar').style.width = '0%';
+    $('#timerText').textContent = '';
+    $('#infoCards').innerHTML = '';
+    return;
+  }
+
+  const key = base32Decode(secret);
+  if (!key) {
+    $('#totpCode').textContent = '✗';
+    $('#timerText').textContent = t('invalidSecret');
+    return;
+  }
+
+  const epoch = Math.floor(Date.now() / 1000);
+  const timeStep = Math.floor(epoch / period);
+  const remaining = period - (epoch % period);
+
+  const buf = new ArrayBuffer(8);
+  new DataView(buf).setBigUint64(0, BigInt(timeStep));
+  const hmacResult = await hmac(key, new Uint8Array(buf), algo);
+
+  const offset = hmacResult[hmacResult.length - 1] & 0x0f;
+  const binary = ((hmacResult[offset] & 0x7f) << 24) | (hmacResult[offset+1] << 16) | (hmacResult[offset+2] << 8) | hmacResult[offset+3];
+  const code = (binary % Math.pow(10, digits)).toString().padStart(digits, '0');
+
+  $('#totpCode').textContent = code;
+  $('#totpCode').classList.toggle('small', digits === 8);
+  $('#progressBar').style.width = ((remaining / period) * 100) + '%';
+  $('#timerText').textContent = remaining + ' ' + t('remaining');
+
+  $('#infoCards').innerHTML = `
+    <div class="totp-info-card"><div class="lbl">${t('epoch')}</div><div class="val">${epoch}</div></div>
+    <div class="totp-info-card"><div class="lbl">${t('timeStep')}</div><div class="val">${timeStep}</div></div>
+    <div class="totp-info-card"><div class="lbl">${t('lblAlgo')}</div><div class="val">${algo}</div></div>
+  `;
+}
+
+function copyCode() {
+  const code = $('#totpCode').textContent;
+  if (code && code !== '——' && code !== '✗') copyText(code);
+}
+
+function startLoop() {
+  if (interval) clearInterval(interval);
+  generateTOTP();
+  interval = setInterval(generateTOTP, 1000);
+}
+
+$('#secret').addEventListener('input', startLoop);
+$('#digits').addEventListener('change', startLoop);
+$('#period').addEventListener('change', startLoop);
+$('#algo').addEventListener('change', startLoop);
+
+$('#warnMsg').textContent = t('warnMsg');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#secret').value='';startLoop()">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#secret').value='JBSWY3DPEHPK3PXP';startLoop()">${t('example')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🎫', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
