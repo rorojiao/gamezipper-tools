@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>文本摘要生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="粘贴任意文章、论文或文档，使用抽取式 NLP 即时生成简洁摘要。调整长度，复制使用 — 文本永不离开您的浏览器。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/text-summarizer.html">
+  <meta property="og:title" content="文本摘要生成器">
+  <meta property="og:description" content="粘贴任意文章、论文或文档，使用抽取式 NLP 即时生成简洁摘要。调整长度，复制使用 — 文本永不离开您的浏览器。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/text-summarizer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="文本摘要生成器">
+  <meta name="twitter:description" content="粘贴任意文章、论文或文档，使用抽取式 NLP 即时生成简洁摘要。调整长度，复制使用 — 文本永不离开您的浏览器。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.ts-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.ts-stat-row{display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:10px}
+.ts-stat-row .label{font-size:.8rem;color:var(--text2)}
+.ts-stat-row .value{font-size:1rem;font-weight:700;color:var(--accent);font-family:monospace}
+.ts-range{flex:1;min-width:180px;max-width:300px;display:flex;align-items:center;gap:8px}
+.ts-range input[type=range]{flex:1;accent-color:var(--accent)}
+.ts-range span{font-weight:700;color:var(--accent);font-family:monospace;min-width:38px;text-align:right}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Text Summarizer","description":"Free online text summarizer using extractive NLP. Paste any article, essay or document and instantly get the most important sentences as a concise summary.","url": "https://tools.gamezipper.com/zh/text/text-summarizer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the text summarizer work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool uses an extractive NLP algorithm: it scores every sentence in your text by word frequency, position and stop-word filtering, then picks the top-scoring sentences in their original order to form a coherent summary. Everything happens in your browser — no data is uploaded."}}, {"@type": "Question", "name": "Can I control how short the summary is?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Drag the summary length slider anywhere from 10% to 80% of the original text. The tool recalculates the summary live, so you can compare short and long versions side by side."}}, {"@type": "Question", "name": "What kind of text works best?", "acceptedAnswer": {"@type": "Answer", "text": "Long-form articles, essays, news stories, blog posts and research abstracts work best — typically 200+ words with clear sentence boundaries. Very short paragraphs or lists may not produce a meaningful summary."}}, {"@type": "Question", "name": "Is my text private and secure?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing is done locally in your browser using JavaScript. Your text never leaves your device, is not stored, and is not sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/text-summarizer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/text-summarizer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/text-summarizer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="ts-controls">
+      <div class="ts-range">
+        <span style="font-size:.85rem;color:var(--text2)" id="lblPct">Summary</span>
+        <input type="range" id="ratio" min="10" max="80" value="30" oninput="doSummarize()">
+        <span id="pctVal">30%</span>
+      </div>
+      <button class="gz-btn gz-btn-secondary" onclick="loadExample()">📄 Example</button>
+    </div>
+    <div class="gz-split">
+      <div><label id="lblIn">Original text</label><textarea id="input" spellcheck="false" placeholder="Paste an article, essay or document here..."></textarea></div>
+      <div><label id="lblOut">Summary</label><div class="gz-output" id="output" style="line-height:1.7"></div></div>
+    </div>
+    <div class="ts-stat-row">
+      <div><span class="label" id="lblOrig">Original</span> <span class="value" id="origStat">0 words · 0 sentences</span></div>
+      <div><span class="label" id="lblSum">Summary</span> <span class="value" id="sumStat">0 words · 0 sentences</span></div>
+      <div><span class="label" id="lblRed">Reduction</span> <span class="value" id="redStat">0%</span></div>
+    </div>
+    <div class="gz-toolbar" id="toolbar"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Text Summarizer',
+    toolDesc: 'Paste any article, essay or document and instantly get a concise summary using extractive NLP. Adjust the length, copy and use — your text never leaves your browser.',
+    lblIn: 'Original text', lblOut: 'Summary',
+    lblPct: 'Summary length', lblOrig: 'Original', lblSum: 'Summary', lblRed: 'Reduction',
+    step1: 'Paste your article, essay or document into the input area',
+    step2: 'Drag the slider to choose how short the summary should be (10%–80%)',
+    step3: 'Read the auto-generated summary in the output area, with word and sentence counts',
+    step4: 'Click Copy to grab the summary, or Clear to start over',
+  },
+  zh: {
+    toolTitle: '文本摘要生成器',
+    toolDesc: '粘贴任意文章、论文或文档，使用抽取式 NLP 即时生成简洁摘要。调整长度，复制使用 — 文本永不离开您的浏览器。',
+    lblIn: '原文', lblOut: '摘要',
+    lblPct: '摘要长度', lblOrig: '原文', lblSum: '摘要', lblRed: '压缩比',
+    step1: '在输入区粘贴文章、论文或文档',
+    step2: '拖动滑块选择摘要长度（10%–80%）',
+    step3: '在输出区阅读自动生成的摘要，查看字数和句数',
+    step4: '点击「复制」获取摘要，或点击「清空」重新开始',
+  }
+});
+
+const STOP = new Set('a,an,the,of,in,on,at,to,for,by,with,from,as,is,are,was,were,be,been,being,and,or,but,if,then,than,that,this,these,those,it,its,he,she,they,we,you,I,my,your,his,her,our,their,me,him,them,us,do,does,did,done,have,has,had,will,would,can,could,should,may,might,must,shall,not,no,nor,so,very,just,more,most,also,such,only,own,same,other,any,all,each,both,every,some,what,which,who,whom,whose,where,when,why,how,because,while,until,about,into,through,during,before,after,above,below,between,out,up,down,off,over,under,again,further,once,here,there,one,two,three,four,five,六,七,八,九,十,的,是,在,了,和,与,或,但,如果,那,这,这些,那些,我,你,他,她,它,我们,他们,自己,有,没,不,很,也,就,还,而,于,及,以,把,被,从,对,到,给,让,使,把,而,被,因为,所以,虽然,但是,然后,以及,的,了,着,过,上,下,里,外,前,后,中,内,外,之,其,亦,乃,即,且,仍,皆,甚,最,极,微,稍,凡,各,本,此,即,如,所,为,到,以,于'.split(','));
+
+const { $, copyText, t } = GZ;
+
+function splitSentences(text) {
+  const parts = text.replace(/\s+/g,' ').trim().split(/(?<=[.!?。！？])\s+(?=[A-Z\u4e00-\u9fa5])/);
+  return parts.filter(s => s.length > 0);
+}
+
+function scoreSentences(sentences) {
+  const wordScores = {};
+  sentences.forEach(s => {
+    const words = s.toLowerCase().match(/[a-z\u4e00-\u9fa5]{2,}/g) || [];
+    words.forEach(w => { if (!STOP.has(w)) wordScores[w] = (wordScores[w]||0) + 1; });
+  });
+  // Normalize
+  const maxScore = Math.max(1, ...Object.values(wordScores));
+  Object.keys(wordScores).forEach(w => wordScores[w] = wordScores[w] / maxScore);
+  return sentences.map((s, i) => {
+    const words = s.toLowerCase().match(/[a-z\u4e00-\u9fa5]{2,}/g) || [];
+    let score = 0;
+    words.forEach(w => { if (wordScores[w]) score += wordScores[w]; });
+    score /= Math.max(1, words.length);
+    // Position bonus
+    if (i === 0) score *= 1.3;
+    else if (i < sentences.length * 0.2) score *= 1.1;
+    else if (i > sentences.length * 0.8) score *= 1.05;
+    return { index: i, text: s, score };
+  });
+}
+
+function doSummarize() {
+  const inp = $('#input').value.trim();
+  if (!inp) {
+    $('#output').textContent = '';
+    $('#origStat').textContent = '0 words · 0 sentences';
+    $('#sumStat').textContent = '0 words · 0 sentences';
+    $('#redStat').textContent = '0%';
+    $('#pctVal').textContent = $('#ratio').value + '%';
+    return;
+  }
+  const ratio = parseInt($('#ratio').value);
+  $('#pctVal').textContent = ratio + '%';
+  const sentences = splitSentences(inp);
+  if (sentences.length <= 1) {
+    $('#output').textContent = sentences[0] || inp;
+    const wc = (inp.match(/\S+/g) || []).length;
+    $('#origStat').textContent = `${wc} words · ${sentences.length} sentences`;
+    $('#sumStat').textContent = `${wc} words · ${sentences.length} sentences`;
+    $('#redStat').textContent = '0%';
+    return;
+  }
+  const scored = scoreSentences(sentences);
+  const totalSent = sentences.length;
+  const targetCount = Math.max(1, Math.min(totalSent, Math.round(totalSent * ratio / 100)));
+  const top = [...scored].sort((a,b) => b.score - a.score).slice(0, targetCount);
+  top.sort((a,b) => a.index - b.index);
+  const summary = top.map(s => s.text).join(' ');
+  $('#output').textContent = summary;
+  const origWords = (inp.match(/\S+/g) || []).length;
+  const sumWords = (summary.match(/\S+/g) || []).length;
+  $('#origStat').textContent = `${origWords} words · ${totalSent} sentences`;
+  $('#sumStat').textContent = `${sumWords} words · ${top.length} sentences`;
+  const red = origWords ? Math.round((1 - sumWords/origWords) * 100) : 0;
+  $('#redStat').textContent = red + '%';
+}
+
+function loadExample() {
+  $('#input').value = `The Industrial Revolution, which began in Britain in the late 18th century, was a period of major change in manufacturing, agriculture, mining, and transport. It had far-reaching effects on society and the economy, fundamentally altering the way people lived and worked. Before the revolution, most goods were produced by hand in small workshops or homes. The introduction of new machinery and the factory system transformed production methods and dramatically increased output. Steam power, in particular, revolutionized transportation through the development of railways and steamships, which made it faster and cheaper to move raw materials and finished goods. The growth of factories led to urbanization, as workers moved from rural areas to cities in search of employment. This rapid urbanization brought about many social problems, including overcrowding, poor sanitation, and disease. Working conditions in factories were often harsh, with long hours, low wages, and unsafe environments. These conditions eventually led to the rise of labor unions and the passage of reform laws. The Industrial Revolution also had a significant impact on the environment, as the burning of coal and other fossil fuels led to air and water pollution. Despite its many negative consequences, the Industrial Revolution is widely regarded as a turning point in human history. It paved the way for the technological advances of the 19th and 20th centuries and laid the foundation for the modern industrial world. The changes it brought about continue to shape our lives today, from the way we work to the products we consume. Understanding the Industrial Revolution is essential for understanding the origins of modern capitalism, globalization, and the environmental challenges we now face.`;
+  doSummarize();
+}
+
+function doClear() { $('#input').value = ''; doSummarize(); }
+
+$('#input').addEventListener('input', doSummarize);
+$('#ratio').addEventListener('input', doSummarize);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📏', href:'/text/word-counter.html', name:'Word Counter'},
+    {icon:'📈', href:'/text/word-frequency.html', name:'Word Frequency'},
+    {icon:'📚', href:'/text/readability-checker.html', name:'Readability'},
+    {icon:'📑', href:'/text/sentence-counter.html', name:'Sentence Counter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
