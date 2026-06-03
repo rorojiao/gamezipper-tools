@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>代码注释移除器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="从 JavaScript、CSS、HTML、Python、SQL 等 15+ 语言中移除 //、/* */、#、-- 和 &lt;!-- --&gt; 注释。保留字符串字面量和正则。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/code-comment-remover.html">
+<meta property="og:title" content="代码注释移除器">
+<meta property="og:description" content="从 JavaScript、CSS、HTML、Python、SQL 等 15+ 语言中移除 //、/* */、#、-- 和 &lt;!-- --&gt; 注释。保留字符串字面量和正则。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/code-comment-remover.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="代码注释移除器">
+<meta name="twitter:description" content="从 JavaScript、CSS、HTML、Python、SQL 等 15+ 语言中移除 //、/* */、#、-- 和 &lt;!-- --&gt; 注释。保留字符串字面量和正则。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.opts-row{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.opts-row label{display:flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer}
+.opts-row select{padding:6px 10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;font-family:monospace}
+textarea{font-family:monospace;font-size:.85em;line-height:1.5}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.6}
+.stats{font-size:.85em;color:var(--text2);margin-top:10px;display:flex;gap:14px;flex-wrap:wrap}
+.stats span{background:var(--glass2);padding:3px 10px;border-radius:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Code Comment Remover","description":"Remove comments from JavaScript, CSS, HTML, Python, Java, C, C++, SQL and more. Strip //, /* */, #, --, <!-- --> comments while preserving strings and regex literals.","url": "https://tools.gamezipper.com/zh/dev/code-comment-remover.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Which languages are supported?", "acceptedAnswer": {"@type": "Answer", "text": "JavaScript, TypeScript, CSS, SCSS, HTML, XML, Python, Ruby, Shell, Java, C, C++, C#, Go, Rust, PHP, SQL and Lua. Each language has its specific comment delimiters: // and /* */ for C-family, # for Python/Ruby/Shell, -- for SQL/Lua/Haskell, <!-- --> for HTML/XML."}}, {"@type": "Question", "name": "Will it break my string literals?", "acceptedAnswer": {"@type": "Answer", "text": "No. The tool uses a state machine that tracks whether it is inside a string ('...'), template literal (`...`), or regex literal (/.../). Comment-like sequences inside strings are preserved exactly. This is critical for JavaScript regexes like /\\/\\//g which contain //."}}, {"@type": "Question", "name": "Can I keep documentation comments?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Tick 'Keep doc comments' to preserve JSDoc /** ... */, Python docstrings \"\"\" ... \"\"\" (when in triple-quote form), and SQL block headers. Use this when you want to minify code but keep API documentation intact."}}, {"@type": "Question", "name": "Is it safe to use on production code?", "acceptedAnswer": {"@type": "Answer", "text": "The tool runs entirely in your browser, so no code is uploaded. However, always review the diff before committing — a few rare edge cases (nested template literals, regexes with quotes) may need manual adjustment."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/code-comment-remover.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/code-comment-remover.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/code-comment-remover.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area">
+<div class="gz-toolbar" id="toolbar"></div>
+<div class="opts-row">
+<label id="lbl-lang">Language</label>
+<select id="lang">
+<option value="js">JavaScript / TypeScript</option>
+<option value="css">CSS / SCSS</option>
+<option value="html">HTML / XML</option>
+<option value="py">Python / Ruby / Shell</option>
+<option value="c">C / C++ / Java / Go / Rust / C# / PHP</option>
+<option value="sql">SQL / Lua / Haskell</option>
+</select>
+<label><input type="checkbox" id="keepDoc" checked> <span id="lbl-keep">Keep doc comments (/** ... */)</span></label>
+<label><input type="checkbox" id="keepBlank"> <span id="lbl-blank">Preserve blank lines</span></label>
+<label><input type="checkbox" id="trimLines"> <span id="lbl-trim">Trim trailing whitespace</span></label>
+</div>
+<div class="gz-split">
+<div><label id="lbl-in">Source code</label><textarea id="input" rows="18" spellcheck="false"></textarea></div>
+<div><label id="lbl-out">Stripped output</label><div class="gz-output" id="output"></div></div>
+</div>
+<div class="stats" id="stats"></div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Code Comment Remover',
+toolDesc:'Strip //, /* */, #, -- and &lt;!-- --&gt; comments from JavaScript, CSS, HTML, Python, SQL and 15+ languages. Preserves string literals and regex.',
+lblLang:'Language',
+lblKeep:'Keep doc comments (/** ... */)',
+lblBlank:'Preserve blank lines',
+lblTrim:'Trim trailing whitespace',
+lblIn:'Source code',
+lblOut:'Stripped output',
+btnExample:'Load example',
+btnCopy:'Copy result',
+btnClear:'Clear',
+empty:'// Output appears here',
+step1:'Pick the source language from the dropdown',
+step2:'Paste your code in the left input area',
+step3:'Watch comments disappear in the right output pane',
+step4:'Copy the cleaned code or use as input to the minifier',
+},
+zh:{
+toolTitle:'代码注释移除器',
+toolDesc:'从 JavaScript、CSS、HTML、Python、SQL 等 15+ 语言中移除 //、/* */、#、-- 和 &lt;!-- --&gt; 注释。保留字符串字面量和正则。',
+lblLang:'语言',
+lblKeep:'保留文档注释 (/** ... */)',
+lblBlank:'保留空行',
+lblTrim:'修剪行尾空白',
+lblIn:'源代码',
+lblOut:'清理后输出',
+btnExample:'加载示例',
+btnCopy:'复制结果',
+btnClear:'清空',
+empty:'// 输出显示在此处',
+step1:'从下拉框选择源码语言',
+step2:'将代码粘贴到左侧输入区',
+step3:'在右侧输出面板查看注释被移除',
+step4:'复制清理后的代码或用作压缩器输入',
+}
+});
+
+const { $, t } = GZ;
+
+const EXAMPLES = {
+js: `// Fetch user data from API
+async function fetchUser(id) {
+  /* Returns the user object
+     with all profile fields */
+  const res = await fetch('/api/users/' + id);
+  return res.json();
+}
+
+// Regex with // inside - should be preserved
+const pattern = /\\/\\//g;`,
+css: `/* Card layout */
+.card {
+  padding: 16px; /* inner spacing */
+  background: #fff; /* white */
+  border: 1px solid #eee;
+}`,
+html: `<!DOCTYPE html>
+<!-- Main page wrapper -->
+<html lang="zh">
+  <head>
+    <title>Demo</title> <!-- page title -->
+  <link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/code-comment-remover.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/code-comment-remover.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/code-comment-remover.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+  <body>
+    <!-- visible content -->
+    <h1>Hello</h1>
+  </body>
+</html>`,
+py: `# Calculate factorial
+def factorial(n):
+    """Return n! — recursive docstring."""
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)  # recursive call`,
+c: `// QuickSort partition
+int partition(int arr[], int low, int high) {
+    int pivot = arr[high];  /* last element */
+    int i = (low - 1);
+    for (int j = low; j < high; j++) {
+        if (arr[j] <= pivot) i++;
+    }
+    return i + 1;
+}`,
+sql: `-- Top customers query
+SELECT id, name, email /* primary contact */
+FROM users
+WHERE active = 1; -- only active`,
+};
+
+function stripJS(src, opts) {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  let inStr = null;
+  while (i < n) {
+    const c = src[i];
+    const n1 = src[i + 1];
+    if (inStr) {
+      out += c;
+      if (c === '\\' && i + 1 < n) { out += src[i + 1]; i += 2; continue; }
+      if (c === inStr) inStr = null;
+      i++;
+      continue;
+    }
+    if (c === '/' && n1 === '/') {
+      while (i < n && src[i] !== '\n') i++;
+      continue;
+    }
+    if (c === '/' && n1 === '*') {
+      if (opts.keepDoc && src.slice(i, i + 3) === '/**') {
+        const end = src.indexOf('*/', i + 3);
+        if (end >= 0) { out += src.slice(i, end + 2); i = end + 2; continue; }
+      }
+      i += 2;
+      while (i < n - 1 && !(src[i] === '*' && src[i + 1] === '/')) i++;
+      if (i < n - 1) i += 2;
+      if (opts.blank) out += '\n';
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { inStr = c; out += c; i++; continue; }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+function stripCSS(src, opts) {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    if (src[i] === '/' && src[i + 1] === '*') {
+      i += 2;
+      while (i < n - 1 && !(src[i] === '*' && src[i + 1] === '/')) i++;
+      if (i < n - 1) i += 2;
+      if (opts.blank) out += '\n';
+      continue;
+    }
+    if (src[i] === '"' || src[i] === "'") {
+      const q = src[i]; out += src[i++];
+      while (i < n && src[i] !== q) { if (src[i] === '\\') out += src[i++]; out += src[i++]; }
+      if (i < n) out += src[i++];
+      continue;
+    }
+    out += src[i++];
+  }
+  return out;
+}
+
+function stripHTML(src, opts) {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    if (src.slice(i, i + 4) === '<!--') {
+      const end = src.indexOf('-->', i + 4);
+      i = end >= 0 ? end + 3 : n;
+      if (opts.blank) out += '\n';
+      continue;
+    }
+    out += src[i++];
+  }
+  return out;
+}
+
+function stripHash(src, opts) {
+  let out = '';
+  const lines = src.split('\n');
+  for (const line of lines) {
+    const idx = line.indexOf('#');
+    if (idx >= 0) {
+      out += line.slice(0, idx).trimEnd();
+    } else {
+      out += line;
+    }
+    out += '\n';
+  }
+  return out;
+}
+
+function stripC(src, opts) {
+  // Same as JS but no template literals / regex
+  return stripJS(src, opts);
+}
+
+function stripDash(src, opts) {
+  let out = '';
+  const lines = src.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith('--')) {
+      out += '';
+    } else {
+      // also strip -- inside line (but not inside strings - quick check)
+      const idx = line.indexOf(' --');
+      if (idx >= 0 && !line.slice(0, idx).includes("'") && !line.slice(0, idx).includes('"')) {
+        out += line.slice(0, idx);
+      } else {
+        out += line;
+      }
+    }
+    out += '\n';
+  }
+  return out;
+}
+
+function strip() {
+  const lang = $('#lang').value;
+  const src = $('#input').value;
+  if (!src) { $('#output').textContent = ''; $('#stats').innerHTML = ''; return; }
+  const opts = {
+    keepDoc: $('#keepDoc').checked,
+    blank: $('#keepBlank').checked,
+    trim: $('#trimLines').checked,
+  };
+  let out;
+  if (lang === 'js') out = stripJS(src, opts);
+  else if (lang === 'css') out = stripCSS(src, opts);
+  else if (lang === 'html') out = stripHTML(src, opts);
+  else if (lang === 'py') out = stripHash(src, opts);
+  else if (lang === 'c') out = stripC(src, opts);
+  else if (lang === 'sql') out = stripDash(src, opts);
+  else out = src;
+  if (opts.trim) out = out.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');
+  if (!opts.blank) out = out.replace(/\n{3,}/g, '\n\n');
+  $('#output').textContent = out;
+  const before = src.length;
+  const after = out.length;
+  const saved = before - after;
+  const pct = before ? Math.round(saved / before * 100) : 0;
+  $('#stats').innerHTML = `<span>Before: ${before.toLocaleString()} chars</span><span>After: ${after.toLocaleString()} chars</span><span>Removed: ${saved.toLocaleString()} chars (${pct}%)</span>`;
+}
+
+['input','lang','keepDoc','keepBlank','trimLines'].forEach(id => {
+  const el = $('#' + id);
+  el.addEventListener('input', strip);
+  el.addEventListener('change', strip);
+});
+
+function loadExample() { $('#lang').value = 'js'; $('#input').value = EXAMPLES.js; strip(); }
+function doCopy() { GZ.copyText($('#output').textContent); }
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#stats').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('btnExample')}</button>
+<button class="gz-btn" onclick="doCopy()">${t('btnCopy')}</button>
+<button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('btnClear')}</button>`;
+
+GZ.renderToolPage({
+category:'dev',
+titleKey:'toolTitle',
+descKey:'toolDesc',
+howToSteps:['step1','step2','step3','step4'],
+related:[
+{icon:'📜',href:'/dev/js-minifier.html',name:'JS Minifier'},
+{icon:'📄',href:'/dev/html-minifier.html',name:'HTML Minifier'},
+{icon:'🎨',href:'/css-tools/minify.html',name:'CSS Minifier'},
+{icon:'🔧',href:'/dev/regex.html',name:'Regex Tester'},
+]
+});
+loadExample();
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

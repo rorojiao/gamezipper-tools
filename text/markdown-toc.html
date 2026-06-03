@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Markdown Table of Contents Generator - Auto TOC Builder | GameZipper Tools</title>
+<meta name="description" content="Generate a Table of Contents (TOC) from any Markdown document instantly. Auto-extract H1-H6 headings, with anchor IDs, GitHub/GitLab compatible, nested or flat styles. Free and runs in your browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/markdown-toc.html">
+<meta property="og:title" content="Markdown Table of Contents Generator - Auto TOC Builder | GameZipper Tools">
+<meta property="og:description" content="Generate a Table of Contents (TOC) from any Markdown document instantly. Auto-extract H1-H6 headings, with anchor IDs, GitHub/GitLab compatible, nested or flat styles.">
+<meta property="og:url" content="https://tools.gamezipper.com/text/markdown-toc.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Markdown Table of Contents Generator - Auto TOC Builder | GameZipper Tools">
+<meta name="twitter:description" content="Generate a Table of Contents (TOC) from any Markdown document. Auto-extract H1-H6 headings with anchor IDs. Free, runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.toc-options{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.toc-options .opt label{font-size:.8em;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.toc-options .opt select,.toc-options .opt input{width:100%;padding:8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;font-family:monospace}
+.toc-preview{margin-top:16px;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:14px}
+.toc-preview h3{margin:0 0 8px;font-size:1em}
+.toc-preview ul{list-style:disc;padding-left:22px;line-height:1.6}
+.toc-preview ul ul{list-style:circle;margin-top:2px}
+.toc-preview a{color:var(--accent);text-decoration:none}
+.toc-preview a:hover{text-decoration:underline}
+.toc-stats{font-size:.85em;color:var(--text2);margin-top:10px;display:flex;gap:14px;flex-wrap:wrap}
+.toc-stats span{background:var(--glass2);padding:3px 10px;border-radius:6px}
+textarea{font-family:monospace;font-size:.85em;line-height:1.5}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.6}
+.indent-l1{margin-left:0}.indent-l2{margin-left:16px}.indent-l3{margin-left:32px}.indent-l4{margin-left:48px}.indent-l5{margin-left:64px}.indent-l6{margin-left:80px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Markdown Table of Contents Generator","description":"Generate a Table of Contents (TOC) from any Markdown document instantly. Auto-extract H1-H6 headings, with anchor IDs, GitHub/GitLab compatible, nested or flat styles.","url":"https://tools.gamezipper.com/text/markdown-toc.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the Markdown TOC generator work?", "acceptedAnswer": {"@type": "Answer", "text": "Paste any Markdown document into the input area. The tool scans all lines starting with one or more # characters (H1-H6), extracts the heading text, generates slug-based anchor IDs (GitHub/GitLab style) and produces a nested or flat Table of Contents you can copy."}}, {"@type": "Question", "name": "Does it match GitHub's anchor ID format?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. By default, the tool uses the same slugify rules as GitHub: lowercase, spaces to hyphens, drop punctuation except hyphens, and append -1, -2 etc. for duplicate headings to keep IDs unique."}}, {"@type": "Question", "name": "Can I choose a different heading level depth?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the min/max heading level options to include only specific heading levels (e.g. only H2 and H3). The tool will ignore anything outside the range."}}, {"@type": "Question", "name": "What is the difference between nested and flat TOC styles?", "acceptedAnswer": {"@type": "Answer", "text": "Nested (default) produces a hierarchical Markdown list that mirrors heading depth with indentation. Flat renders all entries at the same level — useful when you want a simple ordered list with no visual hierarchy."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/markdown-toc.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/markdown-toc.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/markdown-toc.html">
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area">
+<div class="gz-toolbar" id="toolbar"></div>
+<div class="toc-options">
+<div class="opt"><label id="lbl-style">Style</label><select id="style"><option value="nested">Nested (bullets)</option><option value="ordered">Nested (numbered)</option><option value="flat">Flat list</option><option value="brackets">Bracket list</option></select></div>
+<div class="opt"><label id="lbl-min">Min level</label><select id="minLvl"><option value="1">H1</option><option value="2" selected>H2</option><option value="3">H3</option><option value="4">H4</option></select></div>
+<div class="opt"><label id="lbl-max">Max level</label><select id="maxLvl"><option value="2">H2</option><option value="3">H3</option><option value="4">H4</option><option value="6" selected>H6</option></select></div>
+<div class="opt"><label id="lbl-min-h">Min heading</label><input type="text" id="minHeadings" value="1" min="1"></div>
+</div>
+<div class="gz-split">
+<div><label id="lbl-in">Markdown input</label><textarea id="input" rows="14" spellcheck="false" placeholder="# My Article&#10;&#10;## Introduction&#10;Some intro text...&#10;&#10;## Getting Started&#10;..."></textarea></div>
+<div><label id="lbl-out">Generated TOC</label><div class="gz-output" id="output"></div></div>
+</div>
+<div class="toc-preview">
+<h3 id="lbl-preview-h">Live HTML preview</h3>
+<div id="preview"></div>
+<div class="toc-stats" id="stats"></div>
+</div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Markdown Table of Contents Generator',
+toolDesc:'Auto-generate a Table of Contents from any Markdown document. Extracts H1–H6 headings, builds GitHub-style anchor IDs and renders nested, ordered, flat or bracket lists.',
+lblStyle:'Output style',
+lblMin:'Min heading level',
+lblMax:'Max heading level',
+lblMinH:'Min headings required',
+lblIn:'Markdown input',
+lblOut:'Generated TOC (Markdown)',
+lblPreviewH:'Live HTML preview',
+btnExample:'Load example',
+btnClear:'Clear',
+btnCopy:'Copy TOC',
+empty:'No headings found in the selected level range.',
+step1:'Paste your Markdown document into the input area',
+step2:'Choose the output style, min/max heading level and minimum headings',
+step3:'The TOC updates live in both Markdown and rendered HTML preview',
+step4:'Click Copy TOC to grab the snippet for your README, docs or blog post',
+},
+zh:{
+toolTitle:'Markdown 目录生成器',
+toolDesc:'从任意 Markdown 文档自动生成目录。提取 H1–H6 标题，生成 GitHub 风格锚点 ID，渲染嵌套、有序、平铺或括号列表。',
+lblStyle:'输出样式',
+lblMin:'最小标题级别',
+lblMax:'最大标题级别',
+lblMinH:'最少标题数',
+lblIn:'Markdown 输入',
+lblOut:'生成的目录（Markdown）',
+lblPreviewH:'实时 HTML 预览',
+btnExample:'加载示例',
+btnClear:'清空',
+btnCopy:'复制目录',
+empty:'在选定的级别范围内未找到标题。',
+step1:'将 Markdown 文档粘贴到输入区',
+step2:'选择输出样式、最小/最大标题级别和最少标题数',
+step3:'目录在 Markdown 和 HTML 预览中实时更新',
+step4:'点击「复制目录」将片段粘贴到 README、文档或博客中',
+}
+});
+
+const { $, t } = GZ;
+const example = `# GameZipper Tools — Complete Guide
+
+Welcome to the GameZipper Tools guide. This article walks you through the most popular utilities.
+
+## Introduction
+
+GameZipper Tools is a free online toolbox with 290+ utilities for developers, designers and creators.
+
+## Getting Started
+
+### Installation
+
+Just visit the site and pick a tool. No signup required.
+
+### First Tool
+
+Try the JSON formatter first — it works in your browser.
+
+## Developer Tools
+
+### Formatters
+
+- JSON
+- CSS
+- HTML
+
+### Encoders
+
+- Base64
+- URL
+
+## Conclusion
+
+Thanks for reading.`;
+
+function slugify(text) {
+  return text.toLowerCase()
+    .replace(/[`*_~]/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function extractHeadings(md) {
+  const lines = md.split('\n');
+  const headings = [];
+  const slugCount = {};
+  for (const line of lines) {
+    const m = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if (!m) continue;
+    const level = m[1].length;
+    let text = m[2].trim();
+    // strip markdown link syntax to use just label
+    text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    let slug = slugify(text);
+    if (!slug) continue;
+    if (slugCount[slug] !== undefined) {
+      slugCount[slug]++;
+      slug = slug + '-' + slugCount[slug];
+    } else {
+      slugCount[slug] = 0;
+    }
+    headings.push({ level, text, slug });
+  }
+  return headings;
+}
+
+function renderTOC(headings, style) {
+  if (!headings.length) return '';
+  if (style === 'flat') {
+    return headings.map(h => `- [${h.text}](#${h.slug})`).join('\n');
+  }
+  if (style === 'ordered') {
+    let html = '';
+    let stack = [0,0,0,0,0,0];
+    for (const h of headings) {
+      stack[h.level - 1]++;
+      for (let i = h.level; i < 6; i++) stack[i] = 0;
+      const num = stack.slice(0, h.level).join('.');
+      const indent = '  '.repeat(h.level - 1);
+      html += `${indent}${num}. [${h.text}](#${h.slug})\n`;
+    }
+    return html.trimEnd();
+  }
+  if (style === 'brackets') {
+    return headings.map(h => `[${h.text}]: #${h.slug}`).join('\n');
+  }
+  // nested (default)
+  let md = '';
+  const minLevel = Math.min(...headings.map(h => h.level));
+  let prev = minLevel - 1;
+  for (const h of headings) {
+    if (h.level > prev) {
+      while (prev < h.level) { md += (prev === minLevel - 1 ? '' : '\n') + '  '.repeat(prev) + (prev >= minLevel ? '  ' : '') + (prev === minLevel - 1 ? '' : ''); prev++; }
+    } else if (h.level < prev) {
+      prev = h.level;
+    }
+    md += (prev === minLevel ? '' : '\n') + '  '.repeat(h.level - minLevel) + '- [' + h.text + '](#' + h.slug + ')';
+  }
+  return md;
+}
+
+function renderHTML(headings) {
+  if (!headings.length) return '<em style="color:var(--text2)">' + t('empty') + '</em>';
+  const minLevel = Math.min(...headings.map(h => h.level));
+  let html = '<ul>';
+  const stack = [{ level: minLevel - 1, open: true }];
+  for (const h of headings) {
+    while (stack[stack.length - 1].level >= h.level) stack.pop();
+    while (stack[stack.length - 1].level < h.level - 1) {
+      html += '<ul>';
+      stack.push({ level: stack[stack.length - 1].level + 1, open: true });
+    }
+    html += `<li><a href="#${h.slug}">${h.text.replace(/</g,'&lt;')}</a></li>`;
+  }
+  while (stack.length > 1) { html += '</ul>'; stack.pop(); }
+  html += '</ul>';
+  return html;
+}
+
+function update() {
+  const md = $('#input').value;
+  const style = $('#style').value;
+  const minL = +$('#minLvl').value;
+  const maxL = +$('#maxLvl').value;
+  const minH = Math.max(1, +$('#minHeadings').value || 1);
+  let headings = extractHeadings(md).filter(h => h.level >= minL && h.level <= maxL);
+  if (headings.length < minH) {
+    $('#output').textContent = t('empty');
+    $('#preview').innerHTML = '<em style="color:var(--text2)">' + t('empty') + '</em>';
+    $('#stats').innerHTML = `<span>0 ${t('statsHeadings' in GZ.i18n ? 'statsHeadings' : 'headings')}</span>`;
+    return;
+  }
+  const toc = renderTOC(headings, style);
+  $('#output').textContent = toc;
+  $('#preview').innerHTML = renderHTML(headings);
+  const h1 = headings.filter(h => h.level === 1).length;
+  const h2 = headings.filter(h => h.level === 2).length;
+  const h3 = headings.filter(h => h.level === 3).length;
+  $('#stats').innerHTML = `<span>${headings.length} headings</span><span>H1: ${h1}</span><span>H2: ${h2}</span><span>H3+: ${h3}</span>`;
+}
+
+['input','style','minLvl','maxLvl','minHeadings'].forEach(id => {
+  $('#' + id).addEventListener('input', update);
+  $('#' + id).addEventListener('change', update);
+});
+
+function loadExample() { $('#input').value = example; update(); }
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#preview').innerHTML = ''; $('#stats').innerHTML = ''; }
+function doCopy() { GZ.copyText($('#output').textContent); }
+
+$('#toolbar').innerHTML = `
+<button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('btnExample')}</button>
+<button class="gz-btn" onclick="doCopy()">${t('btnCopy')}</button>
+<button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('btnClear')}</button>`;
+
+GZ.renderToolPage({
+category:'text',
+titleKey:'toolTitle',
+descKey:'toolDesc',
+howToSteps:['step1','step2','step3','step4'],
+related:[
+{icon:'📝',href:'/text/markdown.html',name:'Markdown Preview'},
+{icon:'📊',href:'/text/markdown-table.html',name:'Markdown Table'},
+{icon:'📚',href:'/text/markdown-cheatsheet.html',name:'Markdown Cheatsheet'},
+{icon:'🔠',href:'/text/acronym-generator.html',name:'Acronym Generator'},
+]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
