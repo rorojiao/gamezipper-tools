@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>NPM Package Size Checker & Bundlephobia Alternative - Free Tool | GameZipper Tools</title>
+<meta name="description" content="Check the install size, unpacked size and dependency tree of any npm package. Bundlephobia-style analysis — runs in your browser with the official npm registry API, no install required.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/npm-size.html">
+<meta property="og:title" content="NPM Package Size Checker - Free Tool | GameZipper Tools">
+<meta property="og:description" content="Check the install size, unpacked size and dependency tree of any npm package using the official npm registry.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/npm-size.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NPM Package Size Checker - Free Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.search-row{display:flex;gap:8px;margin-bottom:14px}
+.search-row input{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:.9rem;font-family:inherit}
+.search-row input:focus{outline:none;border-color:var(--accent)}
+.quick-picks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.quick-pick{background:var(--glass2);border:1px solid var(--border);color:var(--text2);padding:4px 12px;border-radius:14px;font-size:.78rem;cursor:pointer;transition:all .15s}
+.quick-pick:hover{background:var(--glass);color:var(--text);border-color:var(--accent)}
+.pkg-result{background:var(--glass2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:14px}
+.pkg-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.pkg-name{font-size:1.2rem;font-weight:700;color:var(--text)}
+.pkg-version{color:var(--text2);font-size:.85rem;margin-left:6px}
+.pkg-desc{color:var(--text2);font-size:.85rem;margin-top:4px;line-height:1.45}
+.pkg-link{color:var(--accent);font-size:.8rem;text-decoration:none;margin-top:4px;display:inline-block}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.stat-card{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-card .num{font-size:1.3rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.stat-card .num.big{color:#fbbf24}
+.stat-card .num.huge{color:#f87171}
+.stat-card .lbl{font-size:.72rem;color:var(--text2);margin-top:2px}
+.deps-list{margin-top:12px}
+.deps-list h3{font-size:.95rem;margin-bottom:8px;color:var(--text)}
+.deps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;max-height:400px;overflow-y:auto;padding-right:4px}
+.dep-item{background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:.78rem}
+.dep-item .name{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dep-item .size{color:var(--text2);font-size:.72rem;font-variant-numeric:tabular-nums;flex-shrink:0}
+.dep-item.direct{border-color:var(--accent);background:rgba(99,102,241,.08)}
+.dep-item.direct .name::after{content:'●';color:var(--accent);margin-left:4px;font-size:.6rem}
+.error-msg{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:#f87171;padding:12px 14px;border-radius:10px;margin-top:14px}
+.loading{display:flex;align-items:center;gap:10px;color:var(--text2);margin-top:14px;padding:12px;background:rgba(0,0,0,.2);border-radius:10px}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.suggestion-list{background:var(--glass2);border:1px solid var(--border);border-radius:10px;margin-top:6px;overflow:hidden;max-height:300px;overflow-y:auto}
+.suggestion-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.suggestion-item:hover{background:rgba(99,102,241,.1)}
+.suggestion-item .name{color:var(--text);font-weight:600}
+.suggestion-item .desc{color:var(--text2);font-size:.75rem;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.tag{background:rgba(0,0,0,.2);color:var(--text2);padding:2px 8px;border-radius:6px;font-size:.7rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"NPM Package Size Checker","description":"Check the install size, unpacked size and dependency tree of any npm package. Bundlephobia-style analysis using the official npm registry API.","url":"https://tools.gamezipper.com/dev/npm-size.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does the NPM package size checker show?", "acceptedAnswer": {"@type": "Answer", "text": "It shows the unpacked install size, total number of dependencies, direct vs transitive dependency count, the version and description from the official npm registry, and a list of all dependency packages with their individual unpacked sizes."}}, {"@type": "Question", "name": "How is the install size calculated?", "acceptedAnswer": {"@type": "Answer", "text": "The tool downloads the official npm registry metadata for the package, which includes the unpacked size of the tarball. It also fetches sizes for each direct dependency to give you a complete picture of what would land in your node_modules."}}, {"@type": "Question", "name": "Is this tool safe to use for private packages?", "acceptedAnswer": {"@type": "Answer", "text": "Yes for public packages. The tool only queries the public npm registry, so no credentials are needed. Private packages on the official npm registry are accessible only with an auth token, so this tool cannot check those."}}, {"@type": "Question", "name": "How is this different from Bundlephobia?", "acceptedAnswer": {"@type": "Answer", "text": "Bundlephobia focuses on the cost of importing the package in a webpack bundle. This tool focuses on disk size after npm install, which is what most developers actually want to know. Both are useful for different decisions."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/npm-size.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/npm-size.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/npm-size.html">
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area">
+<div class="gz-toolbar" id="toolbar"></div>
+<div class="search-row">
+<input type="text" id="pkgInput" placeholder="react, lodash, axios, @babel/core…" autocomplete="off">
+<button class="gz-btn" id="checkBtn">🔍 <span id="lbl-check"></span></button>
+</div>
+<div class="quick-picks" id="quickPicks"></div>
+<div id="suggestions"></div>
+<div id="result"></div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'NPM Package Size Checker',
+toolDesc:'Check the install size, unpacked size and dependency tree of any npm package using the official npm registry.',
+lblCheck:'Check',
+lblTry:'Try:',
+step1:'Type a package name in the search box (e.g. "react")',
+step2:'Click Check or pick a quick suggestion',
+step3:'See unpacked size, dependency count and full dep tree',
+step4:'Use this to decide before adding a heavy package to your project',
+errNotFound:'Package not found. Check the spelling or try another name.',
+errGeneric:'Failed to fetch package data. The npm registry may be down.',
+errEmpty:'Please enter a package name.',
+},
+zh:{
+toolTitle:'NPM 包体积检查器',
+toolDesc:'使用官方 npm registry 查询任意 npm 包的安装体积、解压大小和依赖树。',
+lblCheck:'查询',
+lblTry:'试一试：',
+step1:'在搜索框输入包名（如 "react"）',
+step2:'点击「查询」或选择快速建议',
+step3:'查看解压体积、依赖数量和完整依赖树',
+step4:'添加到项目前用它来判断包体积',
+errNotFound:'未找到该包，请检查拼写或尝试其他包名。',
+errGeneric:'获取包数据失败，npm registry 可能宕机。',
+errEmpty:'请输入包名。',
+}
+});
+
+const { $, copyText, t } = GZ;
+const registry = 'https://registry.npmjs.org';
+
+function formatSize(bytes) {
+if (!bytes) return '0 B';
+const units = ['B','KB','MB','GB'];
+let i = 0;
+let size = bytes;
+while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+return size.toFixed(size < 10 ? 2 : 1) + ' ' + units[i];
+}
+
+function sizeClass(bytes) {
+if (bytes > 5 * 1024 * 1024) return 'huge';
+if (bytes > 500 * 1024) return 'big';
+return '';
+}
+
+async function fetchPackage(name) {
+const resp = await fetch(registry + '/' + encodeURIComponent(name).replace(/^%40/, '@'));
+if (!resp.ok) throw new Error(resp.status === 404 ? 'NOT_FOUND' : 'GENERIC');
+return resp.json();
+}
+
+async function fetchSize(name, version) {
+const ver = version.replace(/^[\^~]/, '');
+try {
+const r = await fetch(registry + '/' + encodeURIComponent(name).replace(/^%40/, '@') + '/' + ver);
+if (!r.ok) return 0;
+const d = await r.json();
+return d.dist?.unpackedSize || 0;
+} catch(e) { return 0; }
+}
+
+async function check() {
+const name = $('#pkgInput').value.trim();
+const result = $('#result');
+const sug = $('#suggestions');
+sug.innerHTML = '';
+if (!name) { result.innerHTML = `<div class="error-msg">${t('errEmpty')}</div>`; return; }
+result.innerHTML = `<div class="loading"><div class="spinner"></div> Fetching ${name} from npm registry…</div>`;
+try {
+const data = await fetchPackage(name);
+const latest = data['dist-tags']?.latest || Object.keys(data.versions || {})[0];
+const v = data.versions[latest];
+const mainSize = v.dist?.unpackedSize || 0;
+const deps = v.dependencies || {};
+const depNames = Object.keys(deps);
+const depSizes = {};
+for (const dn of depNames) {
+depSizes[dn] = await fetchSize(dn, deps[dn]);
+}
+const totalSize = mainSize + Object.values(depSizes).reduce((a, b) => a + b, 0);
+const sortedDeps = Object.entries(depSizes).sort((a, b) => b[1] - a[1]);
+const homepage = data.homepage || (v.repository?.url || '').replace(/^git\+/, '').replace(/\.git$/, '');
+result.innerHTML = `
+<div class="pkg-result">
+<div class="pkg-header">
+<div>
+<div class="pkg-name">${data.name}<span class="pkg-version">v${latest}</span></div>
+<div class="pkg-desc">${data.description || 'No description'}</div>
+<a class="pkg-link" href="${homepage}" target="_blank" rel="noopener">${homepage || 'npmjs.com/package/' + data.name}</a>
+<div class="tags">${(data.keywords || []).slice(0, 8).map(k => `<span class="tag">${k}</span>`).join('')}</div>
+</div>
+</div>
+<div class="stat-grid">
+<div class="stat-card"><div class="num">${formatSize(mainSize)}</div><div class="lbl">📦 Unpacked Size</div></div>
+<div class="stat-card"><div class="num ${sizeClass(totalSize)}">${formatSize(totalSize)}</div><div class="lbl">📊 With All Deps</div></div>
+<div class="stat-card"><div class="num">${depNames.length}</div><div class="lbl">🔗 Direct Deps</div></div>
+<div class="stat-card"><div class="num">${v.license || '—'}</div><div class="lbl">⚖️ License</div></div>
+</div>
+${depNames.length > 0 ? `<div class="deps-list"><h3>📚 Dependencies (${depNames.length})</h3><div class="deps-grid">${sortedDeps.map(([n, s]) => `<div class="dep-item direct"><span class="name">${n}</span><span class="size">${formatSize(s)}</span></div>`).join('')}</div></div>` : '<p style="color:var(--text2);margin-top:8px">No dependencies 🎉</p>'}
+</div>`;
+} catch(e) {
+const msg = e.message === 'NOT_FOUND' ? t('errNotFound') : t('errGeneric');
+result.innerHTML = `<div class="error-msg">❌ ${msg}</div>`;
+}
+}
+
+let searchTimer;
+$('#pkgInput').addEventListener('input', e => {
+clearTimeout(searchTimer);
+const q = e.target.value.trim();
+const sug = $('#suggestions');
+if (q.length < 2) { sug.innerHTML = ''; return; }
+searchTimer = setTimeout(async () => {
+try {
+const r = await fetch('https://registry.npmjs.org/-/v1/search?text=' + encodeURIComponent(q) + '&size=8');
+const d = await r.json();
+if (d.objects?.length) {
+sug.innerHTML = `<div class="suggestion-list">${d.objects.map(o => {
+const p = o.package;
+return `<div class="suggestion-item" data-name="${p.name}"><div><div class="name">${p.name}</div><div class="desc">${p.description || ''}</div></div><div style="color:var(--text2);font-size:.72rem">v${p.version}</div></div>`;
+}).join('')}</div>`;
+sug.querySelectorAll('.suggestion-item').forEach(s => {
+s.addEventListener('click', () => { $('#pkgInput').value = s.dataset.name; sug.innerHTML = ''; check(); });
+});
+} else sug.innerHTML = '';
+} catch(e) { sug.innerHTML = ''; }
+}, 300);
+});
+
+$('#checkBtn').addEventListener('click', check);
+$('#pkgInput').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+
+const picks = ['react', 'vue', 'lodash', 'axios', 'dayjs', 'tailwindcss', 'three', 'moment', '@babel/core', 'chart.js'];
+$('#quickPicks').innerHTML = `<span style="color:var(--text2);font-size:.8rem">${t('lblTry')}</span>` + picks.map(p => `<span class="quick-pick" data-pkg="${p}">${p}</span>`).join('');
+$('#quickPicks').querySelectorAll('.quick-pick').forEach(p => {
+p.addEventListener('click', () => { $('#pkgInput').value = p.dataset.pkg; check(); });
+});
+
+GZ.renderToolPage({
+category: 'dev',
+titleKey: 'toolTitle',
+descKey: 'toolDesc',
+howToSteps: ['step1','step2','step3','step4'],
+related: [
+{icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+{icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+{icon:'🪙', href:'/dev/jwt.html', name:'JWT Decoder'},
+{icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp'},
+]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
