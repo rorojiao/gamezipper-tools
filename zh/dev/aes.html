@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>AES 加密 / 解密 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用 AES-128/192/256 在 CBC/ECB/CFB/OFB 模式下加密和解密文本。支持密码派生或 Hex 密钥，基于 Web Crypto API，完全本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/aes.html">
+  <meta property="og:title" content="AES 加密 / 解密">
+  <meta property="og:description" content="使用 AES-128/192/256 在 CBC/ECB/CFB/OFB 模式下加密和解密文本。支持密码派生或 Hex 密钥，基于 Web Crypto API，完全本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/aes.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="AES 加密 / 解密">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.tab{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:.85em;transition:.2s}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;font-weight:700;border-color:transparent}
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.opt-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:4px}
+.opt-card label{font-size:.75em;opacity:.85}
+.opt-card select,.opt-card input{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:.85em;font-family:inherit}
+textarea{width:100%;height:140px;font-family:monospace;font-size:.85em;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:.8rem;color:var(--text);resize:vertical;word-break:break-all}
+#ivOut,#keyOut{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:8px;font-family:monospace;font-size:.8em;word-break:break-all;margin-top:6px}
+.status{font-size:.85em;margin-top:8px}
+.status.ok{color:#10b981}.status.err{color:#ef4444}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"AES Encrypt / Decrypt","description":"Encrypt and decrypt text with AES-128, AES-192 and AES-256 using CBC, ECB, CFB and OFB modes. Web Crypto API, runs in your browser.","url": "https://tools.gamezipper.com/zh/dev/aes.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is AES?", "acceptedAnswer": {"@type": "Answer", "text": "AES (Advanced Encryption Standard) is a symmetric block cipher standardized by NIST in 2001. It encrypts 128-bit blocks with key sizes of 128, 192 or 256 bits. AES-256 is widely used in TLS, disk encryption, file archiving and password managers."}}, {"@type": "Question", "name": "Is AES encryption secure?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. AES is considered cryptographically secure and is approved by the U.S. government for top-secret information. No practical attack breaks AES when used with a strong random key and a proper mode such as CBC or GCM."}}, {"@type": "Question", "name": "What's the difference between AES-128, AES-192 and AES-256?", "acceptedAnswer": {"@type": "Answer", "text": "The number is the key size in bits. AES-128 has 10 rounds, AES-192 has 12 rounds and AES-256 has 14 rounds. All three are considered secure; AES-256 just gives the largest keyspace. Slower hardware benefits most from AES-128."}}, {"@type": "Question", "name": "Do I need to use an IV?", "acceptedAnswer": {"@type": "Answer", "text": "For CBC, CFB and OFB modes, yes — a unique random IV of exactly 16 bytes must be used for every encryption. The tool generates a fresh random IV each time. For ECB mode no IV is needed but the mode is generally insecure for variable-length data."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/aes.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/aes.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/aes.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tabs">
+      <button class="tab active" data-tab="enc">🔒 <span data-tab-label="enc"></span></button>
+      <button class="tab" data-tab="dec">🔓 <span data-tab-label="dec"></span></button>
+    </div>
+
+    <div class="opt-grid">
+      <div class="opt-card"><label data-i18n="keySize"></label>
+        <select id="keySize"><option value="128">AES-128</option><option value="192">AES-192</option><option value="256" selected>AES-256</option></select>
+      </div>
+      <div class="opt-card"><label data-i18n="mode"></label>
+        <select id="mode"><option value="CBC" selected>CBC</option><option value="ECB">ECB</option><option value="CFB">CFB</option><option value="OFB">OFB</option></select>
+      </div>
+      <div class="opt-card"><label data-i18n="keySource"></label>
+        <select id="keySource"><option value="pass" selected data-i18n="fromPassword"></option><option value="hex" data-i18n="hexKey"></option></select>
+      </div>
+      <div class="opt-card"><label data-i18n="keyHex"></label>
+        <input type="text" id="keyHex" placeholder="hex (32/48/64 chars)">
+      </div>
+      <div class="opt-card" style="grid-column:1/-1">
+        <label data-i18n="password"></label>
+        <input type="text" id="password" placeholder="password">
+      </div>
+    </div>
+
+    <!-- ENCRYPT PANEL -->
+    <div class="panel" id="panel-enc">
+      <div class="gz-toolbar" id="toolbar-enc"></div>
+      <label data-i18n="plaintext"></label>
+      <textarea id="plaintext" spellcheck="false" placeholder="text to encrypt..."></textarea>
+      <label style="margin-top:12px;display:block" data-i18n="ciphertext"></label>
+      <textarea id="ciphertext" spellcheck="false" readonly placeholder="..."></textarea>
+      <div class="status" id="encStatus"></div>
+      <label style="margin-top:8px;display:block" data-i18n="ivUsed"></label>
+      <div id="ivOut">—</div>
+    </div>
+
+    <!-- DECRYPT PANEL -->
+    <div class="panel" id="panel-dec" style="display:none">
+      <div class="gz-toolbar" id="toolbar-dec"></div>
+      <label data-i18n="ciphertextIn"></label>
+      <textarea id="ciphertextIn" spellcheck="false" placeholder="hex string to decrypt..."></textarea>
+      <label style="margin-top:12px;display:block" data-i18n="ivIn"></label>
+      <div class="opt-card" style="margin-top:6px"><input type="text" id="ivHex" placeholder="hex (32 chars / 16 bytes)"></div>
+      <label style="margin-top:12px;display:block" data-i18n="plaintextOut"></label>
+      <textarea id="plaintextOut" spellcheck="false" readonly placeholder="..."></textarea>
+      <div class="status" id="decStatus"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'AES Encrypt / Decrypt',
+    toolDesc: 'Encrypt and decrypt text with AES-128, AES-192, AES-256 using CBC, ECB, CFB, OFB modes. Password-derived or hex keys. Web Crypto API, fully client-side.',
+    enc: 'Encrypt',
+    dec: 'Decrypt',
+    keySize: 'Key size',
+    mode: 'Mode',
+    keySource: 'Key source',
+    fromPassword: 'From password (PBKDF2)',
+    hexKey: 'Hex key',
+    keyHex: 'Hex key',
+    password: 'Password',
+    plaintext: 'Plaintext',
+    ciphertext: 'Ciphertext (hex)',
+    ivUsed: 'IV used (hex, save this for decryption)',
+    ciphertextIn: 'Ciphertext (hex)',
+    ivIn: 'IV (hex)',
+    plaintextOut: 'Plaintext',
+    step1: 'Pick a key size (128, 192 or 256 bits) and mode (CBC recommended)',
+    step2: 'Provide a password or a hex key of the right length',
+    step3: 'Click Encrypt or Decrypt — output appears in the box below',
+    step4: 'To decrypt, paste the ciphertext AND the IV back in',
+    encrypt: 'Encrypt',
+    decrypt: 'Decrypt',
+    copy: 'Copy',
+    clear: 'Clear',
+    loadExample: 'Load Example',
+    ok: '✓ Success',
+    err: '✗ Error',
+    keySizeErr: 'Hex key must be',
+    charsLong: 'characters',
+  },
+  zh: {
+    toolTitle: 'AES 加密 / 解密',
+    toolDesc: '使用 AES-128/192/256 在 CBC/ECB/CFB/OFB 模式下加密和解密文本。支持密码派生或 Hex 密钥，基于 Web Crypto API，完全本地处理。',
+    enc: '加密',
+    dec: '解密',
+    keySize: '密钥长度',
+    mode: '模式',
+    keySource: '密钥来源',
+    fromPassword: '密码派生（PBKDF2）',
+    hexKey: 'Hex 密钥',
+    keyHex: 'Hex 密钥',
+    password: '密码',
+    plaintext: '明文',
+    ciphertext: '密文（Hex）',
+    ivUsed: '使用的 IV（Hex，解密时需要）',
+    ciphertextIn: '密文（Hex）',
+    ivIn: 'IV（Hex）',
+    plaintextOut: '明文',
+    step1: '选择密钥长度（128/192/256）和加密模式（推荐 CBC）',
+    step2: '输入密码或对应长度的 Hex 密钥',
+    step3: '点击「加密」或「解密」— 结果出现在下方',
+    step4: '解密时需同时粘贴密文和 IV',
+    encrypt: '加密',
+    decrypt: '解密',
+    copy: '复制',
+    clear: '清空',
+    loadExample: '加载示例',
+    ok: '✓ 成功',
+    err: '✗ 错误',
+    keySizeErr: 'Hex 密钥必须为',
+    charsLong: '个字符',
+  }
+});
+
+document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = GZ.t(el.dataset.i18n));
+Object.entries({enc:'enc', dec:'dec'}).forEach(([k,v]) => {
+  const el = document.querySelector(`[data-tab-label="${k}"]`);
+  if (el) el.textContent = GZ.t(v);
+});
+const { $, copyText, t } = GZ;
+
+// Hex helpers
+const enc = new TextEncoder();
+const dec8 = new TextDecoder();
+function bytesToHex(b) { return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,'0')).join(''); }
+function hexToBytes(h) {
+  if (h.length % 2) throw new Error('odd length');
+  const u = new Uint8Array(h.length / 2);
+  for (let i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i*2,2), 16);
+  return u;
+}
+
+async function deriveKey(pw, bits) {
+  const salt = enc.encode('gamezipper-aes-salt-v1');
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256'},
+    baseKey,
+    {name: 'AES-CBC', length: bits}, // length must match target, but CBC requires 16-byte block; deriveKey will succeed for any AES length
+    false,
+    ['encrypt','decrypt']
+  );
+}
+
+async function getKey() {
+  const bits = +$('#keySize').value;
+  const src = $('#keySource').value;
+  if (src === 'hex') {
+    const exp = bits / 4; // hex chars
+    const hex = $('#keyHex').value.trim();
+    if (hex.length !== exp) { throw new Error(`${t('keySizeErr')} ${exp} ${t('charsLong')}`); }
+    return crypto.subtle.importKey('raw', hexToBytes(hex), {name: 'AES-CBC', length: bits}, false, ['encrypt','decrypt']);
+  }
+  const pw = $('#password').value;
+  if (!pw) throw new Error('password required');
+  return deriveKey(pw, bits);
+}
+
+async function encrypt() {
+  try {
+    const bits = +$('#keySize').value;
+    const mode = $('#mode').value;
+    const key = await getKey();
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+    const algo = {name: mode === 'ECB' ? 'AES-ECB' : `AES-${mode}`, iv: mode === 'ECB' ? undefined : iv, length: bits};
+    // re-import key with correct algo (deriveKey imported for CBC; for others we re-derive)
+    let realKey = key;
+    if (mode !== 'CBC') {
+      // re-derive / re-import with proper algorithm metadata
+      const src = $('#keySource').value;
+      if (src === 'hex') {
+        realKey = await crypto.subtle.importKey('raw', hexToBytes($('#keyHex').value.trim()), {name: `AES-${mode}`, length: bits}, false, ['encrypt','decrypt']);
+      } else {
+        realKey = await deriveKey($('#password').value, bits);
+        // need to re-import as AES-<mode>
+        // simpler: derive with a generic AES and re-import
+        const raw = await crypto.subtle.exportKey('raw', key).catch(() => null);
+        if (!raw) {
+          // can't export; re-derive via PBKDF2
+          const salt = enc.encode('gamezipper-aes-salt-v1');
+          const base = await crypto.subtle.importKey('raw', enc.encode($('#password').value), 'PBKDF2', false, ['deriveBits']);
+          const bitsRaw = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:100000, hash:'SHA-256'}, base, bits);
+          realKey = await crypto.subtle.importKey('raw', bitsRaw, {name: `AES-${mode}`, length: bits}, false, ['encrypt','decrypt']);
+        } else {
+          realKey = await crypto.subtle.importKey('raw', raw, {name: `AES-${mode}`, length: bits}, false, ['encrypt','decrypt']);
+        }
+      }
+    }
+    const ct = await crypto.subtle.encrypt(algo, realKey, enc.encode($('#plaintext').value));
+    $('#ciphertext').value = bytesToHex(ct);
+    $('#ivOut').textContent = bytesToHex(iv);
+    $('#encStatus').textContent = t('ok');
+    $('#encStatus').className = 'status ok';
+  } catch(e) { $('#encStatus').textContent = `${t('err')}: ${e.message}`; $('#encStatus').className = 'status err'; }
+}
+
+async function decrypt() {
+  try {
+    const bits = +$('#keySize').value;
+    const mode = $('#mode').value;
+    const ctHex = $('#ciphertextIn').value.trim();
+    const ivHex = $('#ivHex').value.trim();
+    if (!ctHex) throw new Error('ciphertext required');
+    if (mode !== 'ECB' && (!ivHex || ivHex.length !== 32)) throw new Error('IV must be 32 hex chars (16 bytes)');
+    const src = $('#keySource').value;
+    let realKey;
+    if (src === 'hex') {
+      const exp = bits / 4;
+      const hex = $('#keyHex').value.trim();
+      if (hex.length !== exp) throw new Error(`${t('keySizeErr')} ${exp} ${t('charsLong')}`);
+      realKey = await crypto.subtle.importKey('raw', hexToBytes(hex), {name: `AES-${mode}`, length: bits}, false, ['decrypt']);
+    } else {
+      const pw = $('#password').value;
+      if (!pw) throw new Error('password required');
+      const salt = enc.encode('gamezipper-aes-salt-v1');
+      const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+      const bitsRaw = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:100000, hash:'SHA-256'}, base, bits);
+      realKey = await crypto.subtle.importKey('raw', bitsRaw, {name: `AES-${mode}`, length: bits}, false, ['decrypt']);
+    }
+    const algo = {name: `AES-${mode}`, iv: mode === 'ECB' ? undefined : hexToBytes(ivHex)};
+    const pt = await crypto.subtle.decrypt(algo, realKey, hexToBytes(ctHex));
+    $('#plaintextOut').value = dec8.decode(pt);
+    $('#decStatus').textContent = t('ok');
+    $('#decStatus').className = 'status ok';
+  } catch(e) { $('#decStatus').textContent = `${t('err')}: ${e.message}`; $('#decStatus').className = 'status err'; }
+}
+
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-' + btn.dataset.tab).style.display = 'block';
+}));
+
+$('#toolbar-enc').innerHTML = `
+  <button class="gz-btn" onclick="encrypt()">🔒 ${t('encrypt')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#ciphertext').value)">📋 ${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#plaintext').value='Hello, World! This is a secret message.';$('#password').value='mypassword'">📥 ${t('loadExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#plaintext').value='';$('#ciphertext').value='';$('#ivOut').textContent='—';$('#encStatus').textContent=''">🗑 ${t('clear')}</button>
+`;
+$('#toolbar-dec').innerHTML = `
+  <button class="gz-btn" onclick="decrypt()">🔓 ${t('decrypt')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#plaintextOut').value)">📋 ${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#ciphertextIn').value='';$('#plaintextOut').value='';$('#ivHex').value='';$('#decStatus').textContent=''">🗑 ${t('clear')}</button>
+`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔏', href:'/dev/hmac.html', name:'HMAC Generator'},
+    {icon:'🔐', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔤', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🪙', href:'/dev/base58.html', name:'Base58'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
