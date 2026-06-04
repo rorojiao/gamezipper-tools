@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Braille Translator - Text to Braille Converter | GameZipper Tools</title>
+  <meta name="description" content="Translate text to Braille and Braille back to text online. Free Braille translator with Unicode dots — supports Grade 1 and Grade 2 contractions, all in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/braille.html">
+  <meta property="og:title" content="Braille Translator - Text to Braille Converter | GameZipper Tools">
+  <meta property="og:description" content="Translate text to Braille and Braille back to text online. Free Braille translator with Unicode dots — supports Grade 1 and Grade 2 contractions, all in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/braille.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Braille Translator - Text to Braille Converter | GameZipper Tools">
+<meta name="twitter:description" content="Translate text to Braille and Braille back to text online. Free translator with Unicode dots, Grade 1 and Grade 2 contractions.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{width:100%;min-height:140px;resize:vertical;font-family:inherit;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:1em;line-height:1.5}
+.gz-output{min-height:140px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);word-break:break-word;font-size:1.6em;line-height:1.6;letter-spacing:1px}
+.mode-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.mode-row label{font-size:.85em;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--glass2);padding:6px 12px;border-radius:8px;border:1px solid var(--border)}
+.mode-row input[type=radio]{accent-color:var(--accent)}
+.dot-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin-top:14px}
+.dot-cell{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;font-size:.85em}
+.dot-cell .glyph{font-size:1.5em;display:block;margin-bottom:2px}
+.dot-cell .ltr{font-weight:700;color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Braille Translator","description":"Translate text to Braille and Braille back to text online. Free Braille translator with Unicode dots — supports Grade 1 and Grade 2 contractions.","url":"https://tools.gamezipper.com/text/braille.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage","mainEntity":[{"@type":"Question","name":"What is Braille?","acceptedAnswer":{"@type":"Answer","text":"Braille is a tactile writing system used by people who are blind or visually impaired. It uses patterns of raised dots arranged in cells of up to six dots. The Unicode Braille block (U+2800–U+28FF) represents these dots digitally."}},{"@type":"Question","name":"What is the difference between Grade 1 and Grade 2 Braille?","acceptedAnswer":{"@type":"Answer","text":"Grade 1 Braille spells out every letter of every word. Grade 2 Braille uses contractions for common letter combinations (like 'the' becoming a single cell) and whole words, reducing the size of the output. The translator defaults to Grade 1 and offers Grade 2 as an option."}},{"@type":"Question","name":"Can I copy the Braille output into other apps?","acceptedAnswer":{"@type":"Answer","text":"Yes. The output uses standard Unicode Braille characters, so it pastes into any text field, document, or messaging app that supports Unicode. It also works with screen readers and refreshable Braille displays."}},{"@type":"Question","name":"How do I type Braille in this tool?","acceptedAnswer":{"@type":"Answer","text":"Paste Unicode Braille characters into the input box and switch the mode to Braille → Text. The tool decodes each Braille cell back to its corresponding letter or contraction."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/braille.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/braille.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/braille.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-row" id="mode-row">
+      <label><input type="radio" name="mode" value="t2b" checked> <span id="lbl-t2b"></span></label>
+      <label><input type="radio" name="mode" value="b2t"> <span id="lbl-b2t"></span></label>
+      <label><input type="radio" name="mode" value="grade2"> <span id="lbl-grade2"></span></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div class="dot-legend" id="legend"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Braille Translator',
+    toolDesc: 'Convert text to Unicode Braille (Grade 1 or 2) and decode Braille back to text — instant, private, and free.',
+    lblIn: 'Text Input',
+    lblOut: 'Braille Output',
+    lblT2B: 'Text → Braille',
+    lblB2T: 'Braille → Text',
+    lblGrade2: 'Text → Grade 2 (with contractions)',
+    btnExample: 'Load Example',
+    btnClear: 'Clear',
+    step1: 'Type or paste any text into the left input',
+    step2: 'The output updates instantly to Unicode Braille dots',
+    step3: 'Toggle Grade 2 to apply common contractions',
+    step4: 'Copy the result and paste into any Unicode-supporting app',
+  },
+  zh: {
+    toolTitle: '盲文翻译器',
+    toolDesc: '将文字转换为 Unicode 盲文（Grade 1 或 2）并将盲文解码回文字 — 即时、私密、免费。',
+    lblIn: '文字输入',
+    lblOut: '盲文输出',
+    lblT2B: '文字 → 盲文',
+    lblB2T: '盲文 → 文字',
+    lblGrade2: '文字 → Grade 2（带缩写）',
+    btnExample: '加载示例',
+    btnClear: '清空',
+    step1: '在左侧输入或粘贴任意文字',
+    step2: '右侧即时更新为 Unicode 盲文点符',
+    step3: '切换 Grade 2 启用常见缩写',
+    step4: '复制结果并粘贴到任何支持 Unicode 的应用',
+  }
+});
+
+// English Braille Grade 1 mapping (a-z, 0-9, common punct)
+const T2B = {
+  'a':'⠁','b':'⠃','c':'⠉','d':'⠙','e':'⠑','f':'⠋','g':'⠛','h':'⠓','i':'⠊','j':'⠚',
+  'k':'⠅','l':'⠇','m':'⠍','n':'⠝','o':'⠕','p':'⠏','q':'⠟','r':'⠗','s':'⠎','t':'⠞',
+  'u':'⠥','v':'⠧','w':'⠺','x':'⠭','y':'⠽','z':'⠵',
+  '1':'⠂','2':'⠆','3':'⠒','4':'⠲','5':'⠢','6':'⠖','7':'⠶','8':'⠦','9':'⠔','0':'⠴',
+  ',':'⠂',';':'⠆',':':'⠒','.':'⠲','!':'⠦','?':'⠦','\'':'⠄','"':'⠐','-':'⠤','(':'⠷',')':'⠾',
+  ' ':' ','\n':'\n','\t':'\t'
+};
+
+// Number sign + letters a-j (lowercase) for digits
+const NUM_PREFIX = '⠼';
+const NUM_MAP = { '1':'⠁','2':'⠃','3':'⠉','4':'⠙','5':'⠑','6':'⠋','7':'⠛','8':'⠓','9':'⠊','0':'⠚' };
+const NUM_MAP_BACK = { '⠁':'1','⠃':'2','⠉':'3','⠙':'4','⠑':'5','⠋':'6','⠛':'7','⠓':'8','⠊':'9','⠚':'0' };
+
+// Capital sign + letter
+const CAP_PREFIX = '⠠';
+
+// Grade 2 common contractions (whole-word or part-word)
+const GRADE2 = {
+  // whole-word
+  'and':'⠯','for':'⠿','of':'⠷','the':'⠮','with':'⠾',
+  'but':'⠹','can':'⠱','do':'⠙','every':'⠺','from':'⠫','go':'⠛','have':'⠧','just':'⠵',
+  'knowledge':'⠡⠺','like':'⠇','more':'⠍','not':'⠝','people':'⠏','quite':'⠟','rather':'⠗','so':'⠎',
+  'that':'⠹','us':'⠥','very':'⠧','it':'⠭','you':'⠽','as':'⠁','this':'⠹','which':'⠱','will':'⠺','his':'⠓','in':'⠔',
+  // part-word (apply within word)
+  'ch':'⠡','gh':'⠣','sh':'⠩','th':'⠹','wh':'⠱','ed':'⠫','er':'⠗','ou':'⠳','ow':'⠺','st':'⠎'
+};
+
+// Reverse map Braille -> letter
+const B2T = {};
+for (const [k,v] of Object.entries(T2B)) B2T[v] = k;
+
+const { $, copyText, t } = GZ;
+
+function textToBraille(text, useGrade2) {
+  let out = '';
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    const lower = ch.toLowerCase();
+    // Check for uppercase
+    if (ch >= 'A' && ch <= 'Z') {
+      out += CAP_PREFIX + T2B[lower];
+      i++;
+      continue;
+    }
+    // Check for digit
+    if (ch >= '0' && ch <= '9') {
+      out += NUM_PREFIX + NUM_MAP[ch];
+      i++;
+      continue;
+    }
+    // Check for grade 2 contraction (whole-word)
+    if (useGrade2 && /[a-z]/.test(lower)) {
+      // try whole-word match
+      let matched = false;
+      for (const word of Object.keys(GRADE2).filter(k => k.length > 2)) {
+        if (lower.startsWith(word) && (i + word.length === text.length || !/[a-z]/.test(text[i + word.length].toLowerCase()))) {
+          out += GRADE2[word];
+          i += word.length;
+          matched = true;
+          break;
+        }
+      }
+      if (matched) continue;
+      // try part-word within token
+      let token = '';
+      let j = i;
+      while (j < text.length && /[a-zA-Z]/.test(text[j])) { token += text[j].toLowerCase(); j++; }
+      let t2 = '';
+      let k = 0;
+      while (k < token.length) {
+        let found = false;
+        for (const pw of Object.keys(GRADE2).filter(k => k.length <= 2)) {
+          if (token.substr(k, pw.length) === pw) {
+            t2 += GRADE2[pw];
+            k += pw.length;
+            found = true;
+            break;
+          }
+        }
+        if (!found) { t2 += T2B[token[k]] || token[k]; k++; }
+      }
+      out += t2;
+      i = j;
+      continue;
+    }
+    out += T2B[ch] !== undefined ? T2B[ch] : ch;
+    i++;
+  }
+  return out;
+}
+
+function brailleToText(text) {
+  let out = '';
+  let mode = 'letter'; // 'letter' | 'number' | 'capital'
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === ' ' || ch === '\n' || ch === '\t') { out += ch; mode='letter'; continue; }
+    if (ch === NUM_PREFIX) { mode = 'number'; continue; }
+    if (ch === CAP_PREFIX) { mode = 'capital'; continue; }
+    if (mode === 'number' && NUM_MAP_BACK[ch]) { out += NUM_MAP_BACK[ch]; continue; }
+    if (B2T[ch]) {
+      let l = B2T[ch];
+      if (mode === 'capital') l = l.toUpperCase();
+      out += l;
+    } else {
+      out += ch;
+    }
+    mode = 'letter';
+  }
+  return out;
+}
+
+function update() {
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  const inp = $('#input').value;
+  if (!inp) { $('#output').textContent = ''; return; }
+  if (mode === 't2b') $('#output').textContent = textToBraille(inp, false);
+  else if (mode === 'grade2') $('#output').textContent = textToBraille(inp, true);
+  else $('#output').textContent = brailleToText(inp);
+}
+
+function loadExample() {
+  $('#input').value = 'Hello, World! 2026';
+  document.querySelector('input[name=mode][value=t2b]').checked = true;
+  update();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; }
+
+// Legend
+const letters = 'abcdefghijklmnopqrstuvwxyz';
+$('#legend').innerHTML = letters.split('').map(l => `<div class="dot-cell"><span class="glyph">${T2B[l]}</span><span class="ltr">${l.toUpperCase()}</span></div>`).join('');
+
+$('#input').addEventListener('input', update);
+document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', update));
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('btnExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('btnClear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#output').textContent)">${t('copy')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🙃',href:'/text/flip-text.html',name:'Flip Text'},
+    {icon:'📡',href:'/text/nato-phonetic.html',name:'NATO Phonetic'},
+    {icon:'🔐',href:'/convert/cipher.html',name:'ROT13 / Caesar'},
+    {icon:'✨',href:'/text/fancy-text.html',name:'Fancy Text'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
