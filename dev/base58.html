@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Base58 Encoder / Decoder - Bitcoin Address Format | GameZipper Tools</title>
+<meta name="description" content="Free online Base58 encoder and decoder — convert text to Base58 (Bitcoin, IPFS, Ripple address format) and back. Browser-based, no upload, instant results.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/base58.html">
+<meta property="og:title" content="Base58 Encoder / Decoder - Bitcoin Address Format | GameZipper Tools">
+<meta property="og:description" content="Free Base58 encoder/decoder for Bitcoin, IPFS and Ripple addresses. Convert text to Base58 and back instantly in your browser.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/base58.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Base58 Encoder / Decoder - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Free Base58 encoder/decoder — convert text and hex to Base58 (Bitcoin/IPFS) and back. Browser-only, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.b58-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.b58-wrap{grid-template-columns:1fr}}
+.b58-col{display:flex;flex-direction:column;gap:6px}
+.b58-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.b58-col textarea{min-height:240px;padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.88em;line-height:1.55;resize:vertical;tab-size:2;word-break:break-all}
+.b58-col textarea:focus{outline:none;border-color:var(--accent)}
+.b58-opts{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85em}
+.b58-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.b58-opts select,.b58-opts input{padding:4px 8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-family:inherit}
+.b58-info{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.82em;line-height:1.7;margin-top:6px}
+.b58-info b{color:var(--accent)}
+.b58-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.b58-status.ok{color:var(--success)}
+.b58-status.err{color:var(--danger)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Base58 Encoder / Decoder","description":"Free online Base58 encoder and decoder for Bitcoin, IPFS and Ripple addresses. Convert text or hex to Base58 and back. Browser-based, no upload.","url":"https://tools.gamezipper.com/dev/base58.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Base58 encoding?","acceptedAnswer":{"@type":"Answer","text":"Base58 is a binary-to-text encoding designed for Bitcoin, IPFS and Ripple addresses. It uses 58 characters from the alphanumeric set — omitting 0, O, I and l to avoid visual ambiguity. It is widely used in cryptocurrency wallets, IPFS content identifiers and Solana addresses."}},{"@type":"Question","name":"What's the difference between Base58, Base64 and Base58Check?","acceptedAnswer":{"@type":"Answer","text":"Base58 uses 58 symbols (no 0/O/I/l), Base64 uses 64 symbols. Base58Check adds a 4-byte checksum (double SHA-256) on top of Base58 — that's what real Bitcoin addresses use. This tool performs standard Base58 only, not Base58Check."}},{"@type":"Question","name":"Can I decode a Bitcoin address with this tool?","acceptedAnswer":{"@type":"Answer","text":"A real Bitcoin address is Base58Check encoded. This tool supports raw Base58 decode. To fully decode a Bitcoin address you would also need to verify and strip the 4-byte checksum, which is not implemented here. Use it for short Base58 strings, IPFS CIDs or Solana-style addresses."}},{"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion runs locally in your browser with JavaScript. Nothing is uploaded, stored or transmitted. You can use this tool offline after the page loads."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/base58.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/base58.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/base58.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="b58-opts">
+      <label>Alphabet:
+        <select id="alphabet">
+          <option value="btc">Bitcoin (123456789...)</option>
+          <option value="flickr">Flickr (onmpqrstuvwxyz...)</option>
+          <option value="ripple">Ripple (rpshnaf39wBUD...)</option>
+        </select>
+      </label>
+      <label><input type="radio" name="mode" value="encode" checked> Encode</label>
+      <label><input type="radio" name="mode" value="decode"> Decode</label>
+    </div>
+    <div class="b58-wrap">
+      <div class="b58-col">
+        <label id="lblIn">Input</label>
+        <textarea id="input" spellcheck="false" placeholder="Type or paste text to encode..."></textarea>
+      </div>
+      <div class="b58-col">
+        <label id="lblOut">Output</label>
+        <textarea id="output" spellcheck="false" readonly placeholder="Result appears here..."></textarea>
+      </div>
+    </div>
+    <div class="b58-info">
+      <b>About:</b> Base58 encodes bytes into a 58-character set designed to be human-readable. Used in Bitcoin, IPFS, Solana, Ripple and other crypto systems.
+    </div>
+    <div class="b58-status" id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Base58 Encoder / Decoder',
+    toolDesc: 'Convert text and hex to Base58 (Bitcoin / IPFS / Ripple format) and decode Base58 back to text. Supports multiple alphabets.',
+    step1: 'Choose an alphabet (Bitcoin, Flickr or Ripple) and mode (encode / decode)',
+    step2: 'Type or paste your input on the left side',
+    step3: 'The result appears instantly on the right side',
+    step4: 'Use Copy to copy the Base58 result to clipboard',
+  },
+  zh: {
+    toolTitle: 'Base58 编码 / 解码',
+    toolDesc: '将文本和十六进制转换为 Base58（Bitcoin / IPFS / Ripple 格式）并解码回文本。支持多种字母表。',
+    step1: '选择字母表（Bitcoin、Flickr 或 Ripple）和模式（编码 / 解码）',
+    step2: '在左侧输入或粘贴内容',
+    step3: '结果会即时显示在右侧',
+    step4: '点击「复制」将 Base58 结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const ALPHABETS = {
+  btc: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
+  flickr: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ',
+  ripple: 'rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz'
+};
+
+function getBytes(str) {
+  return new TextEncoder().encode(str);
+}
+function bytesToStr(bytes) {
+  return new TextDecoder('utf-8', {fatal:false}).decode(bytes);
+}
+
+function b58encode(input, alphabet) {
+  if (typeof input === 'string') input = getBytes(input);
+  if (input.length === 0) return '';
+  // Count leading zeros
+  let zeros = 0;
+  while (zeros < input.length && input[zeros] === 0) zeros++;
+  // Convert to base58
+  const digits = [];
+  for (let i = zeros; i < input.length; i++) {
+    let carry = input[i];
+    for (let j = 0; j < digits.length; j++) {
+      carry += digits[j] << 8;
+      digits[j] = carry % 58;
+      carry = (carry / 58) | 0;
+    }
+    while (carry > 0) {
+      digits.push(carry % 58);
+      carry = (carry / 58) | 0;
+    }
+  }
+  // Add leading '1' (alphabet[0]) for each leading zero byte
+  let result = '';
+  for (let i = 0; i < zeros; i++) result += alphabet[0];
+  for (let i = digits.length - 1; i >= 0; i--) result += alphabet[digits[i]];
+  return result;
+}
+
+function b58decode(str, alphabet) {
+  if (str.length === 0) return new Uint8Array(0);
+  // Build reverse lookup
+  const map = {};
+  for (let i = 0; i < alphabet.length; i++) map[alphabet[i]] = i;
+  // Count leading '1's
+  let zeros = 0;
+  while (zeros < str.length && str[zeros] === alphabet[0]) zeros++;
+  // Convert from base58
+  const digits = [];
+  for (let i = zeros; i < str.length; i++) {
+    const c = str[i];
+    if (!(c in map)) throw new Error('Invalid Base58 character: ' + c);
+    let carry = map[c];
+    for (let j = 0; j < digits.length; j++) {
+      carry += digits[j] * 58;
+      digits[j] = carry & 0xff;
+      carry >>= 8;
+    }
+    while (carry > 0) {
+      digits.push(carry & 0xff);
+      carry >>= 8;
+    }
+  }
+  // Build output
+  const out = new Uint8Array(zeros + digits.length);
+  for (let i = 0; i < digits.length; i++) out[zeros + i] = digits[digits.length - 1 - i];
+  return out;
+}
+
+function hexToBytes(hex) {
+  const clean = hex.replace(/^0x/, '').replace(/\s+/g, '');
+  if (!/^[0-9a-fA-F]*$/.test(clean)) throw new Error('Invalid hex string');
+  if (clean.length % 2) throw new Error('Hex must have even length');
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.substr(i*2, 2), 16);
+  return out;
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function process() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const alphaKey = $('#alphabet').value;
+  const alphabet = ALPHABETS[alphaKey];
+  const inp = $('#input').value;
+  const status = $('#status');
+  if (!inp) { $('#output').value = ''; status.textContent = ''; return; }
+  try {
+    let out;
+    if (mode === 'encode') {
+      // Try hex first if it looks like hex, otherwise treat as text
+      const looksHex = /^(0x)?[0-9a-fA-F\s]+$/.test(inp.trim()) && inp.trim().length % 2 === 0;
+      const bytes = looksHex ? hexToBytes(inp) : getBytes(inp);
+      out = b58encode(bytes, alphabet);
+      status.innerHTML = `<span class="ok">✓ Encoded ${bytes.length} byte${bytes.length===1?'':'s'} → ${out.length} Base58 character${out.length===1?'':'s'}</span>`;
+      status.className = 'b58-status ok';
+    } else {
+      const bytes = b58decode(inp.trim(), alphabet);
+      // Try UTF-8 first, fall back to hex
+      const text = bytesToStr(bytes);
+      const isPrintable = Array.from(text).every(ch => {
+        const code = ch.charCodeAt(0);
+        return code >= 32 && code !== 127;
+      });
+      out = isPrintable ? text : bytesToHex(bytes);
+      status.innerHTML = `<span class="ok">✓ Decoded ${inp.trim().length} Base58 char${inp.trim().length===1?'':'s'} → ${bytes.length} byte${bytes.length===1?'':'s'}${isPrintable?' (UTF-8)':' (hex)'}</span>`;
+      status.className = 'b58-status ok';
+    }
+    $('#output').value = out;
+  } catch (e) {
+    status.innerHTML = `<span class="err">✗ ${e.message}</span>`;
+    status.className = 'b58-status err';
+    $('#output').value = '';
+  }
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').textContent = ''; }
+
+function loadExample() {
+  document.querySelector('input[name="mode"][value="encode"]').checked = true;
+  $('#alphabet').value = 'btc';
+  $('#input').value = 'Hello, Base58!';
+  process();
+}
+
+$('#input').addEventListener('input', process);
+document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', process));
+$('#alphabet').addEventListener('change', process);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔤', href:'/convert/base32.html', name:'Base32'},
+    {icon:'🔢', href:'/convert/text-binary-hex.html', name:'Text ↔ Hex'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
