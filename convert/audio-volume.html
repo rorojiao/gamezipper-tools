@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Audio Volume Normalizer & Booster - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Normalize, boost and adjust the volume of MP3, WAV, OGG and M4A audio files online. Free loudness normalization with LUFS/peak targeting — runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/audio-volume.html">
+  <meta property="og:title" content="Audio Volume Normalizer & Booster - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Normalize, boost and adjust the volume of MP3, WAV, OGG audio files online — runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/audio-volume.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Audio Volume Normalizer & Booster - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.av-upload{border:2px dashed var(--border);border-radius:14px;padding:30px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--glass2)}
+.av-upload:hover,.av-upload.dragover{border-color:var(--accent);background:var(--glass)}
+.av-upload input{display:none}
+.av-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:18px}
+.av-control{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.av-control label{display:block;color:var(--text2);font-size:.8rem;font-weight:600;margin-bottom:8px}
+.av-control input[type=range]{width:100%;accent-color:var(--accent)}
+.av-control select{width:100%;padding:6px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;color:var(--text)}
+.av-preview{margin-top:18px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.av-preview audio{width:100%;margin-top:8px}
+.av-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.av-stat{background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;text-align:center}
+.av-stat .num{font-size:1.3rem;font-weight:700;color:var(--accent)}
+.av-stat .lbl{font-size:.7rem;color:var(--text2);margin-top:2px}
+.av-meter{height:8px;background:rgba(0,0,0,0.3);border-radius:4px;overflow:hidden;margin-top:8px;position:relative}
+.av-meter-fill{height:100%;background:linear-gradient(90deg,#10b981 0%,#10b981 70%,#f59e0b 90%,#ef4444 100%);width:0%;transition:width .1s}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Volume Normalizer & Booster","description":"Normalize, boost and adjust the volume of MP3, WAV, OGG and M4A audio files online. Free loudness normalization with LUFS/peak targeting — runs in your browser.","url":"https://tools.gamezipper.com/convert/audio-volume.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does this audio normalizer do?", "acceptedAnswer": {"@type": "Answer", "text": "It analyzes the loudness of an audio file (in LUFS or peak dB) and applies gain so the output matches a target level. You can also simply boost volume by a fixed amount in dB."}}, {"@type": "Question", "name": "Which audio formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "MP3, WAV, OGG, M4A, AAC and any other format your browser can decode with the Web Audio API. Output is always encoded to WAV for maximum compatibility."}}, {"@type": "Question", "name": "Is the audio data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Decoding, analysis and re-encoding all happen locally in your browser using the Web Audio API. No audio is uploaded to any server."}}, {"@type": "Question", "name": "What is LUFS normalization?", "acceptedAnswer": {"@type": "Answer", "text": "LUFS (Loudness Units Full Scale) is the modern broadcast and streaming standard for perceived loudness. Targeting -14 LUFS matches Spotify and YouTube, -16 LUFS matches podcasts, -23 LUFS matches broadcast TV."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/audio-volume.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/audio-volume.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/audio-volume.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <label class="av-upload" id="dropzone">
+      <div style="font-size:2.5rem;margin-bottom:6px">🎵</div>
+      <div id="dz-text">Click or drag an audio file (MP3, WAV, OGG, M4A)</div>
+      <input type="file" id="fileInput" accept="audio/*">
+    </label>
+    <div class="av-controls">
+      <div class="av-control">
+        <label id="lbl-mode">Mode</label>
+        <select id="mode">
+          <option value="normalize-lufs" id="opt-lufs">Normalize to LUFS</option>
+          <option value="normalize-peak" id="opt-peak">Normalize to Peak dB</option>
+          <option value="manual" id="opt-manual">Manual Gain</option>
+        </select>
+      </div>
+      <div class="av-control">
+        <label id="lbl-target">Target</label>
+        <select id="target">
+          <option value="-14">-14 LUFS (Spotify, YouTube)</option>
+          <option value="-16">-16 LUFS (Podcasts)</option>
+          <option value="-23">-23 LUFS (Broadcast)</option>
+          <option value="-1">-1 dB (Peak)</option>
+          <option value="-3">-3 dB (Peak)</option>
+        </select>
+      </div>
+      <div class="av-control">
+        <label id="lbl-gain">Manual Gain: <span id="gainVal">0</span> dB</label>
+        <input type="range" id="gainSlider" min="-24" max="24" step="0.5" value="0" disabled>
+      </div>
+    </div>
+    <div class="av-preview" id="preview" style="display:none">
+      <div style="font-weight:600" id="fileName"></div>
+      <audio id="audioOrig" controls></audio>
+      <div class="av-meter"><div class="av-meter-fill" id="origMeter"></div></div>
+      <div class="av-stats" id="origStats"></div>
+      <div style="margin-top:18px;font-weight:600;color:var(--accent)" id="lbl-result">Processed Output</div>
+      <audio id="audioOut" controls></audio>
+      <div class="av-meter"><div class="av-meter-fill" id="outMeter"></div></div>
+      <div class="av-stats" id="outStats"></div>
+      <div class="gz-toolbar" style="margin-top:14px">
+        <button class="gz-btn" id="processBtn">⚙️ <span id="lbl-process">Process</span></button>
+        <button class="gz-btn gz-btn-secondary" id="downloadBtn">💾 <span id="lbl-download">Download WAV</span></button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Volume Normalizer & Booster',
+    toolDesc: 'Normalize loudness to LUFS or peak dB, or apply manual gain. Boost quiet audio, level podcasts — 100% in your browser.',
+    dzText: 'Click or drag an audio file (MP3, WAV, OGG, M4A)',
+    mode: 'Mode',
+    target: 'Target Level',
+    gain: 'Manual Gain',
+    optLufs: 'Normalize to LUFS',
+    optPeak: 'Normalize to Peak dB',
+    optManual: 'Manual Gain',
+    process: 'Process',
+    download: 'Download WAV',
+    noFile: 'Please select an audio file',
+    orig: 'Original',
+    result: 'Processed Output',
+    file: 'File',
+    duration: 'Duration',
+    peak: 'Peak',
+    rms: 'RMS',
+    estLufs: 'Est. LUFS',
+    applyGain: 'Apply gain',
+    peakLimit: 'Peak limited to',
+    gainApplied: 'Gain applied',
+    step1: 'Upload an audio file (MP3, WAV, OGG, M4A)',
+    step2: 'Pick a mode: LUFS normalization, peak dB target, or manual gain',
+    step3: 'Click Process — analysis and re-encoding run in your browser',
+    step4: 'Listen to the preview, then download the normalized WAV file',
+    dB: 'dB',
+    sec: 's',
+  },
+  zh: {
+    toolTitle: '音频音量标准化 & 增强器',
+    toolDesc: '按 LUFS 或峰值 dB 标准化响度，或应用手动增益。增强静音音频、统一播客音量 — 100% 浏览器本地运行。',
+    dzText: '点击或拖拽音频文件 (MP3, WAV, OGG, M4A)',
+    mode: '模式',
+    target: '目标响度',
+    gain: '手动增益',
+    optLufs: 'LUFS 标准化',
+    optPeak: '峰值 dB 标准化',
+    optManual: '手动增益',
+    process: '处理',
+    download: '下载 WAV',
+    noFile: '请先选择音频文件',
+    orig: '原始',
+    result: '处理结果',
+    file: '文件',
+    duration: '时长',
+    peak: '峰值',
+    rms: 'RMS',
+    estLufs: '预估 LUFS',
+    applyGain: '应用增益',
+    peakLimit: '峰值限制',
+    gainApplied: '已应用增益',
+    step1: '上传音频文件 (MP3, WAV, OGG, M4A)',
+    step2: '选择模式：LUFS 标准化、峰值 dB 目标或手动增益',
+    step3: '点击「处理」— 分析与重编码完全在浏览器中完成',
+    step4: '试听预览，然后下载标准化后的 WAV 文件',
+    dB: 'dB',
+    sec: '秒',
+  }
+});
+
+const { $, t } = GZ;
+
+let originalBuffer = null;
+let originalURL = null;
+let processedURL = null;
+let processedGain = 0;
+
+const fileInput = $('#fileInput');
+const dropzone = $('#dropzone');
+const mode = $('#mode');
+const target = $('#target');
+const gainSlider = $('#gainSlider');
+const gainVal = $('#gainVal');
+const preview = $('#preview');
+const processBtn = $('#processBtn');
+const downloadBtn = $('#downloadBtn');
+const dzText = $('#dz-text');
+
+['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+dropzone.addEventListener('drop', e => { if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files.length) loadFile(e.target.files[0]); });
+
+mode.addEventListener('change', () => {
+  gainSlider.disabled = mode.value !== 'manual';
+  target.disabled = mode.value === 'manual';
+});
+gainSlider.addEventListener('input', () => { gainVal.textContent = gainSlider.value; });
+
+async function loadFile(file) {
+  if (!file.type.startsWith('audio/') && !/\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(file.name)) { alert('Please select an audio file'); return; }
+  if (originalURL) URL.revokeObjectURL(originalURL);
+  originalURL = URL.createObjectURL(file);
+  $('#audioOrig').src = originalURL;
+  $('#fileName').textContent = file.name + ' (' + (file.size/1024/1024).toFixed(2) + ' MB)';
+  preview.style.display = 'block';
+  dzText.textContent = file.name;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const buf = await file.arrayBuffer();
+  originalBuffer = await ctx.decodeAudioData(buf);
+  await ctx.close();
+  renderStats('#origStats', originalBuffer, 0, 0, file.name);
+  setMeter('#origMeter', originalBuffer);
+  if (processedURL) URL.revokeObjectURL(processedURL);
+  processedURL = null; $('#audioOut').src = '';
+  renderStats('#outStats', null, 0, 0, '');
+  setMeter('#outMeter', 0);
+  downloadBtn.disabled = true;
+}
+
+function setMeter(sel, buf) {
+  let peak = 0;
+  if (typeof buf === 'object' && buf) {
+    for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+      const data = buf.getChannelData(ch);
+      for (let i = 0; i < data.length; i++) {
+        const abs = Math.abs(data[i]); if (abs > peak) peak = abs;
+      }
+    }
+  }
+  const db = peak > 0 ? 20 * Math.log10(peak) : -Infinity;
+  const pct = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
+  $(sel).style.width = pct + '%';
+}
+
+function analyze(buf) {
+  let peak = 0, sumSq = 0, count = 0;
+  for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+    const data = buf.getChannelData(ch);
+    for (let i = 0; i < data.length; i++) {
+      const abs = Math.abs(data[i]);
+      if (abs > peak) peak = abs;
+      sumSq += data[i] * data[i]; count++;
+    }
+  }
+  const rms = Math.sqrt(sumSq / count);
+  const peakDb = peak > 0 ? 20 * Math.log10(peak) : -Infinity;
+  const rmsDb = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+  const estLufs = rmsDb - 0.691;
+  return { peakDb, rmsDb, estLufs, duration: buf.duration };
+}
+
+function renderStats(sel, buf, gain, peakLim, fileName) {
+  if (!buf) { $(sel).innerHTML = ''; return; }
+  const a = analyze(buf);
+  const finalPeak = a.peakDb + gain;
+  const cards = [
+    { num: fileName || '—', lbl: t('file') },
+    { num: a.duration.toFixed(1) + ' ' + t('sec'), lbl: t('duration') },
+    { num: a.peakDb.toFixed(1) + ' ' + t('dB'), lbl: t('peak') },
+    { num: a.rmsDb.toFixed(1) + ' ' + t('dB'), lbl: t('rms') },
+    { num: a.estLufs.toFixed(1) + ' LUFS', lbl: t('estLufs') },
+  ];
+  if (gain !== 0) cards.push({ num: (gain > 0 ? '+' : '') + gain.toFixed(1) + ' ' + t('dB'), lbl: t('gainApplied') });
+  if (peakLim !== 0) cards.push({ num: (peakLim > 0 ? '+' : '') + peakLim.toFixed(1) + ' ' + t('dB'), lbl: t('peakLimit') });
+  $(sel).innerHTML = cards.map(c => `<div class="av-stat"><div class="num" style="${c.lbl===t('file')?'font-size:.85rem':''}">${c.num}</div><div class="lbl">${c.lbl}</div></div>`).join('');
+}
+
+processBtn.addEventListener('click', () => {
+  if (!originalBuffer) { alert(t('noFile')); return; }
+  const m = mode.value;
+  const tgt = parseFloat(target.value);
+  let gain = 0, peakLim = 0;
+  if (m === 'manual') {
+    gain = parseFloat(gainSlider.value);
+  } else {
+    const a = analyze(originalBuffer);
+    if (m === 'normalize-lufs') gain = tgt - a.estLufs;
+    else if (m === 'normalize-peak') gain = tgt - a.peakDb;
+  }
+  if (gain > 0) {
+    const a = analyze(originalBuffer);
+    const maxGain = -0.1 - a.peakDb;
+    if (gain > maxGain) { peakLim = maxGain; gain = maxGain; }
+  }
+  const out = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(originalBuffer.numberOfChannels, originalBuffer.length, originalBuffer.sampleRate);
+  const src = out.createBufferSource();
+  src.buffer = originalBuffer;
+  const gainNode = out.createGain();
+  gainNode.gain.value = Math.pow(10, gain / 20);
+  src.connect(gainNode).connect(out.destination);
+  src.start();
+  out.startRendering().then(rendered => {
+    renderStats('#outStats', rendered, gain, peakLim, '');
+    setMeter('#outMeter', rendered);
+    if (processedURL) URL.revokeObjectURL(processedURL);
+    processedURL = bufferToWavURL(rendered);
+    $('#audioOut').src = processedURL;
+    processedGain = gain;
+    downloadBtn.disabled = false;
+  });
+});
+
+function bufferToWavURL(audioBuffer) {
+  const numCh = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const length = audioBuffer.length * numCh * 2 + 44;
+  const buffer = new ArrayBuffer(length);
+  const view = new DataView(buffer);
+  const channels = [];
+  for (let i = 0; i < numCh; i++) channels.push(audioBuffer.getChannelData(i));
+  let offset = 0;
+  const writeStr = s => { for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i)); };
+  writeStr('RIFF'); view.setUint32(offset, length - 8, true); offset += 4;
+  writeStr('WAVE'); writeStr('fmt '); view.setUint32(offset, 16, true); offset += 4;
+  view.setUint16(offset, 1, true); offset += 2;
+  view.setUint16(offset, numCh, true); offset += 2;
+  view.setUint32(offset, sampleRate, true); offset += 4;
+  view.setUint32(offset, sampleRate * numCh * 2, true); offset += 4;
+  view.setUint16(offset, numCh * 2, true); offset += 2;
+  view.setUint16(offset, 16, true); offset += 2;
+  writeStr('data'); view.setUint32(offset, length - 44, true); offset += 4;
+  for (let i = 0; i < audioBuffer.length; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, channels[c][i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+  const blob = new Blob([buffer], { type: 'audio/wav' });
+  return URL.createObjectURL(blob);
+}
+
+downloadBtn.addEventListener('click', () => {
+  if (!processedURL) return;
+  const a = document.createElement('a');
+  a.href = processedURL;
+  a.download = 'normalized-' + (processedGain > 0 ? '+' : '') + processedGain.toFixed(1) + 'dB.wav';
+  a.click();
+});
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔊', href:'/text/text-to-speech.html', name:'Text to Speech'},
+    {icon:'🎤', href:'/text/speech-to-text.html', name:'Speech to Text'},
+    {icon:'🔄', href:'/convert/text-binary-hex.html', name:'Text/Binary/Hex'},
+    {icon:'📱', href:'/convert/qrcode.html', name:'QR Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

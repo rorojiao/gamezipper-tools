@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片转文字 OCR - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用 Tesseract.js 从图片中提取文字 — 支持 100+ 语言，完全浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/ocr.html">
+  <meta property="og:title" content="图片转文字 OCR">
+  <meta property="og:description" content="使用 Tesseract.js 从图片中提取文字 — 支持 100+ 语言，完全浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/ocr.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片转文字 OCR">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
+<style>
+.ocr-upload{border:2px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--glass2)}
+.ocr-upload:hover,.ocr-upload.dragover{border-color:var(--accent);background:var(--glass)}
+.ocr-upload input{display:none}
+.ocr-upload-icon{font-size:3rem;margin-bottom:8px}
+.ocr-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.ocr-controls select,.ocr-controls input{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:.85rem}
+.ocr-progress{margin-top:16px;background:var(--glass2);border-radius:8px;height:8px;overflow:hidden;display:none}
+.ocr-progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .3s}
+.ocr-progress-text{text-align:center;font-size:.8rem;color:var(--text2);margin-top:6px;display:none}
+.ocr-preview{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+.ocr-preview img,.ocr-preview textarea{width:100%;max-height:400px;object-fit:contain;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px}
+.ocr-preview textarea{font-family:monospace;font-size:.85rem;line-height:1.5;padding:12px;resize:vertical;min-height:200px;color:var(--text)}
+.ocr-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:.8rem;color:var(--text2)}
+.ocr-stats span{background:var(--glass2);padding:4px 10px;border-radius:8px;border:1px solid var(--border)}
+@media(max-width:600px){.ocr-preview{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image to Text OCR","description":"Extract text from any image online with our free OCR tool. Convert JPG, PNG, WebP images to editable text in 100+ languages — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/image/ocr.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the OCR tool work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool uses Tesseract.js, an open-source OCR engine compiled to WebAssembly. When you upload an image, it runs entirely in your browser — no data is sent to any server — and recognizes text in 100+ languages."}}, {"@type": "Question", "name": "Which image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "You can upload JPG, PNG, WebP, BMP, GIF and most other browser-supported image formats. For best results use clear, high-resolution images with good contrast between text and background."}}, {"@type": "Question", "name": "Is my image data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All OCR processing happens locally in your browser using Tesseract.js. Your images never leave your device and are not uploaded to any server."}}, {"@type": "Question", "name": "Which languages are supported?", "acceptedAnswer": {"@type": "Answer", "text": "100+ languages including English, Chinese (Simplified & Traditional), Japanese, Korean, Spanish, French, German, Arabic, Hindi, Russian, Portuguese and many more. Language packs are downloaded on demand."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/ocr.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/ocr.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/ocr.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <label class="ocr-upload" id="dropzone">
+      <div class="ocr-upload-icon">📷</div>
+      <div id="dz-text">Click or drag an image here (JPG, PNG, WebP)</div>
+      <input type="file" id="fileInput" accept="image/*">
+    </label>
+    <div class="ocr-controls">
+      <label>🌐 <span id="lbl-lang">Language</span>:
+        <select id="lang">
+          <option value="eng">English</option>
+          <option value="chi_sim">中文 (简体)</option>
+          <option value="chi_tra">中文 (繁體)</option>
+          <option value="jpn">日本語</option>
+          <option value="kor">한국어</option>
+          <option value="spa">Español</option>
+          <option value="fra">Français</option>
+          <option value="deu">Deutsch</option>
+          <option value="ara">العربية</option>
+          <option value="hin">हिन्दी</option>
+          <option value="rus">Русский</option>
+          <option value="por">Português</option>
+          <option value="ita">Italiano</option>
+        </select>
+      </label>
+      <button class="gz-btn" id="startBtn" disabled>🚀 <span id="lbl-start">Extract Text</span></button>
+      <button class="gz-btn gz-btn-secondary" id="clearBtn">🗑️ <span id="lbl-clear">Clear</span></button>
+    </div>
+    <div class="ocr-progress" id="progress"><div class="ocr-progress-bar" id="progressBar"></div></div>
+    <div class="ocr-progress-text" id="progressText">Initializing...</div>
+    <div class="ocr-preview" id="preview" style="display:none">
+      <img id="previewImg" alt="preview">
+      <textarea id="output" spellcheck="false" placeholder="Extracted text will appear here..."></textarea>
+    </div>
+    <div class="ocr-stats" id="stats" style="display:none"></div>
+    <div class="gz-toolbar" id="toolbar" style="display:none;margin-top:14px">
+      <button class="gz-btn" id="copyBtn">📋 <span id="lbl-copy">Copy Text</span></button>
+      <button class="gz-btn gz-btn-secondary" id="downloadBtn">💾 <span id="lbl-download">Download .txt</span></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image to Text OCR',
+    toolDesc: 'Extract text from any image using Tesseract.js — 100+ languages, fully in your browser.',
+    dzText: 'Click or drag an image here (JPG, PNG, WebP)',
+    lang: 'Language',
+    start: 'Extract Text',
+    clear: 'Clear',
+    copy: 'Copy Text',
+    download: 'Download .txt',
+    initOCR: 'Initializing OCR engine...',
+    loadingLang: 'Loading language data...',
+    recognizing: 'Recognizing text...',
+    done: 'Done!',
+    error: 'Error: ',
+    noFile: 'Please select an image first',
+    words: 'words',
+    chars: 'chars',
+    confidence: 'confidence',
+    langLoaded: 'Language loaded',
+    step1: 'Upload an image by clicking the dropzone or drag-and-drop',
+    step2: 'Choose the recognition language from the dropdown',
+    step3: 'Click "Extract Text" — OCR runs entirely in your browser',
+    step4: 'Copy the extracted text or download it as a .txt file',
+  },
+  zh: {
+    toolTitle: '图片转文字 OCR',
+    toolDesc: '使用 Tesseract.js 从图片中提取文字 — 支持 100+ 语言，完全浏览器本地运行。',
+    dzText: '点击或拖拽图片到此处 (JPG, PNG, WebP)',
+    lang: '语言',
+    start: '提取文字',
+    clear: '清空',
+    copy: '复制文字',
+    download: '下载 .txt',
+    initOCR: '正在初始化 OCR 引擎...',
+    loadingLang: '正在加载语言包...',
+    recognizing: '正在识别文字...',
+    done: '完成！',
+    error: '错误：',
+    noFile: '请先选择一张图片',
+    words: '词',
+    chars: '字',
+    confidence: '置信度',
+    langLoaded: '语言已加载',
+    step1: '点击上传区或拖拽图片上传',
+    step2: '从下拉菜单选择识别语言',
+    step3: '点击「提取文字」— OCR 完全在浏览器本地运行',
+    step4: '复制提取的文字或下载为 .txt 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let worker = null;
+let currentFile = null;
+
+const fileInput = $('#fileInput');
+const dropzone = $('#dropzone');
+const startBtn = $('#startBtn');
+const clearBtn = $('#clearBtn');
+const preview = $('#preview');
+const previewImg = $('#previewImg');
+const output = $('#output');
+const progress = $('#progress');
+const progressBar = $('#progressBar');
+const progressText = $('#progressText');
+const stats = $('#stats');
+const toolbar = $('#toolbar');
+const dzText = $('#dz-text');
+
+['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+dropzone.addEventListener('drop', e => { if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files.length) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = e => { previewImg.src = e.target.result; preview.style.display = 'grid'; };
+  reader.readAsDataURL(file);
+  startBtn.disabled = false;
+  dzText.textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+}
+
+async function ensureWorker(lang) {
+  if (!worker) {
+    worker = await Tesseract.createWorker('eng', 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          progressBar.style.width = (m.progress * 100) + '%';
+          progressText.textContent = t('recognizing') + ' ' + Math.round(m.progress * 100) + '%';
+        } else if (m.status) {
+          progressText.textContent = m.status + (m.progress !== undefined ? ' ' + Math.round(m.progress * 100) + '%' : '');
+        }
+      }
+    });
+  } else {
+    await worker.reinitialize(lang);
+  }
+}
+
+startBtn.addEventListener('click', async () => {
+  if (!currentFile) { alert(t('noFile')); return; }
+  startBtn.disabled = true;
+  progress.style.display = 'block';
+  progressText.style.display = 'block';
+  progressText.textContent = t('initOCR');
+  try {
+    const lang = $('#lang').value;
+    await ensureWorker(lang);
+    progressText.textContent = t('recognizing');
+    const { data } = await worker.recognize(currentFile);
+    output.value = data.text;
+    const wordCount = (data.text.match(/\S+/g) || []).length;
+    const charCount = data.text.replace(/\s/g, '').length;
+    stats.style.display = 'flex';
+    stats.innerHTML = `<span>📝 ${wordCount} ${t('words')}</span><span>🔤 ${charCount} ${t('chars')}</span><span>📊 ${Math.round(data.confidence)}% ${t('confidence')}</span><span>🌐 ${t('langLoaded')}</span>`;
+    toolbar.style.display = 'flex';
+    progressText.textContent = t('done');
+  } catch (e) {
+    progressText.textContent = t('error') + e.message;
+  } finally {
+    startBtn.disabled = false;
+  }
+});
+
+clearBtn.addEventListener('click', () => {
+  currentFile = null; output.value = ''; preview.style.display = 'none'; stats.style.display = 'none'; toolbar.style.display = 'none'; progress.style.display = 'none'; progressText.style.display = 'none';
+  startBtn.disabled = true; dzText.textContent = t('dzText');
+  fileInput.value = '';
+});
+
+$('#copyBtn').addEventListener('click', () => copyText(output.value));
+$('#downloadBtn').addEventListener('click', () => {
+  const blob = new Blob([output.value], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ocr-text.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📝', href:'/image/exif-viewer.html', name:'EXIF Viewer'},
+    {icon:'🔍', href:'/image/format-detector.html', name:'Image Format Detector'},
+    {icon:'🖼️', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
