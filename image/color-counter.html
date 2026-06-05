@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image Color Counter - Count Unique Colors in Image | GameZipper Tools</title>
+<meta name="description" content="Count the unique colors in any image, see the color distribution, dominant colors and a histogram. Perfect for analysis, palette extraction and image inspection. Free, browser-only.">
+<link rel="canonical" href="https://tools.gamezipper.com/image/color-counter.html">
+<meta property="og:title" content="Image Color Counter - Count Unique Colors in Image | GameZipper Tools">
+<meta property="og:description" content="Count the unique colors in any image, see the color distribution, dominant colors and a histogram. Perfect for analysis, palette extraction and image inspection. Free, browser-only.">
+<meta property="og:url" content="https://tools.gamezipper.com/image/color-counter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Image Color Counter - Count Unique Colors in Image | GameZipper Tools">
+<meta name="twitter:description" content="Count the unique colors in any image, see the color distribution, dominant colors and a histogram. Perfect for analysis, palette extraction and image inspection. Free, browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.ic-drop{border:2px dashed var(--border);border-radius:14px;padding:36px;text-align:center;background:var(--glass2);cursor:pointer;transition:all .2s;margin:14px 0}
+.ic-drop.drag{border-color:var(--accent);background:rgba(78,205,196,.1)}
+.ic-drop input{display:none}
+.ic-drop p{margin:6px 0;color:var(--text2);font-size:.9em}
+.ic-drop .big{font-size:2.4em}
+.ic-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0}
+.ic-stat{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.ic-stat .num{font-size:1.5em;font-weight:800;color:var(--accent);line-height:1.1}
+.ic-stat .lbl{font-size:.7em;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;margin-top:8px}
+.ic-cell{background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:6px 4px;text-align:center}
+.ic-cell .sw{height:38px;border-radius:4px;border:1px solid rgba(255,255,255,.15);margin-bottom:4px}
+.ic-cell .pct{font-size:.7em;color:var(--text2);font-weight:700}
+.ic-cell .hex{font-size:.65em;color:var(--text2);font-family:monospace;margin-top:2px}
+.ic-section{margin:14px 0;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.ic-section h3{margin:0 0 10px;font-size:1rem}
+.ic-preview{position:relative;display:inline-block;max-width:100%;margin:8px 0}
+.ic-preview img{max-width:100%;max-height:300px;border-radius:8px;display:block}
+.ic-preview .info{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;padding:4px 10px;border-radius:6px;font-size:.78em}
+.ic-tol-row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+.ic-tol-row label{font-size:.85em;display:flex;align-items:center;gap:6px}
+.ic-tol-row input[type=range]{width:160px}
+.ic-err{background:rgba(239,68,68,.12);border:1px solid var(--accent);color:var(--accent);padding:10px;border-radius:8px;font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Color Counter","description":"Count the unique colors in any image, see the color distribution, dominant colors and a histogram. Browser-only, no upload.","url":"https://tools.gamezipper.com/image/color-counter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do you count unique colors in an image?", "acceptedAnswer": {"@type": "Answer", "text": "The tool reads every pixel of the image using a canvas, then counts the occurrences of each RGB color combination. You can also group similar colors using a tolerance slider, which combines near-identical shades into a single bucket to reduce noise."}}, {"@type": "Question", "name": "What is color tolerance?", "acceptedAnswer": {"@type": "Answer", "text": "Tolerance collapses near-identical colors into one bucket. A tolerance of 0 treats every distinct RGB triplet as unique, while higher values (e.g. 16) merge colors that are within ±16 units of each other in each channel. Useful for JPEG/photo compression artifacts."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens locally in your browser using the HTML5 Canvas API. Your image never leaves your device."}}, {"@type": "Question", "name": "What image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Any format your browser can decode in an Image element — JPG, PNG, WebP, GIF, BMP, AVIF, ICO, SVG (rasterized) and more."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/color-counter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/color-counter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/color-counter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label class="ic-drop" id="drop">
+      <input type="file" id="file" accept="image/*">
+      <div class="big">📁</div>
+      <p><strong>Drop an image here</strong> or click to upload</p>
+      <p style="font-size:.78em">JPG, PNG, WebP, GIF, BMP, AVIF, SVG — processed locally</p>
+    </label>
+
+    <div class="ic-tol-row" id="tolRow" style="display:none">
+      <label>Color tolerance: <span id="tolVal">0</span></label>
+      <input type="range" id="tolerance" min="0" max="48" value="0">
+      <button class="gz-btn gz-btn-secondary" onclick="renderAnalysis()">Reanalyze</button>
+      <button class="gz-btn gz-btn-secondary" onclick="$('#file').click()">New image</button>
+    </div>
+
+    <div id="errBox"></div>
+    <div id="preview"></div>
+    <div id="stats"></div>
+    <div id="topSection" style="display:none"></div>
+    <div id="allSection" style="display:none"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Color Counter',
+    toolDesc: 'Count the unique colors in any image and see a histogram of dominant colors. Adjust tolerance to merge similar shades. Browser-only, no upload.',
+    statUnique: 'Unique Colors',
+    statPixels: 'Total Pixels',
+    statSampled: 'Pixels Sampled',
+    statTop: 'Most Used',
+    statAvg: 'Average Color',
+    topSection: 'Top 20 Dominant Colors',
+    allSection: 'All Unique Colors (Top 100)',
+    step1: 'Upload an image by clicking the drop zone or dragging a file in',
+    step2: 'Wait a moment while the tool reads every pixel via canvas',
+    step3: 'Adjust the tolerance slider to merge near-identical colors',
+    step4: 'Inspect the dominant color palette and unique color count',
+  },
+  zh: {
+    toolTitle: '图片颜色计数器',
+    toolDesc: '统计任意图片中的独特颜色数量并查看主色直方图。调整容差可合并相近色调。完全浏览器本地处理，不上传图片。',
+    statUnique: '独特颜色数',
+    statPixels: '总像素数',
+    statSampled: '已采样像素',
+    statTop: '最高频颜色',
+    statAvg: '平均颜色',
+    topSection: '前 20 种主色',
+    allSection: '全部独特颜色（前 100）',
+    step1: '点击拖放区或拖入文件上传图片',
+    step2: '稍等片刻，工具会通过 canvas 读取所有像素',
+    step3: '调整容差滑块以合并相近颜色',
+    step4: '查看主色调色板和独特颜色统计',
+  }
+});
+
+const { $, t } = GZ;
+
+let currentImage = null;
+let currentFileName = '';
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    $('#errBox').innerHTML = '<div class="ic-err">Please choose an image file (JPG, PNG, WebP, GIF, BMP, AVIF, SVG).</div>';
+    return;
+  }
+  $('#errBox').innerHTML = '';
+  currentFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      currentImage = img;
+      $('#preview').innerHTML = `<div class="ic-preview">
+        <img src="${e.target.result}" alt="Uploaded image">
+        <div class="info">${img.width}×${img.height} • ${file.name}</div>
+      </div>`;
+      $('#tolRow').style.display = 'flex';
+      renderAnalysis();
+    };
+    img.onerror = () => {
+      $('#errBox').innerHTML = '<div class="ic-err">Could not decode this image. Try a different format.</div>';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderAnalysis() {
+  if (!currentImage) return;
+  const tol = +$('#tolerance').value;
+  $('#tolVal').textContent = tol;
+  const img = currentImage;
+  const maxW = 600, maxH = 600;
+  const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+  const w = Math.max(1, Math.round(img.width * ratio));
+  const h = Math.max(1, Math.round(img.height * ratio));
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  const data = ctx.getImageData(0, 0, w, h).data;
+  const total = w * h;
+  const colorMap = new Map();
+  let rSum = 0, gSum = 0, bSum = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i+3];
+    if (a < 16) continue; // skip near-transparent
+    let r = data[i], g = data[i+1], b = data[i+2];
+    if (tol > 0) {
+      r = Math.round(r / tol) * tol;
+      g = Math.round(g / tol) * tol;
+      b = Math.round(b / tol) * tol;
+    }
+    rSum += r; gSum += g; bSum += b;
+    const key = (r << 16) | (g << 8) | b;
+    colorMap.set(key, (colorMap.get(key) || 0) + 1);
+  }
+  const sorted = [...colorMap.entries()].sort((a,b) => b[1] - a[1]);
+  const sampled = [...colorMap.values()].reduce((a,b) => a+b, 0);
+  const avgR = Math.round(rSum / sampled) || 0;
+  const avgG = Math.round(gSum / sampled) || 0;
+  const avgB = Math.round(bSum / sampled) || 0;
+  const avgHex = '#' + [avgR,avgG,avgB].map(v => v.toString(16).padStart(2,'0')).join('');
+  const topHex = sorted.length ? '#' + ((sorted[0][0]>>16)&255).toString(16).padStart(2,'0') + ((sorted[0][0]>>8)&255).toString(16).padStart(2,'0') + (sorted[0][0]&255).toString(16).padStart(2,'0') : '—';
+
+  $('#stats').innerHTML = `<div class="ic-stats">
+    <div class="ic-stat"><div class="num">${sorted.length.toLocaleString()}</div><div class="lbl">${t('statUnique')}</div></div>
+    <div class="ic-stat"><div class="num">${total.toLocaleString()}</div><div class="lbl">${t('statPixels')}</div></div>
+    <div class="ic-stat"><div class="num">${sampled.toLocaleString()}</div><div class="lbl">${t('statSampled')}</div></div>
+    <div class="ic-stat"><div class="num" style="background:${topHex};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${topHex}</div><div class="lbl">${t('statTop')}</div></div>
+    <div class="ic-stat"><div class="num" style="background:${avgHex};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${avgHex}</div><div class="lbl">${t('statAvg')}</div></div>
+  </div>`;
+
+  // Top 20
+  const top20 = sorted.slice(0, 20);
+  $('#topSection').style.display = 'block';
+  $('#topSection').innerHTML = `<div class="ic-section"><h3>${t('topSection')}</h3><div class="ic-grid">` + top20.map(([k, c]) => {
+    const r = (k>>16)&255, g = (k>>8)&255, b = k&255;
+    const hex = '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+    const pct = (c / sampled * 100).toFixed(2);
+    return `<div class="ic-cell"><div class="sw" style="background:${hex}"></div><div class="pct">${pct}%</div><div class="hex">${hex}</div></div>`;
+  }).join('') + '</div></div>';
+
+  // All top 100
+  const top100 = sorted.slice(0, 100);
+  $('#allSection').style.display = 'block';
+  $('#allSection').innerHTML = `<div class="ic-section"><h3>${t('allSection')}</h3><div class="ic-grid">` + top100.map(([k, c]) => {
+    const r = (k>>16)&255, g = (k>>8)&255, b = k&255;
+    const hex = '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+    const pct = (c / sampled * 100).toFixed(2);
+    return `<div class="ic-cell"><div class="sw" style="background:${hex}"></div><div class="pct">${pct}%</div><div class="hex">${hex}</div></div>`;
+  }).join('') + '</div></div>';
+}
+
+$('#file').addEventListener('change', e => handleFile(e.target.files[0]));
+$('#tolerance').addEventListener('input', () => { $('#tolVal').textContent = $('#tolerance').value; });
+
+const drop = $('#drop');
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+drop.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="$('#file').click()">Upload Image</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💧', href:'/image/color-extractor.html', name:'Color Extractor'},
+    {icon:'🎨', href:'/image/palette-from-image.html', name:'Palette from Image'},
+    {icon:'🖼️', href:'/image/format-detector.html', name:'Image Format Detector'},
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
