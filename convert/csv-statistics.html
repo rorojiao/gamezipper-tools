@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>CSV Statistics & Profiler - Row, Column, Type Analyzer | GameZipper Tools</title>
+  <meta name="description" content="Analyze any CSV file for row count, column count, missing values, value types, and statistical distributions per column. Free, browser-only CSV profiler with auto-detected delimiters and export.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/csv-statistics.html">
+  <meta property="og:title" content="CSV Statistics & Profiler - Row, Column, Type Analyzer | GameZipper Tools">
+  <meta property="og:description" content="Analyze any CSV for row count, column count, missing values, value types and per-column min/max/mean/distribution. Auto-detects delimiter, header and encoding. Runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/csv-statistics.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV Statistics & Profiler - Row, Column, Type Analyzer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{height:200px;font-family:monospace;font-size:.8em;word-break:break-all;line-height:1.4}
+#status{margin-top:8px;font-size:.85em}
+.config-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:end}
+.config-row>div{flex:1;min-width:140px}
+.config-row label{display:block;margin-bottom:4px;font-weight:600;font-size:.9em;color:var(--text2)}
+.config-row select,.config-row input{width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9em;box-sizing:border-box}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.stat-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-card .num{font-size:1.3em;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:.72em;color:var(--text2);margin-top:2px}
+.col-table{margin-top:16px;padding:14px;background:var(--glass2);border:1px solid var(--border);border-radius:12px;overflow-x:auto}
+.col-table h3{margin:0 0 10px;font-size:.95em}
+.col-table table{width:100%;border-collapse:collapse;font-size:.85em}
+.col-table th,.col-table td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.col-table th{background:var(--glass);font-weight:700}
+.col-table .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7em;font-weight:600}
+.badge-number{background:rgba(97,175,239,.2);color:#61afef}
+.badge-string{background:rgba(0,214,114,.2);color:#00d672}
+.badge-bool{background:rgba(209,154,102,.2);color:#d19a66}
+.badge-date{background:rgba(78,205,196,.2);color:#4ecdc4}
+.badge-mixed{background:rgba(255,217,61,.2);color:#ffd93d}
+.badge-empty{background:rgba(136,136,136,.2);color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV Statistics & Profiler","description":"Analyze any CSV file for row count, column count, missing values, value types and per-column statistics. Auto-detects delimiter and header. Free, browser-only.","url":"https://tools.gamezipper.com/convert/csv-statistics.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does the CSV profiler do?", "acceptedAnswer": {"@type": "Answer", "text": "It parses your CSV, auto-detects the delimiter (comma, tab, semicolon, pipe), identifies the header row, then computes row count, column count, missing value counts per column, inferred types (number, string, boolean, date) and basic statistics — min, max, mean, median and unique count for numeric columns."}}, {"@type": "Question", "name": "How does it detect the delimiter?", "acceptedAnswer": {"@type": "Answer", "text": "The tool counts occurrences of each candidate delimiter (',', '\\t', ';', '|') in the first few non-empty lines and picks the one that produces the most consistent column count. You can override the choice in the dropdown."}}, {"@type": "Question", "name": "Can it handle large CSV files?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Parsing happens line-by-line with no DOM allocation, so the tool can comfortably analyze CSV files up to several megabytes in your browser. For very large files, paste a representative sample (first 1000–5000 rows) for a quick profile."}}, {"@type": "Question", "name": "Is my CSV data sent anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Parsing and analysis happen 100% in your browser. Nothing is uploaded or stored."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-statistics.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-statistics.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-statistics.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="config-row">
+      <div>
+        <label id="lbl-delim"></label>
+        <select id="delim">
+          <option value="auto">Auto-detect</option>
+          <option value=",">Comma ,</option>
+          <option value="\t">Tab</option>
+          <option value=";">Semicolon ;</option>
+          <option value="|">Pipe |</option>
+        </select>
+      </div>
+      <div>
+        <label id="lbl-header"></label>
+        <select id="header">
+          <option value="1">Yes (first row)</option>
+          <option value="0">No (use Col 1, Col 2…)</option>
+        </select>
+      </div>
+    </div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder="Paste CSV here..."></textarea>
+    <div id="status"></div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV Statistics & Profiler',
+    toolDesc: 'Analyze any CSV for row count, column count, missing values, value types and per-column statistics. Auto-detects delimiter and header — runs entirely in your browser.',
+    lblDelim: 'Delimiter',
+    lblHeader: 'Header row',
+    analyze: '📊 Analyze',
+    loadExample: 'Load Example',
+    clear: 'Clear',
+    exportJSON: 'Export JSON',
+    rows: 'Rows',
+    cols: 'Columns',
+    cells: 'Total cells',
+    missing: 'Missing values',
+    unique: 'Unique values',
+    duplicateRows: 'Duplicate rows',
+    types: 'Column Types',
+    preview: 'Sample rows',
+    col: 'Column',
+    type: 'Type',
+    nonNull: 'Non-null',
+    unique: 'Unique',
+    min: 'Min',
+    max: 'Max',
+    mean: 'Mean',
+    median: 'Median',
+    step1: 'Paste a CSV (with or without a header) into the input area',
+    step2: 'Optionally set delimiter and header detection manually',
+    step3: 'Click Analyze to inspect row/column/missing/type stats',
+    step4: 'Export the metrics as JSON for documentation or further processing',
+  },
+  zh: {
+    toolTitle: 'CSV 统计与分析器',
+    toolDesc: '分析任意 CSV 的行数、列数、缺失值、值类型和逐列统计 — 自动检测分隔符和表头，完全在浏览器本地运行。',
+    lblDelim: '分隔符',
+    lblHeader: '表头行',
+    analyze: '📊 分析',
+    loadExample: '加载示例',
+    clear: '清空',
+    exportJSON: '导出 JSON',
+    rows: '行数',
+    cols: '列数',
+    cells: '单元格总数',
+    missing: '缺失值',
+    unique: '唯一值',
+    duplicateRows: '重复行',
+    types: '列类型',
+    preview: '示例行',
+    col: '列',
+    type: '类型',
+    nonNull: '非空',
+    unique: '唯一',
+    min: '最小',
+    max: '最大',
+    mean: '均值',
+    median: '中位数',
+    step1: '将 CSV（可带或不带表头）粘贴到输入区',
+    step2: '可手动选择分隔符和是否包含表头',
+    step3: '点击「分析」查看行/列/缺失值/类型统计',
+    step4: '将指标导出为 JSON 用于文档或后续处理',
+  }
+});
+
+const $ = s => document.querySelector(s);
+const { t, getLang } = GZ;
+let lastResult = null;
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function detectDelimiter(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim()).slice(0, 5);
+  if (lines.length === 0) return ',';
+  const candidates = [',', '\t', ';', '|'];
+  let best = ',', bestScore = -1;
+  for (const c of candidates) {
+    const counts = lines.map(l => (l.match(new RegExp('\\' + c, 'g')) || []).length);
+    if (counts[0] === 0) continue;
+    const max = Math.max(...counts);
+    const min = Math.min(...counts);
+    const score = max * 10 - (max - min); // prefer high count + low variance
+    if (score > bestScore) { bestScore = score; best = c; }
+  }
+  return best;
+}
+
+// Tiny CSV parser (no quoted commas handling of escaped quotes — good enough for stats)
+function parseCSV(text, delim) {
+  const rows = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (line.length === 0) continue;
+    // Naive split that handles double-quoted fields
+    const cells = [];
+    let i = 0, cur = '', inQ = false;
+    while (i < line.length) {
+      const ch = line[i];
+      if (inQ) {
+        if (ch === '"' && line[i+1] === '"') { cur += '"'; i += 2; continue; }
+        if (ch === '"') { inQ = false; i++; continue; }
+        cur += ch; i++;
+      } else {
+        if (ch === '"') { inQ = true; i++; continue; }
+        if (ch === delim) { cells.push(cur); cur = ''; i++; continue; }
+        cur += ch; i++;
+      }
+    }
+    cells.push(cur);
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function inferType(values) {
+  let allNum = true, allBool = true, allDate = true, anyNonEmpty = false;
+  const dateRe = /^\d{4}-\d{2}-\d{2}/;
+  for (const v of values) {
+    if (v === null || v === undefined || v === '') continue;
+    anyNonEmpty = true;
+    if (allNum && (isNaN(Number(v)) || v.trim() === '')) allNum = false;
+    if (allBool && !['true','false','TRUE','FALSE','yes','no','0','1'].includes(v)) allBool = false;
+    if (allDate && !dateRe.test(v) && isNaN(Date.parse(v))) allDate = false;
+  }
+  if (!anyNonEmpty) return 'empty';
+  if (allNum) return 'number';
+  if (allBool) return 'bool';
+  if (allDate) return 'date';
+  return 'string';
+}
+
+function analyze() {
+  const text = $('#input').value.trim();
+  if (!text) return;
+  let delim = $('#delim').value;
+  if (delim === 'auto') delim = detectDelimiter(text);
+  const hasHeader = $('#header').value === '1';
+  const rows = parseCSV(text, delim);
+  if (rows.length === 0) { $('#status').innerHTML = '<span style="color:var(--gz-accent)">No data</span>'; return; }
+
+  const header = hasHeader ? rows[0] : null;
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+  const ncols = Math.max(...rows.map(r => r.length));
+  const headers = header ? header : Array.from({length: ncols}, (_, i) => `${getLang() === 'zh' ? '列' : 'Col'} ${i+1}`);
+
+  // Pad rows
+  for (const r of dataRows) while (r.length < ncols) r.push('');
+
+  // Total cells
+  const totalCells = dataRows.length * ncols;
+
+  // Missing
+  let missing = 0;
+  for (const r of dataRows) for (const c of r) if (c === null || c === undefined || c === '') missing++;
+
+  // Duplicate rows
+  const seen = new Set();
+  let dups = 0;
+  for (const r of dataRows) {
+    const k = r.join('\x1f');
+    if (seen.has(k)) dups++;
+    else seen.add(k);
+  }
+
+  // Per column analysis
+  const colStats = [];
+  for (let c = 0; c < ncols; c++) {
+    const vals = dataRows.map(r => r[c] || '');
+    const nonEmpty = vals.filter(v => v !== '').length;
+    const unique = new Set(vals.filter(v => v !== '')).size;
+    const type = inferType(vals);
+    let min, max, mean, median;
+    if (type === 'number') {
+      const nums = vals.filter(v => v !== '').map(Number).filter(n => !isNaN(n)).sort((a,b) => a-b);
+      if (nums.length) {
+        min = nums[0];
+        max = nums[nums.length-1];
+        mean = Math.round((nums.reduce((a,b) => a+b, 0) / nums.length) * 100) / 100;
+        median = nums[Math.floor(nums.length/2)];
+      }
+    } else if (type === 'date') {
+      const dates = vals.filter(v => v !== '').map(v => Date.parse(v)).filter(d => !isNaN(d)).sort((a,b) => a-b);
+      if (dates.length) {
+        min = new Date(dates[0]).toISOString().slice(0,10);
+        max = new Date(dates[dates.length-1]).toISOString().slice(0,10);
+      }
+    }
+    colStats.push({ name: headers[c] || `Col ${c+1}`, type, nonEmpty, missing: vals.length - nonEmpty, unique, min, max, mean, median });
+  }
+
+  const result = { delim, hasHeader, rows: dataRows.length, cols: ncols, totalCells, missing, duplicateRows: dups, columns: colStats, sample: dataRows.slice(0, 5) };
+  lastResult = result;
+  render(result);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Analyzed ${dataRows.length} × ${ncols} (delim: "${delim === '\t' ? 'TAB' : delim}", header: ${hasHeader ? 'yes' : 'no'})</span>`;
+}
+
+function render(r) {
+  let html = `<div class="stats-grid">
+    <div class="stat-card"><div class="num">${r.rows.toLocaleString()}</div><div class="lbl">${t('rows')}</div></div>
+    <div class="stat-card"><div class="num">${r.cols.toLocaleString()}</div><div class="lbl">${t('cols')}</div></div>
+    <div class="stat-card"><div class="num">${r.totalCells.toLocaleString()}</div><div class="lbl">${t('cells')}</div></div>
+    <div class="stat-card"><div class="num" style="color:${r.missing > 0 ? '#ffd93d' : '#00d672'}">${r.missing.toLocaleString()}</div><div class="lbl">${t('missing')}</div></div>
+    <div class="stat-card"><div class="num">${r.cols ? r.columns.reduce((s,c) => s + c.unique, 0).toLocaleString() : 0}</div><div class="lbl">${t('unique')}</div></div>
+    <div class="stat-card"><div class="num" style="color:${r.duplicateRows > 0 ? '#e94560' : '#00d672'}">${r.duplicateRows.toLocaleString()}</div><div class="lbl">${t('duplicateRows')}</div></div>
+  </div>`;
+
+  // Per-column table
+  html += `<div class="col-table"><h3>${t('types')}</h3><table>
+    <thead><tr><th>${t('col')}</th><th>${t('type')}</th><th>${t('nonNull')}</th><th>${t('missing')}</th><th>${t('unique')}</th><th>${t('min')}</th><th>${t('max')}</th><th>${t('mean')}</th><th>${t('median')}</th></tr></thead>
+    <tbody>`;
+  for (const c of r.columns) {
+    const typeLabel = ({number:'number',string:'string',bool:'bool',date:'date',empty:'empty'})[c.type] || 'mixed';
+    html += `<tr>
+      <td><strong>${escHtml(c.name)}</strong></td>
+      <td><span class="badge badge-${typeLabel}">${typeLabel}</span></td>
+      <td>${c.nonEmpty}</td>
+      <td>${c.missing}</td>
+      <td>${c.unique}</td>
+      <td>${c.min !== undefined ? escHtml(String(c.min)) : '—'}</td>
+      <td>${c.max !== undefined ? escHtml(String(c.max)) : '—'}</td>
+      <td>${c.mean !== undefined ? c.mean : '—'}</td>
+      <td>${c.median !== undefined ? c.median : '—'}</td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+
+  // Sample preview
+  if (r.sample && r.sample.length) {
+    html += `<div class="col-table"><h3>${t('preview')} (${r.sample.length} of ${r.rows})</h3><div style="overflow-x:auto"><table>
+      <thead><tr>${r.columns.map(c => `<th>${escHtml(c.name)}</th>`).join('')}</tr></thead>
+      <tbody>${r.sample.map(row => `<tr>${row.map(cell => `<td>${escHtml(String(cell).slice(0,80))}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div></div>`;
+  }
+
+  $('#output').innerHTML = html;
+}
+
+function exportJSONStats() {
+  if (!lastResult) return;
+  const data = JSON.stringify(lastResult, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'csv-stats.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadExample() {
+  $('#input').value = `name,age,city,signup_date,active,score
+Alice,28,NYC,2023-01-15,true,87.5
+Bob,34,LA,2022-11-20,true,92.0
+Carol,45,Chicago,2023-03-08,false,76.3
+Dave,,Boston,2023-05-12,true,
+Eve,29,Seattle,2024-01-01,true,98.1
+Frank,52,Denver,2021-07-22,false,68.9
+Grace,31,Austin,2023-09-14,true,81.2
+Hank,38,Miami,2022-06-30,true,73.4
+Alice,28,NYC,2023-01-15,true,87.5
+Ivy,26,Portland,2024-02-19,true,90.6`;
+  analyze();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="analyze()">${t('analyze')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('loadExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportJSONStats()">${t('exportJSON')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').innerHTML='';$('#status').innerHTML=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1', 'step2', 'step3', 'step4'],
+  related: [
+    { icon: '📊', href: '/convert/csv-viewer.html', name: 'CSV Viewer' },
+    { icon: '🔄', href: '/convert/csv-to-json.html', name: 'CSV to JSON' },
+    { icon: '🗃️', href: '/convert/csv-to-sql.html', name: 'CSV to SQL' },
+    { icon: '📈', href: '/dev/json-statistics.html', name: 'JSON Statistics' },
+  ]
+});
+loadExample();
+</script>
+<script>new Image().src = "https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p=" + encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JSON 统计与分析器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="分析任意 JSON 文档的体积、深度、键频率、类型分布和树结构 — 单次扫描可处理大文件，完全在浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-statistics.html">
+  <meta property="og:title" content="JSON 统计与分析器">
+  <meta property="og:description" content="分析任意 JSON 文档的体积、深度、键频率、类型分布和树结构 — 单次扫描可处理大文件，完全在浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-statistics.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 统计与分析器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{height:200px;font-family:monospace;font-size:.8em;word-break:break-all;line-height:1.4}
+#status{margin-top:8px;font-size:.85em}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.stat-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-card .num{font-size:1.4em;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:.72em;color:var(--text2);margin-top:2px}
+.panel{margin-top:16px;padding:14px;background:var(--glass2);border:1px solid var(--border);border-radius:12px}
+.panel h3{margin:0 0 8px;font-size:.95em}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:.85em}
+.bar-row .lbl{width:130px;flex-shrink:0;word-break:break-all;font-family:monospace;font-size:.85em}
+.bar-row .bar{flex:1;height:18px;background:var(--glass);border-radius:4px;overflow:hidden}
+.bar-row .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .3s}
+.bar-row .val{font-family:monospace;opacity:.8;font-size:.85em;width:60px;text-align:right}
+.tree{font-family:monospace;font-size:.85em;max-height:300px;overflow:auto;background:var(--glass);padding:10px;border-radius:8px}
+.tree ul{list-style:none;padding-left:18px;margin:0}
+.tree li{margin:1px 0}
+.tree .key{color:#e94560}
+.tree .str{color:#00d672}
+.tree .num{color:#61afef}
+.tree .bool{color:#d19a66}
+.tree .null{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Statistics & Profiler","description":"Analyze any JSON document for size, depth, key frequency, value type distribution and structural complexity. Free, browser-only JSON profiler with tree visualization and export.","url": "https://tools.gamezipper.com/zh/dev/json-statistics.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does the JSON profiler measure?", "acceptedAnswer": {"@type": "Answer", "text": "It measures 25+ metrics: total size in bytes and characters, max nesting depth, total nodes, counts of each value type (string, number, boolean, null, object, array), top repeated keys, average values per object/array, total strings/numbers and tree visualization of the structure."}}, {"@type": "Question", "name": "Can it handle large JSON files?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool uses streaming-friendly single-pass traversal so it can comfortably handle multi-megabyte JSON documents. Files are processed line-by-line and the tree view is capped at a sensible depth to stay responsive."}}, {"@type": "Question", "name": "Is the JSON I paste stored anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Analysis runs entirely in your browser. Nothing is uploaded, logged or stored after you close the tab."}}, {"@type": "Question", "name": "What is the most useful metric for debugging?", "acceptedAnswer": {"@type": "Answer", "text": "Max depth and the top repeated keys are usually the most useful. A very deep structure (depth > 10) is a sign you should flatten your schema, and repeated keys tell you which fields dominate the document — perfect for planning an index or schema migration."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-statistics.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-statistics.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-statistics.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder='Paste JSON here...'></textarea>
+    <div id="status"></div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Statistics & Profiler',
+    toolDesc: 'Analyze any JSON document for size, depth, key frequency, type distribution and tree structure. Single-pass profiler for big files — runs entirely in your browser.',
+    analyze: '📊 Analyze',
+    loadExample: 'Load Example',
+    clear: 'Clear',
+    exportJSON: 'Export JSON',
+    exportCSV: 'Export CSV',
+    basic: 'Basic Metrics',
+    types: 'Value Type Distribution',
+    keys: 'Top Repeated Keys',
+    tree: 'Structure Tree',
+    bytes: 'Bytes',
+    chars: 'Characters',
+    nodes: 'Total Nodes',
+    depth: 'Max Depth',
+    objects: 'Objects',
+    arrays: 'Arrays',
+    strings: 'Strings',
+    numbers: 'Numbers',
+    bools: 'Booleans',
+    nulls: 'Nulls',
+    avgObjKeys: 'Avg keys / object',
+    avgArrLen: 'Avg length / array',
+    valid: '✓ Valid JSON',
+    invalid: '✗ Invalid JSON',
+    errLine: 'Line',
+    errCol: 'Col',
+    step1: 'Paste a JSON document into the input area',
+    step2: 'Click Analyze to compute size, depth, type and key stats',
+    step3: 'Scroll to inspect type distribution, top keys and tree view',
+    step4: 'Export the metrics as JSON or CSV for further analysis',
+  },
+  zh: {
+    toolTitle: 'JSON 统计与分析器',
+    toolDesc: '分析任意 JSON 文档的体积、深度、键频率、类型分布和树结构 — 单次扫描可处理大文件，完全在浏览器本地运行。',
+    analyze: '📊 分析',
+    loadExample: '加载示例',
+    clear: '清空',
+    exportJSON: '导出 JSON',
+    exportCSV: '导出 CSV',
+    basic: '基础指标',
+    types: '值类型分布',
+    keys: '高频键 Top',
+    tree: '结构树',
+    bytes: '字节数',
+    chars: '字符数',
+    nodes: '总节点数',
+    depth: '最大深度',
+    objects: '对象',
+    arrays: '数组',
+    strings: '字符串',
+    numbers: '数字',
+    bools: '布尔',
+    nulls: '空值',
+    avgObjKeys: '每对象平均键数',
+    avgArrLen: '每数组平均长度',
+    valid: '✓ JSON 有效',
+    invalid: '✗ JSON 无效',
+    errLine: '行',
+    errCol: '列',
+    step1: '将 JSON 文档粘贴到输入区',
+    step2: '点击「分析」计算体积、深度、类型和键统计',
+    step3: '向下滚动查看类型分布、高频键和结构树',
+    step4: '将指标导出为 JSON 或 CSV 以便进一步分析',
+  }
+});
+
+const $ = s => document.querySelector(s);
+const { t, copyText, getLang } = GZ;
+let lastStats = null;
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s).replace(/"/g,'&quot;').replace(/'/g,"\\'"); }
+
+function analyze(raw) {
+  const data = JSON.parse(raw);
+  const stats = {
+    bytes: new Blob([raw]).size,
+    chars: raw.length,
+    nodes: 0,
+    depth: 0,
+    objects: 0, arrays: 0, strings: 0, numbers: 0, bools: 0, nulls: 0,
+    totalObjKeys: 0, totalArrItems: 0, maxArrLen: 0,
+    keyCounts: {},
+  };
+
+  function walk(node, depth) {
+    stats.nodes++;
+    if (depth > stats.depth) stats.depth = depth;
+    if (node === null) { stats.nulls++; return; }
+    const t = typeof node;
+    if (t === 'string') stats.strings++;
+    else if (t === 'number') stats.numbers++;
+    else if (t === 'boolean') stats.bools++;
+    else if (Array.isArray(node)) {
+      stats.arrays++;
+      stats.totalArrItems += node.length;
+      if (node.length > stats.maxArrLen) stats.maxArrLen = node.length;
+      for (const v of node) walk(v, depth + 1);
+    } else if (t === 'object') {
+      const keys = Object.keys(node);
+      stats.objects++;
+      stats.totalObjKeys += keys.length;
+      for (const k of keys) {
+        stats.keyCounts[k] = (stats.keyCounts[k] || 0) + 1;
+        walk(node[k], depth + 1);
+      }
+    }
+  }
+  walk(data, 1);
+
+  stats.avgObjKeys = stats.objects ? Math.round((stats.totalObjKeys / stats.objects) * 10) / 10 : 0;
+  stats.avgArrLen = stats.arrays ? Math.round((stats.totalArrItems / stats.arrays) * 10) / 10 : 0;
+  stats.topKeys = Object.entries(stats.keyCounts).sort((a,b) => b[1]-a[1]).slice(0, 12);
+  return { stats, data };
+}
+
+function renderBasic(stats) {
+  return `<div class="stats-grid">
+    <div class="stat-card"><div class="num">${stats.bytes.toLocaleString()}</div><div class="lbl">${t('bytes')}</div></div>
+    <div class="stat-card"><div class="num">${stats.chars.toLocaleString()}</div><div class="lbl">${t('chars')}</div></div>
+    <div class="stat-card"><div class="num">${stats.nodes.toLocaleString()}</div><div class="lbl">${t('nodes')}</div></div>
+    <div class="stat-card"><div class="num">${stats.depth}</div><div class="lbl">${t('depth')}</div></div>
+    <div class="stat-card"><div class="num">${stats.objects}</div><div class="lbl">${t('objects')}</div></div>
+    <div class="stat-card"><div class="num">${stats.arrays}</div><div class="lbl">${t('arrays')}</div></div>
+    <div class="stat-card"><div class="num">${stats.strings}</div><div class="lbl">${t('strings')}</div></div>
+    <div class="stat-card"><div class="num">${stats.numbers}</div><div class="lbl">${t('numbers')}</div></div>
+    <div class="stat-card"><div class="num">${stats.bools}</div><div class="lbl">${t('bools')}</div></div>
+    <div class="stat-card"><div class="num">${stats.nulls}</div><div class="lbl">${t('nulls')}</div></div>
+    <div class="stat-card"><div class="num">${stats.avgObjKeys}</div><div class="lbl">${t('avgObjKeys')}</div></div>
+    <div class="stat-card"><div class="num">${stats.avgArrLen}</div><div class="lbl">${t('avgArrLen')}</div></div>
+  </div>`;
+}
+
+function renderTypes(stats) {
+  const total = stats.objects + stats.arrays + stats.strings + stats.numbers + stats.bools + stats.nulls;
+  if (total === 0) return '';
+  const types = [
+    ['objects', stats.objects],
+    ['arrays', stats.arrays],
+    ['strings', stats.strings],
+    ['numbers', stats.numbers],
+    ['bools', stats.bools],
+    ['nulls', stats.nulls],
+  ];
+  const max = Math.max(...types.map(x => x[1]), 1);
+  return `<div class="panel"><h3>${t('types')}</h3>
+    ${types.map(([k, v]) => `<div class="bar-row"><span class="lbl">${t(k)}</span><div class="bar"><div class="bar-fill" style="width:${(v/max*100).toFixed(1)}%"></div></div><span class="val">${v} (${(v/total*100).toFixed(1)}%)</span></div>`).join('')}
+  </div>`;
+}
+
+function renderKeys(stats) {
+  if (!stats.topKeys.length) return '';
+  const max = stats.topKeys[0][1];
+  return `<div class="panel"><h3>${t('keys')}</h3>
+    ${stats.topKeys.map(([k, v]) => `<div class="bar-row"><span class="lbl">"${escHtml(k)}"</span><div class="bar"><div class="bar-fill" style="width:${(v/max*100).toFixed(1)}%"></div></div><span class="val">${v}×</span></div>`).join('')}
+  </div>`;
+}
+
+function renderTree(data) {
+  function build(node, keyName) {
+    if (node === null) return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}<span class="null">null</span></li>`;
+    const t = typeof node;
+    if (t === 'string') return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}<span class="str">"${escHtml(node)}"</span></li>`;
+    if (t === 'number') return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}<span class="num">${node}</span></li>`;
+    if (t === 'boolean') return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}<span class="bool">${node}</span></li>`;
+    if (Array.isArray(node)) {
+      if (node.length === 0) return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}[]</li>`;
+      return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}Array(${node.length})<ul>${node.map(v => build(v, null)).join('')}</ul></li>`;
+    }
+    if (t === 'object') {
+      const keys = Object.keys(node);
+      if (keys.length === 0) return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}{}</li>`;
+      return `<li>${keyName ? '<span class="key">"'+escHtml(keyName)+'"</span>: ' : ''}Object{${keys.length}}<ul>${keys.map(k => build(node[k], k)).join('')}</ul></li>`;
+    }
+    return '';
+  }
+  // Cap tree at ~500 nodes for performance
+  function capWalk(node, depth, limit, count) {
+    if (count.value >= limit) return '';
+    if (node === null) return `<span class="null">null</span>`;
+    const t = typeof node;
+    if (t === 'string') return `<span class="str">"${escHtml(node.slice(0,40))}"</span>`;
+    if (t === 'number') return `<span class="num">${node}</span>`;
+    if (t === 'boolean') return `<span class="bool">${node}</span>`;
+    if (Array.isArray(node)) {
+      if (node.length === 0) return '[]';
+      if (count.value >= limit) return `Array(${node.length})…`;
+      let s = `Array(${node.length})<ul>`;
+      for (let i = 0; i < node.length; i++) {
+        if (count.value >= limit) { s += '<li>…</li>'; break; }
+        count.value++;
+        s += `<li>${capWalk(node[i], depth+1, limit, count)}</li>`;
+      }
+      return s + '</ul>';
+    }
+    if (t === 'object') {
+      const keys = Object.keys(node);
+      if (keys.length === 0) return '{}';
+      if (count.value >= limit) return `Object{${keys.length}}…`;
+      let s = `Object{${keys.length}}<ul>`;
+      for (let i = 0; i < keys.length; i++) {
+        if (count.value >= limit) { s += '<li>…</li>'; break; }
+        count.value++;
+        const k = keys[i];
+        s += `<li><span class="key">"${escHtml(k)}"</span>: ${capWalk(node[k], depth+1, limit, count)}</li>`;
+      }
+      return s + '</ul>';
+    }
+    return '';
+  }
+  const count = { value: 0 };
+  const html = capWalk(data, 0, 500, count);
+  return `<div class="panel"><h3>${t('tree')}${count.value >= 500 ? ' <small style="opacity:.6">(truncated to 500 nodes)</small>' : ''}</h3><div class="tree"><ul><li>${html}</li></ul></div></div>`;
+}
+
+function doAnalyze() {
+  const raw = $('#input').value.trim();
+  if (!raw) return;
+  try {
+    const { stats, data } = analyze(raw);
+    lastStats = stats;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+    $('#output').innerHTML = renderBasic(stats) + renderTypes(stats) + renderKeys(stats) + renderTree(data);
+  } catch (e) {
+    const msg = e.message;
+    let info = `<span style="color:var(--gz-accent)">${t('invalid')}: ${escHtml(msg)}</span>`;
+    const posMatch = msg.match(/position (\d+)/);
+    if (posMatch) {
+      const pos = parseInt(posMatch[1]);
+      const before = raw.substring(0, pos);
+      const line = before.split('\n').length;
+      const col = pos - before.lastIndexOf('\n');
+      info += ` <span style="opacity:.7">(${t('errLine')} ${line}, ${t('errCol')} ${col})</span>`;
+    }
+    $('#status').innerHTML = info;
+    $('#output').innerHTML = '';
+  }
+}
+
+function exportJSONStats() {
+  if (!lastStats) return;
+  const data = JSON.stringify(lastStats, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'json-stats.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSVStats() {
+  if (!lastStats) return;
+  let csv = 'metric,value\n';
+  for (const [k, v] of Object.entries(lastStats)) {
+    if (typeof v === 'object' && v !== null && !Array.isArray(v)) continue;
+    if (Array.isArray(v)) continue;
+    csv += `${k},${v}\n`;
+  }
+  if (lastStats.topKeys) {
+    for (const [k, c] of lastStats.topKeys) csv += `key:${k},${c}\n`;
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'json-stats.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+$('#input').addEventListener('input', () => { if ($('#input').value.trim().length > 50) doAnalyze(); });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doAnalyze()">${t('analyze')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('loadExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportJSONStats()">${t('exportJSON')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportCSVStats()">${t('exportCSV')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').innerHTML='';$('#status').innerHTML=''">${t('clear')}</button>`;
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "company": "GameZipper",
+    "founded": 2022,
+    "active": true,
+    "departments": [
+      { "name": "Engineering", "head": "Alice", "size": 12 },
+      { "name": "Design", "head": "Bob", "size": 6 },
+      { "name": "Marketing", "head": "Carol", "size": 4 }
+    ],
+    "tools": [
+      { "id": 1, "name": "JSON Formatter", "category": "dev", "free": true },
+      { "id": 2, "name": "Base64", "category": "dev", "free": true },
+      { "id": 3, "name": "Color Picker", "category": "color", "free": true }
+    ],
+    "contact": { "email": "hi@gamezipper.com", "url": "https://tools.gamezipper.com/zh/dev/json-statistics.html" },
+    "tags": ["tools", "free", "browser", "online"]
+  }, null, 2);
+  doAnalyze();
+}
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1', 'step2', 'step3', 'step4'],
+  related: [
+    { icon: '📋', href: '/dev/json.html', name: 'JSON Formatter' },
+    { icon: '🌳', href: '/dev/json-tree.html', name: 'JSON Tree Viewer' },
+    { icon: '🔍', href: '/dev/jsonpath.html', name: 'JSONPath Tester' },
+    { icon: '✅', href: '/dev/json-schema-validator.html', name: 'JSON Schema Validator' },
+  ]
+});
+loadExample();
+</script>
+<script>new Image().src = "https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p=" + encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

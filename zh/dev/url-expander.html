@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>URL 还原与短链展开器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="安全地追踪 bit.ly、t.co、tinyurl、goo.gl 等短链接，还原最终目标 URL，查看每个重定向跳和 HTTP 状态码 — 全部在浏览器本地完成。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/url-expander.html">
+  <meta property="og:title" content="URL 还原与短链展开器">
+  <meta property="og:description" content="安全地追踪 bit.ly、t.co、tinyurl、goo.gl 等短链接，还原最终目标 URL，查看每个重定向跳和 HTTP 状态码 — 全部在浏览器本地完成。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/url-expander.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="URL 还原与短链展开器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{height:140px;font-family:monospace;font-size:.85em;word-break:break-all}
+.hop-list{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.hop{display:grid;grid-template-columns:60px 90px 1fr;gap:10px;padding:10px 14px;border-radius:10px;align-items:center;font-size:.85em;border:1px solid var(--border);background:var(--glass2)}
+.hop-num{font-weight:700;color:var(--accent);font-family:monospace}
+.hop-status{font-family:monospace;font-weight:600;font-size:.85em;padding:3px 8px;border-radius:6px;text-align:center}
+.hop-status.s2{background:rgba(0,214,114,.15);color:#00d672}
+.hop-status.s3{background:rgba(78,205,196,.15);color:#4ecdc4}
+.hop-status.s4,.hop-status.s5{background:rgba(233,69,96,.15);color:#e94560}
+.hop-url{font-family:monospace;word-break:break-all;opacity:.9}
+.hop-final{border:2px solid var(--accent);background:rgba(78,205,196,.1)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.summary-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.summary-card .num{font-size:1.3em;font-weight:700;color:var(--accent)}
+.summary-card .lbl{font-size:.75em;color:var(--text2);margin-top:2px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"URL Expander & Unshortener","description":"Safely follow and unshorten bit.ly, t.co, tinyurl, goo.gl and other shortened links. See the final URL, all redirect hops, and HTTP status codes — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/url-expander.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does a URL expander do?", "acceptedAnswer": {"@type": "Answer", "text": "A URL expander (or unshortener) follows the chain of HTTP redirects behind a shortened link (bit.ly, t.co, tinyurl, goo.gl, etc.) and reveals the final destination URL. It also shows every redirect hop and its status code, so you can verify a link is safe before clicking."}}, {"@type": "Question", "name": "Is it safe to expand shortened links?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. This tool performs safe HEAD/GET requests from your browser and only reads the redirect Location header — it does not follow the destination page, load any resources, or execute any code. Your visit is limited to the redirect chain metadata."}}, {"@type": "Question", "name": "Does it work for every shortener?", "acceptedAnswer": {"@type": "Answer", "text": "It works for any shortener that uses standard HTTP 301/302 redirects, which covers bit.ly, tinyurl.com, t.co, goo.gl, ow.ly, is.gd, buff.ly, rebrand.ly, t.me and most others. The browser is responsible for following the chain and we display each step it traversed."}}, {"@type": "Question", "name": "Will my URL history be stored?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens in your browser. The links you check are not sent to our servers and are not stored after you close the tab."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/url-expander.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/url-expander.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/url-expander.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder="https://bit.ly/..."></textarea>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'URL Expander & Unshortener',
+    toolDesc: 'Safely follow shortened links from bit.ly, t.co, tinyurl, goo.gl and more. Reveal the final destination URL, every redirect hop and its HTTP status — all without leaving your browser.',
+    expand: '🔗 Expand URL',
+    copy: 'Copy Final URL',
+    finalLabel: 'Final URL',
+    hopsLabel: 'Redirect Hops',
+    statusLabel: 'Status',
+    errorCORS: 'Cannot follow this URL from the browser (CORS restriction or network error). Many shorteners work because they send permissive CORS headers — but if a server blocks cross-origin HEAD requests, the chain stops here. Try a different shortener or use a server-based tool.',
+    errorInvalid: 'Please enter a valid http:// or https:// URL.',
+    step1: 'Paste a shortened link into the input area (bit.ly, t.co, tinyurl, etc.)',
+    step2: 'Click "Expand URL" to follow the redirect chain',
+    step3: 'View the final destination URL, every hop and HTTP status',
+    step4: 'Copy the final URL or open it in a new tab once verified safe',
+  },
+  zh: {
+    toolTitle: 'URL 还原与短链展开器',
+    toolDesc: '安全地追踪 bit.ly、t.co、tinyurl、goo.gl 等短链接，还原最终目标 URL，查看每个重定向跳和 HTTP 状态码 — 全部在浏览器本地完成。',
+    expand: '🔗 展开 URL',
+    copy: '复制最终 URL',
+    finalLabel: '最终 URL',
+    hopsLabel: '重定向跳数',
+    statusLabel: '状态',
+    errorCORS: '浏览器无法追踪此 URL（CORS 限制或网络错误）。多数短链服务允许跨域请求，但若服务器阻止跨域 HEAD 请求，链条会中断。请尝试其他短链或使用基于服务器的工具。',
+    errorInvalid: '请输入有效的 http:// 或 https:// URL。',
+    step1: '将短链接粘贴到输入区（bit.ly、t.co、tinyurl 等）',
+    step2: '点击「展开 URL」开始追踪重定向链',
+    step3: '查看最终目标 URL、每一步跳转和 HTTP 状态',
+    step4: '确认安全后复制最终 URL 或在新标签页打开',
+  }
+});
+
+const { $, $$, t, copyText, showToast } = GZ;
+const MAX_HOPS = 15;
+
+async function expandUrl(startUrl) {
+  const hops = [];
+  let current = startUrl;
+  let prev = null;
+  for (let i = 0; i < MAX_HOPS; i++) {
+    let res;
+    try {
+      res = await fetch(current, { method: 'HEAD', redirect: 'manual', mode: 'cors' });
+    } catch (e) {
+      // Try GET as fallback
+      try {
+        res = await fetch(current, { method: 'GET', redirect: 'manual', mode: 'cors' });
+      } catch (e2) {
+        if (hops.length === 0) throw e2;
+        break;
+      }
+    }
+    const status = res.status;
+    const statusText = res.statusText || '';
+    const location = res.headers.get('Location') || res.headers.get('location') || '';
+    hops.push({ url: current, status, statusText, location });
+    const sc = Math.floor(status / 100);
+    if (sc === 3 && location) {
+      // Resolve relative
+      try {
+        const next = new URL(location, current).toString();
+        if (next === current) break;
+        current = next;
+      } catch (e) { break; }
+    } else {
+      break;
+    }
+  }
+  return { hops, finalUrl: hops.length ? hops[hops.length - 1].url : startUrl };
+}
+
+function statusClass(s) { const c = Math.floor(s / 100); return c === 2 ? 's2' : c === 3 ? 's3' : c === 4 || c === 5 ? 's4' : ''; }
+
+function renderResult(result) {
+  const { hops, finalUrl } = result;
+  const totalHops = hops.length;
+  const finalHop = hops[hops.length - 1];
+  const finalStatus = finalHop ? finalHop.status : 0;
+  const redirected = totalHops > 1;
+
+  let html = `<div class="summary">
+    <div class="summary-card"><div class="num">${totalHops}</div><div class="lbl">${t('hopsLabel')}</div></div>
+    <div class="summary-card"><div class="num">${finalStatus}</div><div class="lbl">${t('statusLabel')}</div></div>
+    <div class="summary-card"><div class="num">${redirected ? '✓' : '—'}</div><div class="lbl">${t('finalLabel')}</div></div>
+  </div>
+  <h3 style="margin:18px 0 8px;font-size:1rem">${t('finalLabel')}</h3>
+  <div style="word-break:break-all;padding:12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-family:monospace;font-size:.9em">${escHtml(finalUrl)}</div>
+  <h3 style="margin:18px 0 8px;font-size:1rem">${t('hopsLabel')}</h3>
+  <div class="hop-list">`;
+  hops.forEach((h, i) => {
+    const cls = statusClass(h.status);
+    html += `<div class="hop ${i === hops.length - 1 ? 'hop-final' : ''}">
+      <span class="hop-num">#${i + 1}</span>
+      <span class="hop-status ${cls}">${h.status}</span>
+      <span class="hop-url">${escHtml(h.url)}</span>
+    </div>`;
+  });
+  html += `</div>`;
+  $('#output').innerHTML = html;
+}
+
+function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+async function doExpand() {
+  const raw = $('#input').value.trim();
+  if (!raw) return;
+  let url;
+  try { url = new URL(raw); if (url.protocol !== 'http:' && url.protocol !== 'https:') throw 0; }
+  catch (e) { $('#output').innerHTML = `<div style="color:var(--gz-accent);margin-top:12px">${t('errorInvalid')}</div>`; return; }
+
+  $('#output').innerHTML = '<div style="margin-top:12px;opacity:.7">⏳ Following redirects…</div>';
+  try {
+    const result = await expandUrl(url.toString());
+    renderResult(result);
+  } catch (e) {
+    $('#output').innerHTML = `<div style="color:var(--gz-accent);margin-top:12px">${t('errorCORS')}<br><small style="opacity:.6">${escHtml(e.message || String(e))}</small></div>`;
+  }
+}
+
+function copyFinal() {
+  const card = $('#output .summary');
+  if (!card) return;
+  const text = $('#output div[style*="monospace"]').textContent || '';
+  if (text) copyText(text);
+}
+
+function loadExample() {
+  $('#input').value = 'https://bit.ly/3example';
+  doExpand();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doExpand()">${t('expand')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyFinal()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').innerHTML=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1', 'step2', 'step3', 'step4'],
+  related: [
+    { icon: '🔗', href: '/dev/url-parser.html', name: 'URL Parser' },
+    { icon: '🔐', href: '/dev/url-encode.html', name: 'URL Encoder' },
+    { icon: '📡', href: '/dev/http-status-codes.html', name: 'HTTP Status Codes' },
+    { icon: '🌐', href: '/dev/dns-lookup.html', name: 'DNS Lookup' },
+  ]
+});
+</script>
+<script>new Image().src = "https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p=" + encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
