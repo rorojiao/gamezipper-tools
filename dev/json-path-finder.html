@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON Path Finder & Explorer - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Explore any JSON structure and find the path to any value. Click any node to get its JSONPath, dot-notation path and value — useful for debugging APIs and configs.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-path-finder.html">
+  <meta property="og:title" content="JSON Path Finder & Explorer - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Explore any JSON structure and find the path to any value. Click any node to get its JSONPath, dot-notation path and value — useful for debugging APIs and configs.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-path-finder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON Path Finder & Explorer - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-split{grid-template-columns:1fr 1fr}
+#tree{font-family:monospace;font-size:.85em;line-height:1.8;overflow:auto;max-height:500px;padding:12px}
+#tree .node{cursor:pointer;padding:1px 4px;border-radius:3px}
+#tree .node:hover{background:var(--glass)}
+#tree .node.selected{background:rgba(0,214,114,.15);outline:1px solid var(--gz-accent)}
+#tree .key{color:#e94560}
+#tree .val-str{color:#00d672}
+#tree .val-num{color:#61afef}
+#tree .val-bool{color:#d19a66}
+#tree .val-null{color:#888}
+#tree .bracket{color:var(--text3)}
+#path-output{margin-top:12px;padding:12px;background:var(--glass);border:1px solid var(--border);border-radius:8px;font-family:monospace;font-size:.85em;word-break:break-all}
+#path-output .label{font-weight:600;margin-bottom:4px;font-size:.8em;opacity:.7}
+.path-row{display:flex;gap:6px;align-items:center;margin:4px 0}
+.path-row code{flex:1;padding:4px 8px;background:rgba(0,0,0,.2);border-radius:4px}
+.path-row button{font-size:.75em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Path Finder & Explorer","description":"Explore any JSON structure and find the path to any value. Click any node to get its JSONPath, dot-notation path and value — useful for debugging APIs and configs.","url":"https://tools.gamezipper.com/dev/json-path-finder.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a JSON path finder?", "acceptedAnswer": {"@type": "Answer", "text": "A JSON path finder lets you explore a JSON document as a tree and click on any node to see its full path in multiple formats — dot notation, bracket notation, and JSONPath."}}, {"@type": "Question", "name": "What path formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool outputs paths in three formats: dot notation (user.address.city), bracket notation (user['address']['city']), and JSONPath ($.user.address.city)."}}, {"@type": "Question", "name": "How do I find the path to a specific value?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your JSON, then click on any node in the tree view on the left. The path to that node will appear in the output panel with one-click copy."}}, {"@type": "Question", "name": "Is my JSON data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing happens entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-path-finder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-path-finder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-path-finder.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="input" spellcheck="false" style="min-height:300px"></textarea>
+      </div>
+      <div>
+        <label id="lbl-tree"></label>
+        <div id="tree" style="background:var(--glass);border:1px solid var(--border);border-radius:8px;min-height:300px;max-height:500px;overflow:auto"></div>
+      </div>
+    </div>
+    <div id="path-output" style="display:none">
+      <div class="label" id="path-label">Selected Path</div>
+      <div id="path-dot" class="path-row"><span style="font-size:.75em;opacity:.6;width:60px">dot:</span><code></code><button class="gz-btn" style="padding:2px 8px;font-size:.7em" onclick="copyText(this.previousElementSibling.textContent)">Copy</button></div>
+      <div id="path-bracket" class="path-row"><span style="font-size:.75em;opacity:.6;width:60px">bracket:</span><code></code><button class="gz-btn" style="padding:2px 8px;font-size:.7em" onclick="copyText(this.previousElementSibling.textContent)">Copy</button></div>
+      <div id="path-jsonpath" class="path-row"><span style="font-size:.75em;opacity:.6;width:60px">JSONPath:</span><code></code><button class="gz-btn" style="padding:2px 8px;font-size:.7em" onclick="copyText(this.previousElementSibling.textContent)">Copy</button></div>
+      <div id="path-value" class="path-row"><span style="font-size:.75em;opacity:.6;width:60px">value:</span><code></code><button class="gz-btn" style="padding:2px 8px;font-size:.7em" onclick="copyText(this.previousElementSibling.textContent)">Copy</button></div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Path Finder & Explorer',
+    toolDesc: 'Explore any JSON structure and find the path to any value. Click nodes to get JSONPath, dot-notation and bracket-notation paths.',
+    inputLabel: 'JSON Input',
+    treeLabel: 'JSON Tree (click a node)',
+    step1: 'Paste or type your JSON data in the input area',
+    step2: 'The tree view renders automatically on the right',
+    step3: 'Click any node in the tree to select it',
+    step4: 'Copy the path in dot, bracket or JSONPath format',
+  },
+  zh: {
+    toolTitle: 'JSON 路径查找器',
+    toolDesc: '探索 JSON 结构并找到任意值的路径。点击节点获取 JSONPath、点号路径和方括号路径。',
+    inputLabel: 'JSON 输入',
+    treeLabel: 'JSON 树形结构（点击节点）',
+    step1: '在输入区粘贴或输入 JSON 数据',
+    step2: '右侧自动渲染树形视图',
+    step3: '点击树中的任意节点选中',
+    step4: '以点号、方括号或 JSONPath 格式复制路径',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-tree').textContent = t('treeLabel');
+
+let parsed = null;
+
+function parseAndRender() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#tree').innerHTML = ''; $('#path-output').style.display = 'none'; return; }
+  try {
+    parsed = JSON.parse(inp);
+    $('#tree').innerHTML = '';
+    renderTree(parsed, [], $('#tree'));
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Valid JSON — ${typeof parsed === 'object' ? (Array.isArray(parsed) ? parsed.length + ' items' : Object.keys(parsed).length + ' keys') : 'primitive value'}</span>`;
+  } catch(e) {
+    $('#tree').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Invalid JSON</span>`;
+    $('#path-output').style.display = 'none';
+  }
+}
+
+function renderTree(obj, path, parent, depth = 0) {
+  if (depth > 50) return;
+
+  if (obj === null) {
+    const span = mkNode('null', path, 'val-null');
+    parent.appendChild(span);
+    return;
+  }
+
+  if (typeof obj !== 'object') {
+    const cls = typeof obj === 'string' ? 'val-str' : typeof obj === 'number' ? 'val-num' : typeof obj === 'boolean' ? 'val-bool' : '';
+    const display = typeof obj === 'string' ? `"${obj.length > 80 ? obj.slice(0,80) + '…' : obj}"` : String(obj);
+    const span = mkNode(display, path, cls);
+    parent.appendChild(span);
+    return;
+  }
+
+  const isArray = Array.isArray(obj);
+  const entries = isArray ? obj.map((v, i) => [i, v]) : Object.entries(obj);
+  const open = isArray ? '[' : '{';
+  const close = isArray ? ']' : '}';
+
+  if (entries.length === 0) {
+    const span = mkNode(open + close, path, 'bracket');
+    parent.appendChild(span);
+    return;
+  }
+
+  // Collapsible container
+  const container = document.createElement('div');
+  container.style.marginLeft = depth > 0 ? '16px' : '0';
+
+  const toggle = document.createElement('span');
+  toggle.className = 'bracket';
+  toggle.style.cursor = 'pointer';
+  toggle.textContent = '▾ ' + open;
+  toggle.onclick = () => {
+    const body = container.querySelector('.tree-body');
+    const collapsed = body.style.display === 'none';
+    body.style.display = collapsed ? '' : 'none';
+    toggle.textContent = (collapsed ? '▾ ' : '▸ ') + open;
+  };
+  container.appendChild(toggle);
+
+  const body = document.createElement('div');
+  body.className = 'tree-body';
+  body.style.marginLeft = '12px';
+
+  entries.forEach(([key, val]) => {
+    const line = document.createElement('div');
+    const keySpan = document.createElement('span');
+    keySpan.className = 'key';
+    keySpan.textContent = typeof key === 'number' ? `${key}: ` : `"${key}": `;
+    line.appendChild(keySpan);
+    const childPath = [...path, key];
+    renderTree(val, childPath, line, depth + 1);
+    body.appendChild(line);
+  });
+
+  container.appendChild(body);
+
+  const closeSpan = document.createElement('span');
+  closeSpan.className = 'bracket';
+  closeSpan.textContent = close;
+  container.appendChild(closeSpan);
+
+  parent.appendChild(container);
+}
+
+function mkNode(text, path, cls) {
+  const span = document.createElement('span');
+  span.className = 'node ' + cls;
+  span.textContent = text;
+  span.onclick = (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('#tree .node.selected').forEach(n => n.classList.remove('selected'));
+    span.classList.add('selected');
+    showPath(path);
+  };
+  span.dataset.path = JSON.stringify(path);
+  return span;
+}
+
+function showPath(path) {
+  const po = $('#path-output');
+  po.style.display = '';
+
+  const dotPath = path.map(k => typeof k === 'number' ? `[${k}]` : /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) ? k : `['${k}']`).join('.').replace(/\.\[/g, '[');
+  const bracketPath = path.map(k => `['${k}']`).join('');
+  const jsonPath = '$' + path.map(k => typeof k === 'number' ? `[${k}]` : /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) ? '.' + k : `['${k}']`).join('');
+
+  let value = parsed;
+  for (const k of path) { value = value[k]; }
+  const valueStr = typeof value === 'object' ? JSON.stringify(value, null, 2).slice(0, 200) : String(value);
+
+  po.querySelector('#path-dot code').textContent = dotPath || '(root)';
+  po.querySelector('#path-bracket code').textContent = bracketPath || '(root)';
+  po.querySelector('#path-jsonpath code').textContent = jsonPath || '$';
+  po.querySelector('#path-value code').textContent = valueStr.length > 200 ? valueStr.slice(0, 200) + '…' : valueStr;
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "name": "GameZipper Tools",
+    "version": "2.0",
+    "config": {
+      "theme": "dark",
+      "languages": ["en", "zh", "ja"],
+      "features": {
+        "seo": true,
+        "analytics": true,
+        "categories": 12
+      }
+    },
+    "tools": [
+      {"id": "json", "name": "JSON Formatter", "users": 50000},
+      {"id": "base64", "name": "Base64 Encoder", "users": 35000}
+    ],
+    "stats": {"totalTools": 528, "dailyUsers": 12000}
+  }, null, 2);
+  parseAndRender();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#tree').innerHTML = '';
+  $('#path-output').style.display = 'none';
+  $('#status').innerHTML = '';
+}
+
+$('#input').addEventListener('input', parseAndRender);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example') || 'Example'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear') || 'Clear'}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌳', href:'/dev/json-tree.html', name:'JSON Tree'},
+    {icon:'🧭', href:'/dev/jsonpath.html', name:'JSONPath Tester'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

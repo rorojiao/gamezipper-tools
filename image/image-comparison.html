@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image Comparison Slider - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Compare two images side by side with an interactive before/after slider. Drag to reveal differences — perfect for designers, photographers and developers.">
+  <link rel="canonical" href="https://tools.gamezipper.com/image/image-comparison.html">
+  <meta property="og:title" content="Image Comparison Slider - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Compare two images side by side with an interactive before/after slider. Drag to reveal differences — perfect for designers, photographers and developers.">
+  <meta property="og:url" content="https://tools.gamezipper.com/image/image-comparison.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Image Comparison Slider - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .2s}
+.drop-zone:hover{border-color:var(--gz-accent)}
+#compare-container{position:relative;overflow:hidden;border-radius:8px;margin:12px 0;background:#111;user-select:none;display:none}
+#compare-container img{display:block;max-width:100%;max-height:500px;margin:0 auto}
+#img-before{position:relative;z-index:1}
+#img-after{position:absolute;top:0;left:0;z-index:2;clip-path:inset(0 50% 0 0)}
+#slider-line{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#fff;z-index:3;transform:translateX(-50%);pointer-events:none;box-shadow:0 0 6px rgba(0,0,0,.5)}
+#slider-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;z-index:4;cursor:ew-resize;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.4);font-size:1.2em}
+.labels{display:flex;justify-content:space-between;margin-top:4px;font-size:.8em;opacity:.7}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Comparison Slider","description":"Compare two images side by side with an interactive before/after slider. Drag to reveal differences — perfect for designers, photographers and developers.","url":"https://tools.gamezipper.com/image/image-comparison.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I compare two images?", "acceptedAnswer": {"@type": "Answer", "text": "Upload a Before image and an After image, then drag the slider left and right to compare them. You can also download a screenshot of the comparison."}}, {"@type": "Question", "name": "What image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports PNG, JPG, JPEG, WebP, GIF, BMP and SVG. Both images should ideally have the same dimensions for the best comparison experience."}}, {"@type": "Question", "name": "Is my data uploaded to any server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All image processing happens entirely in your browser. Your images never leave your device."}}, {"@type": "Question", "name": "Can I download the comparison result?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click the Download Comparison button to save the current slider position as a PNG image with both before and after visible."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/image-comparison.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/image-comparison.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/image-comparison.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="drop-zone" id="drop-before" style="flex:1;min-width:200px">
+        <div style="font-size:1.5em">🖼️</div>
+        <div id="lbl-before"></div>
+        <input type="file" id="file-before" accept="image/*" style="display:none">
+      </div>
+      <div class="drop-zone" id="drop-after" style="flex:1;min-width:200px">
+        <div style="font-size:1.5em">🖼️</div>
+        <div id="lbl-after"></div>
+        <input type="file" id="file-after" accept="image/*" style="display:none">
+      </div>
+    </div>
+    <div id="compare-container">
+      <img id="img-before" alt="Before">
+      <img id="img-after" alt="After">
+      <div id="slider-line"></div>
+      <div id="slider-handle">⇔</div>
+    </div>
+    <div class="labels" id="labels-row" style="display:none">
+      <span id="label-before-text">Before</span>
+      <span id="label-after-text">After</span>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Comparison Slider',
+    toolDesc: 'Compare two images with an interactive before/after slider. Drag to reveal differences — perfect for designers and photographers.',
+    dropBefore: 'Drop Before image here',
+    dropAfter: 'Drop After image here',
+    before: 'Before',
+    after: 'After',
+    step1: 'Upload or drag a Before image into the left drop zone',
+    step2: 'Upload or drag an After image into the right drop zone',
+    step3: 'Drag the slider handle left and right to compare',
+    step4: 'Click Download Comparison to save the result',
+  },
+  zh: {
+    toolTitle: '图片对比滑块工具',
+    toolDesc: '使用交互式前后对比滑块比较两张图片。拖动滑块查看差异 — 适合设计师和摄影师。',
+    dropBefore: '拖拽「之前」图片到此处',
+    dropAfter: '拖拽「之后」图片到此处',
+    before: '之前',
+    after: '之后',
+    step1: '上传或拖拽「之前」图片到左侧区域',
+    step2: '上传或拖拽「之后」图片到右侧区域',
+    step3: '拖动滑块左右对比查看差异',
+    step4: '点击「下载对比结果」保存',
+  }
+});
+
+const { $, t } = GZ;
+
+$('#lbl-before').textContent = t('dropBefore');
+$('#lbl-after').textContent = t('dropAfter');
+$('#label-before-text').textContent = t('before');
+$('#label-after-text').textContent = t('after');
+
+const beforeEl = $('#drop-before'), afterEl = $('#drop-after');
+const fileBefore = $('#file-before'), fileAfter = $('#file-after');
+const imgBefore = $('#img-before'), imgAfter = $('#img-after');
+const container = $('#compare-container');
+let sliderPct = 50, dragging = false;
+
+function setupDrop(el, input, img) {
+  el.onclick = () => input.click();
+  el.addEventListener('dragover', e => { e.preventDefault(); el.style.borderColor = 'var(--gz-accent)'; });
+  el.addEventListener('dragleave', () => { el.style.borderColor = ''; });
+  el.addEventListener('drop', e => { e.preventDefault(); el.style.borderColor = ''; if(e.dataTransfer.files.length) loadImage(e.dataTransfer.files[0], img, el); });
+  input.addEventListener('change', e => { if(e.target.files.length) loadImage(e.target.files[0], img, el); });
+}
+
+function loadImage(file, img, el) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    img.src = e.target.result;
+    el.innerHTML = `<div style="font-size:.85em;opacity:.7">✓ ${file.name}</div>`;
+    checkBothLoaded();
+  };
+  reader.readAsDataURL(file);
+}
+
+setupDrop(beforeEl, fileBefore, imgBefore);
+setupDrop(afterEl, fileAfter, imgAfter);
+
+function checkBothLoaded() {
+  let count = 0;
+  if (imgBefore.src) count++;
+  if (imgAfter.src) count++;
+  if (count === 2) {
+    imgBefore.onload = () => showComparison();
+    if (imgBefore.complete && imgAfter.complete) showComparison();
+  }
+}
+
+function showComparison() {
+  container.style.display = 'block';
+  $('#labels-row').style.display = 'flex';
+  beforeEl.style.display = 'none';
+  afterEl.style.display = 'none';
+  setSlider(50);
+  updateToolbar();
+}
+
+function setSlider(pct) {
+  sliderPct = Math.max(0, Math.min(100, pct));
+  imgAfter.style.clipPath = `inset(0 ${100 - sliderPct}% 0 0)`;
+  $('#slider-line').style.left = sliderPct + '%';
+  $('#slider-handle').style.left = sliderPct + '%';
+}
+
+container.addEventListener('mousedown', e => { dragging = true; moveSlider(e); });
+container.addEventListener('touchstart', e => { dragging = true; moveSlider(e.touches[0]); }, { passive: true });
+document.addEventListener('mousemove', e => { if(dragging) moveSlider(e); });
+document.addEventListener('touchmove', e => { if(dragging) moveSlider(e.touches[0]); }, { passive: true });
+document.addEventListener('mouseup', () => { dragging = false; });
+document.addEventListener('touchend', () => { dragging = false; });
+
+function moveSlider(e) {
+  const rect = container.getBoundingClientRect();
+  const pct = ((e.clientX - rect.left) / rect.width) * 100;
+  setSlider(pct);
+}
+
+function downloadComparison() {
+  const c = document.createElement('canvas');
+  const w = imgBefore.naturalWidth;
+  const h = imgBefore.naturalHeight;
+  c.width = w; c.height = h;
+  const cx = c.getContext('2d');
+  cx.drawImage(imgBefore, 0, 0, w, h);
+  const splitX = Math.round(w * sliderPct / 100);
+  cx.save();
+  cx.beginPath();
+  cx.rect(splitX, 0, w - splitX, h);
+  cx.clip();
+  cx.drawImage(imgAfter, 0, 0, w, h);
+  cx.restore();
+  // Draw line
+  cx.strokeStyle = '#fff';
+  cx.lineWidth = 3;
+  cx.beginPath();
+  cx.moveTo(splitX, 0);
+  cx.lineTo(splitX, h);
+  cx.stroke();
+  const a = document.createElement('a');
+  a.href = c.toDataURL('image/png');
+  a.download = 'image-comparison.png';
+  a.click();
+}
+
+function resetTool() {
+  container.style.display = 'none';
+  $('#labels-row').style.display = 'none';
+  beforeEl.style.display = '';
+  afterEl.style.display = '';
+  beforeEl.innerHTML = `<div style="font-size:1.5em">🖼️</div><div>${t('dropBefore')}</div>`;
+  afterEl.innerHTML = `<div style="font-size:1.5em">🖼️</div><div>${t('dropAfter')}</div>`;
+  imgBefore.src = ''; imgAfter.src = '';
+  fileBefore.value = ''; fileAfter.value = '';
+  updateToolbar();
+}
+
+function updateToolbar() {
+  const active = container.style.display === 'block';
+  $('#toolbar').innerHTML = active ? `
+    <button class="gz-btn" onclick="downloadComparison()">💾 Download Comparison</button>
+    <button class="gz-btn gz-btn-secondary" onclick="resetTool()">🔄 New Images</button>` : '';
+}
+
+updateToolbar();
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/filters.html', name:'Image Filters'},
+    {icon:'🔒', href:'/image/censor.html', name:'Image Censor'},
+    {icon:'🔍', href:'/image/exif-viewer.html', name:'EXIF Viewer'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
