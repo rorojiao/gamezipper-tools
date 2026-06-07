@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Coin Flip Statistics - Streak & Probability Analyzer | GameZipper Tools</title>
+<meta name="description" content="Flip virtual coins and analyze the statistics. See frequency distribution, longest streaks, runs test, and chi-square probability. Visualize 50/50 randomness over thousands of flips. Free, in-browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/fun/coin-flip-stats.html">
+<meta property="og:title" content="Coin Flip Statistics - Streak & Probability Analyzer | GameZipper Tools">
+<meta property="og:description" content="Flip thousands of virtual coins and analyze the distribution, longest streaks, and probability. Free, in-browser, no signup.">
+<meta property="og:url" content="https://tools.gamezipper.com/fun/coin-flip-stats.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Coin Flip Statistics - Streak & Probability Analyzer | GameZipper Tools">
+<meta name="twitter:description" content="Flip thousands of virtual coins and analyze the distribution, longest streaks, and probability.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.cf-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.cf-controls input[type="number"]{width:90px;padding:8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:.92em}
+.cf-controls button{padding:9px 14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9em}
+.cf-controls button.secondary{background:var(--glass2);color:var(--text);border:1px solid var(--border)}
+.cf-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0}
+.cf-tile{background:linear-gradient(135deg,var(--glass),var(--glass2));border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.cf-tile.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.cf-tile .num{font-size:1.3em;font-weight:800;line-height:1.1}
+.cf-tile .lbl{font-size:.68em;text-transform:uppercase;letter-spacing:.4px;margin-top:3px;opacity:.85}
+.cf-stream{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px;margin:14px 0;max-height:160px;overflow-y:auto;font-family:monospace;font-size:1.1em;line-height:1.4;letter-spacing:1px;word-break:break-all}
+.cf-stream .h{color:#ffd93d}
+.cf-stream .t{color:#00d672}
+.cf-bar{height:30px;border-radius:6px;margin:8px 0;background:var(--glass2);border:1px solid var(--border);position:relative;overflow:hidden;display:flex}
+.cf-bar > div{height:100%;transition:width .3s}
+.cf-bar .heads{background:linear-gradient(90deg,#ffd93d,#ffaa00)}
+.cf-bar .tails{background:linear-gradient(90deg,#00d672,#00a854)}
+.cf-bar-label{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-around;font-size:.8em;font-weight:700;color:#000;mix-blend-mode:screen}
+.cf-streaks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+@media(max-width:600px){.cf-streaks{grid-template-columns:1fr}}
+.cf-streak-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px}
+.cf-streak-card h4{margin:0 0 6px;font-size:.9em;color:var(--accent)}
+.cf-streak-card .hist{display:flex;align-items:flex-end;gap:2px;height:80px;margin-top:8px}
+.cf-streak-card .hist .bar{flex:1;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:3px 3px 0 0;min-width:6px;position:relative}
+.cf-streak-card .hist .bar .lbl{position:absolute;bottom:-18px;left:0;right:0;font-size:.65em;text-align:center;color:var(--text2);font-family:monospace}
+.cf-tip{background:var(--glass2);border-left:3px solid var(--accent);padding:10px 14px;border-radius:6px;font-size:.85em;margin:10px 0;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Coin Flip Statistics","description":"Flip a virtual coin thousands of times and analyze streaks, frequency distribution, runs test and probability. Free, in-browser.","url":"https://tools.gamezipper.com/fun/coin-flip-stats.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is this coin flip really random?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each flip uses Math.random() (a cryptographically strong PRNG in modern browsers) and is independent of previous flips. Over large samples (10,000+), the distribution will converge to a near-perfect 50/50. Short runs can be skewed by chance, which is exactly what makes the analysis interesting."}}, {"@type": "Question", "name": "What is the longest streak I should expect?", "acceptedAnswer": {"@type": "Answer", "text": "The probability of a streak of k heads in a row is (1/2)^k. In 100 flips you will typically see one streak of 4-5. In 1,000 flips, expect a streak of 7-8. In 10,000 flips, expect a streak of 10-12. The longest streak you see is well described by the formula log₂(N) where N is the number of flips."}}, {"@type": "Question", "name": "What is a runs test?", "acceptedAnswer": {"@type": "Answer", "text": "A runs test counts how many 'runs' (consecutive identical outcomes) appear in a sequence. For a fair coin, the expected number of runs in N flips is (N+1)/2. The standard deviation is sqrt((N-1)/4). If your sequence has too few runs, the coin may not be fair; too many runs suggests alternation. It's a quick statistical test for randomness."}}, {"@type": "Question", "name": "Can I use this for a class or experiment?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool is perfect for teaching probability, the law of large numbers, and the gambler's fallacy. You can flip thousands of coins at once to demonstrate convergence to 50/50, and use the runs test and streak analysis to show that even fair coins can produce long streaks by chance."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/coin-flip-stats.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/coin-flip-stats.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/coin-flip-stats.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="cf-controls">
+      <label><span id="lbl-n" style="font-size:.85em;font-weight:600;margin-right:6px">Flips:</span>
+        <input type="number" id="numFlips" min="1" max="1000000" value="100">
+      </label>
+      <button onclick="flipN()" id="btn-flip"></button>
+      <button class="secondary" onclick="flipN(1000)" id="btn-1k"></button>
+      <button class="secondary" onclick="flipN(10000)" id="btn-10k"></button>
+      <button class="secondary" onclick="reset()" id="btn-reset"></button>
+    </div>
+    <div class="cf-tiles" id="tiles"></div>
+    <div class="cf-bar" id="bar"><div class="heads" id="bar-h"></div><div class="tails" id="bar-t"></div><div class="cf-bar-label" id="bar-label"></div></div>
+    <div class="cf-streaks">
+      <div class="cf-streak-card">
+        <h4>👑 <span id="lbl-longest-h">Longest H-streak</span>: <span id="longestH">0</span></h4>
+        <h4 style="color:#00d672">👑 <span id="lbl-longest-t">Longest T-streak</span>: <span id="longestT">0</span></h4>
+        <div class="hist" id="streakHist"></div>
+      </div>
+      <div class="cf-streak-card">
+        <h4>📊 <span id="lbl-runs">Runs Test</span></h4>
+        <div id="runsInfo" style="font-size:.9em;line-height:1.5"></div>
+        <h4 style="margin-top:10px">📈 <span id="lbl-chi">Chi-Square vs 50/50</span></h4>
+        <div id="chiInfo" style="font-size:.9em;line-height:1.5"></div>
+      </div>
+    </div>
+    <div class="cf-stream" id="stream"></div>
+    <div class="cf-tip">💡 <span id="tip"></span></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Coin Flip Statistics',
+    toolDesc: 'Flip thousands of virtual coins and analyze streaks, distribution, runs test and probability. Visualize 50/50 randomness at scale.',
+    lblN: 'Flips:',
+    btnFlip: '🪙 Flip',
+    btn1k: 'Flip 1,000',
+    btn10k: 'Flip 10,000',
+    btnReset: 'Reset',
+    lblHeads: 'Heads',
+    lblTails: 'Tails',
+    lblLongestH: 'Longest H-streak',
+    lblLongestT: 'Longest T-streak',
+    lblRuns: 'Runs Test',
+    lblChi: 'Chi-Square vs 50/50',
+    lblStream: 'Stream of flips',
+    lblTotal: 'Total Flips',
+    lblH: 'Heads',
+    lblT: 'Tails',
+    lblRatio: 'Heads : Tails',
+    lblDev: 'Deviation from 50%',
+    tip: 'The Law of Large Numbers: as you flip more coins, the heads/tails ratio converges to 50/50. Short samples can be wildly skewed — that\'s the gambler\'s fallacy.',
+    step1: 'Set the number of flips (1 to 1,000,000) and click Flip',
+    step2: 'View the live count, ratio, deviation, and bar distribution',
+    step3: 'Inspect the longest streaks of heads and tails, and the streak histogram',
+    step4: 'Check the runs test and chi-square statistic to evaluate fairness',
+  },
+  zh: {
+    toolTitle: '抛硬币统计',
+    toolDesc: '抛掷上千枚虚拟硬币，分析连胜、分布、游程检验和概率。可视化大规模 50/50 随机性。',
+    lblN: '次数：',
+    btnFlip: '🪙 抛一次',
+    btn1k: '抛 1,000 次',
+    btn10k: '抛 10,000 次',
+    btnReset: '重置',
+    lblHeads: '正面',
+    lblTails: '反面',
+    lblLongestH: '最长正面连胜',
+    lblLongestT: '最长反面连胜',
+    lblRuns: '游程检验',
+    lblChi: '卡方 (vs 50/50)',
+    lblStream: '抛掷序列',
+    lblTotal: '总次数',
+    lblH: '正面',
+    lblT: '反面',
+    lblRatio: '正 : 反',
+    lblDev: '偏离 50% 程度',
+    tip: '大数定律：抛的次数越多，正反比例越接近 50/50。少量样本可能严重偏向一边，这就是赌徒谬误。',
+    step1: '设置次数（1 到 1,000,000）并点击「抛」',
+    step2: '查看实时计数、比例、偏差和条形分布',
+    step3: '检查最长连胜分布和连胜直方图',
+    step4: '查看游程检验和卡方统计评估公平性',
+  }
+});
+
+const { $ } = GZ;
+let flips = [];
+
+function flipN(n) {
+  const count = n || parseInt($('#numFlips').value) || 100;
+  flips = [];
+  for (let i = 0; i < count; i++) {
+    flips.push(Math.random() < 0.5 ? 'H' : 'T');
+  }
+  render();
+}
+
+function reset() {
+  flips = [];
+  render();
+}
+
+function render() {
+  const N = flips.length;
+  const heads = flips.filter(x => x === 'H').length;
+  const tails = N - heads;
+  const headPct = N > 0 ? (heads / N) * 100 : 0;
+  const dev = N > 0 ? Math.abs(50 - headPct) : 0;
+
+  // Longest streaks
+  let longestH = 0, longestT = 0, curH = 0, curT = 0;
+  const streakCounts = {};
+  for (const f of flips) {
+    if (f === 'H') { curH++; curT = 0; longestH = Math.max(longestH, curH); }
+    else { curT++; curH = 0; longestT = Math.max(longestT, curT); }
+    const len = f === 'H' ? curH : curT;
+    streakCounts[len] = (streakCounts[len] || 0) + 1;
+  }
+
+  // Runs test
+  let runs = 0;
+  for (let i = 0; i < N; i++) {
+    if (i === 0 || flips[i] !== flips[i-1]) runs++;
+  }
+  const expRuns = (N + 1) / 2;
+  const stdRuns = Math.sqrt((N - 1) / 4);
+  const zScore = stdRuns > 0 ? (runs - expRuns) / stdRuns : 0;
+
+  // Chi-square
+  const expected = N / 2;
+  const chiSq = expected > 0 ? (Math.pow(heads - expected, 2) / expected + Math.pow(tails - expected, 2) / expected) : 0;
+
+  // Tiles
+  const tiles = [
+    {p:true, val:N, lbl:GZI18n.t('lblTotal')},
+    {p:false, val:heads, lbl:GZI18n.t('lblH')},
+    {p:false, val:tails, lbl:GZI18n.t('lblT')},
+    {p:false, val: N > 0 ? (heads+':'+tails) : '0:0', lbl:GZI18n.t('lblRatio')},
+    {p:false, val: dev.toFixed(2) + '%', lbl:GZI18n.t('lblDev')},
+  ];
+  $('#tiles').innerHTML = tiles.map(x => `<div class="cf-tile ${x.p?'primary':''}"><div class="num">${x.val}</div><div class="lbl">${x.lbl}</div></div>`).join('');
+
+  // Bar
+  $('#bar-h').style.width = headPct + '%';
+  $('#bar-t').style.width = (100 - headPct) + '%';
+  $('#bar-label').innerHTML = `<span>${GZI18n.t('lblHeads')} ${heads} (${headPct.toFixed(1)}%)</span><span>${GZI18n.t('lblTails')} ${tails} (${(100-headPct).toFixed(1)}%)</span>`;
+
+  // Longest streaks
+  $('#longestH').textContent = longestH;
+  $('#longestT').textContent = longestT;
+
+  // Streak histogram
+  const maxLen = Math.max(longestH, longestT, 1);
+  const histHtml = [];
+  for (let i = 1; i <= Math.min(maxLen, 15); i++) {
+    const cnt = streakCounts[i] || 0;
+    const pct = cnt > 0 ? (cnt / N) * 100 : 0;
+    const h = Math.max(2, pct * 4);
+    histHtml.push(`<div class="bar" style="height:${h}%" title="streak of ${i}: ${cnt} times"><span class="lbl">${i}</span></div>`);
+  }
+  $('#streakHist').innerHTML = histHtml.join('');
+
+  // Runs
+  const runsVerdict = Math.abs(zScore) < 2 ? '✓ looks random' : (zScore < 0 ? '⚠ too few runs (clustered)' : '⚠ too many runs (alternating)');
+  $('#runsInfo').innerHTML = `Runs: <b>${runs}</b><br>Expected: ${expRuns.toFixed(1)} ± ${stdRuns.toFixed(1)}<br>Z-score: <b>${zScore.toFixed(2)}</b><br><span style="opacity:.8">${runsVerdict}</span>`;
+
+  // Chi-square
+  const criticalChi = 3.841; // 1 df, p=0.05
+  const chiVerdict = chiSq < criticalChi ? '✓ consistent with 50/50' : '⚠ deviates from 50/50';
+  $('#chiInfo').innerHTML = `χ² = <b>${chiSq.toFixed(3)}</b><br>Critical (p=0.05): 3.841<br><span style="opacity:.8">${chiVerdict}</span>`;
+
+  // Stream (show last 500)
+  const show = flips.slice(-500).map(f => `<span class="${f.toLowerCase()}">${f}</span>`).join('');
+  $('#stream').innerHTML = show || '<span style="opacity:.5">Click "Flip" to start</span>';
+
+  $('#tip').textContent = GZI18n.t('tip');
+}
+
+// Initial labels
+$('#lbl-n').textContent = GZI18n.t('lblN');
+$('#btn-flip').textContent = GZI18n.t('btnFlip');
+$('#btn-1k').textContent = GZI18n.t('btn1k');
+$('#btn-10k').textContent = GZI18n.t('btn10k');
+$('#btn-reset').textContent = GZI18n.t('btnReset');
+$('#lbl-longest-h').textContent = GZI18n.t('lblLongestH');
+$('#lbl-longest-t').textContent = GZI18n.t('lblLongestT');
+$('#lbl-runs').textContent = GZI18n.t('lblRuns');
+$('#lbl-chi').textContent = GZI18n.t('lblChi');
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🪙', href:'/fun/coin-flipper.html', name:'Coin Flipper'},
+    {icon:'🎲', href:'/fun/dice-roller.html', name:'Dice Roller'},
+    {icon:'🎰', href:'/fortune/lucky-number.html', name:'Lucky Number'},
+    {icon:'🎰', href:'/fun/lottery-picker.html', name:'Lottery Picker'},
+  ]
+});
+render();
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
