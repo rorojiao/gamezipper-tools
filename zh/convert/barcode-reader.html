@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>条码/二维码扫描器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="从图片或实时摄像头读取和解码一维、二维条码。支持 QR、EAN-13、UPC、Code 128、PDF417、Data Matrix 等 20+ 格式 — 完全浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/barcode-reader.html">
+  <meta property="og:title" content="条码/二维码扫描器">
+  <meta property="og:description" content="从图片或实时摄像头读取和解码一维、二维条码。支持 QR、EAN-13、UPC、Code 128、PDF417、Data Matrix 等 20+ 格式 — 完全浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/barcode-reader.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="条码/二维码扫描器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm"></script>
+<style>
+.reader{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:780px){.reader{grid-template-columns:1fr}}
+.upload-area{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;background:var(--glass2);transition:all .2s;min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.upload-area:hover,.upload-area.drag{border-color:var(--accent);background:rgba(78,205,196,.05)}
+.upload-area input{display:none}
+.upload-area img{max-width:100%;max-height:200px;display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.results-box{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;min-height:240px;display:flex;flex-direction:column;gap:8px}
+.result-item{padding:10px 12px;background:var(--glass);border:1px solid var(--border);border-radius:8px;display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start}
+.result-type{font-weight:700;color:var(--accent);font-size:.78em;padding:3px 8px;background:rgba(78,205,196,.12);border-radius:6px;align-self:start;white-space:nowrap}
+.result-text{font-family:monospace;font-size:.85em;word-break:break-all;white-space:pre-wrap;max-height:120px;overflow:auto}
+.result-meta{font-size:.7em;opacity:.6;margin-top:4px}
+.copy-mini{padding:3px 8px;font-size:.7em;background:var(--glass2);border:1px solid var(--border);border-radius:6px;cursor:pointer;align-self:start}
+.copy-mini:hover{border-color:var(--accent)}
+.scanner{margin-top:14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.scanner video{width:100%;max-height:300px;background:#000;border-radius:8px;display:block}
+.scanner .controls{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.warn{color:#e94560;background:rgba(233,69,96,.08);padding:10px 12px;border-radius:8px;font-size:.85em;margin-top:10px}
+.ok{color:#00d672;background:rgba(0,214,114,.08);padding:10px 12px;border-radius:8px;font-size:.85em;margin-top:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Barcode Reader & Scanner","description":"Read and decode 1D and 2D barcodes from any image online. Supports EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, QR Code, DataMatrix, PDF417 and more. Free, browser-based, no upload.","url": "https://tools.gamezipper.com/zh/convert/barcode-reader.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What barcode formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The reader uses the open-source ZXing library and supports over 20 formats including QR Code, Data Matrix, PDF417, Aztec, EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, Code 93, Codabar, ITF and RSS-14. Both 1D linear and 2D matrix codes are recognized."}}, {"@type": "Question", "name": "Do my images get uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All decoding happens locally in your browser using a JavaScript WebAssembly implementation. Your image never leaves your device. This makes it safe to scan barcodes that contain personal or confidential data."}}, {"@type": "Question", "name": "Can I scan barcodes with my webcam in real time?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The live scanner tab uses the getUserMedia API to access your webcam. Point the camera at a barcode and the reader will decode it instantly. You can also upload an image file or drop a screenshot."}}, {"@type": "Question", "name": "Why is my barcode not detected?", "acceptedAnswer": {"@type": "Answer", "text": "The most common reasons are: the image is too blurry, the barcode is too small (try cropping tighter), the image has poor contrast, or the code is damaged or partially covered. Try a higher-resolution image with the barcode filling more of the frame."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/barcode-reader.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/barcode-reader.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/barcode-reader.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="reader">
+      <div>
+        <div class="upload-area" id="upload-zone">
+          <input type="file" id="file" accept="image/*">
+          <p>📷 <span id="upload-label">Click, drop or paste an image containing a barcode</span></p>
+          <p style="font-size:.75em;opacity:.6;margin:0" id="upload-hint">Supports QR, EAN, UPC, Code 128, PDF417 and 20+ more formats</p>
+        </div>
+        <div class="scanner" id="scanner-section" style="display:none">
+          <video id="video" playsinline></video>
+          <div class="controls">
+            <button class="gz-btn" id="start-cam">📷 <span id="cam-label">Start Camera</span></button>
+            <button class="gz-btn gz-btn-secondary" id="stop-cam">⏹ <span id="stop-label">Stop</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="results-box" id="results">
+        <p style="opacity:.6;font-size:.85em" id="empty-msg">No barcodes decoded yet. Upload an image or use the camera.</p>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Barcode Reader & Scanner',
+    toolDesc: 'Read and decode 1D and 2D barcodes from any image or live camera. Supports QR Code, EAN-13, UPC, Code 128, PDF417, Data Matrix and 20+ more formats — runs entirely in your browser.',
+    uploadLabel: 'Click, drop or paste an image containing a barcode',
+    uploadHint: 'Supports QR, EAN, UPC, Code 128, PDF417 and 20+ more formats',
+    empty: 'No barcodes decoded yet. Upload an image or use the camera.',
+    cam: 'Start Camera',
+    stop: 'Stop Camera',
+    copy: 'Copy',
+    copyAll: 'Copy All',
+    downloadJson: 'Download JSON',
+    step1: 'Upload a barcode image, drop a file, or click Start Camera to use your webcam',
+    step2: 'The decoder will scan the image and list every barcode it finds with its type',
+    step3: 'Click any result to copy it, or use Copy All / Download JSON to export the batch',
+    step4: 'For best results use a sharp, well-lit image with the barcode filling the frame',
+    noResults: 'No barcodes found in this image. Try a sharper photo or crop tighter.',
+    found: 'Found {n} barcode(s)',
+  },
+  zh: {
+    toolTitle: '条码/二维码扫描器',
+    toolDesc: '从图片或实时摄像头读取和解码一维、二维条码。支持 QR、EAN-13、UPC、Code 128、PDF417、Data Matrix 等 20+ 格式 — 完全浏览器本地运行。',
+    uploadLabel: '点击、拖拽或粘贴包含条码的图片',
+    uploadHint: '支持 QR、EAN、UPC、Code 128、PDF417 等 20+ 格式',
+    empty: '尚未解码任何条码。请上传图片或使用摄像头。',
+    cam: '开启摄像头',
+    stop: '停止摄像头',
+    copy: '复制',
+    copyAll: '复制全部',
+    downloadJson: '下载 JSON',
+    step1: '上传条码图片、拖放文件，或点击「开启摄像头」使用摄像头',
+    step2: '解码器将扫描图片并列出找到的所有条码及其类型',
+    step3: '点击结果复制单个条码，或使用「复制全部」/「下载 JSON」导出',
+    step4: '为获得最佳效果，请使用清晰、光线充足的图片，且条码占据画面大部分',
+    noResults: '未在图片中找到条码。请尝试更清晰的照片或更紧凑的裁剪。',
+    found: '找到 {n} 个条码',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let decodeResults = [];
+let codeReader = null;
+let videoStream = null;
+let lastImgSrc = null;
+
+const ZXingFormatNames = {
+  'QR_CODE':'QR Code',
+  'DATA_MATRIX':'Data Matrix',
+  'PDF_417':'PDF417',
+  'AZTEC':'Aztec',
+  'EAN_13':'EAN-13',
+  'EAN_8':'EAN-8',
+  'UPC_A':'UPC-A',
+  'UPC_E':'UPC-E',
+  'CODE_128':'Code 128',
+  'CODE_39':'Code 39',
+  'CODE_93':'Code 93',
+  'CODABAR':'Codabar',
+  'ITF':'ITF',
+  'RSS_14':'RSS-14',
+  'RSS_EXPANDED':'RSS Expanded',
+  'MAXICODE':'MaxiCode',
+};
+
+async function decodeFromImageSrc(src) {
+  try {
+    const reader = new ZXingBrowser.BrowserMultiFormatReader();
+    const img = new Image();
+    img.src = src;
+    await new Promise(r => img.onload = r);
+    const result = await reader.decodeFromImageElement(img);
+    addResult(result);
+  } catch(e) {
+    if (decodeResults.length === 0) {
+      $('#results').innerHTML = `<p style="opacity:.6;font-size:.85em">${t('noResults')}</p>`;
+    }
+  }
+}
+
+function addResult(result) {
+  if (decodeResults.some(r => r.text === result.getText())) return;
+  const typeName = ZXingFormatNames[result.getBarcodeFormat()] || result.getBarcodeFormat();
+  const item = { type: typeName, text: result.getText() };
+  decodeResults.push(item);
+  renderResults();
+}
+
+function renderResults() {
+  if (decodeResults.length === 0) {
+    $('#results').innerHTML = `<p style="opacity:.6;font-size:.85em">${t('empty')}</p>`;
+    return;
+  }
+  const ok = `<div class="ok">✓ ${t('found').replace('{n}', decodeResults.length)}</div>`;
+  const items = decodeResults.map((r, i) => `
+    <div class="result-item">
+      <span class="result-type">${r.type}</span>
+      <div>
+        <div class="result-text">${escapeHtml(r.text)}</div>
+        <div class="result-meta">${r.text.length} chars</div>
+      </div>
+      <button class="copy-mini" onclick="copyText('${escapeAttr(r.text)}')">📋 ${t('copy')}</button>
+    </div>`).join('');
+  $('#results').innerHTML = ok + items + `
+    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+      <button class="gz-btn gz-btn-secondary" onclick="copyText(JSON.stringify(decodeResults,null,2))">📋 ${t('copyAll')}</button>
+      <button class="gz-btn gz-btn-secondary" onclick="downloadJson()">⬇️ ${t('downloadJson')}</button>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(s) {
+  return String(s==null?'':s).replace(/'/g, "\\'").replace(/\n/g, '\\n');
+}
+
+function downloadJson() {
+  const blob = new Blob([JSON.stringify(decodeResults, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'barcode-results.json';
+  a.click();
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    lastImgSrc = e.target.result;
+    $('#upload-zone').innerHTML = `<img src="${e.target.result}" alt=""><p style="font-size:.75em;opacity:.6;margin:0">${file.name}</p>`;
+    decodeResults = [];
+    decodeFromImageSrc(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function startCamera() {
+  try {
+    $('#scanner-section').style.display = 'block';
+    const reader = new ZXingBrowser.BrowserMultiFormatReader();
+    const video = $('#video');
+    const constraints = { video: { facingMode: 'environment' } };
+    videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = videoStream;
+    await video.play();
+    await reader.decodeFromVideoElement(video, (result) => {
+      if (result) {
+        addResult(result);
+        // Beep sound
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const o = ctx.createOscillator();
+          o.connect(ctx.destination);
+          o.frequency.value = 1500;
+          o.start(); o.stop(ctx.currentTime + 0.06);
+        } catch(e){}
+      }
+    });
+    codeReader = reader;
+  } catch(e) {
+    alert('Camera access denied or not available: ' + e.message);
+    $('#scanner-section').style.display = 'none';
+  }
+}
+
+function stopCamera() {
+  if (codeReader) {
+    try { codeReader.reset(); } catch(e){}
+    codeReader = null;
+  }
+  if (videoStream) {
+    videoStream.getTracks().forEach(t => t.stop());
+    videoStream = null;
+  }
+  $('#video').srcObject = null;
+  $('#scanner-section').style.display = 'none';
+}
+
+$('#upload-zone').addEventListener('click', () => $('#file').click());
+$('#file').addEventListener('change', e => handleFile(e.target.files[0]));
+$('#upload-zone').addEventListener('dragover', e => { e.preventDefault(); $('#upload-zone').classList.add('drag'); });
+$('#upload-zone').addEventListener('dragleave', () => $('#upload-zone').classList.remove('drag'));
+$('#upload-zone').addEventListener('drop', e => {
+  e.preventDefault();
+  $('#upload-zone').classList.remove('drag');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+document.addEventListener('paste', e => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.indexOf('image') === 0) {
+      const file = item.getAsFile();
+      handleFile(file);
+      break;
+    }
+  }
+});
+
+$('#start-cam').addEventListener('click', startCamera);
+$('#stop-cam').addEventListener('click', stopCamera);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="startCamera()">📷 ${t('cam')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="stopCamera()">⏹ ${t('stop')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/barcode.html', name:'Barcode Generator'},
+    {icon:'📱', href:'/convert/qrcode.html', name:'QR Generator'},
+    {icon:'📷', href:'/convert/qr-reader.html', name:'QR Reader'},
+    {icon:'📇', href:'/convert/vcard-qrcode.html', name:'vCard QR'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

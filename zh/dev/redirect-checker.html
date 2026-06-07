@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>URL 重定向检查器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="追踪任意 URL 的完整 HTTP 重定向链 — 查看状态码 (301、302、303、307、308)、响应头、服务器类型、跳数和最终目标。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/redirect-checker.html">
+  <meta property="og:title" content="URL 重定向检查器">
+  <meta property="og:description" content="追踪任意 URL 的完整 HTTP 重定向链 — 查看状态码 (301、302、303、307、308)、响应头、服务器类型、跳数和最终目标。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/redirect-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="URL 重定向检查器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.url-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.url-row input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:.9rem;font-family:monospace}
+.url-row input:focus{outline:none;border-color:var(--accent)}
+.summary{display:grid;grid-template-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.summary-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.85rem}
+.summary-card .lbl{color:var(--text2);font-size:.72em;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.summary-card .val{font-weight:600;word-break:break-all;font-family:monospace}
+.summary-card .val.green{color:#00d672}
+.summary-card .val.red{color:#e94560}
+.hop-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.hop{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--glass2);font-size:.85em;display:grid;grid-template-columns:60px 90px 1fr;gap:10px;align-items:center}
+.hop-num{font-weight:700;color:var(--accent);font-family:monospace}
+.hop-status{font-family:monospace;font-weight:700;font-size:.85em;padding:4px 10px;border-radius:6px;text-align:center;white-space:nowrap}
+.s2{background:rgba(0,214,114,.18);color:#00d672}
+.s3{background:rgba(78,205,196,.18);color:#4ecdc4}
+.s4{background:rgba(233,69,96,.18);color:#e94560}
+.s5{background:rgba(233,69,96,.18);color:#e94560}
+.s0{background:rgba(120,120,120,.18);color:#888}
+.s-other{background:rgba(120,120,120,.18);color:#aaa}
+.hop-url{font-family:monospace;word-break:break-all;opacity:.92}
+.hop-final{border:2px solid var(--accent);background:rgba(78,205,196,.08)}
+.section-title-mini{font-size:1em;font-weight:700;margin:18px 0 8px;color:var(--accent);display:flex;align-items:center;gap:6px}
+.headers-table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:8px}
+.headers-table th{text-align:left;padding:6px 10px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;width:30%;white-space:nowrap;font-family:monospace}
+.headers-table td{padding:5px 10px;border-bottom:1px solid var(--border);word-break:break-all;font-family:monospace}
+.headers-table tr:hover td{background:var(--glass2)}
+.tag{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.7em;font-weight:600;background:var(--glass);border:1px solid var(--border);margin-left:6px}
+.warn{color:#e94560;background:rgba(233,69,96,.08);padding:10px 12px;border-radius:8px;font-size:.85em;margin-top:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"URL Redirect Checker","description":"Trace and analyze HTTP redirects for any URL. Detect 301, 302, 303, 307, 308 redirect chains, server type, response headers and final destination — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/redirect-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an HTTP redirect?", "acceptedAnswer": {"@type": "Answer", "text": "An HTTP redirect is a 3xx status code that tells the browser to fetch the resource from a different URL. Common codes are 301 (permanent), 302 (found/temporary), 303 (see other), 307 (temporary, preserve method) and 308 (permanent, preserve method). A redirect checker traces this chain."}}, {"@type": "Question", "name": "What is a redirect loop?", "acceptedAnswer": {"@type": "Answer", "text": "A redirect loop happens when URL A redirects to B, and B redirects back to A, so the browser can never reach a final page. This tool stops after 20 hops and reports a loop if the same URL appears twice in the chain."}}, {"@type": "Question", "name": "How is this different from URL Expander?", "acceptedAnswer": {"@type": "Answer", "text": "A URL expander only reveals the final destination of short links. A redirect checker analyzes the entire HTTP chain: it shows each status code, response headers, server software, content type, hop latency and flags issues like missing HTTPS, mixed content or excessive hops."}}, {"@type": "Question", "name": "Does the tool follow only safe HEAD requests?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. By default the checker issues HEAD requests so it does not download the body of the page. You can switch to GET mode to also pull body bytes. No cookies or credentials are sent unless you opt in to follow them."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/redirect-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/redirect-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/redirect-checker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="url-row">
+      <input type="text" id="input" spellcheck="false" placeholder="https://example.com/old-page" value="">
+    </div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'URL Redirect Checker',
+    toolDesc: 'Trace the full HTTP redirect chain of any URL — view status codes (301, 302, 303, 307, 308), response headers, server type, total hops and final destination.',
+    check: 'Check Redirects',
+    example: 'Load Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    method: 'Method',
+    head: 'HEAD',
+    get: 'GET',
+    followCookies: 'Send cookies',
+    userAgent: 'User-Agent',
+    summary: 'Summary',
+    finalUrl: 'Final URL',
+    totalHops: 'Total Hops',
+    responseTime: 'Total Time',
+    httpVersion: 'HTTP Version',
+    redirectChain: 'Redirect Chain',
+    responseHeaders: 'Final Response Headers',
+    empty: 'Enter a URL above and click Check Redirects.',
+    noFinal: 'Could not reach a final destination.',
+    error: 'Network error — CORS may be blocking the request, or the server is unreachable.',
+    corsHint: 'Browser CORS may block the response body/headers for some servers. Status code, hops and final URL are still traced where possible.',
+    hop: 'Hop',
+    final: 'Final',
+    step1: 'Paste a full URL (including https://) into the input field',
+    step2: 'Click Check Redirects to trace the entire HTTP redirect chain',
+    step3: 'Review status codes, hop latency, server type and final response headers',
+    step4: 'Copy the chain as cURL or share the analysis',
+  },
+  zh: {
+    toolTitle: 'URL 重定向检查器',
+    toolDesc: '追踪任意 URL 的完整 HTTP 重定向链 — 查看状态码 (301、302、303、307、308)、响应头、服务器类型、跳数和最终目标。',
+    check: '检查重定向',
+    example: '加载示例',
+    clear: '清空',
+    copy: '复制',
+    method: '方法',
+    head: 'HEAD',
+    get: 'GET',
+    followCookies: '发送 Cookie',
+    userAgent: 'User-Agent',
+    summary: '概要',
+    finalUrl: '最终 URL',
+    totalHops: '总跳数',
+    responseTime: '总耗时',
+    httpVersion: 'HTTP 版本',
+    redirectChain: '重定向链',
+    responseHeaders: '最终响应头',
+    empty: '请在上方输入 URL 并点击「检查重定向」。',
+    noFinal: '无法到达最终目标。',
+    error: '网络错误 — 可能是浏览器 CORS 阻止了请求，或服务器不可达。',
+    corsHint: '某些服务器可能因浏览器 CORS 限制而无法读取响应体/响应头,但仍会追踪状态码、跳数和最终 URL。',
+    hop: '跳',
+    final: '终点',
+    step1: '将完整 URL (含 https://) 粘贴到输入框',
+    step2: '点击「检查重定向」追踪完整的 HTTP 重定向链',
+    step3: '查看状态码、跳延迟、服务器类型和最终响应头',
+    step4: '一键复制为 cURL 命令或分享分析结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let lastChain = null;
+
+function getMethod() {
+  return document.querySelector('input[name="method"]:checked')?.value || 'HEAD';
+}
+
+function shortCode(n) {
+  const codes = {200:'200 OK',201:'201',204:'204',301:'301 Moved',302:'302 Found',303:'303 See Other',304:'304 Not Modified',307:'307 Temp',308:'308 Perm',308:'308 Perm',403:'403',404:'404',500:'500',502:'502',503:'503'};
+  return codes[n] || String(n);
+}
+
+function classifyStatus(n) {
+  if (n>=200 && n<300) return 's2';
+  if (n>=300 && n<400) return 's3';
+  if (n>=400 && n<500) return 's4';
+  if (n>=500) return 's5';
+  if (n===0) return 's0';
+  return 's-other';
+}
+
+function escapeHtml(s) {
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escapeAttr(s) {
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+async function traceSingle(url, hop, maxHops) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  const t0 = performance.now();
+  try {
+    const res = await fetch(url, {
+      method: getMethod(),
+      redirect: 'manual',
+      signal: controller.signal,
+      cache: 'no-store',
+      credentials: document.getElementById('chk-cookies')?.checked ? 'include' : 'omit',
+      headers: { 'User-Agent': navigator.userAgent }
+    });
+    const dt = Math.round(performance.now() - t0);
+    const headers = {};
+    res.headers.forEach((v,k) => headers[k] = v);
+    return {
+      ok: true,
+      url, hop, status: res.status, statusText: res.statusText,
+      headers, timeMs: dt, type: res.type || 'basic'
+    };
+  } catch(e) {
+    const dt = Math.round(performance.now() - t0);
+    return { ok:false, url, hop, status:0, timeMs:dt, error: e.message };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function doCheck() {
+  const raw = $('#input').value.trim();
+  if (!raw) { $('#output').innerHTML = `<p style="opacity:.7">${t('empty')}</p>`; return; }
+  let url = raw;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  $('#output').innerHTML = `<p style="opacity:.7">⏳ ${t('check')}…</p>`;
+
+  const hops = [];
+  const visited = new Set();
+  let current = url;
+  const MAX = 20;
+  let totalStart = performance.now();
+
+  for (let i=0; i<MAX; i++) {
+    if (visited.has(current)) {
+      hops.push({ ok:false, url:current, hop:i+1, status:0, error:'LOOP_DETECTED' });
+      break;
+    }
+    visited.add(current);
+    const r = await traceSingle(current, i+1, MAX);
+    hops.push(r);
+    if (!r.ok) break;
+    if (r.status >= 300 && r.status < 400 && r.headers['location']) {
+      try {
+        current = new URL(r.headers['location'], current).toString();
+      } catch(e) { break; }
+    } else {
+      break;
+    }
+  }
+  const totalTime = Math.round(performance.now() - totalStart);
+  lastChain = { hops, totalTime, startedUrl: url, timestamp: Date.now() };
+  renderResult(lastChain);
+}
+
+function renderResult(chain) {
+  const final = chain.hops[chain.hops.length - 1];
+  const summary = `
+    <div class="section-title-mini">📊 ${t('summary')}</div>
+    <div class="summary">
+      <div class="summary-card"><div class="lbl">${t('finalUrl')}</div><div class="val">${escapeHtml(final && final.ok ? final.url : '—')}</div></div>
+      <div class="summary-card"><div class="lbl">${t('totalHops')}</div><div class="val">${chain.hops.length}</div></div>
+      <div class="summary-card"><div class="lbl">${t('responseTime')}</div><div class="val">${chain.totalTime} ms</div></div>
+      <div class="summary-card"><div class="lbl">${t('httpVersion')}</div><div class="val">HTTP/${final && final.headers && final.headers['alt-svc'] ? '2/3' : '1.1'}</div></div>
+    </div>`;
+
+  const chainHtml = chain.hops.map((h, idx) => {
+    const isFinal = idx === chain.hops.length - 1;
+    const cls = classifyStatus(h.status);
+    const code = h.ok ? `${h.status} ${escapeHtml((h.statusText||'').slice(0,16))}` : 'ERR';
+    return `<div class="hop ${isFinal?'hop-final':''}">
+      <div class="hop-num">${idx===0?t('hop'):''} ${idx+1}</div>
+      <div class="hop-status ${cls}">${escapeHtml(code)}</div>
+      <div class="hop-url">${escapeHtml(h.url)}${isFinal?`<span class="tag">${t('final')}</span>`:''}</div>
+    </div>`;
+  }).join('');
+
+  const headersHtml = final && final.ok && final.headers ? `
+    <div class="section-title-mini">🧾 ${t('responseHeaders')}</div>
+    <table class="headers-table">
+      <thead><tr><th>Header</th><th>Value</th></tr></thead>
+      <tbody>
+        ${Object.entries(final.headers).map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`).join('')}
+      </tbody>
+    </table>` : '';
+
+  $('#output').innerHTML = summary + `
+    <div class="section-title-mini">🔗 ${t('redirectChain')}</div>
+    <div class="hop-list">${chainHtml}</div>
+    ${headersHtml}
+    <div class="warn" style="opacity:.7;background:rgba(78,205,196,.08);color:var(--text2)">ℹ️ ${t('corsHint')}</div>`;
+}
+
+function loadExample() {
+  $('#input').value = 'https://bit.ly/3xRPxYQ';
+  doCheck();
+}
+
+function doClear() { $('#input').value=''; $('#output').innerHTML=''; lastChain=null; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doCheck()">${t('check')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>
+  <label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:.85em"><input type="checkbox" id="chk-cookies">${t('followCookies')}</label>
+  <label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:.85em"><input type="radio" name="method" value="HEAD" checked>${t('head')}</label>
+  <label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:.85em"><input type="radio" name="method" value="GET">${t('get')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').textContent)">${t('copy')}</button>`;
+
+$('#input').addEventListener('keydown', e => { if (e.key==='Enter') doCheck(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/dev/url-expander.html', name:'URL Expander'},
+    {icon:'🌐', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'🔨', href:'/dev/url-builder.html', name:'URL Builder'},
+    {icon:'🛠️', href:'/dev/htaccess.html', name:'.htaccess Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

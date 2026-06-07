@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Link Checker - Find Broken Links & Validate URLs | GameZipper Tools</title>
+  <meta name="description" content="Check links in any text or HTML for broken URLs, 404 errors, and unreachable destinations. Bulk-validate up to 100 URLs at once with HTTP status codes, redirect info and response time — runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/link-checker.html">
+  <meta property="og:title" content="Link Checker - Find Broken Links & Validate URLs | GameZipper Tools">
+  <meta property="og:description" content="Check links in any text or HTML for broken URLs, 404 errors, and unreachable destinations. Bulk-validate up to 100 URLs at once with HTTP status codes, redirect info and response time — runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/link-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Link Checker - Find Broken Links & Validate URLs">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.url-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.url-row input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:.9rem;font-family:monospace}
+.url-row input:focus{outline:none;border-color:var(--accent)}
+.results-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:12px}
+.results-table th{text-align:left;padding:8px 10px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;white-space:nowrap}
+.results-table td{padding:7px 10px;border-bottom:1px solid var(--border);word-break:break-all;vertical-align:top}
+.results-table tr:hover td{background:var(--glass2)}
+.status{padding:3px 8px;border-radius:6px;font-family:monospace;font-weight:700;font-size:.78em;display:inline-block;min-width:50px;text-align:center}
+.s2{background:rgba(0,214,114,.18);color:#00d672}
+.s3{background:rgba(78,205,196,.18);color:#4ecdc4}
+.s4{background:rgba(233,69,96,.18);color:#e94560}
+.s5{background:rgba(233,69,96,.18);color:#e94560}
+.s0{background:rgba(120,120,120,.18);color:#888}
+.s-other{background:rgba(120,120,120,.18);color:#aaa}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.summary-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.summary-card .num{font-size:1.4em;font-weight:700;color:var(--accent)}
+.summary-card .num.red{color:#e94560}
+.summary-card .num.green{color:#00d672}
+.summary-card .lbl{font-size:.75em;color:var(--text2);margin-top:2px}
+textarea{width:100%;min-height:140px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:.85rem;font-family:monospace;resize:vertical}
+textarea:focus{outline:none;border-color:var(--accent)}
+.checkbox-row{display:flex;gap:14px;align-items:center;margin:10px 0;flex-wrap:wrap;font-size:.85em}
+.checkbox-row label{display:flex;align-items:center;gap:4px;cursor:pointer}
+.progress{height:6px;background:var(--glass2);border-radius:3px;overflow:hidden;margin:8px 0}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .3s}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Link Checker","description":"Check links in any text or HTML for broken URLs, 404 errors, and unreachable destinations. Bulk-validate up to 100 URLs at once with HTTP status codes, redirect info and response time — runs in your browser.","url":"https://tools.gamezipper.com/dev/link-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a broken link?", "acceptedAnswer": {"@type": "Answer", "text": "A broken link is a URL that returns an HTTP error (4xx like 404 Not Found, 403 Forbidden) or a server error (5xx like 500 Internal Server Error). Broken links hurt user experience and SEO, so it's important to audit them regularly."}}, {"@type": "Question", "name": "How does the link checker work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool extracts all http/https URLs from your input, then issues a HEAD (or GET) request for each one in parallel. For every URL it records the status code, response time, redirect chain length and final destination. The browser is responsible for following the chain."}}, {"@type": "Question", "name": "Is there a limit on how many links I can check?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — to keep the tool fast and polite, it checks up to 100 URLs per run with a concurrency of 6. Larger lists are truncated with a notice. You can run the tool again to check more."}}, {"@type": "Question", "name": "Are my URLs sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The browser issues the requests directly to each target host. This tool's own server never sees the URLs you check. Some servers may still log your IP through standard HTTP access logs, just like visiting the page in a browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/link-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/link-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/link-checker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="margin-bottom:10px">
+      <strong style="font-size:.85em" id="lbl-input">📥 Paste text or HTML containing URLs (one per line or any text):</strong>
+    </div>
+    <textarea id="input" spellcheck="false" placeholder="Paste any text, HTML, or one URL per line. Up to 100 links per check."></textarea>
+    <div class="checkbox-row">
+      <label><input type="radio" name="method" value="HEAD" checked> <span id="lbl-head">HEAD (faster)</span></label>
+      <label><input type="radio" name="method" value="GET"> <span id="lbl-get">GET (more accurate)</span></label>
+      <label><input type="checkbox" id="chk-redirect" checked> <span id="lbl-follow">Follow redirects</span></label>
+      <label><input type="checkbox" id="chk-timeout"> <span id="lbl-10s">10s timeout per link</span></label>
+    </div>
+    <div class="progress" id="progress-wrap" style="display:none"><div class="progress-bar" id="progress-bar"></div></div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Link Checker',
+    toolDesc: 'Bulk-check links in any text or HTML for broken URLs. Get HTTP status codes, response time, redirect info and final destination for up to 100 URLs at once — runs in your browser.',
+    check: 'Check Links',
+    example: 'Load Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    download: 'Download CSV',
+    inputLabel: '📥 Paste text or HTML containing URLs (one per line or any text):',
+    methodHead: 'HEAD (faster)',
+    methodGet: 'GET (more accurate)',
+    follow: 'Follow redirects',
+    timeout10: '10s timeout per link',
+    summary: 'Summary',
+    total: 'Total URLs',
+    ok: 'Working',
+    broken: 'Broken',
+    redirects: 'Redirects',
+    avgTime: 'Avg Time',
+    results: 'Results',
+    noLinks: 'No URLs found in your input. Paste some text or HTML containing links.',
+    limitNote: 'Only the first 100 URLs will be checked.',
+    step1: 'Paste text, HTML, or a list of URLs into the textarea above',
+    step2: 'Pick a method — HEAD is faster, GET is more accurate for protected sites',
+    step3: 'Click Check Links to validate each URL in parallel',
+    step4: 'Review the status codes, response times and any broken links in the table',
+  },
+  zh: {
+    toolTitle: '链接检查器',
+    toolDesc: '批量检查任意文本或 HTML 中的链接是否失效。一次性获取最多 100 个 URL 的 HTTP 状态码、响应时间、重定向信息和最终目标 — 完全浏览器本地运行。',
+    check: '检查链接',
+    example: '加载示例',
+    clear: '清空',
+    copy: '复制',
+    download: '下载 CSV',
+    inputLabel: '📥 粘贴包含 URL 的文本或 HTML（一行一个或任意文本）：',
+    methodHead: 'HEAD (更快)',
+    methodGet: 'GET (更准确)',
+    follow: '跟随重定向',
+    timeout10: '每个链接 10 秒超时',
+    summary: '概要',
+    total: '总 URL 数',
+    ok: '正常',
+    broken: '失效',
+    redirects: '重定向',
+    avgTime: '平均耗时',
+    results: '结果',
+    noLinks: '输入中未找到 URL。请粘贴一些包含链接的文本或 HTML。',
+    limitNote: '仅检查前 100 个 URL。',
+    step1: '将文本、HTML 或 URL 列表粘贴到上方文本框',
+    step2: '选择方法 — HEAD 更快，GET 对受保护站点更准确',
+    step3: '点击「检查链接」并发验证每个 URL',
+    step4: '查看状态码、响应时间和表中的失效链接',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function extractUrls(text) {
+  const urlRe = /https?:\/\/[^\s<>"'`\)\]]+/g;
+  const found = text.match(urlRe) || [];
+  return [...new Set(found.map(u => u.replace(/[.,;:!?)\]]+$/, '')))];
+}
+
+function classifyStatus(n) {
+  if (n>=200 && n<300) return 's2';
+  if (n>=300 && n<400) return 's3';
+  if (n>=400 && n<500) return 's4';
+  if (n>=500) return 's5';
+  if (n===0) return 's0';
+  return 's-other';
+}
+
+function escapeHtml(s) {
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function checkOne(url) {
+  const controller = new AbortController();
+  const timeoutMs = document.getElementById('chk-timeout')?.checked ? 10000 : 8000;
+  const tOut = setTimeout(() => controller.abort(), timeoutMs);
+  const follow = document.getElementById('chk-redirect')?.checked ? 'follow' : 'manual';
+  const method = document.querySelector('input[name="method"]:checked')?.value || 'HEAD';
+  const t0 = performance.now();
+  try {
+    const res = await fetch(url, {
+      method,
+      redirect: follow,
+      signal: controller.signal,
+      cache: 'no-store',
+      mode: 'cors',
+      headers: { 'User-Agent': navigator.userAgent }
+    });
+    const dt = Math.round(performance.now() - t0);
+    clearTimeout(tOut);
+    let finalUrl = res.url || url;
+    let hops = 1;
+    if (follow === 'manual' && res.status >= 300 && res.status < 400) {
+      // follow manually
+      let current = url;
+      let last = res;
+      for (let i=0; i<10; i++) {
+        const loc = last.headers.get('location');
+        if (!loc) break;
+        try { current = new URL(loc, current).toString(); } catch(e) { break; }
+        hops++;
+        try {
+          last = await fetch(current, { method, redirect:'manual', signal: controller.signal, cache:'no-store' });
+        } catch(e) { break; }
+        if (!(last.status >= 300 && last.status < 400)) break;
+      }
+      finalUrl = current;
+    }
+    return { url, status: res.status, ok: res.ok, time: dt, finalUrl, hops, type: res.type || 'basic' };
+  } catch(e) {
+    clearTimeout(tOut);
+    return { url, status: 0, ok: false, time: Math.round(performance.now()-t0), error: e.message };
+  }
+}
+
+async function runWithPool(items, fn, concurrency, onProgress) {
+  const results = new Array(items.length);
+  let idx = 0, done = 0;
+  async function worker() {
+    while (true) {
+      const i = idx++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i]);
+      done++;
+      if (onProgress) onProgress(done, items.length);
+    }
+  }
+  const workers = Array.from({length: concurrency}, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
+let lastResults = [];
+
+async function doCheck() {
+  const text = $('#input').value.trim();
+  if (!text) { $('#output').innerHTML = `<p style="opacity:.7">${t('noLinks')}</p>`; return; }
+  let urls = extractUrls(text);
+  if (urls.length === 0) { $('#output').innerHTML = `<p style="opacity:.7">${t('noLinks')}</p>`; return; }
+  if (urls.length > 100) {
+    urls = urls.slice(0, 100);
+    $('#output').innerHTML = `<p style="opacity:.7;font-size:.85em;margin-bottom:8px">⚠️ ${t('limitNote')}</p>`;
+  } else {
+    $('#output').innerHTML = '';
+  }
+  $('#progress-wrap').style.display = 'block';
+  $('#progress-bar').style.width = '0%';
+  const results = await runWithPool(urls, checkOne, 6, (done, total) => {
+    $('#progress-bar').style.width = ((done/total)*100) + '%';
+  });
+  $('#progress-wrap').style.display = 'none';
+  lastResults = results;
+  renderResults(results);
+}
+
+function renderResults(results) {
+  const ok = results.filter(r => r.status >= 200 && r.status < 300).length;
+  const broken = results.filter(r => r.status === 0 || r.status >= 400).length;
+  const redirects = results.filter(r => r.status >= 300 && r.status < 400).length;
+  const avgTime = results.length ? Math.round(results.reduce((s,r)=>s+r.time,0)/results.length) : 0;
+  const summary = `
+    <div class="summary">
+      <div class="summary-card"><div class="num">${results.length}</div><div class="lbl">${t('total')}</div></div>
+      <div class="summary-card"><div class="num green">${ok}</div><div class="lbl">${t('ok')}</div></div>
+      <div class="summary-card"><div class="num red">${broken}</div><div class="lbl">${t('broken')}</div></div>
+      <div class="summary-card"><div class="num">${redirects}</div><div class="lbl">${t('redirects')}</div></div>
+      <div class="summary-card"><div class="num">${avgTime}</div><div class="lbl">ms · ${t('avgTime')}</div></div>
+    </div>`;
+  const rows = results.map(r => {
+    const cls = classifyStatus(r.status);
+    const code = r.status === 0 ? 'ERR' : r.status;
+    return `<tr>
+      <td><span class="status ${cls}">${code}</span></td>
+      <td><a href="${escapeHtml(r.url)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted">${escapeHtml(r.url)}</a></td>
+      <td style="opacity:.75;font-family:monospace;font-size:.85em">${escapeHtml(r.finalUrl && r.finalUrl!==r.url ? r.finalUrl : '—')}</td>
+      <td style="text-align:right;font-family:monospace">${r.time} ms</td>
+    </tr>`;
+  }).join('');
+  $('#output').innerHTML = summary + `
+    <h3 style="margin:14px 0 4px;font-size:1em">📋 ${t('results')}</h3>
+    <div style="overflow-x:auto">
+    <table class="results-table">
+      <thead><tr><th>Status</th><th>URL</th><th>Final</th><th>Time</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+      <button class="gz-btn gz-btn-secondary" onclick="copyCsv()">⬇️ ${t('download')}</button>
+      <button class="gz-btn gz-btn-secondary" onclick="copyText(JSON.stringify(lastResults,null,2))">📋 ${t('copy')}</button>
+    </div>`;
+}
+
+function copyCsv() {
+  const header = 'Status,URL,FinalURL,TimeMs\n';
+  const rows = lastResults.map(r => `${r.status},"${r.url}","${r.finalUrl||''}",${r.time}`).join('\n');
+  const blob = new Blob([header+rows], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'link-check-results.csv';
+  a.click();
+}
+
+function loadExample() {
+  $('#input').value = `Check out these sites:
+https://www.google.com
+https://github.com
+https://www.wikipedia.org
+https://httpbin.org/status/404
+https://httpbin.org/status/500
+https://this-domain-definitely-does-not-exist-xyz123.com
+https://bit.ly/3xRPxYQ
+https://example.com/redirect/3
+Not a link: just plain text
+https://httpbin.org/delay/2`;
+}
+
+function doClear() { $('#input').value=''; $('#output').innerHTML=''; lastResults=[]; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doCheck()">${t('check')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/dev/url-expander.html', name:'URL Expander'},
+    {icon:'🔁', href:'/dev/redirect-checker.html', name:'Redirect Checker'},
+    {icon:'🔍', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'🔨', href:'/dev/url-builder.html', name:'URL Builder'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
