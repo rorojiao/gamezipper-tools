@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Sudoku Online - Free Brain Puzzle Game | GameZipper Tools</title>
+  <meta name="description" content="Play Sudoku online for free. Classic 9x9 number puzzle with 4 difficulty levels, smart hints, pencil marks, undo, timer and best-time tracking.">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/sudoku.html">
+  <meta property="og:title" content="Sudoku Online - Free Brain Puzzle Game | GameZipper Tools">
+  <meta property="og:description" content="Play Sudoku online for free. Classic 9x9 number puzzle with 4 difficulty levels, smart hints, pencil marks, undo, timer and best-time tracking.">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/sudoku.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Sudoku Online - Free Brain Puzzle Game | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.sd-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:20px}
+.sd-header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:360px;flex-wrap:wrap;gap:8px}
+.sd-diffs{display:flex;gap:4px;flex-wrap:wrap}
+.sd-diffs button{font-size:.8em;padding:6px 10px}
+.sd-diffs button.active{background:var(--accent);color:#1a1a2e}
+.sd-stats{display:flex;gap:8px;flex-wrap:wrap}
+.sd-stat{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.85em;min-width:80px;text-align:center}
+.sd-stat .lbl{color:var(--text2);font-size:.75em;text-transform:uppercase;letter-spacing:.5px}
+.sd-stat .val{font-weight:800;font-size:1.1em;color:var(--text)}
+.sd-stat.mistake .val{color:var(--gz-accent)}
+.sd-stat.best .val{color:var(--accent)}
+.sd-board{display:grid;grid-template-columns:repeat(9,1fr);width:min(92vw,360px);aspect-ratio:1;background:var(--glass2);border:2px solid var(--text);border-radius:6px;overflow:hidden}
+.sd-cell{background:var(--glass);border:.5px solid var(--border3,rgba(255,255,255,.18));display:flex;align-items:center;justify-content:center;font-size:clamp(1em,4.5vw,1.5em);font-weight:600;cursor:pointer;position:relative;user-select:none;aspect-ratio:1;color:var(--text);transition:background .12s}
+.sd-cell.given{background:rgba(255,255,255,.04);font-weight:800;color:var(--text)}
+.sd-cell.user{color:var(--accent)}
+.sd-cell.selected{background:rgba(255,217,61,.25)!important}
+.sd-cell.highlighted{background:rgba(255,255,255,.08)}
+.sd-cell.same{background:rgba(0,198,251,.18)}
+.sd-cell.error{color:#ff4757!important}
+.sd-cell.hint{animation:sdHint .5s ease}
+.sd-cell .pmarks{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-size:.3em;color:var(--text2);font-weight:400;line-height:1;padding:2px}
+.sd-cell .pmarks span{display:flex;align-items:center;justify-content:center}
+.sd-cell .pmarks span.active{color:var(--accent);font-weight:700}
+.sd-cell:nth-child(3n){border-right:1.5px solid var(--text)}
+.sd-cell:nth-child(9n){border-right:none}
+.sd-cell:nth-child(n+19):nth-child(-n+27),.sd-cell:nth-child(n+46):nth-child(-n+54){border-bottom:1.5px solid var(--text)}
+@keyframes sdHint{0%{background:rgba(0,214,114,.6)}100%{background:rgba(255,255,255,.04)}}
+.sd-numpad{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;width:min(92vw,360px);margin-top:6px}
+.sd-numpad button{background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:8px 0;font-size:1.1em;font-weight:700;color:var(--text);cursor:pointer;aspect-ratio:1}
+.sd-numpad button:hover{background:var(--glass)}
+.sd-numpad button.eraser{font-size:.85em}
+.sd-controls{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.sd-controls button{font-size:.85em}
+.sd-mode{display:flex;gap:4px;justify-content:center;margin:6px 0;font-size:.85em}
+.sd-mode button{font-size:.85em;padding:4px 10px}
+.sd-mode button.active{background:var(--accent);color:#1a1a2e}
+.sd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.sd-overlay-content{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:30px;text-align:center;max-width:340px}
+.sd-overlay-content h2{margin:0 0 10px;color:var(--accent)}
+.sd-overlay-content button{margin-top:14px}
+.sd-overlay.hidden{display:none}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sudoku Online","description":"Play Sudoku online for free. Classic 9x9 number puzzle with 4 difficulty levels, smart hints, pencil marks, undo, timer and best-time tracking.","url": "https://tools.gamezipper.com/zh/fun/sudoku.html","applicationCategory":"GameApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do you play Sudoku?", "acceptedAnswer": {"@type": "Answer", "text": "Fill the 9x9 grid so that each row, column and 3x3 box contains the digits 1-9 exactly once. Start with the easiest cells — those with the most given numbers in their row, column and box."}}, {"@type": "Question", "name": "What is the easiest Sudoku strategy?", "acceptedAnswer": {"@type": "Answer", "text": "Use the 'only-one-possibility' technique: scan each row, column and box. If a digit can only fit in one cell, place it. Combine with 'naked pairs' and 'pointing pairs' to crack harder puzzles."}}, {"@type": "Question", "name": "Are these Sudoku puzzles unique solutions?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All puzzles are generated with a single unique solution, so you'll never get stuck with multiple valid answers. Hints are reliable."}}, {"@type": "Question", "name": "Can I save my Sudoku progress?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — your current game is auto-saved in your browser. Reload the page and you'll be back where you were. Best times for each difficulty are also tracked in local storage."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/sudoku.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/sudoku.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/sudoku.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="sd-wrap">
+      <div class="sd-header">
+        <div class="sd-diffs" id="diffs"></div>
+        <div class="sd-stats">
+          <div class="sd-stat"><div class="lbl" id="lblTime">Time</div><div class="val" id="time">0:00</div></div>
+          <div class="sd-stat mistake"><div class="lbl" id="lblMistakes">Mistakes</div><div class="val" id="mistakes">0/3</div></div>
+          <div class="sd-stat best"><div class="lbl" id="lblBest">Best</div><div class="val" id="best">—</div></div>
+        </div>
+      </div>
+      <div class="sd-board" id="board"></div>
+      <div class="sd-mode" id="modeRow"></div>
+      <div class="sd-numpad" id="numpad"></div>
+      <div class="sd-controls">
+        <button class="gz-btn gz-btn-secondary" onclick="newGame()" id="newBtn">New Game</button>
+        <button class="gz-btn gz-btn-secondary" onclick="undo()" id="undoBtn">↶ Undo</button>
+        <button class="gz-btn gz-btn-secondary" onclick="useHint()" id="hintBtn">💡 Hint</button>
+        <button class="gz-btn gz-btn-secondary" onclick="erase()" id="eraseBtn">⌫ Erase</button>
+      </div>
+    </div>
+    <div class="sd-overlay hidden" id="overlay">
+      <div class="sd-overlay-content">
+        <h2 id="overlayTitle">🎉 You solved it!</h2>
+        <p id="overlayMsg"></p>
+        <button class="gz-btn" onclick="document.getElementById('overlay').classList.add('hidden');newGame();" id="overlayBtn">Play Again</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    sdTitle: 'Sudoku — Free Online Number Puzzle',
+    sdDesc: 'Play classic 9×9 Sudoku with 4 difficulty levels. Smart hints, pencil marks, undo, mistake counter, and best-time tracking. Auto-saved in your browser.',
+    easy:'Easy',medium:'Medium',hard:'Hard',expert:'Expert',
+    time:'Time',mistakes:'Mistakes',best:'Best',
+    input:'Input', pencil:'Pencil', undo:'↶ Undo', hint:'💡 Hint', erase:'⌫ Erase', newGame:'New Game',
+    solved:'🎉 Puzzle solved!', failed:'❌ Game over', playAgain:'Play Again',
+    sdStep1:'Pick a difficulty (Easy, Medium, Hard, Expert)',
+    sdStep2:'Click a cell and type 1-9 to fill it, or use the numpad',
+    sdStep3:'Toggle pencil mode to jot down candidate numbers',
+    sdStep4:'Use Hint when stuck — but it costs 30 seconds!',
+  },
+  zh: {
+    sdTitle: '数独 — 免费在线数字谜题',
+    sdDesc: '玩经典 9×9 数独，4 个难度等级。智能提示、候选标记、撤销、错误计数和最佳时间记录。浏览器自动保存。',
+    easy:'简单',medium:'中等',hard:'困难',expert:'专家',
+    time:'时间',mistakes:'错误',best:'最佳',
+    input:'输入', pencil:'标记', undo:'↶ 撤销', hint:'💡 提示', erase:'⌫ 清除', newGame:'新游戏',
+    solved:'🎉 完成！', failed:'❌ 游戏结束', playAgain:'再玩一局',
+    sdStep1:'选择难度（简单、中等、困难、专家）',
+    sdStep2:'点击格子，输入 1-9 填入数字，或使用数字键盘',
+    sdStep3:'切换标记模式写下候选数字',
+    sdStep4:'卡住时使用提示 —— 但会扣 30 秒！',
+  }
+});
+
+const {t,$} = GZ;
+
+const DIFFS = {
+  easy:   {given: 40, name: 'easy'},
+  medium: {given: 32, name: 'medium'},
+  hard:   {given: 28, name: 'hard'},
+  expert: {given: 24, name: 'expert'},
+};
+
+let diff = 'easy', mode = 'input', board = [], solution = [], given = [], notes = [], sel = null, history = [], mistakes = 0, hints = 0, startTime = 0, timer = null, solved = false, gameOver = false;
+
+$('#lblTime').textContent = t('time');
+$('#lblMistakes').textContent = t('mistakes');
+$('#lblBest').textContent = t('best');
+$('#newBtn').textContent = t('newGame');
+$('#undoBtn').textContent = t('undo');
+$('#hintBtn').textContent = t('hint');
+$('#eraseBtn').textContent = t('erase');
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function genSolution(){
+  const g=Array.from({length:9},()=>Array(9).fill(0));
+  function fill(g){
+    for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+      if(g[r][c])continue;
+      const nums=shuffle([1,2,3,4,5,6,7,8,9]);
+      for(const n of nums){
+        if(isValid(g,r,c,n)){g[r][c]=n;if(fill(g))return true;g[r][c]=0;}
+      }
+      return false;
+    }
+    return true;
+  }
+  fill(g);return g;
+}
+function isValid(g,r,c,n){
+  for(let i=0;i<9;i++)if(g[r][i]===n||g[i][c]===n)return false;
+  const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;
+  for(let i=br;i<br+3;i++)for(let j=bc;j<bc+3;j++)if(g[i][j]===n)return false;
+  return true;
+}
+function makePuzzle(targetGiven){
+  const sol = genSolution();
+  const g = sol.map(r=>r.slice());
+  const cells = shuffle([...Array(81).keys()]);
+  let removed = 0;
+  for(const idx of cells){
+    if(81-removed<=targetGiven)break;
+    const r=Math.floor(idx/9),c=idx%9;
+    const tmp=g[r][c];g[r][c]=0;
+    removed++;
+  }
+  return {puzzle:g, solution:sol};
+}
+
+function newGame(){
+  clearInterval(timer);
+  const target = DIFFS[diff].given;
+  const {puzzle, solution: sol} = makePuzzle(target);
+  board = puzzle;
+  solution = sol;
+  given = puzzle.map(r=>r.map(v=>v!==0));
+  notes = Array.from({length:9},()=>Array.from({length:9},()=>new Set()));
+  sel = null; history = []; mistakes = 0; hints = 0; solved = false; gameOver = false;
+  startTime = Date.now();
+  timer = setInterval(updateTime, 1000);
+  updateTime();
+  renderDiffs();
+  render();
+}
+window.newGame = newGame;
+
+function setDiff(d){diff=d;newGame();}
+window.setDiff = setDiff;
+
+function setMode(m){mode=m;renderModeRow();}
+window.setMode = setMode;
+
+function renderDiffs(){
+  $('#diffs').innerHTML = ['easy','medium','hard','expert'].map(d=>`<button class="gz-btn ${diff===d?'':'gz-btn-secondary'} ${diff===d?'active':''}" onclick="setDiff('${d}')">${t(d)}</button>`).join('');
+  $('#modeRow').innerHTML = `<button class="gz-btn gz-btn-secondary ${mode==='input'?'active':''}" onclick="setMode('input')">${t('input')}</button><button class="gz-btn gz-btn-secondary ${mode==='pencil'?'active':''}" onclick="setMode('pencil')">${t('pencil')}</button>`;
+}
+function renderModeRow(){renderDiffs();}
+function renderNumpad(){
+  let html = '';
+  for(let i=1;i<=9;i++)html+=`<button onclick="place(${i})">${i}</button>`;
+  html += `<button class="eraser" onclick="erase()">⌫</button>`;
+  $('#numpad').innerHTML = html;
+}
+function updateTime(){
+  const e = Math.floor((Date.now()-startTime)/1000);
+  const m = Math.floor(e/60), s = e%60;
+  $('#time').textContent = m+':'+String(s).padStart(2,'0');
+  $('#mistakes').textContent = mistakes+'/3';
+  const b = +(localStorage.getItem('sd-best-'+diff)||0);
+  $('#best').textContent = b ? Math.floor(b/60)+':'+String(b%60).padStart(2,'0') : '—';
+}
+function render(){
+  $('#board').innerHTML = '';
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const cell = document.createElement('div');
+    cell.className = 'sd-cell' + (given[r][c]?' given':(board[r][c]?' user':'')) + (sel&&sel[0]===r&&sel[1]===c?' selected':'') + (isError(r,c)?' error':'');
+    cell.dataset.r=r; cell.dataset.c=c;
+    if(board[r][c]){
+      cell.textContent = board[r][c];
+    } else if(notes[r][c].size){
+      let pm = '<div class="pmarks">';
+      for(let n=1;n<=9;n++)pm += `<span class="${notes[r][c].has(n)?'active':''}">${notes[r][c].has(n)?n:''}</span>`;
+      pm += '</div>';
+      cell.innerHTML = pm;
+    }
+    cell.onclick = ()=>select(r,c);
+    $('#board').appendChild(cell);
+  }
+}
+function isError(r,c){
+  if(!board[r][c]||given[r][c])return false;
+  return board[r][c]!==solution[r][c];
+}
+function select(r,c){
+  if(solved||gameOver)return;
+  sel = [r,c]; render();
+}
+window.select = select;
+function place(n){
+  if(!sel||solved||gameOver)return;
+  const [r,c] = sel;
+  if(given[r][c])return;
+  history.push(board.map(row=>row.slice()));
+  if(mode==='pencil'){
+    if(notes[r][c].has(n))notes[r][c].delete(n);else notes[r][c].add(n);
+  } else {
+    board[r][c]=n; notes[r][c].clear();
+    if(n!==solution[r][c]){
+      mistakes++;
+      if(mistakes>=3){gameOver=true;clearInterval(timer);showOverlay('failed','');}
+    }
+    if(checkWin()){solved=true;clearInterval(timer);const e=Math.floor((Date.now()-startTime)/1000);const b=+(localStorage.getItem('sd-best-'+diff)||999999);if(e<b){localStorage.setItem('sd-best-'+diff,e);}showOverlay('solved',t('time')+': '+$('#time').textContent);}
+  }
+  render();
+}
+window.place = place;
+function erase(){
+  if(!sel||solved||gameOver)return;
+  const [r,c] = sel;
+  if(given[r][c])return;
+  history.push(board.map(row=>row.slice()));
+  board[r][c]=0; notes[r][c].clear();
+  render();
+}
+window.erase = erase;
+function undo(){
+  if(!history.length)return;
+  board = history.pop();
+  render();
+}
+window.undo = undo;
+function useHint(){
+  if(solved||gameOver)return;
+  if(sel){
+    const [r,c] = sel;
+    if(given[r][c])return;
+    history.push(board.map(row=>row.slice()));
+    board[r][c] = solution[r][c];
+    notes[r][c].clear();
+    given[r][c] = true;
+    render();
+  }
+}
+window.useHint = useHint;
+function checkWin(){
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++)if(board[r][c]!==solution[r][c])return false;
+  return true;
+}
+function showOverlay(title,msg){
+  $('#overlayTitle').textContent = t(title);
+  $('#overlayMsg').textContent = msg;
+  $('#overlayBtn').textContent = t('playAgain');
+  $('#overlay').classList.remove('hidden');
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key>='1'&&e.key<='9')place(+e.key);
+  else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0')erase();
+  else if(e.key==='z'&&(e.ctrlKey||e.metaKey))undo();
+  else if(e.key==='ArrowUp'&&sel)sel=[Math.max(0,sel[0]-1),sel[1]],render();
+  else if(e.key==='ArrowDown'&&sel)sel=[Math.min(8,sel[0]+1),sel[1]],render();
+  else if(e.key==='ArrowLeft'&&sel)sel=[sel[0],Math.max(0,sel[1]-1)],render();
+  else if(e.key==='ArrowRight'&&sel)sel=[sel[0],Math.min(8,sel[1]+1)],render();
+});
+
+renderDiffs(); renderNumpad(); newGame();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'sdTitle',
+  descKey: 'sdDesc',
+  howToSteps: ['sdStep1','sdStep2','sdStep3','sdStep4'],
+  related: [
+    {icon:'🔢', href:'/fun/2048.html', name:'2048'},
+    {icon:'⭕', href:'/fun/tic-tac-toe.html', name:'Tic Tac Toe'},
+    {icon:'🧩', href:'/fun/word-search.html', name:'Word Search'},
+    {icon:'⌨️', href:'/fun/typing-test.html', name:'Typing Test'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>2048 Online - Free Sliding Puzzle Game | GameZipper Tools</title>
+  <meta name="description" content="Play 2048 online for free. Join the tiles, get to 2048! Classic 4x4 sliding puzzle with keyboard, touch and swipe controls, best score tracking, and undo.">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/2048.html">
+  <meta property="og:title" content="2048 Online - Free Sliding Puzzle Game | GameZipper Tools">
+  <meta property="og:description" content="Play 2048 online for free. Join the tiles, get to 2048! Classic 4x4 sliding puzzle with keyboard, touch and swipe controls, best score tracking, and undo.">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/2048.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="2048 Online - Free Sliding Puzzle Game | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.g2048-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:20px}
+.g2048-header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:340px;flex-wrap:wrap;gap:10px}
+.g2048-title{font-size:1.6em;font-weight:800;color:var(--accent)}
+.g2048-scores{display:flex;gap:8px}
+.g2048-score-box{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:80px;text-align:center}
+.g2048-score-box .lbl{font-size:.7em;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.g2048-score-box .val{font-size:1.4em;font-weight:800;color:var(--text)}
+.g2048-score-box.best .val{color:var(--accent)}
+.g2048-board{position:relative;width:min(90vw,340px);height:min(90vw,340px);background:var(--glass2);border:2px solid var(--border);border-radius:10px;padding:8px;touch-action:none;user-select:none}
+.g2048-grid{position:relative;width:100%;height:100%}
+.g2048-cell{position:absolute;width:calc(25% - 12px);height:calc(25% - 12px);background:rgba(255,255,255,.04);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.6em;color:var(--text);transition:transform .12s ease;line-height:1}
+.g2048-cell[data-v="2"]{background:#eee4da;color:#776e65}
+.g2048-cell[data-v="4"]{background:#ede0c8;color:#776e65}
+.g2048-cell[data-v="8"]{background:#f2b179;color:#fff}
+.g2048-cell[data-v="16"]{background:#f59563;color:#fff}
+.g2048-cell[data-v="32"]{background:#f67c5f;color:#fff}
+.g2048-cell[data-v="64"]{background:#f65e3b;color:#fff}
+.g2048-cell[data-v="128"]{background:#edcf72;color:#fff;font-size:1.3em}
+.g2048-cell[data-v="256"]{background:#edcc61;color:#fff;font-size:1.3em}
+.g2048-cell[data-v="512"]{background:#edc850;color:#fff;font-size:1.3em}
+.g2048-cell[data-v="1024"]{background:#edc53f;color:#fff;font-size:1.1em}
+.g2048-cell[data-v="2048"]{background:#edc22e;color:#fff;font-size:1.1em;box-shadow:0 0 20px #edc22e}
+.g2048-cell[data-v="4096"],.g2048-cell[data-v="8192"]{background:#3c3a32;color:#f9f6f2;font-size:1em}
+.g2048-cell.new{animation:g2048Pop .2s ease}
+.g2048-cell.merged{animation:g2048Merge .2s ease}
+@keyframes g2048Pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+@keyframes g2048Merge{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.g2048-overlay{position:absolute;inset:0;background:rgba(238,228,218,.85);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:10;color:#776e65;font-weight:700}
+.g2048-overlay button{background:#8f7a66;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:1em;cursor:pointer;font-weight:700}
+.g2048-overlay button:hover{background:#9f8b77}
+.g2048-overlay.hidden{display:none}
+.g2048-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.g2048-tip{font-size:.85em;color:var(--text2);text-align:center;margin-top:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"2048 Online","description":"Play 2048 online for free. Join the tiles, get to 2048! Classic 4x4 sliding puzzle with keyboard, touch and swipe controls.","url": "https://tools.gamezipper.com/zh/fun/2048.html","applicationCategory":"GameApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do you play 2048?", "acceptedAnswer": {"@type": "Answer", "text": "Use the arrow keys (or swipe on mobile) to slide all tiles in one direction. Tiles with the same number merge into one when they touch. After every move a new 2 or 4 tile appears in a random empty cell. Reach the 2048 tile to win."}}, {"@type": "Question", "name": "What is the best 2048 strategy?", "acceptedAnswer": {"@type": "Answer", "text": "Keep your highest tile in one corner and never move it. Build a chain in a snake pattern: alternate row direction per row. Avoid using the up arrow early so the bottom row stays full."}}, {"@type": "Question", "name": "Can I undo a move in 2048?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — click the Undo button or press Z to take back your last move. You can also start a new game at any time with the New Game button."}}, {"@type": "Question", "name": "Is my best score saved?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, your best score is saved in your browser's local storage so it persists across sessions on the same device. Clearing browser data will reset it."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/2048.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/2048.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/2048.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="g2048-wrap">
+      <div class="g2048-header">
+        <div class="g2048-title">2<sup>0</sup>4<sup>8</sup></div>
+        <div class="g2048-scores">
+          <div class="g2048-score-box"><div class="lbl" id="lblScore">Score</div><div class="val" id="score">0</div></div>
+          <div class="g2048-score-box best"><div class="lbl" id="lblBest">Best</div><div class="val" id="best">0</div></div>
+        </div>
+      </div>
+      <div class="g2048-board" id="board">
+        <div class="g2048-grid" id="grid"></div>
+        <div class="g2048-overlay hidden" id="overlay">
+          <div id="overlayText" style="font-size:1.6em"></div>
+          <button onclick="newGame()" id="overlayBtn">Try again</button>
+        </div>
+      </div>
+      <div class="g2048-tip" id="tip"></div>
+      <div class="g2048-controls">
+        <button class="gz-btn" onclick="newGame()" id="newBtn">New Game</button>
+        <button class="gz-btn gz-btn-secondary" onclick="undo()" id="undoBtn">↶ Undo</button>
+        <button class="gz-btn gz-btn-secondary" onclick="toggleAuto()" id="autoBtn">▶ Auto-play</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    g2048Title: '2048 — Online Puzzle Game',
+    g2048Desc: 'Join the tiles, get to 2048! Classic sliding number puzzle. Free, no signup, works with keyboard arrows or touch swipes.',
+    score: 'Score', best: 'Best', youWin: 'You win! 🎉', gameOver: 'Game over!',
+    tryAgain: 'Try again', newGame: 'New Game', undo: '↶ Undo', auto: '▶ Auto-play', stop: '⏸ Stop',
+    tip: 'Use arrow keys or swipe to move tiles. Merge matching numbers to reach 2048!',
+    g2048Step1: 'Use arrow keys (or swipe) to slide all tiles in a direction',
+    g2048Step2: 'Tiles with the same number merge into one with double the value',
+    g2048Step3: 'A new 2 or 4 tile spawns after every move',
+    g2048Step4: 'Keep your highest tile in a corner and build a chain — reach 2048 to win!',
+  },
+  zh: {
+    g2048Title: '2048 — 经典数字合并游戏',
+    g2048Desc: '合并数字方块，挑战 2048！经典滑块数字游戏。免费、无需注册，支持键盘方向键和触屏滑动。',
+    score: '分数', best: '最高', youWin: '你赢了！🎉', gameOver: '游戏结束！',
+    tryAgain: '再来一局', newGame: '新游戏', undo: '↶ 撤销', auto: '▶ 自动玩', stop: '⏸ 停止',
+    tip: '使用方向键或滑动移动方块，合并相同数字以达到 2048！',
+    g2048Step1: '使用方向键（或滑动）将所有方块向一个方向滑动',
+    g2048Step2: '相同数字的方块相撞时会合并成双倍数字的方块',
+    g2048Step3: '每次移动后会随机出现一个 2 或 4 的新方块',
+    g2048Step4: '把最大的方块固定在角落，搭建链式合并 —— 达到 2048 即获胜！',
+  }
+});
+
+const {t,$} = GZ;
+const SIZE = 4;
+let grid = [], prevGrid = null, prevScore = 0, score = 0, best = +(localStorage.getItem('g2048-best')||0), won = false, over = false, auto = false, autoTimer = null;
+
+$('#lblScore').textContent = t('score');
+$('#lblBest').textContent = t('best');
+$('#newBtn').textContent = t('newGame');
+$('#undoBtn').textContent = t('undo');
+$('#autoBtn').textContent = t('auto');
+$('#tip').textContent = t('tip');
+
+function emptyGrid(){return Array.from({length:SIZE},()=>Array(SIZE).fill(0));}
+function cloneGrid(g){return g.map(r=>r.slice());}
+function emptyCells(g){const c=[];for(let r=0;r<SIZE;r++)for(let c2=0;c2<SIZE;c2++)if(!g[r][c2])c.push([r,c2]);return c;}
+function addRandom(g){const c=emptyCells(g);if(!c.length)return;[r,c]=c[Math.floor(Math.random()*c.length)];g[r][c]=Math.random()<.9?2:4;}
+function gridsEqual(a,b){for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(a[r][c]!==b[r][c])return false;return true;}
+
+function render(){
+  $('#grid').innerHTML = '';
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const v = grid[r][c];
+    const cell = document.createElement('div');
+    cell.className = 'g2048-cell';
+    if(v)cell.setAttribute('data-v', v);
+    cell.textContent = v||'';
+    cell.style.left = `calc(${c} * 25% + 4px)`;
+    cell.style.top = `calc(${r} * 25% + 4px)`;
+    cell.style.width = 'calc(25% - 8px)';
+    cell.style.height = 'calc(25% - 8px)';
+    $('#grid').appendChild(cell);
+  }
+  $('#score').textContent = score;
+  $('#best').textContent = best;
+}
+
+function rotate(g){
+  const n = g.length;
+  const r = emptyGrid();
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)r[j][n-1-i]=g[i][j];
+  return r;
+}
+function moveLeft(g){
+  let sc=0,moved=false;
+  const out=emptyGrid();
+  for(let r=0;r<SIZE;r++){
+    let row = g[r].filter(v=>v);
+    for(let i=0;i<row.length-1;i++){if(row[i]===row[i+1]){row[i]*=2;sc+=row[i];row.splice(i+1,1);}}
+    for(let c=0;c<SIZE;c++){if(out[r][c]!==row[c]){if(out[r][c]!==row[c]||(out[r][c]||g[r][c])!==(row[c]||g[r][c])){}} if(out[r][c]!==row[c])moved=true;out[r][c]=row[c]||0;}
+  }
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(out[r][c]!==g[r][c])moved=true;
+  return {g:out,sc,moved};
+}
+function move(dir){
+  if(over)return;
+  prevGrid = cloneGrid(grid); prevScore = score;
+  let g = cloneGrid(grid);
+  if(dir==='L'){const m=moveLeft(g);g=m.g;score+=m.sc;}
+  else if(dir==='R'){g=rotate(rotate(g));const m=moveLeft(g);g=m.g;score+=m.sc;g=rotate(rotate(g));}
+  else if(dir==='U'){g=rotate(rotate(rotate(g)));const m=moveLeft(g);g=m.g;score+=m.sc;g=rotate(g);}
+  else if(dir==='D'){g=rotate(g);const m=moveLeft(g);g=m.g;score+=m.sc;g=rotate(rotate(rotate(g)));}
+  if(gridsEqual(grid,g))return;
+  grid=g; addRandom(grid); render();
+  if(score>best){best=score;localStorage.setItem('g2048-best',best);}
+  if(!won){for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(grid[r][c]===2048){won=true;showOverlay('youWin');return;}}
+  if(checkGameOver()){over=true;showOverlay('gameOver');}
+}
+function checkGameOver(){
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(!grid[r][c])return false;
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE-1;c++)if(grid[r][c]===grid[r][c+1])return false;
+  for(let c=0;c<SIZE;c++)for(let r=0;r<SIZE-1;r++)if(grid[r][c]===grid[r+1][c])return false;
+  return true;
+}
+function showOverlay(key){
+  $('#overlayText').textContent = t(key);
+  $('#overlayBtn').textContent = t('tryAgain');
+  $('#overlay').classList.remove('hidden');
+}
+function newGame(){
+  grid = emptyGrid(); score=0; won=false; over=false; prevGrid=null; prevScore=0;
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;auto=false;$('#autoBtn').textContent=t('auto');}
+  addRandom(grid); addRandom(grid); render(); $('#overlay').classList.add('hidden');
+}
+function undo(){
+  if(!prevGrid)return;
+  grid=prevGrid;score=prevScore;over=false;prevGrid=null;
+  $('#overlay').classList.add('hidden');
+  render();
+}
+function toggleAuto(){
+  auto=!auto;
+  $('#autoBtn').textContent = t(auto?'stop':'auto');
+  if(auto){
+    autoTimer = setInterval(()=>{
+      if(over){toggleAuto();return;}
+      // Greedy: try each direction, pick the one that doesn't move or has the best corner heuristic
+      const best=findBestMove();
+      if(best)move(best);
+    }, 100);
+  } else {
+    clearInterval(autoTimer);autoTimer=null;
+  }
+}
+function findBestMove(){
+  let best=null,bestScore=-Infinity;
+  for(const d of ['L','R','U','D']){
+    const g=cloneGrid(grid);
+    let sc=0;
+    if(d==='L'){const m=moveLeft(g);g=m.g;sc=m.sc;}
+    else if(d==='R'){g=rotate(rotate(g));const m=moveLeft(g);g=m.g;sc=m.sc;g=rotate(rotate(g));}
+    else if(d==='U'){g=rotate(rotate(rotate(g)));const m=moveLeft(g);g=m.g;sc=m.sc;g=rotate(g);}
+    else if(d==='D'){g=rotate(g);const m=moveLeft(g);g=m.g;sc=m.sc;g=rotate(rotate(rotate(g)));}
+    if(gridsEqual(grid,g))continue;
+    // Heuristic: prefer keeping high values in bottom-left corner
+    let h=0;
+    for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){const w=(SIZE-r)+(SIZE-c);h+=g[r][c]*w;}
+    h+=sc*2;
+    // Bonus for empty cells
+    h+=emptyCells(g).length*5;
+    if(h>bestScore){bestScore=h;best=d;}
+  }
+  return best;
+}
+window.newGame = newGame; window.undo = undo; window.toggleAuto = toggleAuto;
+
+document.addEventListener('keydown',e=>{
+  const k = e.key;
+  if(k==='ArrowLeft'||k==='a'){e.preventDefault();move('L');}
+  else if(k==='ArrowRight'||k==='d'){e.preventDefault();move('R');}
+  else if(k==='ArrowUp'||k==='w'){e.preventDefault();move('U');}
+  else if(k==='ArrowDown'||k==='s'){e.preventDefault();move('D');}
+  else if(k==='z'||k==='Z'){e.preventDefault();undo();}
+});
+
+let touchStartX, touchStartY;
+const board = $('#board');
+board.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY;},{passive:true});
+board.addEventListener('touchend',e=>{
+  if(touchStartX==null)return;
+  const dx = e.changedTouches[0].clientX-touchStartX;
+  const dy = e.changedTouches[0].clientY-touchStartY;
+  if(Math.abs(dx)>Math.abs(dy)){
+    if(Math.abs(dx)>20)move(dx>0?'R':'L');
+  } else {
+    if(Math.abs(dy)>20)move(dy>0?'D':'U');
+  }
+  touchStartX=touchStartY=null;
+},{passive:true});
+
+newGame();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'g2048Title',
+  descKey: 'g2048Desc',
+  howToSteps: ['g2048Step1','g2048Step2','g2048Step3','g2048Step4'],
+  related: [
+    {icon:'⭕', href:'/fun/tic-tac-toe.html', name:'Tic Tac Toe'},
+    {icon:'⌨️', href:'/fun/typing-test.html', name:'Typing Test'},
+    {icon:'🧩', href:'/fun/word-search.html', name:'Word Search'},
+    {icon:'⏱️', href:'/fun/reaction-time.html', name:'Reaction Time'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
