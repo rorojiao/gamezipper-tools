@@ -171,12 +171,16 @@ ids.forEach(id => {
 function escapeHtml(s) { return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function calcClamp(minPx, maxPx, vpMin, vpMax, prefVw) {
-  // Calculate slope and intercept for vw + rem
-  const slope = (maxPx - minPx) / (vpMax - vpMin) * 100;
-  const yInt = -vpMin * slope + minPx;
-  // Convert yInt to rem (16px base)
-  const yRem = yInt / 16;
-  return {slope, yRem, prefVw};
+  // Calculate slope in px per viewport pixel
+  const slope = (maxPx - minPx) / (vpMax - vpMin);
+  // y-intercept in px
+  const yIntPx = minPx - slope * vpMin;
+  // Convert to vw + rem
+  // slope in vw: slope * 100 (since 1vw = vpWidth/100)
+  const slopeVw = slope * 100;
+  // y-intercept in rem (16px base)
+  const yRem = yIntPx / 16;
+  return {slope, yIntPx, slopeVw, yRem, prefVw};
 }
 
 function update() {
@@ -197,7 +201,7 @@ function update() {
   // Calculate slope & intercept for the vw + rem form
   const c = calcClamp(minPx, maxPx, vpMin, vpMax, prefVw);
   let prefExpr;
-  if (Math.abs(c.slope - prefVw) < 0.05) {
+  if (Math.abs(c.slopeVw - prefVw) < 0.05) {
     prefExpr = `${prefVw.toFixed(2)}vw`;
   } else {
     prefExpr = `${prefVw.toFixed(2)}vw + ${c.yRem.toFixed(3)}rem`;

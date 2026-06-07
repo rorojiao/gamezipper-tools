@@ -141,18 +141,26 @@ function escapeHtml(s) {
 }
 
 function parseClass(cls) {
-  // Returns {variant, prefix, value, suffix}
+  // Returns {variant, prefix, value}
   const parts = cls.split(':');
   const variant = parts.length > 1 ? parts[0] : null;
   const main = parts[parts.length-1];
 
+  // Try longest prefix first by splitting on last '-' for compound values like bg-blue-500
   // Match patterns
   const m = main.match(/^([a-z-]+)-(.+)$/);
-  if (!m) return null;
+  if (!m) {
+    // No dash, treat whole thing as prefix (like 'block', 'flex', 'hidden')
+    return {variant, prefix: main, value: ''};
+  }
   return {variant, prefix: m[1], value: m[2]};
 }
 
 function toCSS(prefix, value) {
+  // For values like '500' or 'white' or 'lg' that need to combine with prefix
+  // Try the longest possible prefix split
+  // e.g. 'bg-blue-500' might want to be bg / blue-500 OR bg-blue / 500
+
   // Spacing
   if (prefix === 'p' || prefix === 'px' || prefix === 'py' || prefix === 'pt' || prefix === 'pr' || prefix === 'pb' || prefix === 'pl') {
     const map = {p:'padding',px:'padding-inline',py:'padding-block',pt:'padding-top',pr:'padding-right',pb:'padding-bottom',pl:'padding-left'};
@@ -173,7 +181,7 @@ function toCSS(prefix, value) {
     if (value === 'fit') return {[map[prefix]]: 'fit-content'};
     if (/^\[.+\]$/.test(value)) return {[map[prefix]]: value.slice(1,-1)};
   }
-  // Colors
+  // Colors - try compound value first (bg-blue-500 => prefix=bg, value=blue-500)
   if (prefix === 'bg') {
     const c = getColor(value);
     if (c) return {'background-color': c};
@@ -186,10 +194,14 @@ function toCSS(prefix, value) {
     if (c) return {color: c};
     if (/^\[.+\]$/.test(value)) return {color: value.slice(1,-1)};
   }
+  // For 'rounded' (no value) and 'rounded-X' patterns
+  if (prefix === 'rounded' && value === '') {
+    return {'border-radius': RADIUS.DEFAULT};
+  }
   // Font weight
   if (prefix === 'font' && FONT_WEIGHT[value]) return {'font-weight': FONT_WEIGHT[value]};
-  // Border radius
-  if (prefix === 'rounded' || prefix === 'rounded-t' || prefix === 'rounded-r' || prefix === 'rounded-b' || prefix === 'rounded-l' || prefix === 'rounded-tl' || prefix === 'rounded-tr' || prefix === 'rounded-br' || prefix === 'rounded-bl') {
+  // Border radius - handle 'rounded-X' with X being part of value
+  if (prefix.startsWith('rounded')) {
     const v = value === '' ? 'DEFAULT' : value;
     if (RADIUS[v] !== undefined) {
       const map = {rounded:'border-radius','rounded-t':'border-top-left-radius border-top-right-radius','rounded-r':'border-top-right-radius border-bottom-right-radius','rounded-b':'border-bottom-left-radius border-bottom-right-radius','rounded-l':'border-top-left-radius border-bottom-left-radius','rounded-tl':'border-top-left-radius','rounded-tr':'border-top-right-radius','rounded-br':'border-bottom-right-radius','rounded-bl':'border-bottom-left-radius'};
@@ -252,8 +264,6 @@ function toCSS(prefix, value) {
     const v = parseInt(value);
     if (!isNaN(v)) return {opacity: v/100};
   }
-  // Rounded full
-  if (prefix === 'rounded' && value === 'full') return {'border-radius':'9999px'};
   return null;
 }
 
@@ -273,7 +283,30 @@ function convert() {
   classes.forEach(cls => {
     const parsed = parseClass(cls);
     if (!parsed) { unmatched++; unmatchedList.push(cls); return; }
-    const css = toCSS(parsed.prefix, parsed.value);
+    // Try: prefix=parsed.prefix, value=parsed.value first
+    // If that fails, try shifting the split: e.g. bg-blue-500 -> bg / blue-500
+    let css = toCSS(parsed.prefix, parsed.value);
+    if (!css) {
+      // Try splitting prefix on the LAST '-' (e.g. 'bg-blue' -> 'bg', 'blue')
+      const lastDash = parsed.prefix.lastIndexOf('-');
+      if (lastDash > 0) {
+        const newPrefix = parsed.prefix.substring(0, lastDash);
+        const newValue = parsed.prefix.substring(lastDash + 1) + '-' + parsed.value;
+        css = toCSS(newPrefix, newValue);
+        if (!css) {
+          // Try again: maybe value also has a dash (e.g. 'bg-blue' as prefix, '500' as value -> try (bg, blue-500) then (bg-blue, 500))
+          const valueParts = newValue.split('-');
+          if (valueParts.length > 1) {
+            // Try (newPrefix, valueParts.join('-')) - same as before
+            // Try splitting value: (newPrefix-valueParts[0], valueParts.slice(1).join('-'))
+            css = toCSS(newPrefix + '-' + valueParts[0], valueParts.slice(1).join('-'));
+          }
+        }
+      }
+    }
+    if (!css && cls === 'rounded') {
+      css = toCSS('rounded', '');
+    }
     if (!css) { unmatched++; unmatchedList.push(cls); return; }
     matched++;
     const variant = parsed.variant;

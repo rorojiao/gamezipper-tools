@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Time Card Calculator - Free Online Work Hours & Payroll | GameZipper Tools</title>
+  <meta name="description" content="Free online time card calculator. Track daily clock-in/out times, breaks, overtime and total work hours. Export timesheet to CSV — perfect for hourly workers and freelancers.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/time-card.html">
+  <meta property="og:title" content="Time Card Calculator - Free Online Work Hours & Payroll | GameZipper Tools">
+  <meta property="og:description" content="Free online time card calculator. Track daily clock-in/out times, breaks, overtime and total work hours. Export timesheet to CSV.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/time-card.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Time Card Calculator - Free Online Work Hours & Payroll | GameZipper Tools">
+<meta name="twitter:description" content="Free online time card calculator with overtime and CSV export. Perfect for hourly workers and freelancers.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.tc-wrap{max-width:920px;margin:0 auto}
+.tc-config{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px;padding:14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px}
+.tc-config label{display:flex;flex-direction:column;gap:4px;font-size:.8em;color:var(--text2)}
+.tc-config input,.tc-config select{padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.95rem}
+.tc-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.tc-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.tc-card .num{font-size:1.5em;font-weight:700;color:var(--gz-accent)}
+.tc-card .label{font-size:.75em;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.tc-card.pay .num{color:#50c878}
+.tc-card.ot .num{color:#ffb428}
+.tc-table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:.9rem}
+.tc-table th,.tc-table td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--border)}
+.tc-table th{background:var(--glass2);font-size:.78em;text-transform:uppercase;color:var(--text2);letter-spacing:.5px}
+.tc-table input{width:100%;padding:6px;border-radius:4px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9rem}
+.tc-table input[type=number]{text-align:right}
+.tc-table .total{font-weight:700;color:var(--gz-accent)}
+.tc-table .ot{color:#ffb428}
+.tc-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tc-actions button{padding:8px 14px}
+.tc-week{display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.tc-week button{padding:6px 10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Time Card Calculator","description":"Free online time card calculator. Track daily clock-in/out times, breaks, overtime and total work hours. Export timesheet to CSV.","url":"https://tools.gamezipper.com/calc/time-card.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How is overtime calculated?", "acceptedAnswer": {"@type": "Answer", "text": "Overtime is the number of hours worked per day that exceed the daily threshold (default 8 hours). You can change the threshold in the settings to match your local labor rules (e.g. 8h/day or 40h/week)."}, {"@type": "Question", "name": "Can I save my timesheet across sessions?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The current week is saved to your browser's local storage. You can also export the timesheet to a CSV file for backup or payroll submission."}}, {"@type": "Question", "name": "Are the times rounded?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool rounds each day's worked hours to the nearest 0.25 hour (15 minutes) and supports an optional rounding grace in minutes."}}, {"@type": "Question", "name": "Is my data sent to any server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All calculations and saved timesheets are local to your browser. Nothing is ever uploaded or shared."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/time-card.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/time-card.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/time-card.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tc-wrap">
+      <div class="tc-config">
+        <label><span id="lblRate"></span><input type="number" id="rate" value="20" step="0.5" min="0"></label>
+        <label><span id="lblOtRate"></span><input type="number" id="otRate" value="30" step="0.5" min="0"></label>
+        <label><span id="lblOtThreshold"></span><input type="number" id="otThreshold" value="8" step="0.5" min="0"></label>
+        <label><span id="lblRound"></span>
+          <select id="round">
+            <option value="0">No rounding</option>
+            <option value="1">1 min</option>
+            <option value="5">5 min</option>
+            <option value="6">15 min (0.25h)</option>
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+          </select>
+        </label>
+      </div>
+      <div class="tc-summary" id="summary"></div>
+      <div class="tc-week">
+        <span id="lblWeek" style="font-size:.9em;opacity:.7"></span>
+        <span style="flex:1"></span>
+        <button class="gz-btn gz-btn-secondary" id="prevWeek">←</button>
+        <button class="gz-btn gz-btn-secondary" id="thisWeek">This week</button>
+        <button class="gz-btn gz-btn-secondary" id="nextWeek">→</button>
+      </div>
+      <div style="overflow-x:auto">
+      <table class="tc-table" id="tcTable">
+        <thead><tr>
+          <th id="thDate"></th>
+          <th id="thIn"></th>
+          <th id="thOut"></th>
+          <th id="thBreak"></th>
+          <th id="thHours"></th>
+          <th id="thOt"></th>
+          <th id="thPay"></th>
+          <th></th>
+        </tr></thead>
+        <tbody id="tcBody"></tbody>
+        <tfoot><tr>
+          <th colspan="4" id="totalsLbl" style="text-align:right"></th>
+          <th class="total" id="totH">0.00</th>
+          <th class="ot total" id="totO">0.00</th>
+          <th class="total" id="totP">$0.00</th>
+          <th></th>
+        </tr></tfoot>
+      </table>
+      </div>
+      <div class="tc-actions">
+        <button class="gz-btn" id="addRow">+ <span id="addLbl"></span></button>
+        <button class="gz-btn gz-btn-secondary" id="exportCsv">⬇️ <span id="exportLbl"></span></button>
+        <button class="gz-btn gz-btn-secondary" id="copyCsv">📋 <span id="copyLbl"></span></button>
+        <button class="gz-btn gz-btn-secondary" id="clearWk">🗑️ <span id="clearLbl"></span></button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Time Card Calculator',
+    toolDesc: 'Track daily clock-in/out times, calculate total work hours, overtime and gross pay. Export timesheet to CSV.',
+    rate: 'Hourly rate ($)', otRate: 'Overtime rate ($)', otThreshold: 'OT threshold (h/day)', round: 'Round to',
+    date: 'Date', in: 'Clock in', out: 'Clock out', break: 'Break (min)', hours: 'Hours', ot: 'OT', pay: 'Pay',
+    week: 'Week of', add: 'Add Day', export: 'Export CSV', copy: 'Copy CSV', clearWk: 'Clear week',
+    totals: 'Totals', delete: 'Delete',
+    step1: 'Set your hourly rate, overtime rate and OT threshold',
+    step2: 'Click "This week" to start, then enter clock-in/out times for each day',
+    step3: 'Adjust break minutes and rounding precision as needed',
+    step4: 'Export to CSV for payroll, or copy to clipboard',
+  },
+  zh: {
+    toolTitle: '工时计算器',
+    toolDesc: '记录每日打卡时间，统计总工时、加班和总薪资。导出为 CSV。',
+    rate: '时薪 ($)', otRate: '加班时薪 ($)', otThreshold: '加班阈值 (小时/天)', round: '舍入精度',
+    date: '日期', in: '上班', out: '下班', break: '休息 (分钟)', hours: '工时', ot: '加班', pay: '薪资',
+    week: '所在周', add: '添加日期', export: '导出 CSV', copy: '复制 CSV', clearWk: '清空本周',
+    totals: '合计', delete: '删除',
+    step1: '设置时薪、加班时薪和加班阈值',
+    step2: '点击「本周」开始，输入每天的上下班时间',
+    step3: '根据需要调整休息分钟数和舍入精度',
+    step4: '导出为 CSV 用于工资结算，或复制到剪贴板',
+  }
+});
+
+const { $, t, copyText, showToast } = GZ;
+const STORAGE_KEY = 'gz-timecard-v1';
+
+let state = {
+  rate: 20, otRate: 30, otThreshold: 8, round: 6,
+  weekStart: null, // Date object for Monday
+  rows: [] // {date:'YYYY-MM-DD', in:'09:00', out:'17:00', break:30}
+};
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (s.rate != null) state.rate = s.rate;
+    if (s.otRate != null) state.otRate = s.otRate;
+    if (s.otThreshold != null) state.otThreshold = s.otThreshold;
+    if (s.round != null) state.round = s.round;
+    if (s.rows && s.weekStart === weekStartKey(state.weekStart || getMonday(new Date()))) {
+      state.rows = s.rows;
+    } else {
+      state.rows = defaultRows();
+    }
+  } catch(e) { state.rows = defaultRows(); }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    rate: state.rate, otRate: state.otRate, otThreshold: state.otThreshold, round: state.round,
+    weekStart: weekStartKey(state.weekStart), rows: state.rows
+  }));
+}
+
+function getMonday(d) {
+  const x = new Date(d);
+  const day = x.getDay() || 7; // 1=Mon, 7=Sun
+  if (day !== 1) x.setDate(x.getDate() - (day - 1));
+  x.setHours(0,0,0,0);
+  return x;
+}
+function weekStartKey(d) { return d ? d.toISOString().slice(0,10) : null; }
+function dateKey(d) { return d.toISOString().slice(0, 10); }
+
+function defaultRows() {
+  const mon = new Date(state.weekStart);
+  const rows = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    rows.push({ date: dateKey(d), in: '', out: '', break: 0 });
+  }
+  return rows;
+}
+
+function parseTime(s) {
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  return parseInt(m[1]) * 60 + parseInt(m[2]);
+}
+function roundTo(min, step) {
+  if (!step || step === 0) return min;
+  return Math.round(min / step) * step;
+}
+function calcDay(row) {
+  const inn = parseTime(row.in);
+  const out = parseTime(row.out);
+  if (inn == null || out == null) return { hours: 0, ot: 0, pay: 0 };
+  let mins = out - inn - (parseInt(row.break) || 0);
+  if (mins < 0) mins = 0;
+  // round
+  const r = parseInt(state.round) || 0;
+  mins = roundTo(mins, r);
+  const hours = mins / 60;
+  const otHours = Math.max(0, hours - state.otThreshold);
+  const regHours = hours - otHours;
+  const pay = regHours * state.rate + otHours * state.otRate;
+  return { hours, ot: otHours, pay };
+}
+
+function fmtHours(h) { return h.toFixed(2); }
+function fmtPay(p) { return '$' + p.toFixed(2); }
+
+function render() {
+  $('#rate').value = state.rate;
+  $('#otRate').value = state.otRate;
+  $('#otThreshold').value = state.otThreshold;
+  $('#round').value = state.round;
+
+  const mon = state.weekStart;
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const fmt = { month: 'short', day: 'numeric', year: 'numeric' };
+  $('#lblWeek').textContent = t('week') + ': ' + mon.toLocaleDateString(undefined, fmt) + ' — ' + sun.toLocaleDateString(undefined, fmt);
+
+  $('#tcBody').innerHTML = state.rows.map((r, i) => {
+    const c = calcDay(r);
+    return `<tr>
+      <td><input type="date" data-i="${i}" data-f="date" value="${r.date}"></td>
+      <td><input type="time" data-i="${i}" data-f="in" value="${r.in}"></td>
+      <td><input type="time" data-i="${i}" data-f="out" value="${r.out}"></td>
+      <td><input type="number" min="0" step="5" data-i="${i}" data-f="break" value="${r.break}"></td>
+      <td class="total">${fmtHours(c.hours)}</td>
+      <td class="ot">${fmtHours(c.ot)}</td>
+      <td class="total">${fmtPay(c.pay)}</td>
+      <td><button onclick="delRow(${i})" style="background:transparent;border:none;cursor:pointer;opacity:.6">🗑️</button></td>
+    </tr>`;
+  }).join('');
+
+  let totH = 0, totO = 0, totP = 0;
+  state.rows.forEach(r => { const c = calcDay(r); totH += c.hours; totO += c.ot; totP += c.pay; });
+  $('#totH').textContent = fmtHours(totH);
+  $('#totO').textContent = fmtHours(totO);
+  $('#totP').textContent = fmtPay(totP);
+  $('#summary').innerHTML = `
+    <div class="tc-card"><div class="num">${fmtHours(totH)}</div><div class="label">${t('hours')}</div></div>
+    <div class="tc-card ot"><div class="num">${fmtHours(totO)}</div><div class="label">${t('ot')}</div></div>
+    <div class="tc-card pay"><div class="num">${fmtPay(totP)}</div><div class="label">${t('pay')}</div></div>
+    <div class="tc-card"><div class="num">${state.rows.length}</div><div class="label">Days</div></div>`;
+}
+
+function bindInputs() {
+  $('#tcBody').addEventListener('input', e => {
+    const i = e.target.dataset.i, f = e.target.dataset.f;
+    if (i == null || !f) return;
+    state.rows[+i][f] = e.target.value;
+    save(); render();
+  });
+}
+
+window.delRow = function(i) {
+  state.rows.splice(i, 1); save(); render();
+};
+
+function addRow() {
+  const last = state.rows[state.rows.length - 1];
+  let nextDate;
+  if (last && last.date) {
+    const d = new Date(last.date); d.setDate(d.getDate() + 1);
+    nextDate = dateKey(d);
+  } else {
+    nextDate = dateKey(new Date());
+  }
+  state.rows.push({ date: nextDate, in: '', out: '', break: 0 });
+  save(); render();
+}
+function clearWk() { if (!confirm('Clear all rows this week?')) return; state.rows = defaultRows(); save(); render(); }
+function exportCsv() {
+  const mon = state.weekStart;
+  let csv = 'Date,Clock In,Clock Out,Break (min),Hours,OT,Pay\n';
+  state.rows.forEach(r => {
+    const c = calcDay(r);
+    csv += `${r.date},${r.in},${r.out},${r.break || 0},${c.hours.toFixed(2)},${c.ot.toFixed(2)},${c.pay.toFixed(2)}\n`;
+  });
+  csv += `\nTotals,,,,"${$('#totH').textContent}","${$('#totO').textContent}","${$('#totP').textContent}"\n`;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'timesheet-' + dateKey(mon) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+function copyCsv() {
+  let csv = 'Date,Clock In,Clock Out,Break (min),Hours,OT,Pay\n';
+  state.rows.forEach(r => {
+    const c = calcDay(r);
+    csv += `${r.date},${r.in},${r.out},${r.break || 0},${c.hours.toFixed(2)},${c.ot.toFixed(2)},${c.pay.toFixed(2)}\n`;
+  });
+  csv += `\nTotals,,,,"${$('#totH').textContent}","${$('#totO').textContent}","${$('#totP').textContent}"\n`;
+  copyText(csv);
+}
+
+state.weekStart = getMonday(new Date());
+load();
+if (state.rows.length === 0) state.rows = defaultRows();
+bindInputs();
+
+$('#rate').addEventListener('input', e => { state.rate = +e.target.value || 0; save(); render(); });
+$('#otRate').addEventListener('input', e => { state.otRate = +e.target.value || 0; save(); render(); });
+$('#otThreshold').addEventListener('input', e => { state.otThreshold = +e.target.value || 0; save(); render(); });
+$('#round').addEventListener('change', e => { state.round = +e.target.value; save(); render(); });
+
+$('#prevWeek').addEventListener('click', () => { state.weekStart.setDate(state.weekStart.getDate() - 7); state.rows = defaultRows(); save(); render(); });
+$('#nextWeek').addEventListener('click', () => { state.weekStart.setDate(state.weekStart.getDate() + 7); state.rows = defaultRows(); save(); render(); });
+$('#thisWeek').addEventListener('click', () => { state.weekStart = getMonday(new Date()); state.rows = defaultRows(); save(); render(); });
+$('#addRow').addEventListener('click', addRow);
+$('#exportCsv').addEventListener('click', exportCsv);
+$('#copyCsv').addEventListener('click', copyCsv);
+$('#clearWk').addEventListener('click', clearWk);
+
+// i18n labels
+const LBL = ['rate','otRate','otThreshold','round','date','in','out','break','hours','ot','pay','totals','add','export','copy','clearWk'];
+const IDS = { rate:'lblRate', otRate:'lblOtRate', otThreshold:'lblOtThreshold', round:'lblRound', date:'thDate', in:'thIn', out:'thOut', break:'thBreak', hours:'thHours', ot:'thOt', pay:'thPay' };
+Object.entries(IDS).forEach(([k, id]) => { const el = $('#' + id); if (el) el.textContent = t(k); });
+$('#totalsLbl').textContent = t('totals');
+$('#addLbl').textContent = t('add');
+$('#exportLbl').textContent = t('export');
+$('#copyLbl').textContent = t('copy');
+$('#clearLbl').textContent = t('clearWk');
+
+render();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp Converter'},
+    {icon:'⏱️', href:'/calc/hours-calculator.html', name:'Hours Calculator'},
+    {icon:'💼', href:'/calc/salary-calculator.html', name:'Salary Calculator'},
+    {icon:'📅', href:'/calc/date-calculator.html', name:'Date Calculator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
