@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Images to GIF Maker - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert images to animated GIF for free. Upload PNG, JPG or WebP images, set frame delay and loop, preview and download — runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/images-to-gif.html">
+  <meta property="og:title" content="Images to GIF Maker - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert images to animated GIF for free. Upload PNG, JPG or WebP images, set frame delay and loop, preview and download — runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/images-to-gif.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Images to GIF Maker - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert images to animated GIF for free. Upload PNG, JPG or WebP, set frame delay and download — runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#frames{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;min-height:80px;padding:12px;border:2px dashed var(--border);border-radius:12px;transition:border-color .2s}
+#frames.dragover{border-color:var(--gz-accent)}
+.frame{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid var(--border);cursor:grab}
+.frame img{width:100%;height:100%;object-fit:cover}
+.frame .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.frame .idx{position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.7);color:#fff;font-size:10px;padding:1px 5px;border-radius:4px}
+#preview{max-width:100%;max-height:400px;border-radius:8px;margin:12px auto;display:block}
+.gz-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
+.gz-controls label{display:flex;align-items:center;gap:6px;font-size:.85em}
+.gz-controls input[type=number]{width:70px}
+.gz-controls input[type=range]{width:120px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Images to GIF Maker","description":"Convert images to animated GIF for free. Upload PNG, JPG or WebP images, set frame delay and loop, preview and download — runs entirely in your browser.","url":"https://tools.gamezipper.com/convert/images-to-gif.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I create an animated GIF from images?", "acceptedAnswer": {"@type": "Answer", "text": "Upload or drag-and-drop your PNG, JPG or WebP images, set the frame delay (how long each image shows), click Generate GIF, then download the result."}}, {"@type": "Question", "name": "Is there a limit on the number of images?", "acceptedAnswer": {"@type": "Answer", "text": "There is no hard limit, but GIFs with many frames or large dimensions may take longer to generate. For best results, keep frames under 50 and use images under 1000px wide."}}, {"@type": "Question", "name": "Are my images uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens entirely in your browser using the GIFEncoder library. Your images never leave your device."}}, {"@type": "Question", "name": "Can I adjust the speed of the GIF?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the frame delay slider to set how long each frame displays, from 50ms (fast) to 2000ms (slow). You can preview the animation before downloading."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/images-to-gif.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/images-to-gif.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/images-to-gif.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+    <div id="frames"></div>
+    <div class="gz-controls" id="controls"></div>
+    <canvas id="canvas" hidden></canvas>
+    <img id="preview" hidden>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Images to GIF Maker',
+    toolDesc: 'Convert images to animated GIF — drag and drop PNG, JPG or WebP, set frame delay, preview and download for free.',
+    addImages: 'Add Images',
+    clearAll: 'Clear All',
+    generateGIF: 'Generate GIF',
+    downloadGIF: 'Download GIF',
+    frameDelay: 'Frame Delay',
+    ms: 'ms',
+    width: 'Width',
+    px: 'px',
+    loop: 'Loop',
+    infinite: 'Infinite',
+    times: 'times',
+    dropHere: 'Drop images here or click Add Images',
+    noFrames: 'Add at least 2 images to generate a GIF.',
+    generating: 'Generating GIF…',
+    done: 'GIF ready! Size: ',
+    step1: 'Click "Add Images" or drag and drop PNG/JPG/WebP files',
+    step2: 'Reorder frames by dragging, remove unwanted frames',
+    step3: 'Set frame delay, width and loop count',
+    step4: 'Click "Generate GIF" then download the result',
+  },
+  zh: {
+    toolTitle: '图片转 GIF 动图',
+    toolDesc: '将多张图片转换为 GIF 动画 — 拖拽上传 PNG/JPG/WebP，设置帧延迟，预览并免费下载。',
+    addImages: '添加图片',
+    clearAll: '清空',
+    generateGIF: '生成 GIF',
+    downloadGIF: '下载 GIF',
+    frameDelay: '帧延迟',
+    ms: '毫秒',
+    width: '宽度',
+    px: 'px',
+    loop: '循环',
+    infinite: '无限',
+    times: '次',
+    dropHere: '拖拽图片到此处或点击"添加图片"',
+    noFrames: '请至少添加 2 张图片。',
+    generating: '正在生成 GIF…',
+    done: 'GIF 已生成！大小：',
+    step1: '点击"添加图片"或拖拽 PNG/JPG/WebP 文件',
+    step2: '拖动调整帧顺序，删除不需要的帧',
+    step3: '设置帧延迟、宽度和循环次数',
+    step4: '点击"生成 GIF"然后下载',
+  }
+});
+
+const { $, t } = GZ;
+let frames = [];
+let gifBlob = null;
+
+// Simple GIF Encoder (minimal LZW-based GIF89a writer)
+class GIFEncoder {
+  constructor(w, h) {
+    this.w = w; this.h = h;
+    this.frames = [];
+    this.delay = 100;
+    this.repeat = 0;
+  }
+  setDelay(ms) { this.delay = Math.round(ms / 10); }
+  setRepeat(n) { this.repeat = n; }
+  addFrame(ctx) {
+    const imgData = ctx.getImageData(0, 0, this.w, this.h);
+    const pixels = imgData.data;
+    // Quantize to 256 colors using median cut (simplified)
+    const palette = this._quantize(pixels);
+    const indexed = this._mapPixels(pixels, palette);
+    this.frames.push({ palette, indexed });
+  }
+  _quantize(pixels) {
+    const colorMap = {};
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i] >> 4, g = pixels[i+1] >> 4, b = pixels[i+2] >> 4;
+      const key = (r << 8) | (g << 4) | b;
+      if (!colorMap[key]) colorMap[key] = [pixels[i], pixels[i+1], pixels[i+2], 0];
+      colorMap[key][3]++;
+    }
+    const sorted = Object.values(colorMap).sort((a,b) => b[3] - a[3]);
+    const palette = [];
+    for (let i = 0; i < 256 && i < sorted.length; i++) {
+      palette.push([sorted[i][0], sorted[i][1], sorted[i][2]]);
+    }
+    while (palette.length < 256) palette.push([0,0,0]);
+    return palette;
+  }
+  _mapPixels(pixels, palette) {
+    const indexed = new Uint8Array(this.w * this.h);
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i], g = pixels[i+1], b = pixels[i+2];
+      let best = 0, bestDist = Infinity;
+      for (let j = 0; j < 256; j++) {
+        const dr = r - palette[j][0], dg = g - palette[j][1], db = b - palette[j][2];
+        const d = dr*dr + dg*dg + db*db;
+        if (d < bestDist) { bestDist = d; best = j; }
+      }
+      indexed[i/4] = best;
+    }
+    return indexed;
+  }
+  finish() {
+    const buf = [];
+    const write = (b) => buf.push(b);
+    const writeS = (s) => { for (let i = 0; i < s.length; i++) write(s.charCodeAt(i)); };
+    const write16 = (v) => { write(v & 0xff); write((v >> 8) & 0xff); };
+    // Header
+    writeS('GIF89a');
+    write16(this.w); write16(this.h);
+    write(0xf7); // GCT flag, 8 bits color resolution, 256 colors
+    write(0); // bg color
+    write(0); // aspect ratio
+    // Global Color Table (first frame palette)
+    const gpal = this.frames[0]?.palette || Array(256).fill([0,0,0]);
+    for (const c of gpal) { write(c[0]); write(c[1]); write(c[2]); }
+    // Netscape extension for looping
+    write(0x21); write(0xff);
+    write(11); writeS('NETSCAPE2.0');
+    write(3); write(1);
+    write16(this.repeat < 0 ? 0 : this.repeat);
+    write(0);
+    // Frames
+    for (let fi = 0; fi < this.frames.length; fi++) {
+      const frame = this.frames[fi];
+      write(0x21); write(0xf9); // Graphics Control Extension
+      write(4);
+      write(0x08); // dispose: restore to bg
+      write16(this.delay);
+      write(0); // transparent color index
+      write(0);
+      // Image Descriptor
+      write(0x2c);
+      write16(0); write16(0); write16(this.w); write16(this.h);
+      write(0); // no local color table, use global
+      // LZW Minimum Code Size
+      const minCodeSize = 8;
+      write(minCodeSize);
+      // LZW compressed data
+      const lzwData = this._lzwEncode(frame.indexed, minCodeSize);
+      let pos = 0;
+      while (pos < lzwData.length) {
+        const chunk = lzwData.slice(pos, pos + 255);
+        write(chunk.length);
+        for (const b of chunk) write(b);
+        pos += 255;
+      }
+      write(0); // block terminator
+    }
+    write(0x3b); // Trailer
+    return new Uint8Array(buf);
+  }
+  _lzwEncode(indexed, minCodeSize) {
+    const clearCode = 1 << minCodeSize;
+    const eoiCode = clearCode + 1;
+    let codeSize = minCodeSize + 1;
+    let nextCode = eoiCode + 1;
+    const dict = new Map();
+    const output = [];
+    let bitBuf = 0, bitCount = 0;
+    const writeBits = (code, size) => {
+      bitBuf |= (code << bitCount);
+      bitCount += size;
+      while (bitCount >= 8) { output.push(bitBuf & 0xff); bitBuf >>= 8; bitCount -= 8; }
+    };
+    // Init dict
+    const resetDict = () => {
+      dict.clear();
+      for (let i = 0; i < clearCode; i++) dict.set(String(i), i);
+      nextCode = eoiCode + 1;
+      codeSize = minCodeSize + 1;
+    };
+    resetDict();
+    writeBits(clearCode, codeSize);
+    let prev = '';
+    for (let i = 0; i < indexed.length; i++) {
+      const cur = String(indexed[i]);
+      const combined = prev ? prev + ',' + cur : cur;
+      if (dict.has(combined)) {
+        prev = combined;
+      } else {
+        writeBits(dict.get(prev), codeSize);
+        if (nextCode < 4096) {
+          dict.set(combined, nextCode++);
+          if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
+        } else {
+          writeBits(clearCode, codeSize);
+          resetDict();
+        }
+        prev = cur;
+      }
+    }
+    if (prev) writeBits(dict.get(prev), codeSize);
+    writeBits(eoiCode, codeSize);
+    if (bitCount > 0) output.push(bitBuf & 0xff);
+    return output;
+  }
+}
+
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+const fileInput = $('#fileInput');
+const framesEl = $('#frames');
+
+function renderFrames() {
+  framesEl.innerHTML = '';
+  if (frames.length === 0) {
+    framesEl.innerHTML = `<p style="color:var(--text2);text-align:center;width:100%;padding:20px">${t('dropHere')}</p>`;
+    return;
+  }
+  frames.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'frame';
+    div.draggable = true;
+    div.dataset.index = i;
+    div.innerHTML = `<img src="${f.url}" alt="Frame ${i+1}"><button class="rm" title="Remove">×</button><span class="idx">${i+1}</span>`;
+    div.querySelector('.rm').onclick = (e) => { e.stopPropagation(); URL.revokeObjectURL(f.url); frames.splice(i, 1); renderFrames(); };
+    div.ondragstart = (e) => { e.dataTransfer.setData('text/plain', i); div.style.opacity = '0.4'; };
+    div.ondragend = () => { div.style.opacity = '1'; };
+    div.ondragover = (e) => { e.preventDefault(); };
+    div.ondrop = (e) => { e.preventDefault(); e.stopPropagation(); const from = parseInt(e.dataTransfer.getData('text/plain')); const to = i; if (from !== to) { const item = frames.splice(from, 1)[0]; frames.splice(to, 0, item); renderFrames(); } };
+    framesEl.appendChild(div);
+  });
+}
+
+fileInput.onchange = (e) => {
+  for (const file of e.target.files) {
+    if (!file.type.startsWith('image/')) continue;
+    frames.push({ url: URL.createObjectURL(file), img: null });
+    const img = new Image();
+    img.onload = () => { frames[frames.length - 1].img = img; };
+    img.src = frames[frames.length - 1].url;
+  }
+  fileInput.value = '';
+  renderFrames();
+};
+
+// Drag and drop on frames area
+framesEl.ondragover = (e) => { e.preventDefault(); framesEl.classList.add('dragover'); };
+framesEl.ondragleave = () => framesEl.classList.remove('dragover');
+framesEl.ondrop = (e) => {
+  e.preventDefault();
+  framesEl.classList.remove('dragover');
+  for (const file of e.dataTransfer.files) {
+    if (!file.type.startsWith('image/')) continue;
+    const url = URL.createObjectURL(file);
+    frames.push({ url, img: null });
+    const img = new Image();
+    img.onload = () => { const last = frames.find(f => f.url === url); if (last) last.img = img; };
+    img.src = url;
+  }
+  renderFrames();
+};
+
+async function generateGIF() {
+  if (frames.length < 2) { alert(t('noFrames')); return; }
+  $('#status').textContent = t('generating');
+  await new Promise(r => setTimeout(r, 50));
+
+  const delayVal = parseInt(document.getElementById('delaySlider').value) || 200;
+  const widthVal = parseInt(document.getElementById('widthInput').value) || 400;
+  const loopVal = parseInt(document.getElementById('loopInput').value) || 0;
+
+  // Wait for all images to load
+  for (const f of frames) {
+    if (!f.img) {
+      f.img = await new Promise(resolve => { const img = new Image(); img.onload = () => resolve(img); img.src = f.url; });
+    }
+  }
+
+  // Calculate uniform dimensions
+  const maxW = widthVal;
+  let maxH = 0;
+  for (const f of frames) {
+    const scale = maxW / f.img.naturalWidth;
+    const h = Math.round(f.img.naturalHeight * scale);
+    if (h > maxH) maxH = h;
+  }
+
+  canvas.width = maxW;
+  canvas.height = maxH;
+  const encoder = new GIFEncoder(maxW, maxH);
+  encoder.setDelay(delayVal);
+  encoder.setRepeat(loopVal === 0 ? 0 : loopVal);
+
+  for (const f of frames) {
+    ctx.clearRect(0, 0, maxW, maxH);
+    const scale = maxW / f.img.naturalWidth;
+    const h = Math.round(f.img.naturalHeight * scale);
+    const y = Math.round((maxH - h) / 2);
+    ctx.drawImage(f.img, 0, y, maxW, h);
+    encoder.addFrame(ctx);
+  }
+
+  const data = encoder.finish();
+  gifBlob = new Blob([data], { type: 'image/gif' });
+  const url = URL.createObjectURL(gifBlob);
+  const preview = $('#preview');
+  preview.src = url;
+  preview.hidden = false;
+  const sizeKB = (gifBlob.size / 1024).toFixed(1);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')}${sizeKB} KB</span>`;
+}
+
+function downloadGIF() {
+  if (!gifBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(gifBlob);
+  a.download = 'animation.gif';
+  a.click();
+}
+
+function clearAll() {
+  frames.forEach(f => URL.revokeObjectURL(f.url));
+  frames = [];
+  gifBlob = null;
+  $('#preview').hidden = true;
+  $('#status').textContent = '';
+  renderFrames();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="$('#fileInput').click()">${t('addImages')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clearAll')}</button>`;
+
+$('#controls').innerHTML = `
+  <label>${t('frameDelay')}: <input type="range" id="delaySlider" min="50" max="2000" value="200" step="50" oninput="document.getElementById('delayVal').textContent=this.value"> <span id="delayVal">200</span>${t('ms')}</label>
+  <label>${t('width')}: <input type="number" id="widthInput" value="400" min="50" max="2000" step="50">${t('px')}</label>
+  <label>${t('loop')}: <input type="number" id="loopInput" value="0" min="0" max="100" step="1" title="0 = ${t('infinite')}"> <small>(0=${t('infinite')})</small></label>
+  <button class="gz-btn" onclick="generateGIF()">${t('generateGIF')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadGIF()">${t('downloadGIF')}</button>`;
+
+renderFrames();
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/convert/webp-to-gif.html', name:'WebP to GIF'},
+    {icon:'🎞️', href:'/image/photo-collage.html', name:'Photo Collage'},
+    {icon:'📱', href:'/convert/qrcode.html', name:'QR Code'},
+    {icon:'🖼️', href:'/image/compressor.html', name:'Image Compressor'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
