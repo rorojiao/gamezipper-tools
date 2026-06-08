@@ -135,5 +135,5 @@ const GZI18n = (function(){
     }
   });
 
-  return { t, setLang, getLang, register };
+  return { t, setLang, getLang, register, _data: T };
 })();
