@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Character Map & Unicode Explorer - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Browse, search and copy Unicode characters, symbols, arrows, math, emoji and special characters. Interactive character map — free, runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/character-map.html">
+  <meta property="og:title" content="Character Map & Unicode Explorer - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Browse, search and copy Unicode characters, symbols, arrows, math, emoji and special characters. Free interactive character map.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/character-map.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Character Map & Unicode Explorer - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Browse, search and copy Unicode characters and symbols. Free interactive character map.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.cat-tabs button{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--fg);cursor:pointer;font-size:.82em;white-space:nowrap}
+.cat-tabs button.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:4px;margin-bottom:16px}
+.char-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;width:52px;height:60px;border-radius:8px;background:var(--glass);border:1px solid var(--border);cursor:pointer;transition:transform .15s,background .15s;position:relative}
+.char-cell:hover{transform:scale(1.15);z-index:2;background:var(--glass2);border-color:var(--accent)}
+.char-cell .ch{font-size:1.5em;line-height:1.2}
+.char-cell .code{font-size:.55em;opacity:.5;font-family:monospace}
+.char-detail{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.char-detail .big{font-size:4em;line-height:1}
+.char-detail .info{font-size:.85em;line-height:1.8}
+.char-detail .info b{color:var(--accent)}
+.copied-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;padding:8px 20px;border-radius:10px;font-weight:bold;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+.copied-toast.show{opacity:1}
+#searchInput{width:100%;background:var(--glass);border:1px solid var(--border);color:var(--fg);border-radius:10px;padding:10px 14px;font-size:1em;margin-bottom:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Character Map & Unicode Explorer","description":"Browse, search and copy Unicode characters, symbols, arrows, math, emoji and special characters. Interactive character map — free, runs in your browser.","url":"https://tools.gamezipper.com/text/character-map.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I find a Unicode character?", "acceptedAnswer": {"@type": "Answer", "text": "Type a keyword in the search box (e.g. arrow, heart, star) or browse categories like Math, Arrows, Symbols."}}, {"@type": "Question", "name": "How do I copy a character?", "acceptedAnswer": {"@type": "Answer", "text": "Click any character to copy it to your clipboard. A toast notification confirms the copy."}}, {"@type": "Question", "name": "How many characters are available?", "acceptedAnswer": {"@type": "Answer", "text": "The tool includes thousands of commonly used Unicode characters organized into categories like punctuation, math, arrows, currency, symbols and more."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/character-map.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/character-map.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/character-map.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <input type="text" id="searchInput" placeholder="">
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="char-detail" id="charDetail" style="display:none">
+      <div class="big" id="detailChar"></div>
+      <div class="info" id="detailInfo"></div>
+    </div>
+    <div class="char-grid" id="charGrid"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<div class="copied-toast" id="toast"></div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Character Map & Unicode Explorer',
+    toolDesc: 'Browse, search and copy Unicode characters, symbols and special characters — organized by category with one-click copy.',
+    searchPlaceholder: 'Search characters (e.g. arrow, heart, star, plus, copyright)...',
+    step1: 'Type a keyword to search or pick a category',
+    step2: 'Click any character to view details',
+    step3: 'Click again or press Copy to add to clipboard',
+    step4: 'Paste into your document, code or social media post',
+  },
+  zh: {
+    toolTitle: '字符映射表 & Unicode 浏览器',
+    toolDesc: '浏览、搜索和复制 Unicode 字符、符号和特殊字符 — 按分类组织，一键复制。',
+    searchPlaceholder: '搜索字符（如 箭头、爱心、星星、加号、版权）...',
+    step1: '输入关键词搜索或选择一个分类',
+    step2: '点击任意字符查看详情',
+    step3: '再次点击或按复制按钮复制到剪贴板',
+    step4: '粘贴到你的文档、代码或社交媒体帖子',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const categories = {
+  'Punctuation': {icon:'✏️',chars:'!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~¡¿‽⋮⋯⌀⌁⌂⸢⸣⸤⸤⟦⟧⟨⟩‹›«»„""''‚''´`'},
+  'Math': {icon:'🔢',chars:'±×÷=≠≈≡≤≥<>∝∞∑∏∫∂√∛∜∆∇∈∉∋∏∐⊕⊖⊗⊘⊙†‡°‰‱℅℃℉ℓ№ª°'},
+  'Arrows': {icon:'➡️',chars:'←↑→↓↔↕↖↗↘↙⇐⇑⇒⇓⇔⇕➜➝➞➟➠➡➢➣➤➥➦➧➨➩➪➫➬➭➮➯➱↩↪↫↬↭↮↯↰↱↲↳↴↵↶↷↺↻⟵⟶⟷⟸⟹⟺⟻⟼'},
+  'Currency': {icon:'💱',chars:'$¢£¤¥€₹₽₿₩₪₫₭₮₯₰₱₲₳₴₵₶₷₸₹₺₻₼₽₾₿﹩'},
+  'Stars': {icon:'⭐',chars:'★☆✦✧✩✪✫✬✭✮✯✰✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿❀❁❂❃❄❅❆❇❈❉❊❋✡🔯'},
+  'Hearts': {icon:'❤️',chars:'❤♥♡❣❤️🧡💛💚💙💜🖤🤍🤎💕💞💓💗💖💘💝💟🎔💝'},
+  'Box Drawing': {icon:'🔲',chars:'─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳'},
+  'Block': {icon:'🟫',chars:'█▓▒░▄▀▌▐▆▇██▓▒░⣿⣷⣯⣟⡿⢿⣻⣽⣾⣀⣤⣦⣴⣶⣷⣸⣼⣹⣺⢀⢠⢰⢸⡀⡠⡰⡰⢐⢒⡐⡒'},
+  'Dingbats': {icon:'✨',chars:'✁✂✃✄✆✇✈✉✌✍✎✏✐✑✒✓✔✕✖✗✘✙✚✛✜✝✞✟✠✡✢✣✤✥✦✧✨✩✪✫✬✭✮✯✰✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿❁❂❃❄❅❆❇❈❉❊❋'},
+  'Superscript': {icon:'ˣ',chars:'⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻᴬᴮᴰᴱᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾᴿᵀᵁⱽᵂ'},
+  'Subscript': {icon:'ₓ',chars:'₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕᵢₒᵣₛₜᵤᵥₓ'},
+  'Fractions': {icon:'½',chars:'½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅐⅛⅜⅝⅞⅑⅒'},
+  'Greek': {icon:'🔤',chars:'αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ'},
+  'Music': {icon:'🎵',chars:'♩♪♫♬♭♮♯𝄞𝄡𝄢𝄪𝄫𝄆𝄇🎼🎤🎧🎸🎹🎺🎻🥁'},
+  'Check': {icon:'✅',chars:'✓✔✗✘✅❌☑☒☓✪✫✬✭٠٩istics'},
+};
+
+$('#searchInput').placeholder = t('searchPlaceholder');
+
+const catNames = Object.keys(categories);
+let currentCat = catNames[0];
+
+function renderTabs() {
+  $('#catTabs').innerHTML = catNames.map(name =>
+    `<button class="${name===currentCat?'active':''}" onclick="setCat('${name}')">${categories[name].icon} ${name}</button>`
+  ).join('');
+}
+
+function setCat(name) {
+  currentCat = name;
+  renderTabs();
+  renderGrid(categories[name].chars);
+}
+
+function renderGrid(chars) {
+  const grid = $('#charGrid');
+  grid.innerHTML = '';
+  [...chars].forEach(ch => {
+    const cell = document.createElement('div');
+    cell.className = 'char-cell';
+    cell.innerHTML = `<span class="ch">${ch}</span><span class="code">U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')}</span>`;
+    cell.onclick = () => selectChar(ch);
+    grid.appendChild(cell);
+  });
+}
+
+function selectChar(ch) {
+  const code = ch.codePointAt(0);
+  const hex = 'U+' + code.toString(16).toUpperCase().padStart(4, '0');
+  const html = `&#${code};`;
+  const css = `\\${code.toString(16)}`;
+  $('#charDetail').style.display = 'flex';
+  $('#detailChar').textContent = ch;
+  $('#detailInfo').innerHTML = `<b>Character:</b> ${ch}<br><b>Unicode:</b> ${hex}<br><b>Decimal:</b> ${code}<br><b>HTML:</b> ${html}<br><b>CSS:</b> ${css}<br><button class="gz-btn" style="margin-top:6px" onclick="copyChar('${ch}')">${t('copy')}</button>`;
+  copyText(ch);
+  showToast(`${ch} copied!`);
+}
+
+function copyChar(ch) {
+  copyText(ch);
+  showToast(`${ch} copied!`);
+}
+
+function showToast(msg) {
+  const toast = $('#toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
+$('#searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  if (!q) { setCat(currentCat); return; }
+  let results = '';
+  for (const cat of catNames) {
+    for (const ch of categories[cat].chars) {
+      const name = ch.toLowerCase();
+      if (name.includes(q) || cat.toLowerCase().includes(q)) results += ch;
+    }
+  }
+  if (!results) results = 'No results found';
+  renderGrid(results);
+});
+
+renderTabs();
+setCat('Punctuation');
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔤', href:'/text/unicode-search.html', name:'Unicode Search'},
+    {icon:'🔤', href:'/dev/ascii-table.html', name:'ASCII Table'},
+    {icon:'😊', href:'/text/emoji-picker.html', name:'Emoji Picker'},
+    {icon:'🔣', href:'/dev/html-entities.html', name:'HTML Entities'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
