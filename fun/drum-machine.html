@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Drum Machine - Make Beats Online Free | GameZipper Tools</title>
+  <meta name="description" content="Free online drum machine and beat maker. 16-step sequencer, 8 drum sounds, BPM control and loop playback. Make beats in your browser — no signup required.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/drum-machine.html">
+  <meta property="og:title" content="Drum Machine - Make Beats Online Free | GameZipper Tools">
+  <meta property="og:description" content="Free online drum machine and beat maker. 16-step sequencer, 8 drum sounds, BPM control and loop playback. Make beats in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/drum-machine.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Drum Machine - Make Beats Online Free | GameZipper Tools">
+<meta name="twitter:description" content="Free online drum machine and beat maker. 16-step sequencer, 8 drum sounds, BPM control and loop playback.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.dm-grid{display:grid;grid-template-columns:90px repeat(16,1fr);gap:3px;max-width:100%;overflow-x:auto;margin:0 auto}
+.dm-label{display:flex;align-items:center;font-size:.8em;font-weight:600;padding:0 4px;white-space:nowrap;min-width:80px}
+.dm-cell{width:100%;aspect-ratio:1;min-width:22px;border-radius:4px;background:var(--gz-bg,#1a1a2e);border:1px solid var(--gz-border,#333);cursor:pointer;transition:all .1s}
+.dm-cell.on{background:var(--gz-accent,#4ecdc4);border-color:var(--gz-accent)}
+.dm-cell.beat-marker{opacity:.5}
+.dm-cell:hover{opacity:.85}
+.dm-cell.current{box-shadow:0 0 0 2px var(--gz-accent2,#ff6b6b)}
+.dm-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-bottom:14px}
+.dm-controls label{font-size:.85em;display:flex;align-items:center;gap:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Drum Machine & Beat Maker","description":"Free online drum machine and beat maker. 16-step sequencer, 8 drum sounds, BPM control and loop playback. Make beats in your browser — no signup required.","url":"https://tools.gamezipper.com/fun/drum-machine.html","applicationCategory":"Entertainment","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I make a beat?", "acceptedAnswer": {"@type": "Answer", "text": "Click the grid cells to toggle drum hits on or off for each of the 16 steps. Press Play to hear your pattern loop."}}, {"@type": "Question", "name": "Can I change the speed?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the BPM slider to adjust tempo from 60 to 200 BPM. The beat will update in real time."}}, {"@type": "Question", "name": "What sounds are included?", "acceptedAnswer": {"@type": "Answer", "text": "8 synthesized drum sounds: Kick, Snare, Closed Hi-Hat, Open Hi-Hat, Clap, Tom High, Tom Low and Crash Cymbal."}}, {"@type": "Question", "name": "Is this free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free. All sounds are generated in real-time using the Web Audio API. No download or signup needed."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/drum-machine.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/drum-machine.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/drum-machine.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="dm-controls" id="controls"></div>
+    <div class="dm-grid" id="grid"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Drum Machine & Beat Maker',
+    toolDesc: 'Free online drum machine with a 16-step sequencer, 8 synthesized drum sounds, BPM control and loop playback.',
+    play: '▶ Play',
+    stop: '⏹ Stop',
+    clear: '🗑️ Clear',
+    bpm: 'BPM',
+    vol: 'Vol',
+    step1: 'Click grid cells to place drum hits for each of the 16 steps',
+    step2: 'Adjust BPM (tempo) with the slider',
+    step3: 'Press Play to hear your beat loop',
+    step4: 'Experiment with different patterns for kick, snare, hi-hat and more!',
+  },
+  zh: {
+    toolTitle: '鼓机 & 节拍制作器',
+    toolDesc: '免费在线鼓机，16 步序列器，8 种合成鼓声，BPM 控制和循环播放。',
+    play: '▶ 播放',
+    stop: '⏹ 停止',
+    clear: '🗑️ 清空',
+    bpm: 'BPM',
+    vol: '音量',
+    step1: '点击网格单元来放置每个步骤的鼓点',
+    step2: '通过滑块调节 BPM（速度）',
+    step3: '按播放键循环听取你的节拍',
+    step4: '尝试不同的底鼓、军鼓、踩镲等组合！',
+  }
+});
+
+const { $, t } = GZ;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+const drums = [
+  { name: 'Kick', freq: 60, decay: 0.4, type: 'sine' },
+  { name: 'Snare', freq: 200, decay: 0.15, type: 'triangle', noise: true },
+  { name: 'Hi-Hat (C)', freq: 800, decay: 0.06, type: 'square', noise: true },
+  { name: 'Hi-Hat (O)', freq: 800, decay: 0.25, type: 'square', noise: true },
+  { name: 'Clap', freq: 400, decay: 0.12, type: 'sawtooth', noise: true },
+  { name: 'Tom Hi', freq: 160, decay: 0.2, type: 'sine' },
+  { name: 'Tom Lo', freq: 100, decay: 0.25, type: 'sine' },
+  { name: 'Crash', freq: 600, decay: 0.6, type: 'square', noise: true },
+];
+
+const STEPS = 16;
+let pattern = drums.map(() => new Array(STEPS).fill(false));
+let playing = false, currentStep = -1, bpm = 120, vol = 0.7, intervalId = null;
+
+function playDrum(d) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = d.type;
+  osc.frequency.setValueAtTime(d.freq, now);
+  osc.frequency.exponentialRampToValueAtTime(d.freq * 0.5, now + d.decay);
+  gain.gain.setValueAtTime(vol, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + d.decay);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(now); osc.stop(now + d.decay + 0.01);
+
+  if (d.noise) {
+    const bufSize = audioCtx.sampleRate * d.decay;
+    const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buf;
+    const ng = audioCtx.createGain();
+    ng.gain.setValueAtTime(vol * 0.4, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + d.decay);
+    const filt = audioCtx.createBiquadFilter();
+    filt.type = 'highpass'; filt.frequency.value = d.freq;
+    noise.connect(filt); filt.connect(ng); ng.connect(audioCtx.destination);
+    noise.start(now); noise.stop(now + d.decay + 0.01);
+  }
+}
+
+function buildGrid() {
+  let html = '';
+  drums.forEach((d, row) => {
+    html += `<div class="dm-label">${d.name}</div>`;
+    for (let col = 0; col < STEPS; col++) {
+      const marker = (col % 4 === 0) ? ' beat-marker' : '';
+      html += `<div class="dm-cell${marker}${pattern[row][col] ? ' on' : ''}" data-r="${row}" data-c="${col}"></div>`;
+    }
+  });
+  $('#grid').innerHTML = html;
+
+  document.querySelectorAll('.dm-cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const r = +cell.dataset.r, c = +cell.dataset.c;
+      pattern[r][c] = !pattern[r][c];
+      cell.classList.toggle('on');
+      if (pattern[r][c]) playDrum(drums[r]);
+    });
+  });
+}
+
+function stepPlay() {
+  document.querySelectorAll('.dm-cell.current').forEach(c => c.classList.remove('current'));
+  currentStep = (currentStep + 1) % STEPS;
+  document.querySelectorAll(`.dm-cell[data-c="${currentStep}"]`).forEach(c => c.classList.add('current'));
+  drums.forEach((d, i) => { if (pattern[i][currentStep]) playDrum(d); });
+}
+
+function startPlay() {
+  if (playing) return;
+  playing = true;
+  currentStep = -1;
+  intervalId = setInterval(stepPlay, (60 / bpm / 4) * 1000);
+  $('#btn-play').textContent = '⏹ Stop';
+}
+
+function stopPlay() {
+  playing = false;
+  clearInterval(intervalId);
+  currentStep = -1;
+  document.querySelectorAll('.dm-cell.current').forEach(c => c.classList.remove('current'));
+  $('#btn-play').textContent = '▶ ' + (GZI18n.getLang() === 'zh' ? '播放' : 'Play');
+}
+
+$('#controls').innerHTML = `
+  <button class="gz-btn" id="btn-play">${t('play')}</button>
+  <button class="gz-btn gz-btn-secondary" id="btn-clear">${t('clear')}</button>
+  <label>${t('bpm')} <input type="range" min="60" max="200" value="120" id="dm-bpm" style="width:80px"> <span id="bpm-val">120</span></label>
+  <label>${t('vol')} <input type="range" min="0" max="100" value="70" id="dm-vol" style="width:60px"></label>
+`;
+
+$('#btn-play').onclick = () => { playing ? stopPlay() : startPlay(); };
+$('#btn-clear').onclick = () => {
+  pattern = drums.map(() => new Array(STEPS).fill(false));
+  stopPlay(); buildGrid();
+};
+$('#dm-bpm').oninput = e => {
+  bpm = +e.target.value; $('#bpm-val').textContent = bpm;
+  if (playing) { clearInterval(intervalId); intervalId = setInterval(stepPlay, (60 / bpm / 4) * 1000); }
+};
+$('#dm-vol').oninput = e => { vol = e.target.value / 100; };
+
+buildGrid();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎼', href:'/fun/metronome.html', name:'Metronome'},
+    {icon:'🎹', href:'/fun/piano.html', name:'Piano'},
+    {icon:'🎹', href:'/fun/chord-progression.html', name:'Chords'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
