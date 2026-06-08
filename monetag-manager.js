@@ -3,6 +3,12 @@
  * ────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
  * 
+ * v5.1 Changes (2026-06-09 优化):
+ *   - AdSense + Monetag race 在 commercial break (工具完成最高价值广告位)
+ *   - loadZone() 增加实际 DOM fill 检测 (不再以 script load 为 fill 标准)
+ *   - 新增 GTM dataLayer 事件推送
+ *   - 修复: data-filled="1" 仅在实际 ad 渲染后才设置
+ *
  * v4 Changes (aligned with gamezipper.com v5):
  *   - Vignette → Poki-style glass overlay with progress bar + brand text
  *   - Frequency control aligned: 45s interval, 20/30min, 60/day
@@ -111,16 +117,52 @@
   } catch(e) {}
 
   // ==================== 广告加载 ====================
+  // v5.1: 实际 DOM fill 检测 (Monetag 脚本加载不等于有广告)
   function loadZone(zoneId, targetEl) {
     return new Promise(function(resolve, reject) {
       var timeout = setTimeout(function() { reject(new Error('timeout')); }, CONFIG.TIMING.adLoadTimeout);
+      var resolved = false;
+      var observer = null;
+      function checkFill() {
+        if (resolved || !targetEl) return;
+        var iframes = targetEl.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {
+          var f = iframes[i];
+          var w = f.offsetWidth || parseInt(f.getAttribute('width') || '0');
+          var h = f.offsetHeight || parseInt(f.getAttribute('height') || '0');
+          if (w >= 50 && h >= 50) {
+            resolved = true; clearTimeout(timeout);
+            if (observer) observer.disconnect();
+            try { (window.dataLayer = window.dataLayer || []).push({event: 'gz_ad_fill', network: 'monetag', zoneId: zoneId}); } catch(e){}
+            resolve(true); return;
+          }
+        }
+      }
+      if (targetEl && typeof MutationObserver !== 'undefined') {
+        observer = new MutationObserver(checkFill);
+        observer.observe(targetEl, { childList: true, subtree: true, attributes: true });
+      }
       var s = document.createElement('script');
       s.src = CONFIG.AD_PROVIDER + '?zone=' + String(zoneId);
       s.async = true;
       s.setAttribute('data-zone', String(zoneId));
       s.setAttribute('data-cf-async', 'false');
-      s.onload = function() { clearTimeout(timeout); resolve(true); };
-      s.onerror = function() { clearTimeout(timeout); reject(new Error('err')); };
+      s.onload = function() {
+        // Monetag 脚本加载完成，等 1.5s 看是否注入内容
+        setTimeout(function() {
+          if (resolved) return;
+          checkFill();
+          if (!resolved) {
+            setTimeout(function() {
+              if (resolved) return;
+              if (observer) observer.disconnect();
+              clearTimeout(timeout);
+              reject(new Error('no_visible_fill'));
+            }, 1500);
+          }
+        }, 800);
+      };
+      s.onerror = function() { clearTimeout(timeout); if (observer) observer.disconnect(); reject(new Error('err')); };
       if (targetEl) { targetEl.appendChild(s); } else { document.head.appendChild(s); }
     });
   }
@@ -244,10 +286,52 @@
       // 自动关闭
       var maxTimer = setTimeout(function() { finishOverlay(); }, CONFIG.TIMING.vignetteMaxDuration);
 
-      // 加载广告 (try Superior first, fall back to Pungent legacy)
-      loadZone(ZONES.vignette).catch(function() {
-        loadZone(ZONES.vignetteLegacy).catch(function() {});
-      });
+      // v5.1: AdSense + Monetag race — 最高价值广告位
+      var adFilled = false;
+      function onAdFilled(network) {
+        if (adFilled) return;
+        adFilled = true;
+        try { (window.dataLayer = window.dataLayer || []).push({event: 'gz_ad_commercial_break', network: network}); } catch(e){}
+      }
+      // Tier 1: AdSense (game 站 AdSense fill 5-10%)
+      try {
+        var adsenseIns = document.createElement('ins');
+        adsenseIns.className = 'adsbygoogle';
+        adsenseIns.style.cssText = 'display:block;width:336px;height:280px;margin:0 auto;';
+        adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
+        adsenseIns.setAttribute('data-ad-slot', 'auto');
+        adsenseIns.setAttribute('data-ad-format', 'rectangle');
+        var adsenseScript = document.createElement('script');
+        adsenseScript.async = true;
+        adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+        document.head.appendChild(adsenseScript);
+        var statusEl2 = document.getElementById('gz-cb-status');
+        // Insert ad below the message
+        if (statusEl2 && statusEl2.parentNode) {
+          statusEl2.parentNode.appendChild(adsenseIns);
+          try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+          // Check fill
+          var adStart = Date.now();
+          var adTimer = setInterval(function() {
+            if (adFilled) { clearInterval(adTimer); return; }
+            var ifr = adsenseIns.querySelector('iframe');
+            var status = adsenseIns.getAttribute('data-ad-status');
+            if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 100)) {
+              onAdFilled('adsense');
+              clearInterval(adTimer);
+            }
+            if (Date.now() - adStart > 4000) clearInterval(adTimer);
+          }, 250);
+        }
+      } catch(e) {}
+      // Tier 2: Monetag (race with AdSense)
+      setTimeout(function() {
+        if (adFilled) return;
+        loadZone(ZONES.vignette).then(function() { onAdFilled('monetag_vignette'); }).catch(function() {
+          if (adFilled) return;
+          loadZone(ZONES.vignetteLegacy).then(function() { onAdFilled('monetag_vignette_legacy'); }).catch(function() {});
+        });
+      }, 1500);
 
       function finishOverlay() {
         clearInterval(progressInterval);
