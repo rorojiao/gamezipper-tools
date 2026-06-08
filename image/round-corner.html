@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image Round Corner Tool - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Add rounded corners to any image online. Customize border radius, padding, background color and export as PNG. Free, private, runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/image/round-corner.html">
+  <meta property="og:title" content="Image Round Corner Tool - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Add rounded corners to any image online. Customize border radius, padding, background color and export as PNG.">
+  <meta property="og:url" content="https://tools.gamezipper.com/image/round-corner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Image Round Corner Tool - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--accent);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:16px}
+.drop-zone:hover{border-color:var(--accent2);background:var(--glass2)}
+.drop-zone.has-image{padding:8px}
+#preview-canvas{max-width:100%;border-radius:8px;display:block;margin:0 auto}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
+.controls label{font-size:.85rem;color:var(--text2)}
+.controls input[type="range"]{width:140px;accent-color:var(--accent)}
+.controls input[type="number"],.controls input[type="color"],.controls select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.85rem}
+.val{font-size:.8rem;color:var(--accent);min-width:32px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Round Corner Tool","description":"Add rounded corners to any image online. Customize border radius, padding, background color and export as PNG.","url":"https://tools.gamezipper.com/image/round-corner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I add rounded corners to an image?", "acceptedAnswer": {"@type": "Answer", "text": "Upload or drag and drop your image, adjust the border radius slider, set padding and background color, then download the result as PNG. The tool renders everything in your browser."}}, {"@type": "Question", "name": "Can I set different radius for each corner?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Uncheck the 'Link corners' option to set individual radius values for top-left, top-right, bottom-right and bottom-left corners independently."}}, {"@type": "Question", "name": "What image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports PNG, JPG, JPEG, WebP, GIF, BMP and SVG input. The output is always a PNG file with transparency support."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens entirely in your browser using the Canvas API. Your images never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/round-corner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/round-corner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/round-corner.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="drop-zone" id="drop-zone">
+      <div id="drop-text">📂 Drop image here or click to upload</div>
+      <canvas id="preview-canvas" style="display:none"></canvas>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none">
+    <div class="controls" id="controls" style="display:none">
+      <label id="lbl-radius"></label>
+      <input type="range" id="radius" min="0" max="200" value="40">
+      <span class="val" id="radius-val">40px</span>
+      <label><input type="checkbox" id="link-corners" checked> <span id="lbl-link"></span></label>
+    </div>
+    <div class="controls" id="corner-controls" style="display:none">
+      <label>TL:</label><input type="number" id="r-tl" value="40" min="0" max="500" style="width:60px">
+      <label>TR:</label><input type="number" id="r-tr" value="40" min="0" max="500" style="width:60px">
+      <label>BR:</label><input type="number" id="r-br" value="40" min="0" max="500" style="width:60px">
+      <label>BL:</label><input type="number" id="r-bl" value="40" min="0" max="500" style="width:60px">
+    </div>
+    <div class="controls" id="extra-controls" style="display:none">
+      <label id="lbl-pad"></label>
+      <input type="range" id="padding" min="0" max="100" value="0">
+      <span class="val" id="pad-val">0px</span>
+      <label id="lbl-bg"></label>
+      <input type="color" id="bg-color" value="#000000">
+      <label><input type="checkbox" id="transparent-bg"> <span id="lbl-transparent"></span></label>
+    </div>
+    <div class="gz-toolbar" id="toolbar"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Round Corner Tool',
+    toolDesc: 'Add rounded corners to any image. Customize border radius, padding, background color and download as PNG.',
+    radius: 'Radius:',
+    linkCorners: 'Link corners',
+    padding: 'Padding:',
+    bgColor: 'Background:',
+    transparent: 'Transparent',
+    dropText: '📂 Drop image here or click to upload',
+    step1: 'Upload or drag and drop an image',
+    step2: 'Adjust the border radius slider',
+    step3: 'Optionally set padding and background color',
+    step4: 'Click Download to save the rounded image as PNG',
+  },
+  zh: {
+    toolTitle: '图片圆角工具',
+    toolDesc: '为任意图片添加圆角效果。自定义圆角半径、内边距、背景色，下载为 PNG。',
+    radius: '圆角：',
+    linkCorners: '联动圆角',
+    padding: '内边距：',
+    bgColor: '背景色：',
+    transparent: '透明',
+    dropText: '📂 拖拽图片到此处或点击上传',
+    step1: '上传或拖拽一张图片',
+    step2: '调整圆角半径滑块',
+    step3: '可选设置内边距和背景色',
+    step4: '点击「下载」保存圆角图片为 PNG',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let img = null;
+
+$('#drop-text').textContent = t('dropText');
+$('#lbl-radius').textContent = t('radius');
+$('#lbl-link').textContent = t('linkCorners');
+$('#lbl-pad').textContent = t('padding');
+$('#lbl-bg').textContent = t('bgColor');
+$('#lbl-transparent').textContent = t('transparent');
+
+// File handling
+const dz = $('#drop-zone');
+dz.addEventListener('click', () => $('#file-input').click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--accent2)'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor = 'var(--accent)'; });
+dz.addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); });
+$('#file-input').addEventListener('change', e => loadFile(e.target.files[0]));
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    img = new Image();
+    img.onload = () => {
+      dz.classList.add('has-image');
+      $('#drop-text').style.display = 'none';
+      $('#controls').style.display = 'flex';
+      $('#extra-controls').style.display = 'flex';
+      render();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getRadii() {
+  if ($('#link-corners').checked) {
+    const r = +$('#radius').value;
+    return [r, r, r, r];
+  }
+  return [+$('#r-tl').value, +$('#r-tr').value, +$('#r-br').value, +$('#r-bl').value];
+}
+
+function render() {
+  if (!img) return;
+  const pad = +$('#padding').value;
+  const w = img.naturalWidth + pad * 2;
+  const h = img.naturalHeight + pad * 2;
+  const canvas = $('#preview-canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.style.display = 'block';
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const isTransparent = $('#transparent-bg').checked;
+  if (!isTransparent) {
+    ctx.fillStyle = $('#bg-color').value;
+  } else {
+    ctx.clearRect(0, 0, w, h);
+  }
+
+  // Draw rounded rect clip
+  const [tl, tr, br, bl] = getRadii();
+  ctx.beginPath();
+  ctx.moveTo(tl + pad, pad);
+  ctx.lineTo(w - tr - pad, pad);
+  ctx.quadraticCurveTo(w - pad, pad, w - pad, tr + pad);
+  ctx.lineTo(w - pad, h - br - pad);
+  ctx.quadraticCurveTo(w - pad, h - pad, w - br - pad, h - pad);
+  ctx.lineTo(bl + pad, h - pad);
+  ctx.quadraticCurveTo(pad, h - pad, pad, h - bl - pad);
+  ctx.lineTo(pad, tl + pad);
+  ctx.quadraticCurveTo(pad, pad, tl + pad, pad);
+  ctx.closePath();
+
+  if (!isTransparent) ctx.fill();
+  ctx.clip();
+  ctx.drawImage(img, pad, pad, img.naturalWidth, img.naturalHeight);
+}
+
+// Event listeners
+['radius','padding','r-tl','r-tr','r-br','r-bl'].forEach(id => {
+  $('#'+id).addEventListener('input', () => {
+    $('#radius-val').textContent = $('#radius').value + 'px';
+    $('#pad-val').textContent = $('#padding').value + 'px';
+    if ($('#link-corners').checked) {
+      const r = $('#radius').value;
+      ['r-tl','r-tr','r-br','r-bl'].forEach(id => $('#'+id).value = r);
+    }
+    render();
+  });
+});
+$('#link-corners').addEventListener('change', () => {
+  $('#corner-controls').style.display = $('#link-corners').checked ? 'none' : 'flex';
+  if ($('#link-corners').checked) {
+    const r = $('#radius').value;
+    ['r-tl','r-tr','r-br','r-bl'].forEach(id => $('#'+id).value = r);
+  }
+  render();
+});
+$('#bg-color').addEventListener('input', render);
+$('#transparent-bg').addEventListener('change', render);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download()">${t('download')} PNG</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#file-input').click()">${t('clear')}</button>`;
+
+window.download = () => {
+  if (!img) return;
+  const a = document.createElement('a');
+  a.href = $('#preview-canvas').toDataURL('image/png');
+  a.download = 'rounded-image.png';
+  a.click();
+};
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⭕', href:'/image/circle-cropper.html', name:'Circle Cropper'},
+    {icon:'🖼️', href:'/image/border.html', name:'Image Border'},
+    {icon:'📐', href:'/image/resizer.html', name:'Image Resizer'},
+    {icon:'🔄', href:'/image/rotator.html', name:'Image Rotator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

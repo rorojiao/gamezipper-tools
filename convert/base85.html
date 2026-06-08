@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Base85 / Ascii85 Encoder & Decoder - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Encode text to Base85 (Ascii85 / Z85 / btoa) and decode Base85 back to text. Supports Adobe, Z85, RFC 1924 and IPv6 variants. Free, private, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/base85.html">
+  <meta property="og:title" content="Base85 / Ascii85 Encoder & Decoder - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Encode text to Base85 (Ascii85 / Z85 / btoa) and decode Base85 back to text. Supports Adobe, Z85, RFC 1924 and IPv6 variants.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/base85.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Base85 / Ascii85 Encoder & Decoder - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Base85 / Ascii85 Encoder & Decoder","description":"Encode text to Base85 (Ascii85 / Z85 / btoa) and decode Base85 back to text. Supports Adobe, Z85, RFC 1924 and IPv6 variants.","url":"https://tools.gamezipper.com/convert/base85.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Base85 / Ascii85 encoding?", "acceptedAnswer": {"@type": "Answer", "text": "Base85 (also known as Ascii85) is a binary-to-text encoding that represents 4 bytes of binary data as 5 ASCII characters. It is more efficient than Base64, expanding data by only 25% instead of 33%."}}, {"@type": "Question", "name": "What variants of Base85 are supported?", "acceptedAnswer": {"@type": "Answer", "text": "This tool supports the Adobe (btoa) variant with <~ and ~> delimiters, the ZeroMQ Z85 variant, the RFC 1924 variant for IPv6, and the standard btoa variant."}}, {"@type": "Question", "name": "Where is Base85 used?", "acceptedAnswer": {"@type": "Answer", "text": "Base85 is used in Adobe PostScript and PDF, Git for binary patch encoding, ZeroMQ Z85 for keys, and IPv6 address representation in RFC 1924."}}, {"@type": "Question", "name": "Is my data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All encoding and decoding happens entirely in your browser. No data is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/base85.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/base85.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/base85.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="10" spellcheck="false" placeholder="Enter text to encode or Base85 to decode..."></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Base85 / Ascii85 Encoder & Decoder',
+    toolDesc: 'Encode text to Base85 (Ascii85) or decode Base85 back to text. Supports Adobe, Z85 and RFC 1924 variants.',
+    encode: 'Encode',
+    decode: 'Decode',
+    adobe: 'Adobe (Ascii85)',
+    z85: 'Z85 (ZeroMQ)',
+    rfc1924: 'RFC 1924 (IPv6)',
+    btoa: 'btoa (Standard)',
+    step1: 'Paste or type text in the input area',
+    step2: 'Select a Base85 variant (Adobe, Z85, RFC 1924, btoa)',
+    step3: 'Click Encode or Decode',
+    step4: 'Copy the result using the Copy button',
+  },
+  zh: {
+    toolTitle: 'Base85 / Ascii85 编码解码器',
+    toolDesc: '将文本编码为 Base85（Ascii85）或将 Base85 解码回文本。支持 Adobe、Z85 和 RFC 1924 变体。',
+    encode: '编码',
+    decode: '解码',
+    adobe: 'Adobe (Ascii85)',
+    z85: 'Z85 (ZeroMQ)',
+    rfc1924: 'RFC 1924 (IPv6)',
+    btoa: 'btoa (标准)',
+    step1: '在输入区粘贴或输入文本',
+    step2: '选择 Base85 变体（Adobe、Z85、RFC 1924、btoa）',
+    step3: '点击「编码」或「解码」',
+    step4: '使用「复制」按钮复制结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let variant = 'adobe';
+
+// Adobe Ascii85 encoding
+function adobeEncode(bytes) {
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 4) {
+    let chunk = 0;
+    let len = Math.min(4, bytes.length - i);
+    for (let j = 0; j < 4; j++) chunk = chunk * 256 + (j < len ? bytes[i + j] : 0);
+    if (len === 4 && chunk === 0) { result += 'z'; continue; }
+    let chars = [];
+    for (let j = 4; j >= 0; j--) { chars[j] = String.fromCharCode(33 + (chunk % 85)); chunk = Math.floor(chunk / 85); }
+    result += chars.slice(0, len + 1).join('');
+  }
+  return '<~' + result + '~>';
+}
+
+function adobeDecode(str) {
+  str = str.replace(/^<~|~>$/g, '').replace(/\s/g, '');
+  let bytes = [];
+  let i = 0;
+  while (i < str.length) {
+    if (str[i] === 'z') { bytes.push(0, 0, 0, 0); i++; continue; }
+    let chunk = 0, len = Math.min(5, str.length - i);
+    let padded = str.slice(i, i + 5).padEnd(5, 'u');
+    for (let j = 0; j < 5; j++) chunk = chunk * 85 + (padded.charCodeAt(j) - 33);
+    for (let j = 3; j >= 0; j--) { bytes.push((chunk >> (j * 8)) & 0xFF); }
+    i += len;
+    if (len < 5) bytes.length -= (4 - len + 1);
+  }
+  return bytes;
+}
+
+// Z85 encoding
+const Z85_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#';
+function z85Encode(bytes) {
+  if (bytes.length % 4 !== 0) throw new Error('Z85 input length must be a multiple of 4 bytes');
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 4) {
+    let chunk = 0;
+    for (let j = 0; j < 4; j++) chunk = chunk * 256 + bytes[i + j];
+    let chars = [];
+    for (let j = 4; j >= 0; j--) { chars[j] = Z85_CHARS[chunk % 85]; chunk = Math.floor(chunk / 85); }
+    result += chars.join('');
+  }
+  return result;
+}
+
+function z85Decode(str) {
+  if (str.length % 5 !== 0) throw new Error('Z85 input length must be a multiple of 5 characters');
+  let bytes = [];
+  for (let i = 0; i < str.length; i += 5) {
+    let chunk = 0;
+    for (let j = 0; j < 5; j++) {
+      const idx = Z85_CHARS.indexOf(str[i + j]);
+      if (idx === -1) throw new Error(`Invalid Z85 character: ${str[i+j]}`);
+      chunk = chunk * 85 + idx;
+    }
+    for (let j = 3; j >= 0; j--) bytes.push((chunk >> (j * 8)) & 0xFF);
+  }
+  return bytes;
+}
+
+// RFC 1924 encoding
+const RFC_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~';
+function rfcEncode(bytes) {
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 4) {
+    let chunk = 0, len = Math.min(4, bytes.length - i);
+    for (let j = 0; j < 4; j++) chunk = chunk * 256 + (j < len ? bytes[i + j] : 0);
+    let chars = [];
+    for (let j = 4; j >= 0; j--) { chars[j] = RFC_CHARS[chunk % 85]; chunk = Math.floor(chunk / 85); }
+    result += chars.slice(0, len + 1).join('');
+  }
+  return result;
+}
+
+function rfcDecode(str) {
+  let bytes = [];
+  let i = 0;
+  while (i < str.length) {
+    let chunk = 0, len = Math.min(5, str.length - i);
+    let padded = str.slice(i, i + 5);
+    while (padded.length < 5) padded += RFC_CHARS[0];
+    for (let j = 0; j < 5; j++) {
+      const idx = RFC_CHARS.indexOf(padded[j]);
+      if (idx === -1) throw new Error(`Invalid RFC 1924 character: ${padded[j]}`);
+      chunk = chunk * 85 + idx;
+    }
+    for (let j = 3; j >= 0; j--) bytes.push((chunk >> (j * 8)) & 0xFF);
+    i += len;
+    if (len < 5) bytes.length -= (4 - len + 1);
+  }
+  return bytes;
+}
+
+// btoa standard
+function btoaEncode(bytes) {
+  let result = '';
+  for (let i = 0; i < bytes.length; i += 4) {
+    let chunk = 0, len = Math.min(4, bytes.length - i);
+    for (let j = 0; j < 4; j++) chunk = chunk * 256 + (j < len ? bytes[i + j] : 0);
+    if (len === 4 && chunk === 0) { result += 'z'; continue; }
+    let chars = [];
+    for (let j = 4; j >= 0; j--) { chars[j] = String.fromCharCode(33 + (chunk % 85)); chunk = Math.floor(chunk / 85); }
+    result += chars.slice(0, len + 1).join('');
+  }
+  return result;
+}
+
+function btoaDecode(str) {
+  str = str.replace(/\s/g, '');
+  let bytes = [];
+  let i = 0;
+  while (i < str.length) {
+    if (str[i] === 'z') { bytes.push(0, 0, 0, 0); i++; continue; }
+    let chunk = 0, len = Math.min(5, str.length - i);
+    let padded = str.slice(i, i + 5).padEnd(5, 'u');
+    for (let j = 0; j < 5; j++) chunk = chunk * 85 + (padded.charCodeAt(j) - 33);
+    for (let j = 3; j >= 0; j--) bytes.push((chunk >> (j * 8)) & 0xFF);
+    i += len;
+    if (len < 5) bytes.length -= (4 - len + 1);
+  }
+  return bytes;
+}
+
+function textToBytes(text) {
+  return new TextEncoder().encode(text);
+}
+
+function bytesToText(bytes) {
+  return new TextDecoder().decode(new Uint8Array(bytes));
+}
+
+function doEncode() {
+  const input = $('#input').value;
+  if (!input.trim()) return;
+  try {
+    const bytes = textToBytes(input);
+    let result;
+    switch (variant) {
+      case 'adobe': result = adobeEncode(bytes); break;
+      case 'z85': result = z85Encode(bytes); break;
+      case 'rfc1924': result = rfcEncode(bytes); break;
+      case 'btoa': result = btoaEncode(bytes); break;
+    }
+    $('#output').textContent = result;
+  } catch (e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function doDecode() {
+  const input = $('#input').value;
+  if (!input.trim()) return;
+  try {
+    let bytes;
+    switch (variant) {
+      case 'adobe': bytes = adobeDecode(input); break;
+      case 'z85': bytes = z85Decode(input); break;
+      case 'rfc1924': bytes = rfcDecode(input); break;
+      case 'btoa': bytes = btoaDecode(input); break;
+    }
+    $('#output').textContent = bytesToText(bytes);
+  } catch (e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = 'GameZipper Tools - Free online utilities!';
+  doEncode();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doEncode()">${t('encode')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDecode()">${t('decode')}</button>
+  <select class="gz-select" id="variant-select">
+    <option value="adobe">${t('adobe')}</option>
+    <option value="z85">${t('z85')}</option>
+    <option value="rfc1924">${t('rfc1924')}</option>
+    <option value="btoa">${t('btoa')}</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').textContent=''">${t('clear')}</button>`;
+
+$('#variant-select').addEventListener('change', e => { variant = e.target.value; });
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔤', href:'/convert/base32.html', name:'Base32'},
+    {icon:'🪙', href:'/dev/base58.html', name:'Base58'},
+    {icon:'🔢', href:'/convert/number-base.html', name:'Number Base'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
