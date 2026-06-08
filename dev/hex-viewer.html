@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Hex Viewer - View File Contents in Hexadecimal | GameZipper Tools</title>
+  <meta name="description" content="View any file's content in hexadecimal format. Free online hex viewer — drag and drop files to see hex dump with ASCII representation. Supports text-to-hex and hex-to-text conversion.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/hex-viewer.html">
+  <meta property="og:title" content="Hex Viewer - View File Contents in Hexadecimal | GameZipper Tools">
+  <meta property="og:description" content="View any file's content in hexadecimal format. Free online hex viewer — drag and drop files to see hex dump with ASCII representation.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/hex-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Hex Viewer - View File Contents in Hexadecimal | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.hex-output{font-family:'Courier New',monospace;font-size:.82em;line-height:1.7;overflow-x:auto;white-space:pre;background:var(--gz-card,#1a1a2e);padding:12px;border-radius:8px;max-height:500px;overflow-y:auto}
+.hex-offset{color:#e94560;margin-right:12px}
+.hex-bytes{color:#61afef;margin-right:12px}
+.hex-ascii{color:#00d672}
+.hex-nonprint{color:#555}
+.drop-zone{border:2px dashed var(--gz-border,#444);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:background .2s;margin-bottom:12px}
+.drop-zone:hover,.drop-zone.dragover{background:var(--gz-card-hover,#22223a)}
+.tab-row{display:flex;gap:0;margin-bottom:12px}
+.tab-btn{padding:8px 16px;background:var(--gz-card,#1a1a2e);border:1px solid var(--gz-border,#333);cursor:pointer;font-size:.85em;color:var(--gz-text-secondary,#aaa);transition:all .2s}
+.tab-btn:first-child{border-radius:6px 0 0 6px}
+.tab-btn:last-child{border-radius:0 6px 6px 0}
+.tab-btn.active{background:var(--gz-accent,#e94560);color:#fff;border-color:var(--gz-accent,#e94560)}
+.file-info{font-size:.85em;color:var(--gz-text-secondary,#aaa);margin-bottom:8px;display:flex;gap:16px;flex-wrap:wrap}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hex Viewer","description":"View any file or text content in hexadecimal format. Free online hex dump viewer with ASCII representation.","url":"https://tools.gamezipper.com/dev/hex-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a hex viewer?", "acceptedAnswer": {"@type": "Answer", "text": "A hex viewer displays the raw bytes of a file or text as hexadecimal numbers alongside their ASCII character representation. This is useful for debugging binary files, analyzing file formats, and inspecting data encoding."}}, {"@type": "Question", "name": "Can I view binary files?", "acceptedAnswer": {"@type": "Answer", "text": "Yes! You can drag and drop any file — binary or text — and view its hexadecimal representation. The tool reads files locally in your browser."}}, {"@type": "Question", "name": "Can I convert text to hex?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Switch to the Text to Hex tab, type or paste text, and see the hexadecimal representation of each character."}}, {"@type": "Question", "name": "Is my file data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All file reading and hex conversion happens entirely in your browser. No data is uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/hex-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/hex-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/hex-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('file')" id="tabFile">📁 File</button>
+      <button class="tab-btn" onclick="switchTab('text')" id="tabText">📝 Text to Hex</button>
+      <button class="tab-btn" onclick="switchTab('hextotext')" id="tabHex">🔄 Hex to Text</button>
+    </div>
+    <div id="panelFile">
+      <div class="drop-zone" id="dropZone">
+        <div style="font-size:2em;margin-bottom:8px">📁</div>
+        <p>Drag & drop a file here or click to browse</p>
+        <input type="file" id="fileInput" style="display:none">
+      </div>
+      <div class="file-info" id="fileInfo"></div>
+    </div>
+    <div id="panelText" style="display:none">
+      <textarea id="textInput" rows="4" placeholder="Type or paste text to convert to hex..." spellcheck="false"></textarea>
+    </div>
+    <div id="panelHexToText" style="display:none">
+      <textarea id="hexInput" rows="4" placeholder="Paste hex string (e.g. 48 65 6C 6C 6F)..." spellcheck="false"></textarea>
+    </div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="hex-output" id="hexOutput"></div>
+    <div id="stats" style="margin-top:8px;font-size:.85em;color:var(--gz-text-secondary,#aaa)"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Hex Viewer',
+    toolDesc: 'View file or text content in hexadecimal format. Drag and drop files, convert text to hex, or hex to text.',
+    step1: 'Choose a mode: File, Text to Hex, or Hex to Text',
+    step2: 'Upload a file or paste text/hex data',
+    step3: 'View the hex dump with offset addresses and ASCII',
+    step4: 'Copy the hex output to clipboard',
+  },
+  zh: {
+    toolTitle: '十六进制查看器',
+    toolDesc: '以十六进制格式查看文件或文本内容。支持拖放文件、文本转十六进制和反向转换。',
+    step1: '选择模式：文件查看、文本转十六进制、十六进制转文本',
+    step2: '上传文件或粘贴文本/十六进制数据',
+    step3: '查看包含偏移地址和 ASCII 的十六进制转储',
+    step4: '复制十六进制输出到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let currentTab = 'file';
+let fileBytes = null;
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (tab === 'file') { $('#tabFile').classList.add('active'); $('#panelFile').style.display=''; $('#panelText').style.display='none'; $('#panelHexToText').style.display='none'; }
+  else if (tab === 'text') { $('#tabText').classList.add('active'); $('#panelFile').style.display='none'; $('#panelText').style.display=''; $('#panelHexToText').style.display='none'; }
+  else { $('#tabHex').classList.add('active'); $('#panelFile').style.display='none'; $('#panelText').style.display='none'; $('#panelHexToText').style.display=''; }
+  update();
+}
+
+function toHexDump(bytes) {
+  const lines = [];
+  for (let i = 0; i < bytes.length; i += 16) {
+    const slice = bytes.subarray(i, Math.min(i + 16, bytes.length));
+    const offset = i.toString(16).padStart(8, '0').toUpperCase();
+    let hexParts = [];
+    let asciiParts = [];
+    for (let j = 0; j < 16; j++) {
+      if (j < slice.length) {
+        hexParts.push(slice[j].toString(16).padStart(2, '0').toUpperCase());
+        const c = slice[j];
+        asciiParts.push(c >= 32 && c <= 126 ? String.fromCharCode(c) : '<span class="hex-nonprint">.</span>');
+      } else {
+        hexParts.push('  ');
+        asciiParts.push(' ');
+      }
+    }
+    const hexStr = hexParts.slice(0, 8).join(' ') + '  ' + hexParts.slice(8).join(' ');
+    const asciiStr = asciiParts.join('');
+    lines.push(`<span class="hex-offset">${offset}</span><span class="hex-bytes">${hexStr}</span><span class="hex-ascii">${asciiStr}</span>`);
+  }
+  return lines.join('\n');
+}
+
+function textToHex(text) {
+  const encoder = new TextEncoder();
+  return encoder.encode(text);
+}
+
+function hexToBytes(hexStr) {
+  const clean = hexStr.replace(/[^0-9a-fA-F]/g, '');
+  if (clean.length % 2 !== 0) return null;
+  const bytes = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(clean.substring(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+function update() {
+  let bytes = null;
+  if (currentTab === 'file') {
+    bytes = fileBytes;
+  } else if (currentTab === 'text') {
+    const text = $('#textInput').value;
+    if (text) bytes = textToHex(text);
+  } else {
+    const hex = $('#hexInput').value.trim();
+    if (hex) bytes = hexToBytes(hex);
+  }
+
+  if (!bytes || bytes.length === 0) {
+    $('#hexOutput').innerHTML = '<span style="color:var(--gz-text-secondary,#aaa)">No data to display</span>';
+    $('#stats').innerHTML = '';
+    return;
+  }
+
+  $('#hexOutput').innerHTML = toHexDump(bytes);
+  const size = bytes.length < 1024 ? bytes.length + ' bytes' : (bytes.length / 1024).toFixed(1) + ' KB';
+  const lines = Math.ceil(bytes.length / 16);
+  $('#stats').textContent = `Size: ${size} | Lines: ${lines}`;
+}
+
+// File handling
+const dropZone = $('#dropZone');
+const fileInput = $('#fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files.length) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    fileBytes = new Uint8Array(e.target.result);
+    const size = fileBytes.length < 1024 ? fileBytes.length + ' B' : (fileBytes.length / 1024).toFixed(1) + ' KB';
+    $('#fileInfo').innerHTML = `<span>📄 ${file.name}</span><span>Size: ${size}</span><span>Type: ${file.type || 'unknown'}</span>`;
+    update();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+$('#textInput').addEventListener('input', update);
+$('#hexInput').addEventListener('input', update);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText($('#hexOutput').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#textInput').value='Hello, World! 🌍';switchTab('text');update()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="fileBytes=null;$('#textInput').value='';$('#hexInput').value='';$('#fileInfo').innerHTML='';$('#hexOutput').innerHTML='';$('#stats').innerHTML=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔢', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔢', href:'/dev/number-base.html', name:'Number Base'},
+    {icon:'🔤', href:'/dev/text-binary-hex.html', name:'ASCII/Binary/Hex'},
+    {icon:'🔗', href:'/dev/hash.html', name:'Hash Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

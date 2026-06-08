@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>URL Extractor - Extract All URLs from Text | GameZipper Tools</title>
+  <meta name="description" content="Extract all URLs, links, emails and domains from any text instantly. Free online URL extractor — paste text and get a clean list of all web addresses.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/url-extractor.html">
+  <meta property="og:title" content="URL Extractor - Extract All URLs from Text | GameZipper Tools">
+  <meta property="og:description" content="Extract all URLs, links, emails and domains from any text instantly. Free online URL extractor — paste text and get a clean list of all web addresses.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/url-extractor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="URL Extractor - Extract All URLs from Text | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.6}
+.stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:.85em;color:var(--gz-text-secondary,#aaa)}
+.stats span{background:var(--gz-card,#1a1a2e);padding:4px 10px;border-radius:6px}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.filter-row label{font-size:.85em;display:flex;align-items:center;gap:4px;cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"URL Extractor","description":"Extract all URLs, links, emails and domains from any text instantly. Free online URL extractor tool.","url":"https://tools.gamezipper.com/dev/url-extractor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I extract URLs from text?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your text into the input area and click Extract. The tool will find all URLs, domains, and email addresses and list them in the output area."}}, {"@type": "Question", "name": "What formats can it extract?", "acceptedAnswer": {"@type": "Answer", "text": "It can extract HTTP/HTTPS URLs, FTP links, email addresses, and bare domain names. You can toggle which types to include using the filter checkboxes."}}, {"@type": "Question", "name": "Does it remove duplicate URLs?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool automatically deduplicates extracted URLs. Each unique URL appears only once in the results, even if it appears multiple times in the input."}}, {"@type": "Question", "name": "Is my data sent to any server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All URL extraction happens entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/url-extractor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/url-extractor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/url-extractor.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'URL Extractor',
+    toolDesc: 'Extract all URLs, email addresses and domains from any text. Filter, deduplicate and copy results instantly.',
+    step1: 'Paste your text containing URLs into the input area',
+    step2: 'Select which types to extract: URLs, emails, or domains',
+    step3: 'Click Extract to get a clean, deduplicated list',
+    step4: 'Copy the results or download them as a text file',
+    extract: 'Extract',
+    urls: 'URLs',
+    emails: 'Emails',
+    domains: 'Domains',
+    dedup: 'Deduplicate',
+    found: 'Found',
+    download: 'Download .txt',
+  },
+  zh: {
+    toolTitle: 'URL 提取器',
+    toolDesc: '从任意文本中提取所有 URL、邮箱地址和域名。支持过滤、去重和一键复制。',
+    step1: '将包含 URL 的文本粘贴到输入区',
+    step2: '选择提取类型：URL、邮箱或域名',
+    step3: '点击「提取」获取干净的去重列表',
+    step4: '复制结果或下载为文本文件',
+    extract: '提取',
+    urls: 'URL',
+    emails: '邮箱',
+    domains: '域名',
+    dedup: '去重',
+    found: '找到',
+    download: '下载 .txt',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let filterURLs = true, filterEmails = true, filterDomains = false, dedup = true;
+
+function extract() {
+  const text = $('#input').value;
+  if (!text.trim()) { $('#output').textContent = ''; $('#stats').innerHTML = ''; return; }
+
+  const results = [];
+  if (filterURLs) {
+    const urlRegex = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
+    const found = text.match(urlRegex) || [];
+    results.push(...found.map(u => u.replace(/[.,;:!?)\]]+$/, '')));
+  }
+  if (filterEmails) {
+    const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+    results.push(...(text.match(emailRegex) || []));
+  }
+  if (filterDomains) {
+    const domainRegex = /(?:https?:\/\/)?([a-zA-Z0-9][a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g;
+    let m;
+    while ((m = domainRegex.exec(text)) !== null) {
+      if (!m[0].includes('@') && !m[0].startsWith('http')) results.push(m[1]);
+      else if (m[0].startsWith('http')) results.push(m[1]);
+    }
+  }
+
+  let final = dedup ? [...new Set(results)] : results;
+  final = final.filter(Boolean);
+
+  $('#output').textContent = final.join('\n');
+  const parts = [];
+  if (filterURLs) { const c = results.filter(r => /^https?:\/\//i.test(r)).length; parts.push(`${t('urls')}: ${c}`); }
+  if (filterEmails) { const c = results.filter(r => r.includes('@')).length; parts.push(`${t('emails')}: ${c}`); }
+  parts.push(`${t('found')}: ${final.length}`);
+  $('#stats').innerHTML = parts.map(p => `<span>${p}</span>`).join('');
+}
+
+function downloadResults() {
+  const text = $('#output').textContent;
+  if (!text) return;
+  const blob = new Blob([text], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'extracted-urls.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+$('#input').addEventListener('input', extract);
+
+function buildToolbar() {
+  $('#toolbar').innerHTML = `
+    <button class="gz-btn" onclick="extract()">${t('extract')}</button>
+    <label><input type="checkbox" checked onchange="filterURLs=this.checked;extract()"> ${t('urls')}</label>
+    <label><input type="checkbox" checked onchange="filterEmails=this.checked;extract()"> ${t('emails')}</label>
+    <label><input type="checkbox" onchange="filterDomains=this.checked;extract()"> ${t('domains')}</label>
+    <label><input type="checkbox" checked onchange="dedup=this.checked;extract()"> ${t('dedup')}</label>
+    <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="downloadResults()">${t('download')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').textContent='';$('#stats').innerHTML=''">${t('clear')}</button>`;
+}
+
+buildToolbar();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'📧', href:'/dev/email-extractor.html', name:'Email Extractor'},
+    {icon:'🔗', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'🔍', href:'/dev/link-checker.html', name:'Link Checker'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
