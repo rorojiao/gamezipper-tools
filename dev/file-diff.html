@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>File Diff Checker - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Compare two files or texts side by side. Find added, removed and changed lines with color-coded diff highlighting. Free, instant, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/file-diff.html">
+  <meta property="og:title" content="File Diff Checker - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Compare two files or texts side by side. Find added, removed and changed lines with color-coded diff highlighting. Free, instant, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/file-diff.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="File Diff Checker - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.diff-container{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:12px 0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+@media(max-width:700px){.diff-container{grid-template-columns:1fr}}
+.diff-pane{overflow-x:auto}
+.diff-pane:first-child{border-right:1px solid var(--border)}
+.diff-header{background:var(--glass);padding:6px 12px;font-weight:600;font-size:.85em;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.diff-body{font-family:monospace;font-size:.82em;line-height:1.6}
+.diff-line{padding:2px 12px;white-space:pre;display:flex;min-height:1.6em}
+.diff-line .ln{color:var(--text3);min-width:36px;user-select:none;opacity:.6}
+.diff-line .content{flex:1}
+.diff-line.added{background:rgba(0,214,114,.15)}
+.diff-line.added .content::before{content:''}
+.diff-line.removed{background:rgba(255,107,107,.15)}
+.diff-line.same{}
+.diff-stats{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}
+.diff-stat{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 16px;display:flex;align-items:center;gap:6px;font-size:.9em}
+.diff-stat .dot{width:10px;height:10px;border-radius:50%}
+.dot-add{background:#00d672}
+.dot-rm{background:#ff6b6b}
+.dot-ch{background:#ffd93d}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"File Diff Checker","description":"Compare two files or texts side by side. Find added, removed and changed lines with color-coded diff highlighting. Free, instant, browser-only.","url":"https://tools.gamezipper.com/dev/file-diff.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the diff tool work?","acceptedAnswer":{"@type":"Answer","text":"Paste or upload two versions of a file, and the tool compares them line by line using an LCS (Longest Common Subsequence) algorithm to highlight added, removed and unchanged lines."}},{"@type":"Question","name":"Is my data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All comparison happens in your browser. No file content is ever sent to any server."}},{"@type":"Question","name":"What file types can I compare?","acceptedAnswer":{"@type":"Answer","text":"You can compare any text-based files: code, JSON, CSV, XML, YAML, Markdown, plain text and more. Binary files are not supported."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/file-diff.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/file-diff.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/file-diff.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split" style="grid-template-columns:1fr 1fr">
+      <div>
+        <label style="font-weight:600;display:block;margin-bottom:4px" id="lbl-left"></label>
+        <textarea id="inputLeft" spellcheck="false" style="height:250px;font-family:monospace;font-size:.85em" placeholder="Paste original file here..."></textarea>
+      </div>
+      <div>
+        <label style="font-weight:600;display:block;margin-bottom:4px" id="lbl-right"></label>
+        <textarea id="inputRight" spellcheck="false" style="height:250px;font-family:monospace;font-size:.85em" placeholder="Paste modified file here..."></textarea>
+      </div>
+    </div>
+    <div class="diff-stats" id="diffStats"></div>
+    <div class="diff-container" id="diffContainer"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'File Diff Checker',
+    toolDesc: 'Compare two files or texts side by side with color-coded diff highlighting. Find added, removed and changed lines instantly.',
+    lblLeft: 'Original (Left)',
+    lblRight: 'Modified (Right)',
+    compare: 'Compare',
+    added: 'Added',
+    removed: 'Removed',
+    unchanged: 'Unchanged',
+    step1: 'Paste the original file content in the left textarea',
+    step2: 'Paste the modified file content in the right textarea',
+    step3: 'Click Compare to see the diff',
+    step4: 'Added lines are green, removed lines are red',
+  },
+  zh: {
+    toolTitle: '文件差异对比工具',
+    toolDesc: '并排对比两个文件或文本，高亮显示新增、删除和变更的行。即时、免费、浏览器本地运行。',
+    lblLeft: '原始文件（左）',
+    lblRight: '修改文件（右）',
+    compare: '对比',
+    added: '新增',
+    removed: '删除',
+    unchanged: '未变',
+    step1: '在左侧文本框粘贴原始文件内容',
+    step2: '在右侧文本框粘贴修改后的文件内容',
+    step3: '点击「对比」查看差异',
+    step4: '绿色行为新增，红色行为删除',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Simple LCS-based diff algorithm
+function diff(oldLines, newLines) {
+  const m = oldLines.length, n = newLines.length;
+  // Build LCS table
+  const dp = [];
+  for (let i = 0; i <= m; i++) {
+    dp[i] = [];
+    for (let j = 0; j <= n; j++) {
+      if (i === 0 || j === 0) dp[i][j] = 0;
+      else if (oldLines[i-1] === newLines[j-1]) dp[i][j] = dp[i-1][j-1] + 1;
+      else dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  
+  // Backtrack to find diff
+  const result = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldLines[i-1] === newLines[j-1]) {
+      result.unshift({ type: 'same', oldIdx: i, newIdx: j, text: oldLines[i-1] });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      result.unshift({ type: 'add', newIdx: j, text: newLines[j-1] });
+      j--;
+    } else {
+      result.unshift({ type: 'remove', oldIdx: i, text: oldLines[i-1] });
+      i--;
+    }
+  }
+  return result;
+}
+
+function doCompare() {
+  const oldText = $('#inputLeft').value;
+  const newText = $('#inputRight').value;
+  
+  if (!oldText && !newText) return;
+  
+  const oldLines = oldText.split('\n');
+  const newLines = newText.split('\n');
+  const result = diff(oldLines, newLines);
+  
+  // Stats
+  let addCount = 0, rmCount = 0, sameCount = 0;
+  result.forEach(r => {
+    if (r.type === 'add') addCount++;
+    else if (r.type === 'remove') rmCount++;
+    else sameCount++;
+  });
+  
+  $('#diffStats').innerHTML = `
+    <div class="diff-stat"><div class="dot dot-add"></div> ${t('added')}: <strong>${addCount}</strong></div>
+    <div class="diff-stat"><div class="dot dot-rm"></div> ${t('removed')}: <strong>${rmCount}</strong></div>
+    <div class="diff-stat"><div class="dot dot-ch"></div> ${t('unchanged')}: <strong>${sameCount}</strong></div>
+    <div class="diff-stat">Total: <strong>${result.length}</strong> lines</div>
+  `;
+  
+  // Render diff
+  const container = $('#diffContainer');
+  let leftHtml = '', rightHtml = '';
+  let leftLn = 0, rightLn = 0;
+  
+  result.forEach(r => {
+    const esc = r.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (r.type === 'same') {
+      leftLn++; rightLn++;
+      leftHtml += `<div class="diff-line same"><span class="ln">${leftLn}</span><span class="content">${esc}</span></div>`;
+      rightHtml += `<div class="diff-line same"><span class="ln">${rightLn}</span><span class="content">${esc}</span></div>`;
+    } else if (r.type === 'remove') {
+      leftLn++;
+      leftHtml += `<div class="diff-line removed"><span class="ln">${leftLn}</span><span class="content">- ${esc}</span></div>`;
+      rightHtml += `<div class="diff-line" style="background:rgba(255,107,107,.08)"><span class="ln"></span><span class="content"></span></div>`;
+    } else {
+      rightLn++;
+      leftHtml += `<div class="diff-line" style="background:rgba(0,214,114,.08)"><span class="ln"></span><span class="content"></span></div>`;
+      rightHtml += `<div class="diff-line added"><span class="ln">${rightLn}</span><span class="content">+ ${esc}</span></div>`;
+    }
+  });
+  
+  container.innerHTML = `
+    <div class="diff-pane">
+      <div class="diff-header"><span>${t('lblLeft')}</span><span>${oldLines.length} lines</span></div>
+      <div class="diff-body">${leftHtml}</div>
+    </div>
+    <div class="diff-pane">
+      <div class="diff-header"><span>${t('lblRight')}</span><span>${newLines.length} lines</span></div>
+      <div class="diff-body">${rightHtml}</div>
+    </div>
+  `;
+}
+
+function loadExample() {
+  $('#inputLeft').value = `function greet(name) {
+  console.log("Hello, " + name);
+  return true;
+}
+
+const users = ["Alice", "Bob", "Charlie"];
+users.forEach(greet);`;
+
+  $('#inputRight').value = `function greet(name, greeting = "Hello") {
+  console.log(greeting + ", " + name + "!");
+  return true;
+}
+
+const users = ["Alice", "Bob", "Charlie", "Diana"];
+users.forEach(user => greet(user));
+
+// Added logging
+console.log("Done!");`;
+
+  doCompare();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doCompare()">${t('compare')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')||'Example'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#inputLeft').value='';$('#inputRight').value='';$('#diffContainer').innerHTML='';$('#diffStats').innerHTML=''">${t('clear')}</button>`;
+
+// Auto-compare on input (debounced)
+let timer;
+function debounceCompare() {
+  clearTimeout(timer);
+  timer = setTimeout(doCompare, 500);
+}
+$('#inputLeft').addEventListener('input', debounceCompare);
+$('#inputRight').addEventListener('input', debounceCompare);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/text/diff.html', name:'Text Diff'},
+    {icon:'⚖️', href:'/dev/json-diff.html', name:'JSON Diff'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

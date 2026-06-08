@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Uptime & SLA Calculator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Calculate uptime percentage, downtime allowance and SLA targets. Convert 99.9%, 99.99%, 99.999% to minutes and seconds of allowed downtime per month, year and quarter.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/uptime-calculator.html">
+  <meta property="og:title" content="Uptime & SLA Calculator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Calculate uptime percentage, downtime allowance and SLA targets. Convert 99.9%, 99.99%, 99.999% to minutes and seconds of allowed downtime per month, year and quarter.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/uptime-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Uptime & SLA Calculator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.sla-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:20px 0}
+.sla-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center}
+.sla-card h3{margin:0 0 8px;font-size:1.4rem;color:var(--accent)}
+.sla-card .value{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:8px 0}
+.sla-card .sub{color:var(--text2);font-size:.85em;margin:4px 0}
+.result-table{width:100%;border-collapse:collapse;margin:16px 0}
+.result-table th,.result-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.9em}
+.result-table th{background:var(--glass);font-weight:600}
+.result-table td code{background:var(--glass2);padding:2px 6px;border-radius:4px;font-size:.85em}
+.gauge{width:200px;height:100px;margin:16px auto;position:relative}
+.gauge-bg{fill:none;stroke:var(--glass2);stroke-width:12}
+.gauge-fill{fill:none;stroke:var(--accent);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .5s}
+.gauge-text{font-size:24px;font-weight:800;fill:var(--text);text-anchor:middle}
+.gauge-label{font-size:12px;fill:var(--text2);text-anchor:middle}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Uptime & SLA Calculator","description":"Calculate uptime percentage, downtime allowance and SLA targets. Convert 99.9%, 99.99%, 99.999% to minutes and seconds of allowed downtime per month, year and quarter.","url":"https://tools.gamezipper.com/calc/uptime-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is 99.9% uptime in minutes per month?","acceptedAnswer":{"@type":"Answer","text":"99.9% uptime allows 43.83 minutes (approximately 43 minutes and 50 seconds) of downtime per month, or about 8 hours and 45 minutes per year."}},{"@type":"Question","name":"What is the difference between 99.9% and 99.99% uptime?","acceptedAnswer":{"@type":"Answer","text":"99.9% allows about 43.8 minutes of monthly downtime while 99.99% allows only about 4.38 minutes. The difference is a factor of 10 in allowed downtime."}},{"@type":"Question","name":"What does five nines (99.999%) uptime mean?","acceptedAnswer":{"@type":"Answer","text":"99.999% uptime means no more than 5.26 minutes of downtime per year, or about 26 seconds per month. This is the gold standard for mission-critical systems."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/uptime-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/uptime-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/uptime-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="max-width:900px;margin:0 auto">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" class="gz-split-responsive">
+        <div>
+          <label style="font-weight:600;display:block;margin-bottom:6px" id="lbl-sla"></label>
+          <input id="slaInput" type="number" value="99.9" step="0.001" min="0" max="100" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:1.2em;font-weight:700">
+        </div>
+        <div>
+          <label style="font-weight:600;display:block;margin-bottom:6px" id="lbl-downtime"></label>
+          <input id="downtimeInput" type="text" placeholder="e.g. 30m, 2h, 1d" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:1.2em">
+        </div>
+      </div>
+      
+      <!-- Gauge -->
+      <div style="text-align:center">
+        <svg class="gauge" viewBox="0 0 200 110">
+          <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100"/>
+          <path class="gauge-fill" id="gaugeFill" d="M 20 100 A 80 80 0 0 1 180 100" stroke-dasharray="251.3" stroke-dashoffset="0"/>
+          <text class="gauge-text" x="100" y="85" id="gaugeText">99.9%</text>
+          <text class="gauge-label" x="100" y="105" id="gaugeLabel">Uptime</text>
+        </svg>
+      </div>
+      
+      <!-- Quick reference cards -->
+      <div class="sla-grid" id="slaCards"></div>
+      
+      <!-- Detail table -->
+      <table class="result-table" id="resultTable">
+        <thead><tr>
+          <th id="th-period"></th>
+          <th id="th-total"></th>
+          <th id="th-allowed"></th>
+          <th id="th-format"></th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Uptime & SLA Calculator',
+    toolDesc: 'Calculate allowed downtime from any SLA percentage. See how 99.9%, 99.99%, 99.999% translate to minutes per month and year.',
+    lblSla: 'Uptime / SLA %',
+    lblDowntime: 'Or enter downtime (auto-calc %)',
+    thPeriod: 'Period',
+    thTotal: 'Total Time',
+    thAllowed: 'Allowed Downtime',
+    thFormat: 'Readable',
+    step1: 'Enter your SLA uptime percentage (e.g. 99.9)',
+    step2: 'Or enter a downtime amount to reverse-calculate uptime',
+    step3: 'View allowed downtime per day, week, month, quarter and year',
+    step4: 'Compare with common SLA tiers (9s reference cards)',
+  },
+  zh: {
+    toolTitle: '可用率 & SLA 计算器',
+    toolDesc: '根据 SLA 可用率百分比计算允许的停机时间。查看 99.9%、99.99%、99.999% 对应每月和每年的停机时长。',
+    lblSla: '可用率 / SLA %',
+    lblDowntime: '或输入停机时间（自动反算百分比）',
+    thPeriod: '周期',
+    thTotal: '总时长',
+    thAllowed: '允许停机',
+    thFormat: '可读格式',
+    step1: '输入 SLA 可用率百分比（如 99.9）',
+    step2: '或输入停机时间反算可用率',
+    step3: '查看每天、每周、每月、每季度和每年允许的停机时间',
+    step4: '对比常见 SLA 等级（9 的数量参考卡）',
+  }
+});
+
+const { $, t } = GZ;
+
+const periods = [
+  { id: 'daily', seconds: 86400 },
+  { id: 'weekly', seconds: 604800 },
+  { id: 'monthly', seconds: 2592000 },
+  { id: 'quarterly', seconds: 7776000 },
+  { id: 'yearly', seconds: 31536000 },
+];
+
+const periodNames = {
+  daily: { en: 'Daily', zh: '每天' },
+  weekly: { en: 'Weekly', zh: '每周' },
+  monthly: { en: 'Monthly (30d)', zh: '每月（30天）' },
+  quarterly: { en: 'Quarterly (90d)', zh: '每季度（90天）' },
+  yearly: { en: 'Yearly (365d)', zh: '每年（365天）' },
+};
+
+const lang = GZI18n.getLang();
+
+function formatDuration(seconds) {
+  if (seconds < 1) return (seconds * 1000).toFixed(1) + 'ms';
+  if (seconds < 60) return seconds.toFixed(1) + 's';
+  if (seconds < 3600) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}m ${s}s`;
+  }
+  if (seconds < 86400) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h}h ${m}m`;
+  }
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  return `${d}d ${h}h`;
+}
+
+function formatTotal(seconds) {
+  if (seconds < 86400) return (seconds / 3600).toFixed(0) + 'h';
+  return (seconds / 86400).toFixed(0) + 'd';
+}
+
+function calculate() {
+  let slaPct = parseFloat($('#slaInput').value);
+  const dtInput = $('#downtimeInput').value.trim();
+  
+  if (dtInput) {
+    let dtSec = 0;
+    const match = dtInput.match(/^([\d.]+)\s*(ms|s|m|h|d)?$/i);
+    if (match) {
+      const val = parseFloat(match[1]);
+      const unit = (match[2] || 'm').toLowerCase();
+      if (unit === 'ms') dtSec = val / 1000;
+      else if (unit === 's') dtSec = val;
+      else if (unit === 'm') dtSec = val * 60;
+      else if (unit === 'h') dtSec = val * 3600;
+      else if (unit === 'd') dtSec = val * 86400;
+    }
+    if (dtSec > 0) {
+      slaPct = ((1 - dtSec / 2592000) * 100); // based on monthly
+      if (slaPct < 0) slaPct = 0;
+      if (slaPct > 100) slaPct = 100;
+      $('#slaInput').value = slaPct.toFixed(6).replace(/\.?0+$/, '');
+    }
+  }
+  
+  if (isNaN(slaPct) || slaPct < 0 || slaPct > 100) return;
+  
+  const downtimeRatio = 1 - slaPct / 100;
+  
+  // Update gauge
+  const arcLen = 251.3;
+  const offset = arcLen * (1 - slaPct / 100);
+  $('#gaugeFill').setAttribute('stroke-dashoffset', offset);
+  
+  let gaugeColor = '#4ecdc4';
+  if (slaPct < 99) gaugeColor = '#ff6b6b';
+  else if (slaPct < 99.9) gaugeColor = '#ffd93d';
+  else if (slaPct >= 99.99) gaugeColor = '#00d672';
+  $('#gaugeFill').setAttribute('stroke', gaugeColor);
+  
+  $('#gaugeText').textContent = slaPct >= 99.9 ? slaPct.toFixed(slaPct >= 99.99 ? 3 : 1) + '%' : slaPct.toFixed(2) + '%';
+  
+  // Update table
+  const tbody = $('#tableBody');
+  tbody.innerHTML = '';
+  periods.forEach(p => {
+    const dtSec = p.seconds * downtimeRatio;
+    const tr = document.createElement('tr');
+    const pName = lang === 'zh' ? periodNames[p.id].zh : periodNames[p.id].en;
+    tr.innerHTML = `<td><strong>${pName}</strong></td><td>${formatTotal(p.seconds)}</td><td><code>${dtSec < 0.001 ? '< 1ms' : formatDuration(dtSec)}</code></td><td>${dtSec < 0.001 ? '< 1ms' : formatDuration(dtSec)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderSlaCards() {
+  const tiers = [99, 99.5, 99.9, 99.95, 99.99, 99.999];
+  const cards = $('#slaCards');
+  cards.innerHTML = tiers.map(tier => {
+    const monthly = 2592000 * (1 - tier / 100);
+    const yearly = 31536000 * (1 - tier / 100);
+    const nines = tier.toString().split('').filter(c => c === '9').length;
+    let label = tier >= 99.99 ? `(${nines} nines)` : '';
+    return `<div class="sla-card" style="cursor:pointer" onclick="$('#slaInput').value='${tier}';calculate()">
+      <h3>${tier}%</h3>
+      <div class="value">${formatDuration(monthly)}</div>
+      <div class="sub">/ month</div>
+      <div class="sub" style="margin-top:8px">${formatDuration(yearly)} / year ${label}</div>
+    </div>`;
+  }).join('');
+}
+
+$('#slaInput').addEventListener('input', () => { $('#downtimeInput').value = ''; calculate(); });
+$('#downtimeInput').addEventListener('input', calculate);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#slaInput').value='99.9';$('#downtimeInput').value='';calculate()">99.9%</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#slaInput').value='99.99';$('#downtimeInput').value='';calculate()">99.99%</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#slaInput').value='99.999';$('#downtimeInput').value='';calculate()">99.999%</button>`;
+
+renderSlaCards();
+calculate();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏰', href:'/calc/time-calculator.html', name:'Time Calculator'},
+    {icon:'📊', href:'/calc/statistics-calculator.html', name:'Statistics'},
+    {icon:'⚡', href:'/dev/speed-test.html', name:'Speed Test'},
+    {icon:'📡', href:'/dev/http-headers.html', name:'HTTP Headers'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
