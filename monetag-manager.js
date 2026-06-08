@@ -27,6 +27,10 @@
     inpagePush: 11012010,
     vignette:   11012011,
     // pushNotif: 11012012  // DISABLED
+    // Legacy fallback (Pungent tag - was filling in March 2026)
+    // Re-activated 2026-06-08 after Superior zones showed 0 imp for 14 days
+    inpagePushLegacy: 10689345,
+    vignetteLegacy:   10689346,
   };
 
   var CONFIG = {
@@ -137,10 +141,17 @@
 
     setTimeout(function() {
       if (container.getAttribute('data-filled')) return;
+      // Try Superior first; fall back to Pungent (legacy) if Superior fails
       loadZone(ZONES.inpagePush, container).then(function() {
         container.setAttribute('data-filled', '1');
         markShown();
-      }).catch(function() {});
+      }).catch(function() {
+        if (container.getAttribute('data-filled')) return;
+        loadZone(ZONES.inpagePushLegacy, container).then(function() {
+          container.setAttribute('data-filled', '1');
+          markShown();
+        }).catch(function() {});
+      });
     }, CONFIG.TIMING.containerAdDelay);
   }
 
@@ -233,8 +244,10 @@
       // 自动关闭
       var maxTimer = setTimeout(function() { finishOverlay(); }, CONFIG.TIMING.vignetteMaxDuration);
 
-      // 加载广告
-      loadZone(ZONES.vignette).catch(function() {});
+      // 加载广告 (try Superior first, fall back to Pungent legacy)
+      loadZone(ZONES.vignette).catch(function() {
+        loadZone(ZONES.vignetteLegacy).catch(function() {});
+      });
 
       function finishOverlay() {
         clearInterval(progressInterval);
@@ -284,7 +297,10 @@
     if (!canShowAd()) return;
     setTimeout(function() {
       if (!canShowAd()) return;
-      loadZone(ZONES.inpagePush).then(function() { markShown(); }).catch(function() {});
+      // Try Superior first; fall back to Pungent (legacy)
+      loadZone(ZONES.inpagePush).then(function() { markShown(); }).catch(function() {
+        loadZone(ZONES.inpagePushLegacy).then(function() { markShown(); }).catch(function() {});
+      });
     }, 3000);
   }
 
