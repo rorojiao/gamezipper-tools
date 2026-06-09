@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Wordle - Play Online Free | GameZipper Tools</title>
+  <meta name="description" content="Play Wordle online for free. Guess the 5-letter word in 6 tries. Color-coded hints show correct, misplaced and wrong letters. Unlimited puzzles, no daily limit.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/wordle.html">
+  <meta property="og:title" content="Wordle - Play Online Free | GameZipper Tools">
+  <meta property="og:description" content="Play Wordle online for free. Guess the 5-letter word in 6 tries. Color-coded hints show correct, misplaced and wrong letters. Unlimited puzzles, no daily limit.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/wordle.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Wordle - Play Online Free | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.board{display:flex;flex-direction:column;align-items:center;gap:6px;margin:20px auto}
+.row{display:flex;gap:6px}
+.cell{width:56px;height:56px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.6em;font-weight:800;text-transform:uppercase;border-radius:8px;transition:transform .1s}
+.cell.flip{animation:flip .4s ease}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.cell.correct{background:#22c55e;color:#fff;border-color:#22c55e}
+.cell.present{background:#eab308;color:#fff;border-color:#eab308}
+.cell.absent{background:#444;color:#fff;border-color:#444}
+.keyboard{display:flex;flex-direction:column;align-items:center;gap:5px;margin:16px auto;max-width:500px}
+.kb-row{display:flex;gap:5px}
+.kb-key{min-width:32px;height:48px;border-radius:8px;border:none;background:var(--glass2);color:var(--text);font-size:.9em;font-weight:700;cursor:pointer;transition:all .1s;padding:0 8px}
+.kb-key:hover:not(:disabled){background:var(--accent);color:#000;transform:translateY(-2px)}
+.kb-key.wide{min-width:56px;font-size:.75em}
+.kb-key.correct{background:#22c55e;color:#fff}
+.kb-key.present{background:#eab308;color:#fff}
+.kb-key.absent{background:#444;color:#fff;opacity:.5}
+.game-msg{text-align:center;font-size:1.2em;font-weight:700;padding:12px;margin:10px 0;border-radius:12px}
+.game-msg.win{background:rgba(34,197,94,.15);color:#22c55e}
+.game-msg.lose{background:rgba(239,68,68,.15);color:var(--gz-accent)}
+.game-info{display:flex;justify-content:center;gap:20px;font-size:.85em;color:var(--text2)}
+.game-info strong{color:var(--text)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wordle Game Online","description":"Play Wordle online for free. Guess the 5-letter word in 6 tries with color-coded hints. Unlimited puzzles, no daily limit.","url":"https://tools.gamezipper.com/fun/wordle.html","applicationCategory":"Game","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are the rules of Wordle?", "acceptedAnswer": {"@type": "Answer", "text": "Guess the hidden 5-letter word in 6 tries. After each guess, tiles change color: green means the letter is correct and in the right position, yellow means the letter is in the word but in the wrong position, and gray means the letter is not in the word."}}, {"@type": "Question", "name": "How is this different from the original Wordle?", "acceptedAnswer": {"@type": "Answer", "text": "This version offers unlimited puzzles — play as many times as you want with no daily limit. It runs entirely in your browser with no data sent to any server."}}, {"@type": "Question", "name": "Can I play with my keyboard?", "acceptedAnswer": {"@type": "Answer", "text": "Yes! Type letters on your physical keyboard and press Enter to submit. Press Backspace to delete. You can also use the on-screen keyboard."}}, {"@type": "Question", "name": "What words are valid?", "acceptedAnswer": {"@type": "Answer", "text": "You can enter any 5-letter combination of A-Z. The answer is always a common English word. Non-letter characters are not accepted."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/wordle.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/wordle.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/wordle.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area" style="text-align:center">
+    <div class="game-info">
+      <span id="played-display"></span>
+      <span id="win-rate-display"></span>
+      <span id="streak-display"></span>
+    </div>
+    <div class="board" id="board"></div>
+    <div id="game-message"></div>
+    <div class="keyboard" id="keyboard"></div>
+    <div style="margin-top:12px">
+      <button class="gz-btn" id="new-game-btn" style="display:none"></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Wordle — Unlimited Word Game',
+    toolDesc: 'Guess the 5-letter word in 6 tries. Green = correct position, Yellow = wrong position, Gray = not in word. Play unlimited times!',
+    newGame: 'Play Again',
+    played: 'Played',
+    winRate: 'Win %',
+    streak: 'Streak',
+    youWin: '🎉 Amazing!',
+    youLose: 'The word was:',
+    notEnough: 'Not enough letters',
+    step1: 'Type a 5-letter word and press Enter to guess',
+    step2: 'Green tiles mean the letter is in the correct position',
+    step3: 'Yellow tiles mean the letter is in the word but wrong position',
+    step4: 'Gray tiles mean the letter is not in the word at all',
+  },
+  zh: {
+    toolTitle: 'Wordle 无限猜词游戏',
+    toolDesc: '在 6 次机会内猜出 5 字母单词。绿色=位置正确，黄色=字母对但位置错，灰色=不含此字母。无限畅玩！',
+    newGame: '再来一局',
+    played: '已玩',
+    winRate: '胜率',
+    streak: '连胜',
+    youWin: '🎉 太厉害了！',
+    youLose: '答案是：',
+    notEnough: '字母不够',
+    step1: '输入一个 5 字母单词后按回车提交',
+    step2: '绿色方块表示字母位置正确',
+    step3: '黄色方块表示字母对但位置错了',
+    step4: '灰色方块表示单词中不包含该字母',
+  }
+});
+
+const { $, t } = GZ;
+
+const WORDS = ['about','above','actor','adapt','admit','adopt','agent','agree','alarm','album','alive','allow','alone','alter','among','angel','anger','apple','apply','arena','argue','arise','array','aside','asset','avoid','award','aware','basic','beach','begin','being','below','bench','birth','black','blade','blame','blank','blast','blaze','bleed','blend','bless','blind','block','bloom','blown','board','bonus','bound','brain','brand','brave','bread','break','breed','brick','bride','brief','bring','broad','broke','brown','brush','build','bunch','burst','buyer','cabin','candy','carry','catch','cause','chain','chair','charm','chart','chase','cheap','check','chest','chief','child','chunk','civic','civil','claim','class','clean','clear','climb','cling','clock','clone','close','cloud','coach','coast','coral','count','court','cover','crack','craft','crash','crazy','cream','crime','crisp','cross','crowd','crown','cruel','crush','curve','cycle','dance','death','debut','decay','delay','delta','demon','dense','depth','derby','devil','diary','dirty','donor','doubt','dough','draft','drain','drama','drank','drawn','dream','dress','drift','drink','drive','drone','drown','dying','eager','early','earth','eight','elder','elect','elite','empty','enemy','enjoy','enter','equal','error','essay','event','every','exact','exert','exile','exist','extra','faint','fairy','faith','false','fancy','fatal','fault','feast','fence','ferry','fever','fiber','field','fifth','fifty','fight','final','flame','flash','fleet','flesh','float','flood','floor','flora','fluid','flush','flute','focus','force','forge','forth','forum','found','frame','frank','fraud','fresh','front','frost','fruit','fully','giant','given','glass','globe','gloom','glory','glove','grace','grade','grain','grand','grant','graph','grasp','grass','grave','great','green','greet','grief','grind','grip','gross','group','grove','grown','guard','guess','guest','guide','guilt','happy','harsh','hasty','haven','heart','heavy','hence','horse','hotel','house','human','humor','hurry','ideal','image','imply','index','inner','input','irony','issue','ivory','jewel','joint','judge','juice','known','label','large','laser','later','laugh','layer','learn','lease','least','leave','legal','lemon','level','light','limit','linen','liver','lofty','logic','loose','lover','lower','loyal','lucky','lunar','lunch','lying','magic','major','maker','manor','maple','march','match','maybe','mayor','media','mercy','metal','meter','might','minor','minus','mixed','model','money','month','moral','motor','mount','mouse','mouth','movie','music','naive','naked','nerve','never','night','noble','noise','north','noted','novel','nurse','nylon','occur','ocean','offer','often','olive','onset','opera','orbit','order','organ','other','outer','owner','oxide','ozone','paint','panel','panic','party','paste','patch','pause','peace','pearl','penny','phase','phone','photo','piano','piece','pilot','pitch','pixel','place','plain','plane','plant','plate','plaza','plead','plumb','plume','plump','point','polar','pound','power','press','price','pride','prime','print','prior','prize','probe','proof','proud','prove','proxy','pulse','punch','pupil','queen','query','quest','quick','quiet','quite','quota','quote','radar','radio','raise','rally','range','rapid','ratio','reach','react','ready','realm','rebel','reign','relax','reply','rider','ridge','rifle','right','rigid','risky','rival','river','robin','robot','rocky','rouge','rough','round','route','royal','rugby','ruler','rural','sadly','saint','salad','sauce','scale','scene','scope','score','sense','serve','seven','shade','shake','shall','shame','shape','share','shark','sharp','sheep','sheer','shelf','shell','shift','shine','shirt','shock','shore','short','shout','shown','sight','since','sixth','sixty','skill','skull','slate','slave','sleep','slice','slide','slope','smart','smell','smile','smoke','snack','solar','solid','solve','sorry','south','space','spare','spark','speak','speed','spend','spice','spike','spine','split','spoke','spoon','sport','spray','squad','stack','staff','stage','stain','stake','stale','stall','stamp','stand','stare','start','state','stays','steak','steal','steam','steel','steep','steer','stern','stick','stiff','still','stock','stone','stood','store','storm','story','stove','strip','stuck','stuff','style','sugar','suite','super','surge','swamp','swear','sweet','swept','swift','swing','sword','swore','sworn','syrup','table','taken','taste','taxes','teach','teeth','tempo','thank','theme','thick','thief','thing','think','third','thorn','those','three','threw','throw','thumb','tiger','tight','timer','tired','title','today','token','total','touch','tough','tower','toxic','trace','track','trade','trail','train','trait','trash','treat','trend','trial','tribe','trick','tried','troop','truck','truly','trump','trunk','trust','truth','tumor','twice','twist','ultra','under','union','unite','unity','until','upper','upset','urban','usage','usual','utter','valid','value','valve','vault','verse','vigor','vinyl','viral','virus','visit','vital','vivid','vocal','voice','voter','vowel','wages','waste','watch','water','weary','weave','wedge','weird','whale','wheat','wheel','where','which','while','white','whole','whose','width','woman','women','world','worry','worse','worst','worth','would','wound','wreck','write','wrong','wrote','yield','young','youth'];
+
+let answer = '', currentRow = 0, currentCol = 0, guesses = [], gameOver = false;
+let stats = { played: 0, wins: 0, streak: 0 };
+const MAX_GUESSES = 6, WORD_LEN = 5;
+
+function newGame() {
+  answer = WORDS[Math.floor(Math.random() * WORDS.length)];
+  currentRow = 0; currentCol = 0; guesses = []; gameOver = false;
+  $('#game-message').innerHTML = '';
+  $('#new-game-btn').style.display = 'none';
+  renderBoard();
+  renderKeyboard();
+  updateStats();
+}
+
+function renderBoard() {
+  const el = $('#board');
+  let html = '';
+  for (let r = 0; r < MAX_GUESSES; r++) {
+    html += '<div class="row">';
+    for (let c = 0; c < WORD_LEN; c++) {
+      const letter = guesses[r] ? guesses[r][c] : '';
+      html += `<div class="cell" id="cell-${r}-${c}">${letter}</div>`;
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderKeyboard() {
+  const rows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+  const keyStates = {};
+  guesses.forEach(g => {
+    const result = evaluate(g);
+    g.split('').forEach((c, i) => {
+      const s = result[i];
+      if (s === 'correct') keyStates[c] = 'correct';
+      else if (s === 'present' && keyStates[c] !== 'correct') keyStates[c] = 'present';
+      else if (!keyStates[c]) keyStates[c] = 'absent';
+    });
+  });
+
+  const el = $('#keyboard');
+  el.innerHTML = rows.map((row, ri) => {
+    let keys = row.split('').map(c => {
+      const cls = keyStates[c] || '';
+      return `<button class="kb-key ${cls}" onclick="pressKey('${c}')">${c}</button>`;
+    });
+    if (ri === 2) {
+      keys.unshift(`<button class="kb-key wide" onclick="pressKey('ENTER')">ENTER</button>`);
+      keys.push(`<button class="kb-key wide" onclick="pressKey('BACK')">⌫</button>`);
+    }
+    return `<div class="kb-row">${keys.join('')}</div>`;
+  }).join('');
+}
+
+function evaluate(guess) {
+  const result = Array(WORD_LEN).fill('absent');
+  const ansArr = answer.split('');
+  const gArr = guess.split('');
+
+  // First pass: correct
+  for (let i = 0; i < WORD_LEN; i++) {
+    if (gArr[i] === ansArr[i]) {
+      result[i] = 'correct';
+      ansArr[i] = null;
+      gArr[i] = null;
+    }
+  }
+  // Second pass: present
+  for (let i = 0; i < WORD_LEN; i++) {
+    if (gArr[i] === null) continue;
+    const idx = ansArr.indexOf(gArr[i]);
+    if (idx !== -1) {
+      result[i] = 'present';
+      ansArr[idx] = null;
+    }
+  }
+  return result;
+}
+
+function revealRow(row, guess) {
+  const result = evaluate(guess);
+  for (let i = 0; i < WORD_LEN; i++) {
+    const cell = $(`#cell-${row}-${i}`);
+    setTimeout(() => {
+      cell.classList.add('flip');
+      setTimeout(() => {
+        cell.classList.add(result[i]);
+      }, 200);
+    }, i * 200);
+  }
+}
+
+window.pressKey = function(key) {
+  if (gameOver) return;
+  key = key.toUpperCase();
+
+  if (key === 'ENTER') {
+    if (currentCol < WORD_LEN) {
+      $('#game-message').innerHTML = `<div style="color:var(--text3);font-size:.9em;padding:4px">${t('notEnough')}</div>`;
+      return;
+    }
+    const guess = guesses[currentRow];
+    revealRow(currentRow, guess);
+    setTimeout(() => {
+      if (guess === answer) {
+        gameOver = true;
+        stats.played++; stats.wins++; stats.streak++;
+        $('#game-message').innerHTML = `<div class="game-msg win">${t('youWin')}</div>`;
+        $('#new-game-btn').style.display = 'inline-block';
+        updateStats();
+      } else if (currentRow >= MAX_GUESSES - 1) {
+        gameOver = true;
+        stats.played++; stats.streak = 0;
+        $('#game-message').innerHTML = `<div class="game-msg lose">${t('youLose')} <strong>${answer.toUpperCase()}</strong></div>`;
+        $('#new-game-btn').style.display = 'inline-block';
+        updateStats();
+      }
+    }, WORD_LEN * 200 + 300);
+    currentRow++;
+    currentCol = 0;
+    renderKeyboard();
+    return;
+  }
+
+  if (key === 'BACK' || key === 'BACKSPACE') {
+    if (currentCol > 0) {
+      currentCol--;
+      const guess = guesses[currentRow] || '';
+      guesses[currentRow] = guess.substring(0, currentCol);
+      const cell = $(`#cell-${currentRow}-${currentCol}`);
+      if (cell) cell.textContent = '';
+    }
+    return;
+  }
+
+  if (/^[A-Z]$/.test(key) && currentCol < WORD_LEN) {
+    if (!guesses[currentRow]) guesses[currentRow] = '';
+    guesses[currentRow] += key;
+    const cell = $(`#cell-${currentRow}-${currentCol}`);
+    if (cell) cell.textContent = key;
+    currentCol++;
+  }
+};
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Enter') pressKey('ENTER');
+  else if (e.key === 'Backspace') pressKey('BACK');
+  else if (/^[a-zA-Z]$/.test(e.key)) pressKey(e.key);
+});
+
+function updateStats() {
+  const wr = stats.played ? Math.round(stats.wins / stats.played * 100) : 0;
+  $('#played-display').innerHTML = `${t('played')}: <strong>${stats.played}</strong>`;
+  $('#win-rate-display').innerHTML = `${t('winRate')}: <strong>${wr}%</strong>`;
+  $('#streak-display').innerHTML = `${t('streak')}: <strong>${stats.streak}</strong>`;
+}
+
+$('#new-game-btn').textContent = t('newGame');
+$('#new-game-btn').addEventListener('click', newGame);
+
+newGame();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💀', href:'/fun/hangman.html', name:'Hangman'},
+    {icon:'🧩', href:'/fun/sudoku.html', name:'Sudoku'},
+    {icon:'🔢', href:'/fun/2048.html', name:'2048'},
+    {icon:'⌨️', href:'/fun/typing-test.html', name:'Typing Test'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

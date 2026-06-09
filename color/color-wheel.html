@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Color Wheel & Harmony Generator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Interactive color wheel to pick colors and generate harmonious palettes — complementary, analogous, triadic, tetradic and split-complementary schemes. Free online tool.">
+  <link rel="canonical" href="https://tools.gamezipper.com/color/color-wheel.html">
+  <meta property="og:title" content="Color Wheel & Harmony Generator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Interactive color wheel to pick colors and generate harmonious palettes — complementary, analogous, triadic, tetradic and split-complementary schemes. Free online tool.">
+  <meta property="og:url" content="https://tools.gamezipper.com/color/color-wheel.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Color Wheel & Harmony Generator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#wheel-canvas{cursor:crosshair;border-radius:50%;display:block;margin:0 auto}
+.harmony-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);cursor:pointer;font-size:.85em;transition:all .2s}
+.harmony-btn.active,.harmony-btn:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+.palette-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.color-chip{display:flex;flex-direction:column;align-items:center;gap:4px}
+.color-swatch{width:60px;height:60px;border-radius:12px;border:2px solid var(--border);cursor:pointer;position:relative;transition:transform .2s}
+.color-swatch:hover{transform:scale(1.1)}
+.color-swatch::after{content:'Copy';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);color:#fff;font-size:.7em;border-radius:10px;opacity:0;transition:opacity .2s}
+.color-swatch:hover::after{opacity:1}
+.color-hex{font-size:.75em;font-family:monospace;color:var(--text2)}
+.selected-color{display:flex;align-items:center;gap:12px;padding:12px;background:var(--glass2);border-radius:12px;border:1px solid var(--border)}
+.selected-swatch{width:50px;height:50px;border-radius:10px;border:2px solid var(--border)}
+.color-values{font-family:monospace;font-size:.85em;line-height:1.6}
+.gz-split{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.gz-split{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Color Wheel & Harmony Generator","description":"Interactive color wheel to pick colors and generate harmonious palettes — complementary, analogous, triadic, tetradic and split-complementary schemes.","url":"https://tools.gamezipper.com/color/color-wheel.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a color wheel?", "acceptedAnswer": {"@type": "Answer", "text": "A color wheel is a circular diagram that organizes colors by their chromatic relationship. It shows primary, secondary and tertiary colors arranged by hue, making it easy to find harmonious color combinations."}}, {"@type": "Question", "name": "What are complementary colors?", "acceptedAnswer": {"@type": "Answer", "text": "Complementary colors sit opposite each other on the color wheel (e.g., red and green, blue and orange). They create strong contrast and visual interest when used together."}}, {"@type": "Question", "name": "How do I use the color wheel?", "acceptedAnswer": {"@type": "Answer", "text": "Click anywhere on the color wheel to select a base hue. Then choose a harmony mode (complementary, analogous, triadic, etc.) to generate a matching palette. Click any color swatch to copy its HEX code."}}, {"@type": "Question", "name": "Are the generated palettes good for web design?", "acceptedAnswer": {"@type": "Answer", "text": "Yes! The palettes are generated using color theory principles used by professional designers. Each scheme provides balanced contrast and visual harmony suitable for websites, apps and branding."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/color/color-wheel.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/color/color-wheel.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/color/color-wheel.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-split">
+      <div style="text-align:center">
+        <canvas id="wheel-canvas" width="300" height="300"></canvas>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px" id="harmony-btns"></div>
+      </div>
+      <div>
+        <div class="selected-color" id="selected-color">
+          <div class="selected-swatch" id="selected-swatch"></div>
+          <div class="color-values" id="color-values"></div>
+        </div>
+        <div class="palette-row" id="palette"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Color Wheel & Harmony Generator',
+    toolDesc: 'Pick a base color on the wheel and generate harmonious palettes — complementary, analogous, triadic and more.',
+    complementary: 'Complementary',
+    analogous: 'Analogous',
+    triadic: 'Triadic',
+    tetradic: 'Tetradic',
+    split: 'Split-Comp.',
+    monochromatic: 'Monochromatic',
+    copied: 'Copied!',
+    step1: 'Click anywhere on the color wheel to pick a base color',
+    step2: 'Choose a harmony mode to generate a matching palette',
+    step3: 'Click any color swatch to copy its HEX code',
+    step4: 'Use the palette in your designs, websites or apps',
+  },
+  zh: {
+    toolTitle: '色轮与配色生成器',
+    toolDesc: '在色轮上选取基色，生成和谐的配色方案 — 互补色、类似色、三色、四色等。',
+    complementary: '互补色',
+    analogous: '类似色',
+    triadic: '三色',
+    tetradic: '四色',
+    split: '分裂互补',
+    monochromatic: '单色',
+    copied: '已复制！',
+    step1: '在色轮上点击选取基色',
+    step2: '选择配色模式生成和谐的色板',
+    step3: '点击任意色块复制 HEX 色值',
+    step4: '将配色方案用于设计、网站或应用',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const canvas = $('#wheel-canvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const cx = W / 2, cy = H / 2, R = W / 2 - 10;
+
+let currentHue = 0, currentSat = 100, currentLight = 50;
+let harmonyMode = 'complementary';
+
+const harmonies = ['complementary','analogous','triadic','tetradic','split','monochromatic'];
+
+// Draw color wheel
+function drawWheel() {
+  ctx.clearRect(0, 0, W, H);
+  for (let angle = 0; angle < 360; angle += 0.5) {
+    const startRad = (angle - 1) * Math.PI / 180;
+    const endRad = (angle + 1) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, startRad, endRad);
+    ctx.closePath();
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(0.5, `hsl(${angle}, 100%, 50%)`);
+    gradient.addColorStop(1, `hsl(${angle}, 100%, 30%)`);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+  }
+  // Draw indicator
+  const indicatorAngle = (currentHue - 90) * Math.PI / 180;
+  const indicatorR = R * 0.7;
+  const ix = cx + Math.cos(indicatorAngle) * indicatorR;
+  const iy = cy + Math.sin(indicatorAngle) * indicatorR;
+  ctx.beginPath();
+  ctx.arc(ix, iy, 10, 0, Math.PI * 2);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(ix, iy, 7, 0, Math.PI * 2);
+  ctx.fillStyle = `hsl(${currentHue}, ${currentSat}%, ${currentLight}%)`;
+  ctx.fill();
+}
+
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function hslToRgb(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)));
+  };
+  return { r: f(0), g: f(8), b: f(4) };
+}
+
+function getHarmonyColors() {
+  const h = currentHue, s = currentSat, l = currentLight;
+  switch (harmonyMode) {
+    case 'complementary':
+      return [{h,s,l},{h:(h+180)%360,s,l}];
+    case 'analogous':
+      return [{h:(h-30+360)%360,s,l},{h,s,l},{h:(h+30)%360,s,l}];
+    case 'triadic':
+      return [{h,s,l},{h:(h+120)%360,s,l},{h:(h+240)%360,s,l}];
+    case 'tetradic':
+      return [{h,s,l},{h:(h+90)%360,s,l},{h:(h+180)%360,s,l},{h:(h+270)%360,s,l}];
+    case 'split':
+      return [{h,s,l},{h:(h+150)%360,s,l},{h:(h+210)%360,s,l}];
+    case 'monochromatic':
+      return [{h,s,l:l+20},{h,s,l:l+10},{h,s,l},{h,s,l:l-10},{h,s,l:l-20}].map(c=>({...c,l:Math.max(10,Math.min(90,c.l))}));
+    default:
+      return [{h,s,l}];
+  }
+}
+
+function updateUI() {
+  drawWheel();
+  const hex = hslToHex(currentHue, currentSat, currentLight);
+  const rgb = hslToRgb(currentHue, currentSat, currentLight);
+  $('#selected-swatch').style.background = hex;
+  $('#color-values').innerHTML = `HEX: ${hex}<br>RGB: rgb(${rgb.r}, ${rgb.g}, ${rgb.b})<br>HSL: hsl(${Math.round(currentHue)}, ${currentSat}%, ${currentLight}%)`;
+
+  const colors = getHarmonyColors();
+  $('#palette').innerHTML = colors.map(c => {
+    const ch = hslToHex(c.h, c.s, c.l);
+    return `<div class="color-chip"><div class="color-swatch" style="background:${ch}" onclick="copyColor('${ch}')"></div><span class="color-hex">${ch}</span></div>`;
+  }).join('');
+}
+
+function copyColor(hex) {
+  copyText(hex);
+  const btn = event.currentTarget;
+  const old = btn.style.outline;
+  btn.style.outline = '3px solid var(--accent)';
+  setTimeout(() => btn.style.outline = old, 300);
+}
+
+// Click handler
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width, scaleY = H / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+  const dx = x - cx, dy = y - cy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist <= R) {
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+    if (angle < 0) angle += 360;
+    currentHue = Math.round(angle);
+    currentSat = Math.round(40 + (dist / R) * 60);
+    updateUI();
+  }
+});
+
+// Render harmony buttons
+$('#harmony-btns').innerHTML = harmonies.map(mode =>
+  `<button class="harmony-btn${mode === harmonyMode ? ' active' : ''}" onclick="setHarmony('${mode}',this)">${t(mode)}</button>`
+).join('');
+
+window.setHarmony = function(mode, btn) {
+  harmonyMode = mode;
+  document.querySelectorAll('.harmony-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateUI();
+};
+
+window.copyColor = copyColor;
+updateUI();
+
+GZ.renderToolPage({
+  category: 'color',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/color/picker.html', name:'Color Picker'},
+    {icon:'🌈', href:'/color/palette.html', name:'Palette Generator'},
+    {icon:'👁️', href:'/color/contrast.html', name:'Contrast Checker'},
+    {icon:'🎨', href:'/color/harmony.html', name:'Color Harmony'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
