@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Investment Calculator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Calculate investment growth with compound interest. See how your money grows over time with regular contributions, adjustable rates and detailed year-by-year breakdown.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/investment-calculator.html">
+  <meta property="og:title" content="Investment Calculator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Calculate investment growth with compound interest. See year-by-year breakdown with regular contributions and adjustable rates.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/investment-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Investment Calculator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:.85em;font-weight:600;opacity:.8}
+.form-group input,.form-group select{padding:8px 10px;border-radius:8px;border:1px solid var(--gz-border,rgba(255,255,255,.15));background:var(--gz-bg,#0a0a1a);color:inherit;font-size:1em}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.result-card{padding:12px;border-radius:8px;text-align:center;background:rgba(255,255,255,.05);border:1px solid var(--gz-border,rgba(255,255,255,.1))}
+.result-card .value{font-size:1.4em;font-weight:700;color:var(--gz-accent,#4ecdc4)}
+.result-card .label{font-size:.8em;opacity:.7;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:.85em}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--gz-border,rgba(255,255,255,.06))}
+th{font-weight:600;opacity:.7;text-align:right}
+td:first-child,th:first-child{text-align:left}
+.chart-container{margin:16px 0;position:relative;height:260px;background:rgba(255,255,255,.02);border-radius:8px;overflow:hidden}
+canvas{width:100%!important;height:100%!important}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Investment Calculator","description":"Calculate investment growth with compound interest. See year-by-year breakdown with regular contributions and adjustable rates.","url":"https://tools.gamezipper.com/calc/investment-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does compound interest work for investments?","acceptedAnswer":{"@type":"Answer","text":"Compound interest means you earn interest on both your original investment and on the interest you've already earned. Over time, this creates exponential growth — the longer you invest, the faster your money grows."}}, {"@type":"Question","name":"What is a good annual return rate?","acceptedAnswer":{"@type":"Answer","text":"Historically, the S&P 500 has returned about 10% per year on average (before inflation). Bond investments typically return 4-6%. A diversified portfolio might target 7-8% annually."}}, {"@type":"Question","name":"How often should I contribute to my investment?","acceptedAnswer":{"@type":"Answer","text":"Regular contributions (monthly or biweekly) take advantage of dollar-cost averaging, which reduces the impact of market volatility. Consistent investing over time generally yields better results than trying to time the market."}}, {"@type":"Question","name":"Does this calculator account for inflation?","acceptedAnswer":{"@type":"Answer","text":"This calculator shows nominal returns. To account for inflation, you can lower your expected return rate by the average inflation rate (historically about 3% per year in the US)."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/investment-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/investment-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/investment-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label id="lbl-initial"></label>
+        <input type="number" id="initial" value="10000" min="0" step="100">
+      </div>
+      <div class="form-group">
+        <label id="lbl-monthly"></label>
+        <input type="number" id="monthly" value="500" min="0" step="50">
+      </div>
+      <div class="form-group">
+        <label id="lbl-rate"></label>
+        <input type="number" id="rate" value="8" min="0" max="100" step="0.1">
+      </div>
+      <div class="form-group">
+        <label id="lbl-years"></label>
+        <input type="number" id="years" value="20" min="1" max="100" step="1">
+      </div>
+      <div class="form-group">
+        <label id="lbl-compound"></label>
+        <select id="compound">
+          <option value="1">Annual</option>
+          <option value="4">Quarterly</option>
+          <option value="12" selected>Monthly</option>
+          <option value="365">Daily</option>
+        </select>
+      </div>
+    </div>
+    <div id="results" style="display:none">
+      <div class="result-grid">
+        <div class="result-card"><div class="value" id="r-future"></div><div class="label" id="r-future-lbl"></div></div>
+        <div class="result-card"><div class="value" id="r-contrib"></div><div class="label" id="r-contrib-lbl"></div></div>
+        <div class="result-card"><div class="value" id="r-interest"></div><div class="label" id="r-interest-lbl"></div></div>
+        <div class="result-card"><div class="value" id="r-growth"></div><div class="label" id="r-growth-lbl"></div></div>
+      </div>
+      <div class="chart-container"><canvas id="chart"></canvas></div>
+      <div style="overflow-x:auto">
+        <table id="schedule">
+          <thead><tr><th id="th-year"></th><th id="th-contrib"></th><th id="th-interest"></th><th id="th-balance"></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Investment Calculator',
+    toolDesc: 'Calculate investment growth with compound interest, regular contributions and year-by-year breakdown.',
+    initial: 'Initial Investment ($)',
+    monthly: 'Monthly Contribution ($)',
+    annualRate: 'Annual Return Rate (%)',
+    years: 'Investment Period (Years)',
+    compoundFreq: 'Compounding Frequency',
+    calculate: 'Calculate',
+    futureValue: 'Future Value',
+    totalContrib: 'Total Contributions',
+    totalInterest: 'Total Interest Earned',
+    growthPct: 'Total Growth',
+    year: 'Year',
+    contributions: 'Contributions',
+    interest: 'Interest Earned',
+    balance: 'Balance',
+    step1: 'Enter your initial investment amount',
+    step2: 'Set monthly contribution and expected annual return',
+    step3: 'Choose investment period and compounding frequency',
+    step4: 'Click Calculate to see growth chart and year-by-year breakdown',
+  },
+  zh: {
+    toolTitle: '投资计算器',
+    toolDesc: '使用复利计算投资增长，支持定期投入和逐年明细分析。',
+    initial: '初始投资金额（¥）',
+    monthly: '每月定投金额（¥）',
+    annualRate: '预期年化收益率（%）',
+    years: '投资期限（年）',
+    compoundFreq: '复利频率',
+    calculate: '计算',
+    futureValue: '未来价值',
+    totalContrib: '总投入金额',
+    totalInterest: '总收益',
+    growthPct: '总增长率',
+    year: '年份',
+    contributions: '累计投入',
+    interest: '累计收益',
+    balance: '账户余额',
+    step1: '输入初始投资金额',
+    step2: '设置每月定投金额和预期年化收益率',
+    step3: '选择投资期限和复利频率',
+    step4: '点击「计算」查看增长图表和逐年明细',
+  }
+});
+
+const { $, t } = GZ;
+const fmt = (n) => {
+  const lang = GZI18n.getLang();
+  return new Intl.NumberFormat(lang === 'zh' ? 'zh-CN' : 'en-US', { style: 'currency', currency: lang === 'zh' ? 'CNY' : 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+};
+const fmtPct = (n) => n.toFixed(1) + '%';
+
+function calculate() {
+  const P = parseFloat($('#initial').value) || 0;
+  const M = parseFloat($('#monthly').value) || 0;
+  const r = (parseFloat($('#rate').value) || 0) / 100;
+  const Y = parseInt($('#years').value) || 1;
+  const n = parseInt($('#compound').value) || 12;
+  
+  const yearlyData = [];
+  let balance = P;
+  let totalContrib = P;
+  
+  for (let y = 1; y <= Y; y++) {
+    const startBalance = balance;
+    // Monthly contributions + compound growth
+    for (let m = 1; m <= 12; m++) {
+      balance += M;
+      totalContrib += M;
+      // Apply compound interest each compounding period
+      const periodsPerMonth = n / 12;
+      if (periodsPerMonth >= 1) {
+        for (let p = 0; p < Math.floor(periodsPerMonth); p++) {
+          balance *= (1 + r / n);
+        }
+      } else {
+        // Less than once per month, apply proportionally
+        balance *= (1 + r / n);
+      }
+    }
+    const interest = balance - totalContrib;
+    yearlyData.push({
+      year: y,
+      contributions: totalContrib,
+      interest: Math.max(0, interest),
+      balance: balance,
+    });
+  }
+  
+  // Display results
+  $('#results').style.display = 'block';
+  $('#r-future').textContent = fmt(balance);
+  $('#r-future-lbl').textContent = t('futureValue');
+  $('#r-contrib').textContent = fmt(totalContrib);
+  $('#r-contrib-lbl').textContent = t('totalContrib');
+  const interest = balance - totalContrib;
+  $('#r-interest').textContent = fmt(interest);
+  $('#r-interest-lbl').textContent = t('totalInterest');
+  $('#r-growth').textContent = fmtPct(totalContrib > 0 ? (interest / totalContrib) * 100 : 0);
+  $('#r-growth-lbl').textContent = t('growthPct');
+  
+  // Table headers
+  $('#th-year').textContent = t('year');
+  $('#th-contrib').textContent = t('contributions');
+  $('#th-interest').textContent = t('interest');
+  $('#th-balance').textContent = t('balance');
+  
+  // Table body
+  let html = '';
+  yearlyData.forEach(d => {
+    html += `<tr><td>${d.year}</td><td>${fmt(d.contributions)}</td><td>${fmt(d.interest)}</td><td><strong>${fmt(d.balance)}</strong></td></tr>`;
+  });
+  $('#tbody').innerHTML = html;
+  
+  // Simple bar chart
+  drawChart(yearlyData, totalContrib);
+}
+
+function drawChart(data, totalContrib) {
+  const canvas = $('#chart');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  ctx.scale(2, 2);
+  const W = rect.width;
+  const H = rect.height;
+  
+  ctx.clearRect(0, 0, W, H);
+  
+  if (data.length === 0) return;
+  
+  const maxVal = Math.max(...data.map(d => d.balance));
+  const padL = 60, padR = 20, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,.1)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (chartH * i / 4);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmt(maxVal * (4 - i) / 4), padL - 6, y + 4);
+  }
+  
+  const barW = Math.max(2, chartW / data.length - 2);
+  
+  data.forEach((d, i) => {
+    const x = padL + (i / data.length) * chartW + 1;
+    const contribH = (d.contributions / maxVal) * chartH;
+    const totalH = (d.balance / maxVal) * chartH;
+    
+    // Contributions (bottom)
+    ctx.fillStyle = 'rgba(78,205,196,.6)';
+    ctx.fillRect(x, padT + chartH - contribH, barW, contribH);
+    
+    // Interest (top of contributions)
+    ctx.fillStyle = 'rgba(233,69,96,.6)';
+    ctx.fillRect(x, padT + chartH - totalH, barW, totalH - contribH);
+    
+    // Year label (every 5 years or last)
+    if (d.year % 5 === 0 || d.year === data.length) {
+      ctx.fillStyle = 'rgba(255,255,255,.5)';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.year, x + barW / 2, H - padB + 16);
+    }
+  });
+  
+  // Legend
+  ctx.fillStyle = 'rgba(78,205,196,.6)';
+  ctx.fillRect(W - 140, 8, 10, 10);
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = '10px sans-serif';
+  ctx.fillText('Contributions', W - 125, 17);
+  ctx.fillStyle = 'rgba(233,69,96,.6)';
+  ctx.fillRect(W - 140, 22, 10, 10);
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.fillText('Interest', W - 125, 31);
+}
+
+// Set labels
+$('#lbl-initial').textContent = t('initial');
+$('#lbl-monthly').textContent = t('monthly');
+$('#lbl-rate').textContent = t('annualRate');
+$('#lbl-years').textContent = t('years');
+$('#lbl-compound').textContent = t('compoundFreq');
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="calculate()">${t('calculate')}</button>`;
+
+// Auto-calculate on input change
+['initial','monthly','rate','years','compound'].forEach(id => {
+  $('#' + id).addEventListener('input', calculate);
+});
+
+// Initial calc
+calculate();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📈', href:'/calc/compound-interest.html', name:'Compound Interest'},
+    {icon:'💰', href:'/calc/roi.html', name:'ROI Calculator'},
+    {icon:'🏖️', href:'/calc/retirement-calculator.html', name:'Retirement'},
+    {icon:'🏦', href:'/calc/loan-calculator.html', name:'Loan Calculator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
