@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Video Trimmer — Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Trim and cut video clips online for free. Set start and end points, preview and download trimmed MP4/WebM. No upload, runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/video-trimmer.html">
+  <meta property="og:title" content="Video Trimmer — Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Trim and cut video clips online for free. Set start and end points, preview and download trimmed MP4/WebM. No upload, runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/video-trimmer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Video Trimmer — Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#video-drop{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+#video-drop:hover,#video-drop.dragover{border-color:var(--gz-accent);background:rgba(255,255,255,.03)}
+#video-drop svg{width:48px;height:48px;fill:var(--gz-accent);margin-bottom:8px}
+#video-container{max-width:100%}
+#video-container video{width:100%;border-radius:8px;background:#000}
+.trim-controls{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap;align-items:center}
+.trim-controls label{display:flex;align-items:center;gap:6px;font-size:.9em}
+.trim-controls input[type=number]{width:80px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--glass2);color:inherit}
+input[type=range]{width:100%;accent-color:var(--gz-accent)}
+#timeline{position:relative;height:40px;border-radius:6px;background:var(--glass2);margin:8px 0;cursor:pointer;overflow:hidden}
+#timeline-fill{position:absolute;top:0;height:100%;background:rgba(233,69,96,.3);pointer-events:none}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Video Trimmer","description":"Trim and cut video clips online for free. Set start and end points, preview and download trimmed MP4/WebM. No upload, runs entirely in your browser.","url":"https://tools.gamezipper.com/convert/video-trimmer.html","applicationCategory":"Multimedia","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I trim a video online?", "acceptedAnswer": {"@type": "Answer", "text": "Upload your video file (MP4, WebM, MOV), set the start and end times using the sliders or input fields, preview the trimmed section, and click Download."}}, {"@type": "Question", "name": "Is my video uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens entirely in your browser using canvas recording. Your video files never leave your device."}}, {"@type": "Question", "name": "What video formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports MP4, WebM, MOV, AVI and any format your browser can play. Output is saved as WebM (VP9 + Opus) for broad compatibility."}}, {"@type": "Question", "name": "Does trimming reduce video quality?", "acceptedAnswer": {"@type": "Answer", "text": "The tool re-encodes the trimmed portion using high-quality WebM (VP9). There may be minimal quality difference, but the result is suitable for most uses."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/video-trimmer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/video-trimmer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/video-trimmer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div id="video-drop">
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      <div id="drop-text"></div>
+      <input type="file" id="file-input" accept="video/*" style="display:none">
+    </div>
+    <div id="editor" style="display:none">
+      <div id="video-container">
+        <video id="video" preload="metadata"></video>
+      </div>
+      <div id="timeline" style="display:none">
+        <div id="timeline-fill"></div>
+      </div>
+      <div class="trim-controls" id="trim-ui" style="display:none">
+        <label><span id="lbl-start"></span>
+          <input type="range" id="start-slider" min="0" max="100" value="0" step="0.01">
+        </label>
+        <label><span id="lbl-end"></span>
+          <input type="range" id="end-slider" min="0" max="100" value="100" step="0.01">
+        </label>
+        <span id="duration-display" style="font-size:.85em;opacity:.7"></span>
+      </div>
+      <div class="trim-controls">
+        <button class="gz-btn" id="play-btn">▶ Preview</button>
+        <button class="gz-btn gz-btn-secondary" id="stop-btn">■ Stop</button>
+        <button class="gz-btn" id="download-btn" style="margin-left:auto"></button>
+        <button class="gz-btn gz-btn-secondary" id="reset-btn"></button>
+      </div>
+      <div id="status" style="margin-top:8px;font-size:.85em"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Video Trimmer',
+    toolDesc: 'Trim and cut video clips online for free. Set start and end points with visual timeline, preview and download — runs entirely in your browser.',
+    dropText: 'Drop video file here or click to browse',
+    lblStart: 'Start',
+    lblEnd: 'End',
+    download: 'Download Trimmed Video',
+    reset: 'Load New Video',
+    processing: 'Processing… this may take a moment for long videos',
+    done: '✓ Download ready!',
+    noVideo: 'Please upload a video first',
+    step1: 'Upload a video file (MP4, WebM, MOV)',
+    step2: 'Drag the start and end sliders to select your clip',
+    step3: 'Click Preview to review the trimmed section',
+    step4: 'Click Download to save the trimmed video as WebM',
+  },
+  zh: {
+    toolTitle: '视频裁剪工具',
+    toolDesc: '在线裁剪视频，可视化时间线设置起止点，即时预览和下载 — 完全浏览器本地处理。',
+    dropText: '拖拽视频文件到此处或点击选择',
+    lblStart: '起始',
+    lblEnd: '结束',
+    download: '下载裁剪后的视频',
+    reset: '加载新视频',
+    processing: '处理中… 长视频可能需要较长时间',
+    done: '✓ 下载已准备！',
+    noVideo: '请先上传视频文件',
+    step1: '上传视频文件（MP4、WebM、MOV）',
+    step2: '拖动起始和结束滑块选择片段',
+    step3: '点击预览按钮查看裁剪效果',
+    step4: '点击下载按钮保存裁剪后的视频（WebM 格式）',
+  }
+});
+
+const { $, t } = GZ;
+
+$('#drop-text').textContent = t('dropText');
+$('#lbl-start').textContent = t('lblStart');
+$('#lbl-end').textContent = t('lblEnd');
+$('#download-btn').textContent = t('download');
+$('#reset-btn').textContent = t('reset');
+
+const video = $('#video');
+let videoURL = null, duration = 0, isPreviewing = false;
+
+const drop = $('#video-drop');
+drop.onclick = () => $('#file-input').click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); };
+drop.ondragleave = () => drop.classList.remove('dragover');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); };
+$('#file-input').onchange = function() { if (this.files[0]) loadFile(this.files[0]); };
+
+function loadFile(file) {
+  if (videoURL) URL.revokeObjectURL(videoURL);
+  videoURL = URL.createObjectURL(file);
+  video.src = videoURL;
+  video.onloadedmetadata = () => {
+    duration = video.duration;
+    $('#start-slider').max = duration;
+    $('#end-slider').max = duration;
+    $('#start-slider').value = 0;
+    $('#end-slider').value = duration;
+    drop.style.display = 'none';
+    $('#editor').style.display = 'block';
+    $('#timeline').style.display = 'block';
+    $('#trim-ui').style.display = 'flex';
+    updateTimeline();
+    $('#duration-display').textContent = fmt(0) + ' → ' + fmt(duration) + ' (' + fmt(duration) + ')';
+  };
+}
+
+function fmt(s) {
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(1);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function updateTimeline() {
+  const start = parseFloat($('#start-slider').value);
+  const end = parseFloat($('#end-slider').value);
+  if (start >= end) return;
+  const tl = $('#timeline');
+  const fill = $('#timeline-fill');
+  fill.style.left = (start / duration * 100) + '%';
+  fill.style.width = ((end - start) / duration * 100) + '%';
+  $('#duration-display').textContent = fmt(start) + ' → ' + fmt(end) + ' (' + fmt(end - start) + ')';
+}
+
+$('#start-slider').oninput = function() {
+  if (parseFloat(this.value) >= parseFloat($('#end-slider').value)) {
+    this.value = parseFloat($('#end-slider').value) - 0.1;
+  }
+  updateTimeline();
+  video.currentTime = parseFloat(this.value);
+};
+
+$('#end-slider').oninput = function() {
+  if (parseFloat(this.value) <= parseFloat($('#start-slider').value)) {
+    this.value = parseFloat($('#start-slider').value) + 0.1;
+  }
+  updateTimeline();
+  video.currentTime = parseFloat(this.value);
+};
+
+$('#play-btn').onclick = () => {
+  video.currentTime = parseFloat($('#start-slider').value);
+  video.play();
+  isPreviewing = true;
+};
+
+video.ontimeupdate = () => {
+  if (isPreviewing && video.currentTime >= parseFloat($('#end-slider').value)) {
+    video.pause();
+    isPreviewing = false;
+  }
+};
+
+$('#stop-btn').onclick = () => {
+  video.pause();
+  isPreviewing = false;
+};
+
+$('#download-btn').onclick = async () => {
+  if (!videoURL) { $('#status').textContent = t('noVideo'); return; }
+  const start = parseFloat($('#start-slider').value);
+  const end = parseFloat($('#end-slider').value);
+  if (start >= end) return;
+
+  $('#status').textContent = t('processing');
+  video.currentTime = start;
+  await new Promise(r => { video.onseeked = r; });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 360;
+  const cctx = canvas.getContext('2d');
+
+  const stream = canvas.captureStream(30);
+
+  // Try to capture audio from the video
+  try {
+    const vidEl = video.cloneNode();
+    vidEl.src = videoURL;
+    vidEl.currentTime = start;
+    await new Promise(r => { vidEl.onseeked = r; });
+    const audioCtx = new AudioContext();
+    const source = audioCtx.createMediaElementSource(vidEl);
+    const dest = audioCtx.createMediaStreamDestination();
+    source.connect(dest);
+    source.connect(audioCtx.destination);
+    dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+    vidEl.play();
+  } catch(e) {
+    // Audio capture may fail, continue without audio
+  }
+
+  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+    ? 'video/webm;codecs=vp9,opus'
+    : MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
+      ? 'video/webm;codecs=vp8,opus'
+      : 'video/webm';
+
+  const rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5000000 });
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  rec.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'trimmed_video.webm';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    $('#status').textContent = t('done');
+  };
+
+  rec.start();
+  video.play();
+  isPreviewing = true;
+
+  function drawFrame() {
+    if (video.currentTime >= end || video.paused || video.ended) {
+      video.pause();
+      isPreviewing = false;
+      rec.stop();
+      return;
+    }
+    cctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+};
+
+$('#reset-btn').onclick = () => {
+  video.pause();
+  isPreviewing = false;
+  if (videoURL) URL.revokeObjectURL(videoURL);
+  videoURL = null;
+  video.src = '';
+  duration = 0;
+  $('#editor').style.display = 'none';
+  drop.style.display = '';
+  $('#status').textContent = '';
+  $('#file-input').value = '';
+};
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎬', href:'/convert/video-to-gif.html', name:'Video to GIF'},
+    {icon:'🎵', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🖥️', href:'/convert/screen-recorder.html', name:'Screen Recorder'},
+    {icon:'🗜️', href:'/convert/gif-compressor.html', name:'GIF Compressor'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
