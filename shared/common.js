@@ -1,6 +1,6 @@
 /* GameZipper Tools — Common JS */
 (function(){
-  var s1=document.createElement('script');s1.src='/monetag-manager.js';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260609c';s1.defer=true;document.head.appendChild(s1);
   // adsterra-manager.js removed — zone IDs were placeholders, wasting resources
   var s4=document.createElement('script');s4.src='/adsense-auto.js';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
