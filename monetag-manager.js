@@ -87,6 +87,20 @@
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push(Object.assign({ event: 'gz_ad_' + type }, ev));
     } catch(e) {}
+    // 2026-06-10: forward to BI server (matches gamezipper.com v5.2.1 fix).
+    // tools.site has no gz-analytics.js, so window.gzAnalytics is undefined → use direct sendBeacon.
+    try {
+      if (window.gzAnalytics && typeof window.gzAnalytics.sendAd === 'function') {
+        window.gzAnalytics.sendAd(type, ev);
+      } else if (window.GZ_COLLECT_ENDPOINT) {
+        var payload = JSON.stringify([{
+          site: location.hostname, path: location.pathname,
+          e: 'gz_ad_event', d: Object.assign({ t: type }, ev), t: Date.now(),
+          vid: '', sid: ''
+        }]);
+        if (navigator.sendBeacon) { navigator.sendBeacon(window.GZ_COLLECT_ENDPOINT, payload); }
+      }
+    } catch(e) {}
     if (window.GZAdDebug) {
       try { console.log('[gz-ad]', type, ev); } catch(e) {}
     }
