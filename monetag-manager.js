@@ -1,8 +1,15 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v4 (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.2-monetag-events (Poki-style)
  * ────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
- * 
+ *
+ * v5.2-monetag-events Changes (2026-06-09):
+ *   - 新增 ad events tracker (window.gzAdEvents + GTM dataLayer 推送)
+ *     对齐 gamezipper.com v5.2: fill / no_fill / script_loaded /
+ *     load_error / commercial_break_fill / commercial_break_no_fill
+ *   - 替换 tools 站 v5.1 inline `gz_ad_fill` / `gz_ad_commercial_break`
+ *     dataLayer push 为统一的 trackAdEvent() 调用
+ *
  * v5.1 Changes (2026-06-09 优化):
  *   - AdSense + Monetag race 在 commercial break (工具完成最高价值广告位)
  *   - loadZone() 增加实际 DOM fill 检测 (不再以 script load 为 fill 标准)
@@ -61,7 +68,30 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
+    VERSION: '5.2-monetag-events',  // 2026-06-09: 移植 gzAdEvents tracker 对齐 gamezipper.com v5.2
   };
+
+  // ==================== AD EVENTS TRACKER (v5.2) ====================
+  // Lightweight event log so we can see which network actually fires.
+  // Each event: { type, network, zoneId, slotId, containerId, ts, meta }
+  // Exposed as window.gzAdEvents for console inspection and external analytics.
+  var adEvents = [];
+  function trackAdEvent(type, data) {
+    var ev = { type: type, ts: Date.now() };
+    for (var k in data) { if (Object.prototype.hasOwnProperty.call(data, k)) ev[k] = data[k]; }
+    adEvents.push(ev);
+    // Cap at 200 events
+    if (adEvents.length > 200) adEvents.shift();
+    try {
+      // Fire dataLayer event for GTM if available
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(Object.assign({ event: 'gz_ad_' + type }, ev));
+    } catch(e) {}
+    if (window.GZAdDebug) {
+      try { console.log('[gz-ad]', type, ev); } catch(e) {}
+    }
+  }
+  window.gzAdEvents = adEvents;
 
   var state = {
     adTimestamps: [],
@@ -117,7 +147,8 @@
   } catch(e) {}
 
   // ==================== 广告加载 ====================
-  // v5.1: 实际 DOM fill 检测 (Monetag 脚本加载不等于有广告)
+  // v5.2: 实际 DOM fill 检测 (Monetag 脚本加载不等于有广告)
+  //       全程 trackAdEvent() 上报 fill/script_loaded/no_fill/load_error
   function loadZone(zoneId, targetEl) {
     return new Promise(function(resolve, reject) {
       var timeout = setTimeout(function() { reject(new Error('timeout')); }, CONFIG.TIMING.adLoadTimeout);
@@ -133,7 +164,7 @@
           if (w >= 50 && h >= 50) {
             resolved = true; clearTimeout(timeout);
             if (observer) observer.disconnect();
-            try { (window.dataLayer = window.dataLayer || []).push({event: 'gz_ad_fill', network: 'monetag', zoneId: zoneId}); } catch(e){}
+            trackAdEvent('fill', { network: 'monetag', zoneId: zoneId, containerId: targetEl.id || '' });
             resolve(true); return;
           }
         }
@@ -148,6 +179,7 @@
       s.setAttribute('data-zone', String(zoneId));
       s.setAttribute('data-cf-async', 'false');
       s.onload = function() {
+        trackAdEvent('script_loaded', { network: 'monetag', zoneId: zoneId });
         // Monetag 脚本加载完成，等 1.5s 看是否注入内容
         setTimeout(function() {
           if (resolved) return;
@@ -157,12 +189,18 @@
               if (resolved) return;
               if (observer) observer.disconnect();
               clearTimeout(timeout);
+              trackAdEvent('no_fill', { network: 'monetag', zoneId: zoneId });
               reject(new Error('no_visible_fill'));
             }, 1500);
           }
         }, 800);
       };
-      s.onerror = function() { clearTimeout(timeout); if (observer) observer.disconnect(); reject(new Error('err')); };
+      s.onerror = function() {
+        clearTimeout(timeout);
+        if (observer) observer.disconnect();
+        trackAdEvent('load_error', { network: 'monetag', zoneId: zoneId });
+        reject(new Error('err'));
+      };
       if (targetEl) { targetEl.appendChild(s); } else { document.head.appendChild(s); }
     });
   }
@@ -286,12 +324,13 @@
       // 自动关闭
       var maxTimer = setTimeout(function() { finishOverlay(); }, CONFIG.TIMING.vignetteMaxDuration);
 
-      // v5.1: AdSense + Monetag race — 最高价值广告位
+      // v5.2: AdSense + Monetag race — 最高价值广告位
+      //       全程 trackAdEvent() 上报 commercial_break_fill / no_fill / load_error
       var adFilled = false;
       function onAdFilled(network) {
         if (adFilled) return;
         adFilled = true;
-        try { (window.dataLayer = window.dataLayer || []).push({event: 'gz_ad_commercial_break', network: network}); } catch(e){}
+        trackAdEvent('commercial_break_fill', { network: network });
       }
       // Tier 1: AdSense (game 站 AdSense fill 5-10%)
       try {
@@ -323,13 +362,17 @@
             if (Date.now() - adStart > 4000) clearInterval(adTimer);
           }, 250);
         }
-      } catch(e) {}
+      } catch(e) {
+        trackAdEvent('adsense_load_error', { error: String(e) });
+      }
       // Tier 2: Monetag (race with AdSense)
       setTimeout(function() {
         if (adFilled) return;
         loadZone(ZONES.vignette).then(function() { onAdFilled('monetag_vignette'); }).catch(function() {
           if (adFilled) return;
-          loadZone(ZONES.vignetteLegacy).then(function() { onAdFilled('monetag_vignette_legacy'); }).catch(function() {});
+          loadZone(ZONES.vignetteLegacy).then(function() { onAdFilled('monetag_vignette_legacy'); }).catch(function() {
+            trackAdEvent('commercial_break_no_fill', {});
+          });
         });
       }, 1500);
 
