@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>虚拟钢琴 — 在线弹奏 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在线弹钢琴。两个八度，支持键盘快捷键、延音踏板和音量控制。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/piano.html">
+  <meta property="og:title" content="虚拟钢琴 — 在线弹奏">
+  <meta property="og:description" content="免费在线弹钢琴。两个八度，支持键盘快捷键、延音踏板和音量控制。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/piano.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="虚拟钢琴 — 在线弹奏">
+<meta name="twitter:description" content="免费在线弹钢琴。两个八度，支持键盘快捷键、延音踏板和音量控制。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.piano-wrap{display:flex;justify-content:center;overflow-x:auto;padding:10px 0;user-select:none}
+.piano{position:relative;display:flex}
+.wkey{width:48px;height:180px;background:#fff;border:1px solid #bbb;border-radius:0 0 6px 6px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:11px;color:#666;transition:background .08s;flex-shrink:0}
+.wkey:active,.wkey.pressed{background:#e0e0e0}
+.wkey .note{font-size:10px;opacity:.6}
+.bkey{width:30px;height:115px;background:#222;border-radius:0 0 4px 4px;cursor:pointer;position:absolute;z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:9px;color:#999;transition:background .08s}
+.bkey:active,.bkey.pressed{background:#555}
+.piano-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-bottom:12px}
+.piano-controls label{font-size:.85em;display:flex;align-items:center;gap:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Virtual Piano","description":"Play a virtual piano online for free. Two octaves, keyboard shortcuts, sustain, and volume control. No signup — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/fun/piano.html","applicationCategory":"Entertainment","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I play the virtual piano?", "acceptedAnswer": {"@type": "Answer", "text": "Click the keys with your mouse or use keyboard shortcuts. White keys: A S D F G H J K L ; and black keys: W E T Y U O P."}}, {"@type": "Question", "name": "Does the piano make real sound?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. It uses the Web Audio API to synthesize piano-like tones in real time. No audio files are loaded."}}, {"@type": "Question", "name": "Can I use my computer keyboard?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The lower row maps to white keys and the upper row maps to black keys. Press keys to play notes instantly."}}, {"@type": "Question", "name": "Is this free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free. No signup, no ads blocking the piano, no download required."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/piano.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/piano.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/piano.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="piano-controls" id="controls"></div>
+    <div class="piano-wrap"><div class="piano" id="piano"></div></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Virtual Piano — Play Online',
+    toolDesc: 'Play piano online for free. Two octaves, keyboard shortcuts, sustain pedal and volume control.',
+    volume: 'Volume',
+    sustain: 'Sustain',
+    step1: 'Click piano keys with your mouse or use keyboard shortcuts',
+    step2: 'Adjust volume and sustain with the controls above',
+    step3: 'White keys: A S D F G H J K L ; — Black keys: W E T Y U O P',
+    step4: 'Enjoy playing melodies and chords!',
+  },
+  zh: {
+    toolTitle: '虚拟钢琴 — 在线弹奏',
+    toolDesc: '免费在线弹钢琴。两个八度，支持键盘快捷键、延音踏板和音量控制。',
+    volume: '音量',
+    sustain: '延音',
+    step1: '用鼠标点击琴键或使用键盘快捷键弹奏',
+    step2: '通过上方控件调节音量和延音',
+    step3: '白键：A S D F G H J K L ; — 黑键：W E T Y U O P',
+    step4: '尽情弹奏旋律与和弦！',
+  }
+});
+
+const { $, t } = GZ;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let volume = 0.5, sustain = false, activeOsc = {};
+
+// Note frequencies (C4 to C6)
+const notes = [
+  {n:'C4',f:261.63,type:'w',kb:'a'},{n:'C#4',f:277.18,type:'b',kb:'w'},
+  {n:'D4',f:293.66,type:'w',kb:'s'},{n:'D#4',f:311.13,type:'b',kb:'e'},
+  {n:'E4',f:329.63,type:'w',kb:'d'},
+  {n:'F4',f:349.23,type:'w',kb:'f'},{n:'F#4',f:369.99,type:'b',kb:'t'},
+  {n:'G4',f:392.00,type:'w',kb:'g'},{n:'G#4',f:415.30,type:'b',kb:'y'},
+  {n:'A4',f:440.00,type:'w',kb:'h'},{n:'A#4',f:466.16,type:'b',kb:'u'},
+  {n:'B4',f:493.88,type:'w',kb:'j'},
+  {n:'C5',f:523.25,type:'w',kb:'k'},{n:'C#5',f:554.37,type:'b',kb:'o'},
+  {n:'D5',f:587.33,type:'w',kb:'l'},{n:'D#5',f:622.25,type:'b',kb:'p'},
+  {n:'E5',f:659.25,type:'w',kb:';'},
+  {n:'F5',f:698.46,type:'w',kb:null},{n:'F#5',f:739.99,type:'b',kb:null},
+  {n:'G5',f:783.99,type:'w',kb:null},{n:'G#5',f:830.61,type:'b',kb:null},
+  {n:'A5',f:880.00,type:'w',kb:null},{n:'A#5',f:932.33,type:'b',kb:null},
+  {n:'B5',f:987.77,type:'w',kb:null},{n:'C6',f:1046.50,type:'w',kb:null},
+];
+
+function playNote(note) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (activeOsc[note.n]) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = note.f;
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(volume * 0.6, audioCtx.currentTime + 0.3);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); activeOsc[note.n] = { osc, gain };
+}
+
+function stopNote(note) {
+  if (!activeOsc[note.n]) return;
+  const { osc, gain } = activeOsc[note.n];
+  const t = audioCtx.currentTime;
+  const rel = sustain ? 2.0 : 0.3;
+  gain.gain.cancelScheduledValues(t);
+  gain.gain.setValueAtTime(gain.gain.value, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + rel);
+  osc.stop(t + rel + 0.05);
+  delete activeOsc[note.n];
+}
+
+// Build piano keyboard
+let html = '', wIdx = 0, blackPositions = [];
+const whiteNotes = notes.filter(n => n.type === 'w');
+const blackNotes = notes.filter(n => n.type === 'b');
+
+whiteNotes.forEach((n, i) => {
+  html += `<div class="wkey" data-note="${n.n}" data-freq="${n.f}">${n.kb ? `<span>${n.kb.toUpperCase()}</span>` : ''}<br><span class="note">${n.n}</span></div>`;
+});
+
+// Calculate black key positions
+let bIdx = 0;
+notes.forEach((n, i) => {
+  if (n.type === 'b') {
+    // Count white keys before this black key
+    let wc = notes.slice(0, i).filter(x => x.type === 'w').length;
+    blackPositions.push({ ...n, left: wc * 48 - 15 });
+  }
+});
+
+$('#piano').innerHTML = html;
+blackPositions.forEach(n => {
+  const el = document.createElement('div');
+  el.className = 'bkey';
+  el.dataset.note = n.n;
+  el.dataset.freq = n.f;
+  el.style.left = n.left + 'px';
+  el.innerHTML = n.kb ? `<span>${n.kb.toUpperCase()}</span>` : '';
+  $('#piano').appendChild(el);
+});
+
+// Mouse/touch events
+document.querySelectorAll('.wkey,.bkey').forEach(key => {
+  const note = notes.find(n => n.n === key.dataset.note);
+  key.addEventListener('pointerdown', e => { e.preventDefault(); playNote(note); key.classList.add('pressed'); });
+  key.addEventListener('pointerup', () => { stopNote(note); key.classList.remove('pressed'); });
+  key.addEventListener('pointerleave', () => { stopNote(note); key.classList.remove('pressed'); });
+});
+
+// Keyboard shortcuts
+const kbMap = {};
+notes.forEach(n => { if (n.kb) kbMap[n.kb] = n; });
+document.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  const n = kbMap[e.key.toLowerCase()];
+  if (n) { playNote(n); const el = document.querySelector(`[data-note="${n.n}"]`); if (el) el.classList.add('pressed'); }
+});
+document.addEventListener('keyup', e => {
+  const n = kbMap[e.key.toLowerCase()];
+  if (n) { stopNote(n); const el = document.querySelector(`[data-note="${n.n}"]`); if (el) el.classList.remove('pressed'); }
+});
+
+$('#controls').innerHTML = `
+  <label>${t('volume')} <input type="range" min="0" max="100" value="50" id="vol-slider"></label>
+  <label><input type="checkbox" id="sus-toggle"> ${t('sustain')}</label>
+`;
+$('#vol-slider').oninput = e => { volume = e.target.value / 100; };
+$('#sus-toggle').onchange = e => { sustain = e.target.checked; };
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎼', href:'/fun/metronome.html', name:'Metronome'},
+    {icon:'🎹', href:'/fun/chord-progression.html', name:'Chords'},
+    {icon:'⌨️', href:'/fun/typing-test.html', name:'Typing Test'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

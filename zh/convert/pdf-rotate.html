@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>PDF 旋转工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 PDF 页面旋转 90°、180° 或 270° — 选择页面、旋转并下载。免费、私密、浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/pdf-rotate.html">
+  <meta property="og:title" content="PDF 旋转工具">
+  <meta property="og:description" content="将 PDF 页面旋转 90°、180° 或 270° — 选择页面、旋转并下载。免费、私密、浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/pdf-rotate.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PDF 旋转工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<style>
+.gz-drop{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+.gz-drop:hover,.gz-drop.drag{border-color:var(--accent);background:var(--glass2)}
+.gz-drop .icon{font-size:2.5rem}
+.page-grid{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;justify-content:center}
+.page-card{background:var(--glass);border:2px solid var(--border);border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:.2s;min-width:120px}
+.page-card:hover{border-color:var(--accent)}
+.page-card canvas{display:block;margin:0 auto;border-radius:4px;max-width:100px;height:auto}
+.page-card .pg-num{font-size:.75em;color:var(--text2);margin-top:6px}
+.page-card .rot-badge{display:inline-block;background:var(--accent);color:#000;padding:2px 8px;border-radius:8px;font-size:.7em;font-weight:700;margin-top:4px}
+.gz-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center;justify-content:center}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PDF Rotate","description":"Rotate PDF pages by 90°, 180° or 270° online for free. No upload — all processing happens in your browser.","url": "https://tools.gamezipper.com/zh/convert/pdf-rotate.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I rotate a PDF page?","acceptedAnswer":{"@type":"Answer","text":"Upload your PDF, click on a page to select it, then click Rotate Left or Rotate Right. Download the rotated PDF."}},{"@type":"Question","name":"Is my PDF uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All PDF processing happens entirely in your browser using the pdf-lib library. Your files never leave your device."}},{"@type":"Question","name":"Can I rotate all pages at once?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click 'Select All' then rotate. You can also rotate individual pages by clicking them first."}},{"@type":"Question","name":"What rotation angles are supported?","acceptedAnswer":{"@type":"Answer","text":"You can rotate pages by 90° clockwise or counter-clockwise. Clicking multiple times accumulates rotation (90°, 180°, 270°, 360°)."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/pdf-rotate.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/pdf-rotate.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/pdf-rotate.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-drop" id="drop">
+      <div class="icon">📄</div>
+      <p id="dropLabel"></p>
+      <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+    </div>
+    <div id="editor" style="display:none">
+      <div id="pageInfo" style="text-align:center;margin-bottom:8px;font-size:.9em;color:var(--text2)"></div>
+      <div class="gz-toolbar">
+        <button class="gz-btn gz-btn-secondary" onclick="selectAll()">☑️ <span id="lblSelectAll"></span></button>
+        <button class="gz-btn gz-btn-secondary" onclick="rotateCW()">↻ 90°</button>
+        <button class="gz-btn gz-btn-secondary" onclick="rotateCCW()">↺ -90°</button>
+        <button class="gz-btn gz-btn-secondary" onclick="rotate180()">↻ 180°</button>
+        <button class="gz-btn" id="btnDownload" onclick="downloadPDF()">📥 <span id="lblDownload"></span></button>
+      </div>
+      <div class="page-grid" id="pageGrid"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'PDF Rotate',
+    toolDesc: 'Rotate PDF pages by 90°, 180° or 270° — select pages, rotate and download. Free, private, runs in your browser.',
+    dropLabel: 'Drop a PDF here or click to upload',
+    selectAll: 'Select All',
+    download: 'Download Rotated PDF',
+    pageInfo: n => `${n} page${n > 1 ? 's' : ''} loaded · Click pages to select`,
+    rotLabel: d => `${d}°`,
+    step1: 'Upload a PDF file by dragging or clicking',
+    step2: 'Click pages to select them (or click Select All)',
+    step3: 'Click rotate buttons to rotate selected pages',
+    step4: 'Download the rotated PDF',
+  },
+  zh: {
+    toolTitle: 'PDF 旋转工具',
+    toolDesc: '将 PDF 页面旋转 90°、180° 或 270° — 选择页面、旋转并下载。免费、私密、浏览器本地处理。',
+    dropLabel: '拖拽 PDF 到此处或点击上传',
+    selectAll: '全选',
+    download: '下载旋转后的 PDF',
+    pageInfo: n => `已加载 ${n} 页 · 点击页面进行选择`,
+    rotLabel: d => `${d}°`,
+    step1: '拖拽或点击上传 PDF 文件',
+    step2: '点击页面进行选择（或点击全选）',
+    step3: '点击旋转按钮旋转所选页面',
+    step4: '下载旋转后的 PDF',
+  }
+});
+
+const { $, t } = GZ;
+const { PDFDocument, degrees } = PDFLib;
+
+let pdfBytes = null;
+let rotations = []; // per-page rotation tracking
+let selected = new Set();
+
+const drop = $('#drop');
+const fileInput = $('#fileInput');
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+$('#dropLabel').textContent = t('dropLabel');
+$('#lblSelectAll').textContent = t('selectAll');
+$('#lblDownload').textContent = t('download');
+
+async function loadFile(file) {
+  pdfBytes = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const pages = pdfDoc.getPages();
+  rotations = pages.map(p => p.getRotation().angle);
+  selected.clear();
+
+  $('#pageInfo').textContent = t('pageInfo')(pages.length);
+  $('#drop').style.display = 'none';
+  $('#editor').style.display = 'block';
+
+  await renderPages(pdfDoc);
+}
+
+async function renderPages(pdfDoc) {
+  const grid = $('#pageGrid');
+  grid.innerHTML = '';
+  const pages = pdfDoc.getPages();
+
+  // Render thumbnails using pdf-lib + canvas
+  for (let i = 0; i < pages.length; i++) {
+    const card = document.createElement('div');
+    card.className = 'page-card';
+    card.dataset.idx = i;
+
+    // Create a simple thumbnail with page number
+    const thumb = document.createElement('canvas');
+    thumb.width = 100;
+    thumb.height = 140;
+    const ctx = thumb.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, 100, 140);
+    ctx.strokeStyle = '#ddd';
+    ctx.strokeRect(2, 2, 96, 136);
+
+    ctx.fillStyle = '#666';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Page ' + (i + 1), 50, 75);
+
+    // Show rotation
+    if (rotations[i] % 360 !== 0) {
+      const badge = document.createElement('div');
+      badge.className = 'rot-badge';
+      badge.textContent = rotations[i] + '°';
+      card.appendChild(thumb);
+      card.appendChild(badge);
+    } else {
+      card.appendChild(thumb);
+    }
+
+    const num = document.createElement('div');
+    num.className = 'pg-num';
+    num.textContent = '#' + (i + 1);
+    card.appendChild(num);
+
+    card.addEventListener('click', () => {
+      if (selected.has(i)) { selected.delete(i); card.style.borderColor = ''; }
+      else { selected.add(i); card.style.borderColor = 'var(--accent)'; }
+    });
+
+    grid.appendChild(card);
+  }
+}
+
+function selectAll() {
+  const grid = $('#pageGrid');
+  const cards = grid.children;
+  if (selected.size === rotations.length) {
+    selected.clear();
+    for (const c of cards) c.style.borderColor = '';
+  } else {
+    for (let i = 0; i < rotations.length; i++) {
+      selected.add(i);
+      cards[i].style.borderColor = 'var(--accent)';
+    }
+  }
+}
+
+async function rotateCW() { await rotateSelected(90); }
+async function rotateCCW() { await rotateSelected(-90); }
+async function rotate180() { await rotateSelected(180); }
+
+async function rotateSelected(angle) {
+  if (selected.size === 0) return;
+  for (const i of selected) {
+    rotations[i] = (rotations[i] + angle + 360) % 360;
+  }
+  // Re-render
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  await renderPages(pdfDoc);
+}
+
+async function downloadPDF() {
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const pages = pdfDoc.getPages();
+  for (let i = 0; i < pages.length; i++) {
+    pages[i].setRotation(degrees(rotations[i]));
+  }
+  const saved = await pdfDoc.save();
+  const blob = new Blob([saved], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rotated.pdf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/pdf-merger.html', name:'PDF Merger'},
+    {icon:'✂️', href:'/convert/pdf-page-splitter.html', name:'PDF Splitter'},
+    {icon:'🗜️', href:'/convert/pdf-compressor.html', name:'PDF Compressor'},
+    {icon:'🖼️', href:'/convert/pdf-to-image.html', name:'PDF to Image'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

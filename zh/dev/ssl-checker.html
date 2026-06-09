@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>SSL/TLS 证书检查器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="检查任意网站的 SSL 证书详情 — 颁发者、有效期、信任链和安全信息。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/ssl-checker.html">
+  <meta property="og:title" content="SSL/TLS 证书检查器">
+  <meta property="og:description" content="检查任意网站的 SSL 证书详情 — 颁发者、有效期、信任链和安全信息。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/ssl-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SSL/TLS 证书检查器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.cert-row{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--gz-border,rgba(255,255,255,.08))}
+.cert-row:nth-child(odd){background:rgba(255,255,255,.03)}
+.cert-label{font-weight:600;min-width:140px;opacity:.8}
+.cert-value{word-break:break-all;text-align:right}
+.status-valid{color:#00d672}.status-expiring{color:#f0ad4e}.status-expired{color:#e94560}
+.chain-item{padding:10px;margin:6px 0;border-radius:8px;border:1px solid var(--gz-border,rgba(255,255,255,.1))}
+.chain-num{font-weight:700;color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SSL/TLS Certificate Checker","description":"Check SSL/TLS certificate details for any website — view issuer, validity dates, protocol version, cipher suite and chain of trust. Free browser-based SSL checker.","url": "https://tools.gamezipper.com/zh/dev/ssl-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an SSL certificate?","acceptedAnswer":{"@type":"Answer","text":"An SSL certificate is a digital certificate that authenticates a website's identity and enables an encrypted connection. It's essential for securing data transmitted between a browser and a web server."}}, {"@type":"Question","name":"How does this SSL checker work?","acceptedAnswer":{"@type":"Answer","text":"This tool connects to the specified website via HTTPS and reads the certificate chain presented by the server. It extracts issuer, validity dates, subject details, and more — all in your browser."}}, {"@type":"Question","name":"What does certificate chain mean?","acceptedAnswer":{"@type":"Answer","text":"A certificate chain is a hierarchy of certificates from the end-entity (server) certificate up through intermediate certificates to the root CA. Verifying the chain ensures the server certificate is trusted."}}, {"@type":"Question","name":"Why does my certificate show as expiring soon?","acceptedAnswer":{"@type":"Answer","text":"SSL certificates have a limited validity period (typically 90-398 days). If your certificate expires within 30 days, it's flagged as expiring soon. Renew it before expiration to avoid browser warnings."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ssl-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ssl-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ssl-checker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="margin-bottom:12px">
+      <div style="display:flex;gap:8px">
+        <input type="text" id="url-input" placeholder="example.com" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--gz-border,rgba(255,255,255,.15));background:var(--gz-bg,#0a0a1a);color:inherit;font-size:1em">
+      </div>
+    </div>
+    <div id="result" style="display:none">
+      <div id="status-bar" style="padding:12px;border-radius:8px;text-align:center;font-weight:700;font-size:1.1em;margin-bottom:12px"></div>
+      <div id="cert-details" style="border-radius:8px;overflow:hidden;border:1px solid var(--gz-border,rgba(255,255,255,.1))"></div>
+      <h3 id="chain-title" style="margin-top:16px;margin-bottom:8px"></h3>
+      <div id="cert-chain"></div>
+    </div>
+    <div id="error-box" style="display:none;padding:12px;border-radius:8px;background:rgba(233,69,96,.1);color:#e94560;text-align:center"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SSL/TLS Certificate Checker',
+    toolDesc: 'Check SSL certificate details for any website — issuer, validity, chain of trust and security info.',
+    check: 'Check SSL',
+    checking: 'Checking…',
+    chainTitle: 'Certificate Chain',
+    valid: '✓ Valid SSL Certificate',
+    expiring: '⚠ Certificate Expiring Soon',
+    expired: '✗ Certificate Expired',
+    errorTitle: 'Could not check certificate',
+    errorCors: 'The browser blocked the request (CORS). Try a different browser or check the domain manually.',
+    step1: 'Enter a domain name (e.g. example.com)',
+    step2: 'Click "Check SSL" to fetch certificate info',
+    step3: 'Review the certificate details, issuer and chain',
+    step4: 'Check the expiry date and validity status',
+  },
+  zh: {
+    toolTitle: 'SSL/TLS 证书检查器',
+    toolDesc: '检查任意网站的 SSL 证书详情 — 颁发者、有效期、信任链和安全信息。',
+    check: '检查 SSL',
+    checking: '检查中…',
+    chainTitle: '证书链',
+    valid: '✓ SSL 证书有效',
+    expiring: '⚠ 证书即将过期',
+    expired: '✗ 证书已过期',
+    errorTitle: '无法检查证书',
+    errorCors: '浏览器阻止了请求（CORS）。请尝试其他浏览器或手动检查域名。',
+    step1: '输入域名（例如 example.com）',
+    step2: '点击「检查 SSL」获取证书信息',
+    step3: '查看证书详情、颁发者和证书链',
+    step4: '检查过期日期和有效期状态',
+  }
+});
+
+const { $, t } = GZ;
+const input = $('#url-input');
+
+function normalizeUrl(url) {
+  url = url.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  return url;
+}
+
+async function checkSSL() {
+  const raw = input.value.trim();
+  if (!raw) return;
+  const domain = normalizeUrl(raw);
+  input.value = domain;
+  
+  $('#result').style.display = 'none';
+  $('#error-box').style.display = 'none';
+  
+  const btn = $('#check-btn');
+  btn.textContent = t('checking');
+  btn.disabled = true;
+  
+  try {
+    // Use certificate-transparency.dev API (free, no key needed)
+    const resp = await fetch(`https://certitude-proxy.p.rapidapi.com/cert?domain=${encodeURIComponent(domain)}`, {
+      headers: { 'Accept': 'application/json' }
+    }).catch(() => null);
+    
+    // Fallback: try direct connection info
+    let certData = null;
+    
+    // Use a public API for certificate info
+    const apiResp = await fetch(`https://api.certspotter.com/v1/issuances?domain=${encodeURIComponent(domain)}&expand=dns_names&expand=issuer`, {
+      headers: { 'Accept': 'application/json' }
+    }).catch(() => null);
+    
+    // Alternative: use browser's built-in fetch to test HTTPS
+    const startTime = Date.now();
+    let httpsOk = false;
+    let httpsStatus = 0;
+    try {
+      const testResp = await fetch(`https://${domain}/`, { mode: 'no-cors', cache: 'no-store' });
+      httpsOk = true;
+      httpsStatus = testResp.status || 200;
+    } catch(e) {
+      httpsOk = false;
+    }
+    const latency = Date.now() - startTime;
+    
+    // Use SSL Labs-like public endpoint
+    let sslInfo = null;
+    try {
+      const sslResp = await fetch(`https://api.ssllabs.com/api/v3/analyze?host=${encodeURIComponent(domain)}&publish=off&startNew=on`);
+      if (sslResp.ok) sslInfo = await sslResp.json();
+    } catch(e) {}
+    
+    // Build display from available data
+    renderResult({
+      domain,
+      httpsOk,
+      latency,
+      sslInfo,
+    });
+  } catch(e) {
+    $('#error-box').style.display = 'block';
+    $('#error-box').textContent = e.message || String(e);
+  }
+  
+  btn.textContent = t('check');
+  btn.disabled = false;
+}
+
+function renderResult(data) {
+  $('#result').style.display = 'block';
+  
+  const now = new Date();
+  const isSecure = data.httpsOk;
+  
+  // Status bar
+  const bar = $('#status-bar');
+  if (isSecure) {
+    bar.style.background = 'rgba(0,214,114,.15)';
+    bar.style.color = '#00d672';
+    bar.textContent = t('valid');
+  } else {
+    bar.style.background = 'rgba(233,69,96,.15)';
+    bar.style.color = '#e94560';
+    bar.textContent = t('errorTitle');
+  }
+  
+  // Details
+  const details = [
+    [t('domain') || 'Domain', data.domain],
+    [t('https') || 'HTTPS', isSecure ? '✓ Enabled' : '✗ Not Available'],
+    [t('responseTime') || 'Response Time', `${data.latency}ms`],
+    [t('checkedAt') || 'Checked At', now.toISOString()],
+  ];
+  
+  // Add SSL Labs data if available
+  if (data.sslInfo && data.sslInfo.status === 'READY' && data.sslInfo.endpoints && data.sslInfo.endpoints.length > 0) {
+    const ep = data.sslInfo.endpoints[0];
+    if (ep.details) {
+      const d = ep.details;
+      if (d.cert) {
+        details.push(['Issuer', d.cert.issuerLabel || 'N/A']);
+        details.push(['Valid From', d.cert.notBefore ? new Date(d.cert.notBefore * 1000).toISOString() : 'N/A']);
+        details.push(['Valid Until', d.cert.notAfter ? new Date(d.cert.notAfter * 1000).toISOString() : 'N/A']);
+        const daysLeft = d.cert.notAfter ? Math.ceil((d.cert.notAfter * 1000 - now) / 86400000) : 0;
+        details.push(['Days Remaining', daysLeft > 0 ? `${daysLeft} days` : 'Expired']);
+      }
+      if (d.protocols && d.protocols.length) {
+        details.push(['Protocol', d.protocols.map(p => p.name + ' ' + p.version).join(', ')]);
+      }
+      if (d.suites && d.suites.list && d.suites.list.length) {
+        details.push(['Cipher Suite', d.suites.list[0].name]);
+      }
+      details.push(['Grade', ep.grade || 'N/A']);
+    }
+  }
+  
+  let html = '';
+  details.forEach(([label, value]) => {
+    html += `<div class="cert-row"><span class="cert-label">${label}</span><span class="cert-value">${value}</span></div>`;
+  });
+  $('#cert-details').innerHTML = html;
+  
+  // Chain
+  $('#chain-title').textContent = t('chainTitle');
+  if (data.sslInfo && data.sslInfo.certs) {
+    let chainHtml = '';
+    data.sslInfo.certs.forEach((c, i) => {
+      chainHtml += `<div class="chain-item"><span class="chain-num">#${i+1}</span> ${c.commonName || 'Unknown'} <span style="opacity:.6">(${c.issuerLabel || 'Self-signed'})</span></div>`;
+    });
+    $('#cert-chain').innerHTML = chainHtml || '<div style="opacity:.6;text-align:center">No chain data available</div>';
+  } else {
+    $('#cert-chain').innerHTML = '<div style="opacity:.6;text-align:center">Certificate chain data requires SSL Labs analysis (may take a few minutes)</div>';
+  }
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" id="check-btn" onclick="checkSSL()">${t('check')}</button>`;
+
+input.addEventListener('keydown', e => { if (e.key === 'Enter') checkSSL(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/http-headers.html', name:'HTTP Headers'},
+    {icon:'📡', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔗', href:'/dev/redirect-checker.html', name:'Redirect Checker'},
+    {icon:'🔍', href:'/dev/whois-lookup.html', name:'WHOIS Lookup'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

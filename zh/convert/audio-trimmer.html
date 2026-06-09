@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>音频裁剪工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线裁剪音频文件。设置起止时间点，预览并下载裁剪后的音频 — 完全浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/audio-trimmer.html">
+  <meta property="og:title" content="音频裁剪工具">
+  <meta property="og:description" content="在线裁剪音频文件。设置起止时间点，预览并下载裁剪后的音频 — 完全浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/audio-trimmer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="音频裁剪工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#audio-drop{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s}
+#audio-drop:hover,#audio-drop.dragover{border-color:var(--gz-accent)}
+#waveform-wrap{position:relative;background:#1a1a2e;border-radius:8px;overflow:hidden;margin:12px 0}
+#waveform-canvas{width:100%;height:100px;display:block}
+#range-overlay{position:absolute;top:0;height:100%;pointer-events:none}
+#range-overlay .sel{position:absolute;top:0;height:100%;background:rgba(0,214,114,.15);border-left:3px solid var(--gz-accent);border-right:3px solid var(--gz-accent);pointer-events:all;cursor:ew-resize}
+#range-overlay .left-handle,#range-overlay .right-handle{position:absolute;top:0;width:12px;height:100%;cursor:ew-resize;pointer-events:all}
+#range-overlay .left-handle{left:-6px}
+#range-overlay .right-handle{right:-6px}
+.gz-range-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gz-range-row label{font-size:.85em;opacity:.8}
+.gz-range-row input[type=number]{width:80px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:inherit;font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Trimmer & Cutter","description":"Trim and cut audio files online for free. Set start and end points, preview, and download the trimmed MP3, WAV or OGG — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/convert/audio-trimmer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I trim audio online?", "acceptedAnswer": {"@type": "Answer", "text": "Upload your audio file (MP3, WAV, OGG, etc.), set the start and end points using the visual waveform or time inputs, preview the selection, then click Download to save the trimmed audio."}}, {"@type": "Question", "name": "Is my audio data uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All audio processing happens entirely in your browser using the Web Audio API. Your audio files never leave your device."}}, {"@type": "Question", "name": "What audio formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports MP3, WAV, OGG, FLAC, AAC, M4A, WebM and any format your browser can decode. Output is available in WAV format."}}, {"@type": "Question", "name": "Can I preview before downloading?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click Play Selection to hear only the trimmed portion. You can adjust start and end points until it sounds perfect, then download."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/audio-trimmer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/audio-trimmer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/audio-trimmer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="audio-drop">
+      <div style="font-size:2em">🎵</div>
+      <div id="drop-label"></div>
+      <input type="file" id="file-input" accept="audio/*" style="display:none">
+    </div>
+    <div id="editor" style="display:none">
+      <div id="waveform-wrap">
+        <canvas id="waveform-canvas"></canvas>
+        <div id="range-overlay"><div class="sel" id="sel-box"></div></div>
+      </div>
+      <div class="gz-range-row">
+        <label id="lbl-start"></label>
+        <input type="number" id="start-sec" min="0" step="0.01" value="0">
+        <label id="lbl-end"></label>
+        <input type="number" id="end-sec" min="0" step="0.01" value="0">
+        <label id="lbl-dur"></label>
+        <span id="sel-dur" style="font-weight:600"></span>
+      </div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Trimmer & Cutter',
+    toolDesc: 'Trim and cut audio files online. Set start and end points, preview, and download the trimmed audio — all in your browser.',
+    dropLabel: 'Drop an audio file here or click to upload',
+    start: 'Start (s):',
+    end: 'End (s):',
+    duration: 'Selected:',
+    step1: 'Upload an audio file (MP3, WAV, OGG, M4A, etc.)',
+    step2: 'Drag the handles on the waveform or type start/end times',
+    step3: 'Click Play Selection to preview the trimmed part',
+    step4: 'Click Download Trimmed to save the result',
+  },
+  zh: {
+    toolTitle: '音频裁剪工具',
+    toolDesc: '在线裁剪音频文件。设置起止时间点，预览并下载裁剪后的音频 — 完全浏览器本地处理。',
+    dropLabel: '拖拽音频文件到此处或点击上传',
+    start: '起始（秒）：',
+    end: '结束（秒）：',
+    duration: '选中时长：',
+    step1: '上传音频文件（MP3、WAV、OGG、M4A 等）',
+    step2: '拖动波形上的手柄或输入起止时间',
+    step3: '点击「播放选中」预览裁剪部分',
+    step4: '点击「下载裁剪结果」保存文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let audioCtx, audioBuffer, startTime = 0, endTime = 0, source, isPlaying = false;
+
+const dropEl = $('#audio-drop');
+const fileInput = $('#file-input');
+const canvas = $('#waveform-canvas');
+const ctx = canvas.getContext('2d');
+
+$('#drop-label').textContent = t('dropLabel');
+$('#lbl-start').textContent = t('start');
+$('#lbl-end').textContent = t('end');
+$('#lbl-dur').textContent = t('duration');
+
+dropEl.onclick = () => fileInput.click();
+dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('dragover'); });
+dropEl.addEventListener('dragleave', () => dropEl.classList.remove('dragover'));
+dropEl.addEventListener('drop', e => { e.preventDefault(); dropEl.classList.remove('dragover'); if(e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if(e.target.files.length) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      audioCtx = audioCtx || new AudioContext();
+      audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+      startTime = 0;
+      endTime = audioBuffer.duration;
+      $('#start-sec').value = 0;
+      $('#start-sec').max = endTime;
+      $('#end-sec').value = endTime.toFixed(2);
+      $('#end-sec').max = endTime;
+      dropEl.style.display = 'none';
+      $('#editor').style.display = 'block';
+      drawWaveform();
+      updateSelection();
+    } catch(err) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${err.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function drawWaveform() {
+  const data = audioBuffer.getChannelData(0);
+  const w = canvas.width = canvas.offsetWidth * 2;
+  const h = canvas.height = 200;
+  ctx.clearRect(0, 0, w, h);
+  const step = Math.ceil(data.length / w);
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, w, h);
+  ctx.beginPath();
+  ctx.strokeStyle = '#00d672';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < w; i++) {
+    let min = 1, max = -1;
+    for (let j = 0; j < step; j++) {
+      const val = data[i * step + j] || 0;
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    const y1 = (1 + min) * h / 2;
+    const y2 = (1 + max) * h / 2;
+    ctx.moveTo(i, y1);
+    ctx.lineTo(i, y2);
+  }
+  ctx.stroke();
+}
+
+function updateSelection() {
+  if (!audioBuffer) return;
+  const selBox = $('#sel-box');
+  const dur = audioBuffer.duration;
+  const leftPct = (startTime / dur * 100);
+  const widthPct = ((endTime - startTime) / dur * 100);
+  selBox.style.left = leftPct + '%';
+  selBox.style.width = widthPct + '%';
+  const selDur = endTime - startTime;
+  $('#sel-dur').textContent = formatTime(selDur);
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(2);
+  return m > 0 ? `${m}:${sec.padStart(5, '0')}` : `${sec}s`;
+}
+
+// Drag handles on waveform
+let dragging = null;
+const wrap = $('#waveform-wrap');
+wrap.addEventListener('mousedown', e => {
+  if (!audioBuffer) return;
+  const rect = wrap.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const time = pct * audioBuffer.duration;
+  const distStart = Math.abs(time - startTime);
+  const distEnd = Math.abs(time - endTime);
+  if (distStart < distEnd && distStart < audioBuffer.duration * 0.05) {
+    dragging = 'start';
+  } else if (distEnd < audioBuffer.duration * 0.05) {
+    dragging = 'end';
+  } else {
+    dragging = 'middle';
+    const midStart = startTime;
+    const midEnd = endTime;
+    const midLen = midEnd - midStart;
+    startTime = Math.max(0, time - midLen / 2);
+    endTime = startTime + midLen;
+    if (endTime > audioBuffer.duration) { endTime = audioBuffer.duration; startTime = endTime - midLen; }
+    $('#start-sec').value = startTime.toFixed(2);
+    $('#end-sec').value = endTime.toFixed(2);
+    updateSelection();
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (!dragging || !audioBuffer) return;
+  const rect = wrap.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const time = pct * audioBuffer.duration;
+  if (dragging === 'start') { startTime = Math.max(0, Math.min(time, endTime - 0.01)); $('#start-sec').value = startTime.toFixed(2); }
+  else if (dragging === 'end') { endTime = Math.min(audioBuffer.duration, Math.max(time, startTime + 0.01)); $('#end-sec').value = endTime.toFixed(2); }
+  updateSelection();
+});
+document.addEventListener('mouseup', () => { dragging = null; });
+
+$('#start-sec').addEventListener('input', e => { startTime = Math.max(0, +e.target.value || 0); if(startTime >= endTime) startTime = endTime - 0.01; updateSelection(); });
+$('#end-sec').addEventListener('input', e => { endTime = Math.min(audioBuffer ? audioBuffer.duration : 0, +e.target.value || 0); if(endTime <= startTime) endTime = startTime + 0.01; updateSelection(); });
+
+function playSelection() {
+  if (!audioBuffer || isPlaying) { stopPlayback(); return; }
+  audioCtx = audioCtx || new AudioContext();
+  source = audioCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioCtx.destination);
+  source.start(0, startTime, endTime - startTime);
+  isPlaying = true;
+  source.onended = () => { isPlaying = false; updateToolbar(); };
+  updateToolbar();
+}
+
+function stopPlayback() {
+  if (source) { try { source.stop(); } catch(e){} }
+  isPlaying = false;
+  updateToolbar();
+}
+
+function downloadTrimmed() {
+  if (!audioBuffer) return;
+  const sr = audioBuffer.sampleRate;
+  const startSample = Math.floor(startTime * sr);
+  const endSample = Math.floor(endTime * sr);
+  const length = endSample - startSample;
+  const offCtx = new OfflineAudioContext(audioBuffer.numberOfChannels, length, sr);
+  const src = offCtx.createBufferSource();
+  const trimBuf = audioCtx.createBuffer(audioBuffer.numberOfChannels, length, sr);
+  for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
+    const srcData = audioBuffer.getChannelData(ch);
+    const dstData = trimBuf.getChannelData(ch);
+    for (let i = 0; i < length; i++) dstData[i] = srcData[startSample + i];
+  }
+  // Encode to WAV
+  const wav = encodeWAV(trimBuf);
+  const blob = new Blob([wav], { type: 'audio/wav' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'trimmed-audio.wav'; a.click();
+  URL.revokeObjectURL(url);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Downloaded trimmed audio (${formatTime(length / sr)})</span>`;
+}
+
+function encodeWAV(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sr = buffer.sampleRate;
+  const bps = 16;
+  const blockAlign = numCh * bps / 8;
+  const dataLen = buffer.length * blockAlign;
+  const buf = new ArrayBuffer(44 + dataLen);
+  const v = new DataView(buf);
+  function ws(o, s) { for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); }
+  ws(0, 'RIFF'); v.setUint32(4, 36 + dataLen, true); ws(8, 'WAVE');
+  ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, numCh, true); v.setUint32(24, sr, true);
+  v.setUint32(28, sr * blockAlign, true); v.setUint16(32, blockAlign, true);
+  v.setUint16(34, bps, true);
+  ws(36, 'data'); v.setUint32(40, dataLen, true);
+  let offset = 44;
+  for (let i = 0; i < buffer.length; i++) {
+    for (let ch = 0; ch < numCh; ch++) {
+      let s = buffer.getChannelData(ch)[i];
+      s = Math.max(-1, Math.min(1, s));
+      v.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return buf;
+}
+
+function resetTool() {
+  stopPlayback();
+  audioBuffer = null;
+  startTime = 0; endTime = 0;
+  dropEl.style.display = '';
+  $('#editor').style.display = 'none';
+  $('#status').innerHTML = '';
+  fileInput.value = '';
+}
+
+function updateToolbar() {
+  $('#toolbar').innerHTML = `
+    <button class="gz-btn" onclick="playSelection()">${isPlaying ? '⏹️ Stop' : '▶️ Play Selection'}</button>
+    <button class="gz-btn" onclick="downloadTrimmed()">💾 Download Trimmed</button>
+    <button class="gz-btn gz-btn-secondary" onclick="resetTool()">🔄 New File</button>`;
+}
+
+updateToolbar();
+
+window.addEventListener('resize', () => { if(audioBuffer) drawWaveform(); });
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔊', href:'/convert/audio-volume.html', name:'Audio Normalizer'},
+    {icon:'🎵', href:'/convert/mp3-tag-editor.html', name:'MP3 Tag Editor'},
+    {icon:'🎤', href:'/dev/microphone-test.html', name:'Microphone Test'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

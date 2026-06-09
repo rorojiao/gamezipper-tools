@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>正则表达式可视化 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将正则表达式可视化为铁路图。将任意正则模式分解为交互式可视化图表，附带每个标记的描述。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/regex-visualizer.html">
+  <meta property="og:title" content="正则表达式可视化">
+  <meta property="og:description" content="将正则表达式可视化为铁路图。将任意正则模式分解为交互式可视化图表，附带每个标记的描述。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/regex-visualizer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="正则表达式可视化">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#diagram{overflow-x:auto;padding:16px;background:var(--glass);border:1px solid var(--border);border-radius:12px;min-height:120px}
+#diagram svg{width:100%;max-width:900px;margin:0 auto;display:block}
+#diagram svg text{font-family:monospace;font-size:13px;fill:var(--text)}
+#diagram svg rect{rx:4}
+#breakdown{margin-top:16px;font-size:.85em;line-height:1.8}
+#breakdown .token{display:inline-block;background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:2px 8px;margin:2px;font-family:monospace;font-size:.85em}
+#breakdown .token:hover{border-color:var(--gz-accent)}
+#breakdown .token .desc{display:block;font-size:.75em;opacity:.6;font-family:sans-serif}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Regex Visualizer","description":"Visualize regular expressions as railroad diagrams. Understand any regex pattern with interactive SVG diagrams — breaks down quantifiers, groups, alternations and character classes.","url": "https://tools.gamezipper.com/zh/dev/regex-visualizer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a regex visualizer?", "acceptedAnswer": {"@type": "Answer", "text": "A regex visualizer breaks down a regular expression into a visual railroad diagram showing each part of the pattern — literals, character classes, quantifiers, groups and alternations — making complex patterns easy to understand."}}, {"@type": "Question", "name": "What regex features are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The visualizer supports character classes, quantifiers (+, *, ?, {n,m}), groups, alternations (|), anchors (^, $), escape sequences, and more."}}, {"@type": "Question", "name": "Can I test the regex against text?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enter a test string and the tool will highlight all matches, showing match indices and captured groups."}}, {"@type": "Question", "name": "Is this tool free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free. All regex processing happens in your browser — no data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/regex-visualizer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/regex-visualizer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/regex-visualizer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input type="text" id="regex-input" placeholder="/pattern/flags" spellcheck="false" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:inherit;font-family:monospace;font-size:1em">
+    </div>
+    <div id="diagram"></div>
+    <div id="breakdown"></div>
+    <div style="margin-top:12px">
+      <input type="text" id="test-input" placeholder="Test string..." spellcheck="false" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:inherit;font-size:.9em">
+      <div id="test-result" style="margin-top:6px;font-size:.85em;line-height:1.6"></div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Regex Visualizer',
+    toolDesc: 'Visualize regular expressions as railroad diagrams. Break down any regex pattern into an interactive visual diagram with token descriptions.',
+    step1: 'Enter a regex pattern in the input field (with or without /slashes/)',
+    step2: 'View the railroad diagram showing the flow of the pattern',
+    step3: 'Check the token breakdown for a description of each part',
+    step4: 'Enter a test string to see matches highlighted in real time',
+  },
+  zh: {
+    toolTitle: '正则表达式可视化',
+    toolDesc: '将正则表达式可视化为铁路图。将任意正则模式分解为交互式可视化图表，附带每个标记的描述。',
+    step1: '在输入框中输入正则表达式（带或不带 /斜线/）',
+    step2: '查看铁路图了解模式的匹配流程',
+    step3: '查看标记分解了解每个部分的含义',
+    step4: '输入测试文本实时查看匹配高亮',
+  }
+});
+
+const { $, t } = GZ;
+const regexInput = $('#regex-input');
+const testInput = $('#test-input');
+
+// Tokenize regex for breakdown
+function tokenizeRegex(pattern) {
+  const tokens = [];
+  let i = 0;
+  while (i < pattern.length) {
+    const ch = pattern[i];
+    if (ch === '\\') {
+      const esc = pattern[i+1];
+      if (esc) { tokens.push({ type: 'escape', raw: '\\' + esc, desc: describeEscape(esc) }); i += 2; }
+      else { tokens.push({ type: 'literal', raw: '\\', desc: 'Backslash' }); i++; }
+    } else if (ch === '[') {
+      let j = i + 1;
+      if (pattern[j] === '^') j++;
+      if (pattern[j] === ']') j++;
+      while (j < pattern.length && pattern[j] !== ']') { if(pattern[j]==='\\') j++; j++; }
+      const raw = pattern.slice(i, j + 1);
+      tokens.push({ type: 'class', raw, desc: 'Character class' });
+      i = j + 1;
+    } else if (ch === '(') {
+      let j = i + 1;
+      let name = 'Group';
+      if (pattern[j] === '?' && pattern[j+1] === ':') name = 'Non-capturing group';
+      else if (pattern[j] === '?' && pattern[j+1] === '=') name = 'Positive lookahead';
+      else if (pattern[j] === '?' && pattern[j+1] === '!') name = 'Negative lookahead';
+      else if (pattern[j] === '?' && pattern[j+1] === '<' && pattern[j+2] === '=') name = 'Positive lookbehind';
+      else if (pattern[j] === '?' && pattern[j+1] === '<' && pattern[j+2] === '!') name = 'Negative lookbehind';
+      else if (pattern[j] === '?' && pattern[j+1] === 'P' && pattern[j+2] === '<') { const end = pattern.indexOf('>', j+3); name = 'Named group <' + pattern.slice(j+3, end) + '>'; }
+      else if (pattern[j] === '?') name = 'Special group';
+      tokens.push({ type: 'group-start', raw: ch, desc: name });
+      i++;
+    } else if (ch === ')') {
+      tokens.push({ type: 'group-end', raw: ch, desc: 'End group' });
+      i++;
+    } else if (ch === '|' ) {
+      tokens.push({ type: 'alt', raw: ch, desc: 'OR — alternation' });
+      i++;
+    } else if (ch === '^') {
+      tokens.push({ type: 'anchor', raw: ch, desc: 'Start of string / line' });
+      i++;
+    } else if (ch === '$') {
+      tokens.push({ type: 'anchor', raw: ch, desc: 'End of string / line' });
+      i++;
+    } else if (ch === '.') {
+      tokens.push({ type: 'wildcard', raw: ch, desc: 'Any character (except newline)' });
+      i++;
+    } else if ('+*?'.includes(ch)) {
+      const prev = tokens[tokens.length - 1];
+      if (prev) { prev.quantifier = ch; prev.raw += ch; }
+      const descs = { '+': 'One or more', '*': 'Zero or more', '?': 'Zero or one (optional)' };
+      tokens.push({ type: 'quantifier', raw: ch, desc: descs[ch] });
+      i++;
+    } else if (ch === '{') {
+      let j = i + 1;
+      while (j < pattern.length && pattern[j] !== '}') j++;
+      const raw = pattern.slice(i, j + 1);
+      const inner = raw.slice(1, -1);
+      let desc = 'Repeat';
+      if (/^\d+$/.test(inner)) desc = `Exactly ${inner} times`;
+      else if (/^\d+,$/.test(inner)) desc = `At least ${inner.replace(',','')} times`;
+      else if (/^,\d+$/.test(inner)) desc = `Up to ${inner.replace(',','')} times`;
+      else if (/^\d+,\d+$/.test(inner)) { const [a,b] = inner.split(','); desc = `Between ${a} and ${b} times`; }
+      const prev = tokens[tokens.length - 1];
+      if (prev) { prev.quantifier = raw; }
+      tokens.push({ type: 'quantifier', raw, desc });
+      i = j + 1;
+    } else {
+      tokens.push({ type: 'literal', raw: ch, desc: JSON.stringify(ch) });
+      i++;
+    }
+  }
+  return tokens;
+}
+
+function describeEscape(c) {
+  const map = { d: 'Digit [0-9]', D: 'Non-digit', w: 'Word char [a-zA-Z0-9_]', W: 'Non-word char',
+    s: 'Whitespace', S: 'Non-whitespace', b: 'Word boundary', B: 'Non-word boundary',
+    n: 'Newline', t: 'Tab', r: 'Carriage return', f: 'Form feed', v: 'Vertical tab',
+    '0': 'NUL char' };
+  return map[c] || `Escaped "${c}"`;
+}
+
+function buildDiagram(tokens) {
+  let x = 20, y = 30;
+  const parts = [];
+  const w = 70, h = 28;
+
+  parts.push(`<line x1="5" y1="${y+h/2}" x2="20" y2="${y+h/2}" stroke="var(--gz-accent)" stroke-width="2"/>`);
+
+  for (const tk of tokens) {
+    if (tk.type === 'quantifier') continue;
+    let bg = 'var(--glass)', border = 'var(--border)', tw = Math.max(w, tk.raw.length * 9 + 16);
+    if (tk.type === 'literal') { bg = '#1a3a4a'; border = '#2d6a7a'; }
+    else if (tk.type === 'class') { bg = '#3a2a4a'; border = '#6a4a8a'; }
+    else if (tk.type === 'escape') { bg = '#2a3a2a'; border = '#4a7a4a'; }
+    else if (tk.type === 'wildcard') { bg = '#4a3a1a'; border = '#8a7a3a'; }
+    else if (tk.type === 'anchor') { bg = '#4a1a2a'; border = '#8a3a5a'; }
+    else if (tk.type === 'alt') { bg = '#3a3a1a'; border = '#7a7a3a'; }
+    else if (tk.type === 'group-start' || tk.type === 'group-end') { bg = '#1a2a4a'; border = '#3a5a8a'; }
+
+    const text = tk.raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    parts.push(`<rect x="${x}" y="${y}" width="${tw}" height="${h}" fill="${bg}" stroke="${border}" stroke-width="1.5"/>`);
+    parts.push(`<text x="${x+tw/2}" y="${y+h/2+4}" text-anchor="middle">${text}</text>`);
+
+    if (tk.quantifier) {
+      parts.push(`<text x="${x+tw/2}" y="${y-4}" text-anchor="middle" style="font-size:11px;fill:var(--gz-accent)">${tk.quantifier}</text>`);
+    }
+
+    const lineX1 = x + tw;
+    x += tw + 12;
+    parts.push(`<line x1="${lineX1}" y1="${y+h/2}" x2="${x}" y2="${y+h/2}" stroke="var(--text3)" stroke-width="1.5"/>`);
+  }
+
+  const totalW = x + 30;
+  parts.push(`<circle cx="${x+10}" cy="${y+h/2}" r="6" fill="var(--gz-accent)"/>`);
+
+  return `<svg viewBox="0 0 ${totalW} ${y+h+30}" xmlns="http://www.w3.org/2000/svg">${parts.join('')}</svg>`;
+}
+
+function visualize() {
+  let val = regexInput.value.trim();
+  if (!val) { $('#diagram').innerHTML = '<div style="text-align:center;opacity:.5;padding:30px">Enter a regex pattern above</div>'; $('#breakdown').innerHTML = ''; return; }
+
+  let flags = '', pattern = val;
+  const m = val.match(/^\/(.+)\/([gimsuy]*)$/);
+  if (m) { pattern = m[1]; flags = m[2]; }
+
+  try {
+    new RegExp(pattern, flags);
+  } catch(e) {
+    $('#diagram').innerHTML = `<div style="color:var(--gz-accent);padding:20px">Invalid regex: ${e.message}</div>`;
+    $('#breakdown').innerHTML = '';
+    return;
+  }
+
+  const tokens = tokenizeRegex(pattern);
+  $('#diagram').innerHTML = buildDiagram(tokens);
+
+  // Build breakdown
+  let bdHtml = '<strong>Token Breakdown:</strong><br>';
+  for (const tk of tokens) {
+    bdHtml += `<span class="token" title="${tk.desc}">${tk.raw.replace(/</g,'&lt;')}<span class="desc">${tk.desc}</span></span>`;
+  }
+  $('#breakdown').innerHTML = bdHtml;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${tokens.filter(t=>t.type!=='quantifier').length} tokens, ${flags ? 'flags: ' + flags : 'no flags'}</span>`;
+}
+
+function testRegex() {
+  let val = regexInput.value.trim();
+  const testStr = testInput.value;
+  if (!val || !testStr) { $('#test-result').innerHTML = ''; return; }
+
+  let flags = 'g', pattern = val;
+  const m = val.match(/^\/(.+)\/([gimsuy]*)$/);
+  if (m) { pattern = m[1]; flags = m[2].includes('g') ? m[2] : m[2] + 'g'; }
+
+  try {
+    const re = new RegExp(pattern, flags);
+    let result = '', lastIndex = 0, matchCount = 0;
+    let match;
+    while ((match = re.exec(testStr)) !== null) {
+      matchCount++;
+      result += escapeHtml(testStr.slice(lastIndex, match.index));
+      result += `<span style="background:rgba(0,214,114,.25);border-bottom:2px solid var(--gz-accent)">${escapeHtml(match[0])}</span>`;
+      lastIndex = match.index + match[0].length;
+      if (!match[0].length) { re.lastIndex++; }
+      if (matchCount > 500) break;
+    }
+    result += escapeHtml(testStr.slice(lastIndex));
+    $('#test-result').innerHTML = matchCount > 0
+      ? `<strong>Match${matchCount>1?'es':''}:</strong> ${matchCount} found<br>${result}`
+      : `<span style="opacity:.6">No matches found</span>`;
+  } catch(e) {
+    $('#test-result').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadExample() {
+  regexInput.value = '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/';
+  testInput.value = 'user@example.com and invalid@ are both here';
+  visualize();
+  testRegex();
+}
+
+function doClear() {
+  regexInput.value = '';
+  testInput.value = '';
+  $('#diagram').innerHTML = '';
+  $('#breakdown').innerHTML = '';
+  $('#test-result').innerHTML = '';
+  $('#status').innerHTML = '';
+}
+
+regexInput.addEventListener('input', () => { visualize(); testRegex(); });
+testInput.addEventListener('input', testRegex);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example') || 'Example'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear') || 'Clear'}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'📜', href:'/dev/regex-cheatsheet.html', name:'Regex Cheatsheet'},
+    {icon:'🪄', href:'/dev/regex-generator.html', name:'Regex Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

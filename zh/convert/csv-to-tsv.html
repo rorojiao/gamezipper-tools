@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>CSV ↔ TSV 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在 CSV 和 TSV（制表符分隔）格式之间互转，自动检测分隔符，正确处理引号字段。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/csv-to-tsv.html">
+  <meta property="og:title" content="CSV ↔ TSV 转换器">
+  <meta property="og:description" content="在 CSV 和 TSV（制表符分隔）格式之间互转，自动检测分隔符，正确处理引号字段。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/csv-to-tsv.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV ↔ TSV 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#input,#output{font-family:monospace;font-size:.85em;resize:vertical;min-height:180px}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:.85em;opacity:.8}
+.stats span{background:rgba(255,255,255,.05);padding:4px 10px;border-radius:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV to TSV Converter","description":"Convert CSV (comma-separated) data to TSV (tab-separated) format and back. Auto-detect delimiters, handle quoted fields and newlines. Free, instant, browser-only.","url": "https://tools.gamezipper.com/zh/convert/csv-to-tsv.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is TSV format?","acceptedAnswer":{"@type":"Answer","text":"TSV (Tab-Separated Values) is a text format where data fields are separated by tab characters. It's commonly used in data analysis, database imports, and spreadsheets as an alternative to CSV."}}, {"@type":"Question","name":"What is the difference between CSV and TSV?","acceptedAnswer":{"@type":"Answer","text":"CSV uses commas to separate fields, while TSV uses tab characters. TSV is often preferred for data containing commas in values, as it avoids quoting issues. Many bioinformatics and data tools use TSV as the default format."}}, {"@type":"Question","name":"Does this tool handle quoted fields?","acceptedAnswer":{"@type":"Answer","text":"Yes. This converter properly handles RFC 4180 quoted fields, including fields with embedded commas, newlines and escaped quotes. The parsing is identical to standard CSV/TSV readers."}}, {"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser. Your data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-to-tsv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-to-tsv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-to-tsv.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="name,age,city&#10;Alice,30,New York&#10;Bob,25,&quot;San Francisco&quot;"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV ↔ TSV Converter',
+    toolDesc: 'Convert CSV to TSV (tab-separated) and back. Auto-detect delimiters, handle quoted fields properly.',
+    inputLabel: 'Input (CSV or TSV)',
+    outputLabel: 'Output',
+    toTsv: 'CSV → TSV',
+    toCsv: 'TSV → CSV',
+    rows: 'Rows',
+    cols: 'Columns',
+    step1: 'Paste CSV or TSV data in the input area',
+    step2: 'Click CSV → TSV or TSV → CSV to convert',
+    step3: 'The result appears in the output area instantly',
+    step4: 'Use Copy to copy the converted data',
+  },
+  zh: {
+    toolTitle: 'CSV ↔ TSV 转换器',
+    toolDesc: '在 CSV 和 TSV（制表符分隔）格式之间互转，自动检测分隔符，正确处理引号字段。',
+    inputLabel: '输入（CSV 或 TSV）',
+    outputLabel: '输出',
+    toTsv: 'CSV → TSV',
+    toCsv: 'TSV → CSV',
+    rows: '行数',
+    cols: '列数',
+    step1: '在输入区粘贴 CSV 或 TSV 数据',
+    step2: '点击 CSV → TSV 或 TSV → CSV 进行转换',
+    step3: '结果即时显示在输出区域',
+    step4: '点击「复制」将结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Parse CSV/TSV respecting RFC 4180
+function parseDelimited(text, delimiter) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  let i = 0;
+  
+  while (i < text.length) {
+    const ch = text[i];
+    
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < text.length && text[i + 1] === '"') {
+          field += '"';
+          i += 2;
+        } else {
+          inQuotes = false;
+          i++;
+        }
+      } else {
+        field += ch;
+        i++;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+        i++;
+      } else if (text.substr(i, delimiter.length) === delimiter) {
+        row.push(field);
+        field = '';
+        i += delimiter.length;
+      } else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) {
+        row.push(field);
+        field = '';
+        if (ch === '\r') i++;
+        rows.push(row);
+        row = [];
+        i++;
+      } else {
+        field += ch;
+        i++;
+      }
+    }
+  }
+  
+  // Last field/row
+  if (field || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  
+  return rows;
+}
+
+function toDelimited(rows, delimiter) {
+  return rows.map(row => {
+    return row.map(field => {
+      if (field.includes(delimiter) || field.includes('"') || field.includes('\n') || field.includes('\r')) {
+        return '"' + field.replace(/"/g, '""') + '"';
+      }
+      return field;
+    }).join(delimiter);
+  }).join('\n');
+}
+
+function convertToTsv() {
+  const inp = $('#input').value;
+  if (!inp.trim()) return;
+  
+  // Detect if input is TSV (has tabs) or CSV
+  const hasTabs = inp.includes('\t');
+  const inputDelim = hasTabs ? '\t' : ',';
+  
+  const rows = parseDelimited(inp, inputDelim);
+  const output = toDelimited(rows, '\t');
+  
+  $('#output').value = output;
+  showStats(rows);
+}
+
+function convertToCsv() {
+  const inp = $('#input').value;
+  if (!inp.trim()) return;
+  
+  // Detect if input is TSV or CSV
+  const hasTabs = inp.includes('\t');
+  const inputDelim = hasTabs ? '\t' : ',';
+  
+  const rows = parseDelimited(inp, inputDelim);
+  const output = toDelimited(rows, ',');
+  
+  $('#output').value = output;
+  showStats(rows);
+}
+
+function showStats(rows) {
+  const maxCols = rows.reduce((max, r) => Math.max(max, r.length), 0);
+  $('#stats').innerHTML = `<span>${t('rows')}: ${rows.length}</span><span>${t('cols')}: ${maxCols}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = `name,age,city,email
+Alice Johnson,30,"New York, NY",alice@example.com
+Bob Smith,25,"San Francisco, CA",bob@example.com
+"Carol, M.",28,"Los Angeles, CA",carol@example.com
+David Lee,35,"Chicago, IL",david@example.com
+"Eve ""Star"" Wang",22,"Seattle, WA",eve@example.com`;
+  convertToTsv();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convertToTsv()">${t('toTsv')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="convertToCsv()">${t('toCsv')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${GZ.t('example') || 'Example'}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${GZ.t('copy') || 'Copy'}</button>`;
+
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-out').textContent = t('outputLabel');
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'📊', href:'/convert/csv-to-sql.html', name:'CSV to SQL'},
+    {icon:'📊', href:'/convert/csv-to-html.html', name:'CSV to HTML'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

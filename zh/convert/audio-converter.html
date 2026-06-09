@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>音频格式转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在 WAV、OGG、WebM、AAC 等格式之间转换音频文件。免费、私密，完全浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/audio-converter.html">
+  <meta property="og:title" content="音频格式转换器">
+  <meta property="og:description" content="在 WAV、OGG、WebM、AAC 等格式之间转换音频文件。免费、私密，完全浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/audio-converter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="音频格式转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-drop{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+.gz-drop:hover,.gz-drop.drag{border-color:var(--accent);background:var(--glass2)}
+.gz-drop .icon{font-size:2.5rem}
+.gz-row{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;align-items:flex-start}
+.gz-row>div{flex:1;min-width:260px}
+.gz-controls label{display:block;margin:8px 0 4px;font-size:.85em;color:var(--text2)}
+.gz-controls select{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);font-size:.9em}
+.gz-controls input[type=range]{width:100%;accent-color:var(--accent)}
+.gz-controls .val{float:right;font-weight:600;color:var(--accent)}
+audio{width:100%;margin-top:8px;border-radius:8px}
+.gz-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.gz-stats .stat{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:8px 16px;text-align:center;flex:1;min-width:100px}
+.gz-stats .stat .num{font-size:1rem;font-weight:700;color:var(--accent)}
+.gz-stats .stat .lbl{font-size:.75em;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Converter","description":"Convert audio files between formats online for free. MP3, WAV, OGG, AAC, FLAC and WebM. No upload — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/convert/audio-converter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What audio formats can I convert?","acceptedAnswer":{"@type":"Answer","text":"You can convert between WAV, OGG (Vorbis/Opus), WebM (Opus), AAC (MP4/M4A) and other formats supported by your browser. Output depends on browser support."}},{"@type":"Question","name":"Is my audio uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All audio conversion happens entirely in your browser using the Web Audio API. Your files never leave your device."}},{"@type":"Question","name":"Can I adjust audio quality?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can set the output sample rate (8000–48000 Hz) and bitrate for lossy formats. Higher settings produce better quality but larger files."}},{"@type":"Question","name":"Why are some formats not available?","acceptedAnswer":{"@type":"Answer","text":"Available output formats depend on your browser. Chrome supports WebM (Opus) and OGG (Vorbis), while Safari supports AAC (MP4). WAV is universally supported."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/audio-converter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/audio-converter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/audio-converter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-drop" id="drop">
+      <div class="icon">🎵</div>
+      <p id="dropLabel"></p>
+      <input type="file" id="fileInput" accept="audio/*" hidden>
+    </div>
+    <div id="editor" style="display:none">
+      <div class="gz-row">
+        <div>
+          <audio id="audioPreview" controls></audio>
+          <div id="audioInfo" style="font-size:.8em;color:var(--text2);margin-top:4px"></div>
+        </div>
+        <div>
+          <div class="gz-controls">
+            <label id="lblFormat"></label>
+            <select id="outputFormat">
+              <option value="audio/wav">WAV</option>
+              <option value="audio/ogg;codecs=opus" selected>OGG (Opus)</option>
+              <option value="audio/ogg;codecs=vorbis">OGG (Vorbis)</option>
+              <option value="audio/webm;codecs=opus">WebM (Opus)</option>
+              <option value="audio/mp4">MP4 / AAC</option>
+            </select>
+            <label><span id="lblSample"></span> <span class="val" id="valSample">44100</span></label>
+            <input type="range" id="sampleRate" min="8000" max="48000" step="1000" value="44100">
+            <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="gz-btn" id="btnConvert" onclick="doConvert()"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="result" style="display:none;margin-top:16px">
+        <div class="gz-stats">
+          <div class="stat"><div class="num" id="statOrig">—</div><div class="lbl" id="statOrigL"></div></div>
+          <div class="stat"><div class="num" id="statNew">—</div><div class="lbl" id="statNewL"></div></div>
+        </div>
+        <audio id="outputPreview" controls style="width:100%;margin-top:12px"></audio>
+        <div style="text-align:center;margin-top:12px">
+          <a id="downloadLink" class="gz-btn" style="display:inline-block;text-decoration:none"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Converter',
+    toolDesc: 'Convert audio files between WAV, OGG, WebM, AAC and more. Free, private — runs entirely in your browser.',
+    dropLabel: 'Drop an audio file here or click to upload',
+    format: 'Output Format',
+    sampleRate: 'Sample Rate (Hz)',
+    convert: 'Convert Audio',
+    converting: 'Converting...',
+    origSize: 'Original',
+    newSize: 'Converted',
+    download: 'Download Converted Audio',
+    step1: 'Upload an audio file (MP3, WAV, OGG, FLAC, AAC)',
+    step2: 'Choose the output format and sample rate',
+    step3: 'Click "Convert Audio" to process',
+    step4: 'Preview and download the converted audio',
+  },
+  zh: {
+    toolTitle: '音频格式转换器',
+    toolDesc: '在 WAV、OGG、WebM、AAC 等格式之间转换音频文件。免费、私密，完全浏览器本地处理。',
+    dropLabel: '拖拽音频文件到此处或点击上传',
+    format: '输出格式',
+    sampleRate: '采样率 (Hz)',
+    convert: '转换音频',
+    converting: '转换中...',
+    origSize: '原始大小',
+    newSize: '转换后大小',
+    download: '下载转换后的音频',
+    step1: '上传音频文件（MP3、WAV、OGG、FLAC、AAC）',
+    step2: '选择输出格式和采样率',
+    step3: '点击「转换音频」开始处理',
+    step4: '预览并下载转换后的音频',
+  }
+});
+
+const { $, t } = GZ;
+
+// UI setup
+$('#dropLabel').textContent = t('dropLabel');
+$('#lblFormat').textContent = t('format');
+$('#lblSample').textContent = t('sampleRate');
+$('#btnConvert').textContent = t('convert');
+
+const drop = $('#drop');
+const fileInput = $('#fileInput');
+const audio = $('#audioPreview');
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+$('#sampleRate').addEventListener('input', e => { $('#valSample').textContent = e.target.value; });
+
+let originalFile = null;
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
+function getExt(mimeType) {
+  if (mimeType.includes('wav')) return 'wav';
+  if (mimeType.includes('webm')) return 'webm';
+  if (mimeType.includes('mp4')) return 'm4a';
+  if (mimeType.includes('ogg')) return 'ogg';
+  return 'audio';
+}
+
+function loadFile(file) {
+  originalFile = file;
+  const url = URL.createObjectURL(file);
+  audio.src = url;
+  audio.onloadedmetadata = () => {
+    $('#audioInfo').textContent = `${file.name} · ${formatSize(file.size)} · ${audio.duration.toFixed(1)}s`;
+  };
+  $('#drop').style.display = 'none';
+  $('#editor').style.display = 'block';
+  $('#result').style.display = 'none';
+}
+
+async function doConvert() {
+  if (!originalFile) return;
+  const btn = $('#btnConvert');
+  btn.disabled = true;
+  btn.textContent = t('converting');
+
+  try {
+    const format = $('#outputFormat').value;
+    const sr = parseInt($('#sampleRate').value);
+
+    // Check if format is supported
+    if (!MediaRecorder.isTypeSupported(format)) {
+      // Fallback to WAV
+      alert('This format is not supported by your browser. Falling back to WAV.');
+    }
+
+    // Decode audio
+    const arrayBuffer = await originalFile.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: sr });
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    // Re-encode using offline context + MediaRecorder
+    const offlineCtx = new OfflineAudioContext(
+      audioBuffer.numberOfChannels,
+      Math.ceil(audioBuffer.duration * sr),
+      sr
+    );
+    const source = offlineCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(offlineCtx.destination);
+    source.start();
+
+    // Use MediaRecorder with destination stream
+    const dest = audioCtx.createMediaStreamDestination();
+    const liveSource = audioCtx.createBufferSource();
+    liveSource.buffer = audioBuffer;
+    liveSource.connect(dest);
+
+    const useFormat = MediaRecorder.isTypeSupported(format) ? format : 'audio/wav';
+    const recorder = new MediaRecorder(dest.stream, {
+      mimeType: useFormat,
+      audioBitsPerSecond: 128000
+    });
+
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+    const done = new Promise(resolve => {
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: useFormat });
+        resolve(blob);
+      };
+    });
+
+    recorder.start();
+    liveSource.start();
+
+    // Stop after duration
+    setTimeout(() => {
+      recorder.stop();
+      liveSource.stop();
+    }, (audioBuffer.duration * 1000) + 100);
+
+    const blob = await done;
+    const url = URL.createObjectURL(blob);
+
+    $('#outputPreview').src = url;
+    $('#statOrig').textContent = formatSize(originalFile.size);
+    $('#statOrigL').textContent = t('origSize');
+    $('#statNew').textContent = formatSize(blob.size);
+    $('#statNewL').textContent = t('newSize');
+    $('#downloadLink').href = url;
+    $('#downloadLink').textContent = t('download');
+    $('#downloadLink').download = 'converted.' + getExt(useFormat);
+    $('#result').style.display = 'block';
+
+    audioCtx.close();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = t('convert');
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🔊', href:'/convert/audio-volume.html', name:'Audio Volume'},
+    {icon:'🎵', href:'/convert/mp3-tag-editor.html', name:'MP3 Tag Editor'},
+    {icon:'🔄', href:'/convert/webp-converter.html', name:'WebP Converter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

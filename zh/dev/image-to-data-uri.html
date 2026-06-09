@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片转 Data URI 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将任意图片转换为 Data URI 字符串，可直接嵌入 HTML、CSS 和 JSON。支持 PNG、JPG、WebP、GIF、SVG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/image-to-data-uri.html">
+  <meta property="og:title" content="图片转 Data URI 转换器">
+  <meta property="og:description" content="将任意图片转换为 Data URI 字符串，可直接嵌入 HTML、CSS 和 JSON。支持 PNG、JPG、WebP、GIF、SVG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/image-to-data-uri.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片转 Data URI 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;margin:12px 0}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass)}
+.drop-zone img{max-width:200px;max-height:200px;border-radius:8px;margin-top:12px}
+#output{font-family:monospace;font-size:.8em;word-break:break-all;max-height:300px;overflow-y:auto;background:var(--glass);padding:12px;border-radius:10px;line-height:1.6;margin:12px 0}
+.stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
+.stat-item{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:120px}
+.stat-item .label{font-size:.8em;color:var(--text2);margin-bottom:4px}
+.stat-item .value{font-size:1.1em;font-weight:700}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image to Data URI Converter","description":"Convert any image to a Data URI string for embedding directly in HTML, CSS and JSON. Supports PNG, JPG, WebP, GIF, SVG. Drag and drop, copy or download.","url": "https://tools.gamezipper.com/zh/dev/image-to-data-uri.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a Data URI?","acceptedAnswer":{"@type":"Answer","text":"A Data URI is a base64-encoded string that embeds image data directly in HTML, CSS or JSON. It eliminates the need for separate image files by including the image inline as text."}},{"@type":"Question","name":"When should I use Data URIs?","acceptedAnswer":{"@type":"Answer","text":"Data URIs are useful for small icons, favicons, CSS background images, email templates and reducing HTTP requests. Avoid using them for large images as they increase file size by about 33%."}},{"@type":"Question","name":"What image formats are supported?","acceptedAnswer":{"@type":"Answer","text":"This tool supports PNG, JPG/JPEG, WebP, GIF, SVG, BMP, ICO and AVIF. The output format matches your input automatically."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/image-to-data-uri.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/image-to-data-uri.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/image-to-data-uri.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="dropZone">
+      <div style="font-size:3em">🖼️</div>
+      <p id="lbl-drop"></p>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <div id="preview"></div>
+    </div>
+    <div class="stat-row" id="stats" style="display:none">
+      <div class="stat-item"><div class="label" id="lbl-fname"></div><div class="value" id="statName">-</div></div>
+      <div class="stat-item"><div class="label" id="lbl-ftype"></div><div class="value" id="statType">-</div></div>
+      <div class="stat-item"><div class="label" id="lbl-fsize"></div><div class="value" id="statSize">-</div></div>
+      <div class="stat-item"><div class="label" id="lbl-uri-size"></div><div class="value" id="statUriSize">-</div></div>
+      <div class="stat-item"><div class="label" id="lbl-dims"></div><div class="value" id="statDims">-</div></div>
+    </div>
+    <div id="output" style="display:none"></div>
+    <div id="actions" style="display:none;text-align:center;margin-top:8px">
+      <button class="gz-btn" id="btnCopy"></button>
+      <button class="gz-btn gz-btn-secondary" id="btnCopyCss"></button>
+      <button class="gz-btn gz-btn-secondary" id="btnCopyImg"></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image to Data URI Converter',
+    toolDesc: 'Convert any image to a Data URI string for embedding in HTML, CSS and JSON. Supports PNG, JPG, WebP, GIF, SVG.',
+    lblDrop: 'Drop an image here or click to upload',
+    lblFname: 'File Name',
+    lblFtype: 'MIME Type',
+    lblFsize: 'Original Size',
+    lblUriSize: 'Data URI Size',
+    lblDims: 'Dimensions',
+    copyRaw: '📋 Copy Data URI',
+    copyCss: '📋 Copy CSS background',
+    copyImg: '📋 Copy <img> tag',
+    copied: 'Copied!',
+    step1: 'Drop or select an image file',
+    step2: 'The image is converted to a base64 Data URI',
+    step3: 'View stats: file size, Data URI size, dimensions',
+    step4: 'Copy as raw URI, CSS background or HTML img tag',
+  },
+  zh: {
+    toolTitle: '图片转 Data URI 转换器',
+    toolDesc: '将任意图片转换为 Data URI 字符串，可直接嵌入 HTML、CSS 和 JSON。支持 PNG、JPG、WebP、GIF、SVG。',
+    lblDrop: '拖拽图片到此处或点击上传',
+    lblFname: '文件名',
+    lblFtype: 'MIME 类型',
+    lblFsize: '原始大小',
+    lblUriSize: 'Data URI 大小',
+    lblDims: '尺寸',
+    copyRaw: '📋 复制 Data URI',
+    copyCss: '📋 复制 CSS 背景',
+    copyImg: '📋 复制 <img> 标签',
+    copied: '已复制！',
+    step1: '拖拽或选择图片文件',
+    step2: '图片自动转换为 base64 Data URI',
+    step3: '查看统计：文件大小、URI 大小、尺寸',
+    step4: '复制为原始 URI、CSS 背景或 HTML img 标签',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let currentUri = '';
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(2) + ' MB';
+}
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUri = e.target.result;
+    currentUri = dataUri;
+    
+    // Show preview
+    $('#preview').innerHTML = `<img src="${dataUri}" alt="preview">`;
+    
+    // Show stats
+    $('#stats').style.display = 'flex';
+    $('#statName').textContent = file.name;
+    $('#statType').textContent = file.type;
+    $('#statSize').textContent = formatSize(file.size);
+    $('#statUriSize').textContent = formatSize(dataUri.length);
+    
+    const img = new Image();
+    img.onload = () => {
+      $('#statDims').textContent = img.width + ' × ' + img.height;
+    };
+    img.src = dataUri;
+    
+    // Show output
+    $('#output').style.display = 'block';
+    $('#output').textContent = dataUri;
+    
+    // Show actions
+    $('#actions').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drop zone
+const dropZone = $('#dropZone');
+dropZone.addEventListener('click', () => $('#fileInput').click());
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+$('#fileInput').addEventListener('change', (e) => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+// Copy buttons
+$('#btnCopy').textContent = t('copyRaw');
+$('#btnCopy').addEventListener('click', () => {
+  copyText(currentUri);
+  $('#btnCopy').textContent = t('copied');
+  setTimeout(() => $('#btnCopy').textContent = t('copyRaw'), 1500);
+});
+
+$('#btnCopyCss').textContent = t('copyCss');
+$('#btnCopyCss').addEventListener('click', () => {
+  const css = `background-image: url("${currentUri}");`;
+  copyText(css);
+  $('#btnCopyCss').textContent = t('copied');
+  setTimeout(() => $('#btnCopyCss').textContent = t('copyCss'), 1500);
+});
+
+$('#btnCopyImg').textContent = t('copyImg');
+$('#btnCopyImg').addEventListener('click', () => {
+  const html = `<img src="${currentUri}" alt="image">`;
+  copyText(html);
+  $('#btnCopyImg').textContent = t('copied');
+  setTimeout(() => $('#btnCopyImg').textContent = t('copyImg'), 1500);
+});
+
+$('#toolbar').innerHTML = `<button class="gz-btn gz-btn-secondary" onclick="$('#fileInput').click()">${t('example')||'Upload'}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/image-to-base64.html', name:'Image to Base64'},
+    {icon:'🔗', href:'/convert/svg-to-data-uri.html', name:'SVG to Data URI'},
+    {icon:'🖼️', href:'/convert/base64-to-image.html', name:'Base64 to Image'},
+    {icon:'📄', href:'/dev/base64.html', name:'Base64 Encoder'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

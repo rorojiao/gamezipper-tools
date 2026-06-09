@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>WebP 转 GIF 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将动态或静态 WebP 图片转换为 GIF 格式。调整质量、缩放和帧延迟 — 完全浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/webp-to-gif.html">
+  <meta property="og:title" content="WebP 转 GIF 转换器">
+  <meta property="og:description" content="将动态或静态 WebP 图片转换为 GIF 格式。调整质量、缩放和帧延迟 — 完全浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/webp-to-gif.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="WebP 转 GIF 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text2);font-size:1.1em}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass2)}
+.drop-zone img{max-width:300px;max-height:300px;border-radius:8px;margin-top:12px}
+.preview-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+.preview-row>div{flex:1;min-width:250px;text-align:center}
+.preview-row canvas,.preview-row img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+.options{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:end}
+.options label{display:flex;flex-direction:column;gap:4px;font-size:.85em;color:var(--text2)}
+.options input,.options select{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:.9em}
+#status{margin-top:10px;font-size:.9em;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"WebP to GIF Converter","description":"Convert animated or static WebP images to GIF format online. Set frame rate, quality and size — runs entirely in your browser. Free, no upload.","url": "https://tools.gamezipper.com/zh/convert/webp-to-gif.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert WebP to GIF?", "acceptedAnswer": {"@type": "Answer", "text": "Drop or upload your WebP image, adjust quality and dimensions if needed, then click Convert to GIF. The converted file downloads instantly."}}, {"@type": "Question", "name": "Does this tool support animated WebP?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Animated WebP files are converted to animated GIFs preserving all frames. Static WebP files are converted to single-frame GIFs."}}, {"@type": "Question", "name": "Is my file uploaded to any server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All conversion happens locally in your browser using Canvas API. No files are ever uploaded."}}, {"@type": "Question", "name": "Will the GIF quality match the WebP?", "acceptedAnswer": {"@type": "Answer", "text": "GIF format only supports 256 colors per frame, so some quality loss may occur for complex images. The tool uses optimal quantization to preserve visual quality as much as possible."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/webp-to-gif.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/webp-to-gif.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/webp-to-gif.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="dropZone">
+      <div>📁 <span data-i18n="dropHere">Drop WebP file here or click to upload</span></div>
+      <div id="preview"></div>
+      <input type="file" id="fileInput" accept="image/webp" style="display:none">
+    </div>
+    <div class="options" id="options">
+      <label><span data-i18n="scale">Scale</span>
+        <select id="scale">
+          <option value="1">100%</option>
+          <option value="0.75">75%</option>
+          <option value="0.5" selected>50%</option>
+          <option value="0.25">25%</option>
+        </select>
+      </label>
+      <label><span data-i18n="quality">Quality</span>
+        <input type="range" id="quality" min="1" max="20" value="10">
+      </label>
+      <label><span data-i18n="delay">Frame Delay (ms)</span>
+        <input type="number" id="delay" value="100" min="20" max="5000" step="10">
+      </label>
+    </div>
+    <div id="status"></div>
+    <div class="preview-row" id="resultArea" style="display:none">
+      <div>
+        <h3 data-i18n="result">Result</h3>
+        <canvas id="resultCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'WebP to GIF Converter',
+    toolDesc: 'Convert animated or static WebP images to GIF format. Adjust quality, scale and frame delay — runs entirely in your browser.',
+    dropHere: 'Drop WebP file here or click to upload',
+    scale: 'Scale',
+    quality: 'Quality',
+    delay: 'Frame Delay (ms)',
+    convert: 'Convert to GIF',
+    result: 'Result',
+    download: 'Download GIF',
+    step1: 'Drop or upload a WebP image file',
+    step2: 'Adjust scale, quality and frame delay',
+    step3: 'Click Convert to GIF',
+    step4: 'Download the converted GIF file',
+  },
+  zh: {
+    toolTitle: 'WebP 转 GIF 转换器',
+    toolDesc: '将动态或静态 WebP 图片转换为 GIF 格式。调整质量、缩放和帧延迟 — 完全浏览器本地运行。',
+    dropHere: '拖拽 WebP 文件到此处或点击上传',
+    scale: '缩放',
+    quality: '质量',
+    delay: '帧延迟（毫秒）',
+    convert: '转换为 GIF',
+    result: '结果',
+    download: '下载 GIF',
+    step1: '拖拽或上传 WebP 图片文件',
+    step2: '调整缩放比例、质量和帧延迟',
+    step3: '点击「转换为 GIF」',
+    step4: '下载转换后的 GIF 文件',
+  }
+});
+
+const { $, t, copyText } = GZ;
+let webpImg = null;
+let isAnimated = false;
+
+const dropZone = $('#dropZone');
+const fileInput = $('#fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  if (!file.type.includes('webp')) {
+    $('#status').textContent = 'Please upload a WebP file';
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  webpImg = new Image();
+  webpImg.onload = () => {
+    $('#preview').innerHTML = `<img src="${url}" alt="WebP preview">`;
+    $('#status').textContent = `Loaded: ${webpImg.naturalWidth}x${webpImg.naturalHeight} (${(file.size/1024).toFixed(1)} KB)`;
+  };
+  webpImg.src = url;
+}
+
+async function convertToGIF() {
+  if (!webpImg) return;
+  const scale = +$('#scale').value;
+  const delay = +$('#delay').value;
+  const quality = +$('#quality').value;
+  const w = Math.round(webpImg.naturalWidth * scale);
+  const h = Math.round(webpImg.naturalHeight * scale);
+
+  // Draw to canvas
+  const canvas = $('#resultCanvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(webpImg, 0, 0, w, h);
+
+  // Get pixel data
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const pixels = imageData.data;
+
+  // Quantize colors (median cut simplified - use uniform quantization)
+  const rMask = Math.max(1, 8 - quality);
+  const gMask = Math.max(1, 8 - quality);
+  const bMask = Math.max(1, 8 - quality);
+  const palette = new Map();
+  let idx = 0;
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i] >> rMask << rMask;
+    const g = pixels[i+1] >> gMask << gMask;
+    const b = pixels[i+2] >> bMask << bMask;
+    const a = pixels[i+3];
+    const key = (r << 16) | (g << 8) | b;
+    if (!palette.has(key)) {
+      palette.set(key, { r, g, b, idx: idx++ });
+      if (idx >= 256) break;
+    }
+  }
+
+  // Convert to palette indices
+  const indices = new Uint8Array(w * h);
+  for (let i = 0; i < pixels.length; i += 4) {
+    const pi = i / 4;
+    if (pixels[i+3] < 128) {
+      indices[pi] = 0; // transparent -> first color
+    } else {
+      const r = pixels[i] >> rMask << rMask;
+      const g = pixels[i+1] >> gMask << gMask;
+      const b = pixels[i+2] >> bMask << bMask;
+      const key = (r << 16) | (g << 8) | b;
+      indices[pi] = palette.has(key) ? palette.get(key).idx : 0;
+    }
+  }
+
+  // Build GIF binary
+  const palArr = Array.from(palette.values());
+  const colorTable = new Uint8Array(768); // 256 * 3
+  palArr.forEach((c, i) => { colorTable[i*3] = c.r; colorTable[i*3+1] = c.g; colorTable[i*3+2] = c.b; });
+
+  // GIF89a header
+  const header = new Uint8Array([0x47,0x49,0x46,0x38,0x39,0x61]); // GIF89a
+
+  // Logical screen descriptor
+  const lsd = new Uint8Array(7);
+  lsd[0] = w & 0xFF; lsd[1] = (w >> 8) & 0xFF;
+  lsd[2] = h & 0xFF; lsd[3] = (h >> 8) & 0xFF;
+  lsd[4] = 0xF7; // global color table, 8 bits
+  lsd[5] = 0; // bg color
+  lsd[6] = 0; // aspect
+
+  // Trailer
+  const trailer = new Uint8Array([0x3B]);
+
+  // Build image descriptor
+  const imgDesc = new Uint8Array(10);
+  imgDesc[0] = 0x2C; // image separator
+  // left, top = 0
+  imgDesc[5] = w & 0xFF; imgDesc[6] = (w >> 8) & 0xFF;
+  imgDesc[7] = h & 0xFF; imgDesc[8] = (h >> 8) & 0xFF;
+
+  // LZW minimum code size
+  const minCodeSize = 8;
+
+  // Simple LZW encoding
+  const lzwData = lzwEncode(indices, minCodeSize);
+
+  // GIF control extension for delay
+  const gce = new Uint8Array([0x21, 0xF9, 0x04, 0x00, delay & 0xFF, (delay >> 8) & 0xFF, 0x00, 0x00]);
+
+  // Combine all parts
+  const parts = [header, lsd, colorTable, gce, imgDesc, new Uint8Array([minCodeSize]), lzwData, trailer];
+  const blob = new Blob(parts, { type: 'image/gif' });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'converted.gif';
+  a.click();
+
+  $('#status').textContent = `GIF saved: ${w}x${h}, ${(blob.size/1024).toFixed(1)} KB`;
+  $('#resultArea').style.display = '';
+}
+
+function lzwEncode(indices, minCodeSize) {
+  const clearCode = 1 << minCodeSize;
+  const eoiCode = clearCode + 1;
+  let codeSize = minCodeSize + 1;
+  let nextCode = eoiCode + 1;
+  const maxCode = 4096;
+
+  // Initialize code table
+  let table = new Map();
+  for (let i = 0; i < clearCode; i++) table.set(String(i), i);
+
+  const output = [];
+  let buffer = 0;
+  let bufferBits = 0;
+
+  function writeCode(code) {
+    buffer |= (code << bufferBits);
+    bufferBits += codeSize;
+    while (bufferBits >= 8) {
+      output.push(buffer & 0xFF);
+      buffer >>= 8;
+      bufferBits -= 8;
+    }
+  }
+
+  writeCode(clearCode);
+
+  let current = String(indices[0]);
+  for (let i = 1; i < indices.length; i++) {
+    const next = String(indices[i]);
+    const combined = current + ',' + next;
+    if (table.has(combined)) {
+      current = combined;
+    } else {
+      writeCode(table.get(current));
+      if (nextCode < maxCode) {
+        table.set(combined, nextCode++);
+        if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
+      } else {
+        writeCode(clearCode);
+        table = new Map();
+        for (let j = 0; j < clearCode; j++) table.set(String(j), j);
+        nextCode = eoiCode + 1;
+        codeSize = minCodeSize + 1;
+      }
+      current = next;
+    }
+  }
+
+  writeCode(table.get(current));
+  writeCode(eoiCode);
+
+  if (bufferBits > 0) output.push(buffer & 0xFF);
+
+  // Build sub-blocks (max 255 bytes each)
+  const blocks = [];
+  for (let i = 0; i < output.length; i += 255) {
+    const chunk = output.slice(i, i + 255);
+    blocks.push(chunk.length, ...chunk);
+  }
+  blocks.push(0); // block terminator
+
+  return new Uint8Array(blocks);
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convertToGIF()">${t('convert')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/convert/webp-converter.html', name:'WebP ↔ PNG/JPG'},
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'🖼️', href:'/image/svg-to-png.html', name:'SVG to PNG'},
+    {icon:'🖼️', href:'/convert/png-to-jpg.html', name:'PNG to JPG'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

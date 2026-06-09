@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>SVG 路径编辑器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="可视化编辑 SVG 路径 — 添加、移动和删除控制点，实时预览路径变化。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/svg-path-editor.html">
+  <meta property="og:title" content="SVG 路径编辑器">
+  <meta property="og:description" content="可视化编辑 SVG 路径 — 添加、移动和删除控制点，实时预览路径变化。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/svg-path-editor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SVG 路径编辑器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#svg-canvas{border:1px solid var(--gz-border);border-radius:8px;cursor:crosshair;background:#fafafa;width:100%;min-height:400px}
+.gz-split>div{flex:1;min-width:0}
+#path-input{width:100%;min-height:120px;font-family:monospace;font-size:.85em;padding:10px;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--gz-text);resize:vertical}
+.toolbar-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.point-info{font-size:.8em;color:var(--gz-text-secondary);margin-top:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SVG Path Editor","description":"Edit and visualize SVG paths interactively. Add, move, delete control points and see the path data update in real time.","url": "https://tools.gamezipper.com/zh/dev/svg-path-editor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I edit an SVG path visually?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your SVG path d attribute into the input, or click on the canvas to add points. Drag points to move them and see the path update in real time."}}, {"@type": "Question", "name": "What SVG path commands are supported?", "acceptedAnswer": {"@type": "Answer", "text": "All standard SVG path commands: M, L, H, V, C, S, Q, T, A and Z. Both absolute and relative commands are supported."}}, {"@type": "Question", "name": "Can I export the edited SVG path?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Copy the updated path d attribute from the text area, or use the Copy SVG button to get a complete SVG element."}}, {"@type": "Question", "name": "Is this tool free to use?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. This SVG path editor is completely free and runs entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/svg-path-editor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/svg-path-editor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/svg-path-editor.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="toolbar-row">
+      <button class="gz-btn" onclick="clearAll()" id="btn-clear"></button>
+      <button class="gz-btn gz-btn-secondary" onclick="loadExample()" id="btn-example"></button>
+      <button class="gz-btn gz-btn-secondary" onclick="toggleClosed()" id="btn-close-path"></button>
+      <button class="gz-btn" onclick="copySVG()" id="btn-copy-svg"></button>
+      <button class="gz-btn gz-btn-secondary" onclick="copyPath()" id="btn-copy-path"></button>
+    </div>
+    <div class="gz-split">
+      <div>
+        <svg id="svg-canvas" viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+          <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e0e0" stroke-width="0.5"/></pattern></defs>
+          <rect width="500" height="400" fill="url(#grid)"/>
+          <path id="svg-path" fill="none" stroke="var(--gz-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <g id="points-group"></g>
+        </svg>
+        <div class="point-info" id="point-info"></div>
+      </div>
+      <div>
+        <label id="lbl-input" style="font-weight:600;display:block;margin-bottom:4px"></label>
+        <textarea id="path-input" spellcheck="false" placeholder="M 50 50 L 200 100 L 350 50 Z"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SVG Path Editor',
+    toolDesc: 'Edit and visualize SVG paths interactively — add, move and delete control points with real-time preview.',
+    btnClear: 'Clear',
+    btnExample: 'Load Example',
+    btnClosePath: 'Toggle Close',
+    btnCopySVG: 'Copy SVG',
+    btnCopyPath: 'Copy Path',
+    lblInput: 'Path Data (d attribute)',
+    copied: 'Copied!',
+    pointCount: 'Points: {n}',
+    step1: 'Click on the canvas to add path points',
+    step2: 'Drag points to reposition them',
+    step3: 'Edit the path data directly in the text area',
+    step4: 'Copy the SVG path or full SVG element for your project',
+    faq1Q: 'How do I edit an SVG path visually?',
+    faq1A: 'Paste your path d attribute or click on the canvas to add points. Drag points to move them.',
+    faq2Q: 'What SVG path commands are supported?',
+    faq2A: 'All standard commands: M, L, H, V, C, S, Q, T, A and Z.',
+    faq3Q: 'Can I export the edited SVG path?',
+    faq3A: 'Yes. Use Copy Path or Copy SVG to get the code for your project.',
+  },
+  zh: {
+    toolTitle: 'SVG 路径编辑器',
+    toolDesc: '可视化编辑 SVG 路径 — 添加、移动和删除控制点，实时预览路径变化。',
+    btnClear: '清空',
+    btnExample: '加载示例',
+    btnClosePath: '切换闭合',
+    btnCopySVG: '复制 SVG',
+    btnCopyPath: '复制路径',
+    lblInput: '路径数据（d 属性）',
+    copied: '已复制！',
+    pointCount: '点数：{n}',
+    step1: '在画布上点击添加路径点',
+    step2: '拖动点来重新定位',
+    step3: '在文本框中直接编辑路径数据',
+    step4: '复制 SVG 路径或完整 SVG 元素到你的项目',
+    faq1Q: '如何可视化编辑 SVG 路径？',
+    faq1A: '粘贴路径 d 属性或直接在画布上点击添加点，拖动点即可移动。',
+    faq2Q: '支持哪些 SVG 路径命令？',
+    faq2A: '支持所有标准命令：M、L、H、V、C、S、Q、T、A 和 Z。',
+    faq3Q: '可以导出编辑后的 SVG 路径吗？',
+    faq3A: '可以。使用「复制路径」或「复制 SVG」获取代码。',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let points = [];
+let closed = false;
+let dragIdx = -1;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function getSVGPoint(e) {
+  const svg = $('#svg-canvas');
+  const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  return {
+    x: Math.round((e.clientX - rect.left) / rect.width * vb.width),
+    y: Math.round((e.clientY - rect.top) / rect.height * vb.height)
+  };
+}
+
+function buildPath() {
+  if (points.length === 0) return '';
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` L ${points[i].x} ${points[i].y}`;
+  }
+  if (closed && points.length > 2) d += ' Z';
+  return d;
+}
+
+function render() {
+  const d = buildPath();
+  $('#svg-path').setAttribute('d', d || '');
+  $('#path-input').value = d;
+  $('#point-info').textContent = points.length > 0 ? t('pointCount').replace('{n}', points.length) : '';
+
+  const g = $('#points-group');
+  while (g.firstChild) g.removeChild(g.firstChild);
+  points.forEach((p, i) => {
+    const circle = document.createElementNS(SVG_NS, 'circle');
+    circle.setAttribute('cx', p.x);
+    circle.setAttribute('cy', p.y);
+    circle.setAttribute('r', 6);
+    circle.setAttribute('fill', i === 0 ? '#00d672' : 'var(--gz-accent)');
+    circle.setAttribute('stroke', '#fff');
+    circle.setAttribute('stroke-width', '2');
+    circle.style.cursor = 'grab';
+    circle.dataset.idx = i;
+    g.appendChild(circle);
+  });
+}
+
+function clearAll() { points = []; closed = false; render(); }
+
+function loadExample() {
+  points = [{x:80,y:80},{x:250,y:40},{x:420,y:80},{x:380,y:200},{x:250,y:340},{x:120,y:200}];
+  closed = true;
+  render();
+}
+
+function toggleClosed() { closed = !closed; render(); }
+
+function copySVG() {
+  const d = buildPath();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="500" height="400">\n  <path d="${d}" fill="none" stroke="#333" stroke-width="2"/>\n</svg>`;
+  copyText(svg);
+  const btn = $('#btn-copy-svg'); btn.textContent = t('copied'); setTimeout(() => btn.textContent = t('btnCopySVG'), 1500);
+}
+
+function copyPath() {
+  copyText(buildPath());
+  const btn = $('#btn-copy-path'); btn.textContent = t('copied'); setTimeout(() => btn.textContent = t('btnCopyPath'), 1500);
+}
+
+const svgEl = $('#svg-canvas');
+
+svgEl.addEventListener('mousedown', e => {
+  if (e.target.tagName === 'circle') {
+    dragIdx = +e.target.dataset.idx;
+    e.target.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+});
+
+svgEl.addEventListener('mousemove', e => {
+  if (dragIdx >= 0) {
+    const pt = getSVGPoint(e);
+    points[dragIdx] = pt;
+    render();
+    e.preventDefault();
+  }
+});
+
+svgEl.addEventListener('mouseup', e => {
+  if (dragIdx >= 0) { dragIdx = -1; return; }
+  const pt = getSVGPoint(e);
+  // Check not clicking existing point
+  const existing = e.target.tagName === 'circle';
+  if (!existing) {
+    points.push(pt);
+    render();
+  }
+});
+
+svgEl.addEventListener('dblclick', e => {
+  if (e.target.tagName === 'circle') {
+    const idx = +e.target.dataset.idx;
+    points.splice(idx, 1);
+    render();
+  }
+});
+
+$('#path-input').addEventListener('input', e => {
+  const d = e.target.value.trim();
+  if (!d) { points = []; render(); return; }
+  // Parse simple M/L/Z commands
+  const nums = d.match(/-?\d+\.?\d*/g);
+  if (!nums || nums.length < 2) return;
+  const newPoints = [];
+  const cmds = d.split(/(?=[MLHVCSQTAZmlhvcsqtaz])/);
+  cmds.forEach(cmd => {
+    const type = cmd.charAt(0);
+    const vals = cmd.slice(1).match(/-?\d+\.?\d*/g);
+    if (!vals) return;
+    if (type === 'M' || type === 'L' || type === 'm' || type === 'l') {
+      for (let i = 0; i < vals.length; i += 2) {
+        if (i + 1 < vals.length) newPoints.push({x: +vals[i], y: +vals[i+1]});
+      }
+    }
+  });
+  if (newPoints.length) { points = newPoints; closed = /\s*Z\s*$/i.test(d); render(); }
+});
+
+// Set labels
+$('#btn-clear').textContent = t('btnClear');
+$('#btn-example').textContent = t('btnExample');
+$('#btn-close-path').textContent = t('btnClosePath');
+$('#btn-copy-svg').textContent = t('btnCopySVG');
+$('#btn-copy-path').textContent = t('btnCopyPath');
+$('#lbl-input').textContent = t('lblInput');
+
+loadExample();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/dev/svg-editor.html', name:'SVG Editor'},
+    {icon:'📐', href:'/css-tools/clip-path.html', name:'Clip-Path'},
+    {icon:'🫧', href:'/css-tools/svg-blob.html', name:'SVG Blob'},
+    {icon:'🖼️', href:'/image/svg-to-png.html', name:'SVG to PNG'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

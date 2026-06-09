@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>正则表达式解释器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时理解任意正则表达式。逐个标记地解释你的正则模式中每个部分的含义。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/regex-explainer.html">
+  <meta property="og:title" content="正则表达式解释器">
+  <meta property="og:description" content="即时理解任意正则表达式。逐个标记地解释你的正则模式中每个部分的含义。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/regex-explainer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="正则表达式解释器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.explanation{margin-top:12px}
+.token{display:flex;gap:12px;padding:10px 14px;border-radius:8px;margin-bottom:6px;align-items:flex-start;font-size:.9em}
+.token:nth-child(odd){background:var(--gz-card,#1a1a2e)}
+.token:nth-child(even){background:var(--gz-card-hover,#22223a)}
+.token-chars{font-family:monospace;font-weight:700;color:var(--gz-accent,#e94560);min-width:60px;word-break:break-all}
+.token-desc{flex:1;color:var(--gz-text-secondary,#ccc)}
+.token-type{font-size:.75em;padding:2px 8px;border-radius:4px;background:var(--gz-accent,#e94560);color:#fff;white-space:nowrap}
+#flags{font-size:.85em;margin-top:8px;color:var(--gz-text-secondary,#aaa)}
+#flags b{color:var(--gz-accent,#e94560)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Regex Explainer","description":"Understand any regular expression instantly. Paste a regex pattern and get a detailed step-by-step explanation of what each part does.","url": "https://tools.gamezipper.com/zh/dev/regex-explainer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the regex explainer work?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your regular expression into the input field and the tool breaks it down token by token, explaining what each part of the pattern matches. It supports JavaScript regex syntax including flags, character classes, quantifiers, groups, and more."}}, {"@type": "Question", "name": "What regex flavors are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports JavaScript-compatible regular expressions (ECMAScript). This covers most common regex patterns used in web development, including character classes, quantifiers, groups, anchors, lookaheads, and escape sequences."}}, {"@type": "Question", "name": "Can I test my regex as well?", "acceptedAnswer": {"@type": "Answer", "text": "Yes! You can enter a test string to see if it matches your regex pattern. The tool highlights matched portions and shows capture group results."}}, {"@type": "Question", "name": "Is this tool free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free with no limits. All regex parsing happens in your browser — nothing is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/regex-explainer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/regex-explainer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/regex-explainer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="input" spellcheck="false" rows="3" placeholder="^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})$"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <label style="font-size:.85em">Flags: <input id="flags" value="gi" style="width:80px;font-family:monospace;padding:4px 8px;border-radius:6px;border:1px solid var(--gz-border,#333);background:var(--gz-card,#1a1a2e);color:var(--gz-text,#eee)"></label>
+          <label style="font-size:.85em">Test: <input id="teststr" style="flex:1;font-family:monospace;padding:4px 8px;border-radius:6px;border:1px solid var(--gz-border,#333);background:var(--gz-card,#1a1a2e);color:var(--gz-text,#eee)"></label>
+        </div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"><div class="explanation" id="explanation"></div></div>
+        <div id="matchResult" style="margin-top:8px;font-size:.85em"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Regex Explainer',
+    toolDesc: 'Understand any regular expression instantly. Get a step-by-step breakdown of what each token in your regex pattern does.',
+    step1: 'Paste your regex pattern into the input area',
+    step2: 'Optionally add flags (g, i, m, s, u) and a test string',
+    step3: 'Review the token-by-token explanation below',
+    step4: 'Test your regex against the test string to see matches',
+    explain: 'Explain',
+    noInput: 'Enter a regex pattern to get an explanation',
+    invalidRegex: 'Invalid regex: ',
+  },
+  zh: {
+    toolTitle: '正则表达式解释器',
+    toolDesc: '即时理解任意正则表达式。逐个标记地解释你的正则模式中每个部分的含义。',
+    step1: '在输入区粘贴正则表达式',
+    step2: '可选：添加标志位（g, i, m, s, u）和测试字符串',
+    step3: '在下方查看逐条标记解释',
+    step4: '用测试字符串验证正则匹配结果',
+    explain: '解释',
+    noInput: '请输入正则表达式以获取解释',
+    invalidRegex: '无效正则：',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const DESC = {
+  '^': {type:'anchor',en:'Start of string or line',zh:'字符串或行首'},
+  '$': {type:'anchor',en:'End of string or line',zh:'字符串或行尾'},
+  '\\b': {type:'anchor',en:'Word boundary',zh:'单词边界'},
+  '\\B': {type:'anchor',en:'Non-word boundary',zh:'非单词边界'},
+  '\\d': {type:'charclass',en:'Any digit [0-9]',zh:'任意数字 [0-9]'},
+  '\\D': {type:'charclass',en:'Any non-digit [^0-9]',zh:'任意非数字 [^0-9]'},
+  '\\w': {type:'charclass',en:'Any word character [a-zA-Z0-9_]',zh:'任意单词字符 [a-zA-Z0-9_]'},
+  '\\W': {type:'charclass',en:'Any non-word character',zh:'任意非单词字符'},
+  '\\s': {type:'charclass',en:'Any whitespace',zh:'任意空白字符'},
+  '\\S': {type:'charclass',en:'Any non-whitespace',zh:'任意非空白字符'},
+  '\\n': {type:'escape',en:'Newline character',zh:'换行符'},
+  '\\t': {type:'escape',en:'Tab character',zh:'制表符'},
+  '\\r': {type:'escape',en:'Carriage return',zh:'回车符'},
+  '.': {type:'charclass',en:'Any character (except newline)',zh:'任意字符（除换行外）'},
+  '*': {type:'quantifier',en:'Zero or more of previous',zh:'前一项出现零次或多次'},
+  '+': {type:'quantifier',en:'One or more of previous',zh:'前一项出现一次或多次'},
+  '?': {type:'quantifier',en:'Zero or one of previous (optional)',zh:'前一项出现零次或一次（可选）'},
+  '|': {type:'alternation',en:'OR — matches left or right side',zh:'或 — 匹配左边或右边'},
+  '(': {type:'group',en:'Start capture group',zh:'开始捕获组'},
+  ')': {type:'group',en:'End capture group',zh:'结束捕获组'},
+  '[': {type:'charclass',en:'Start character class',zh:'开始字符类'},
+  ']': {type:'charclass',en:'End character class',zh:'结束字符类'},
+  '{': {type:'quantifier',en:'Start repetition quantifier',zh:'开始重复量词'},
+  '}': {type:'quantifier',en:'End repetition quantifier',zh:'结束重复量词'},
+};
+
+function explain() {
+  const pattern = $('#input').value;
+  if (!pattern.trim()) { $('#explanation').innerHTML = `<p style="color:var(--gz-text-secondary,#aaa)">${t('noInput')}</p>`; $('#matchResult').innerHTML=''; return; }
+
+  const lang = GZI18n.getLang ? GZI18n.getLang() : (document.documentElement.lang || 'en');
+  const isZh = lang === 'zh';
+  const tokens = [];
+  let i = 0;
+  while (i < pattern.length) {
+    const ch = pattern[i];
+    let tok = null;
+    if (ch === '\\') {
+      const next = pattern[i+1];
+      if (next !== undefined) {
+        const esc = '\\' + next;
+        if (DESC[esc]) { tok = {chars:esc, ...DESC[esc]}; i += 2; }
+        else { tok = {chars:esc, type:'escape',en:'Escaped character: ' + esc,zh:'转义字符：' + esc}; i += 2; }
+      } else { tok = {chars:ch, type:'escape',en:'Backslash',zh:'反斜杠'}; i++; }
+    } else if (ch === '[') {
+      let j = i + 1;
+      if (j < pattern.length && pattern[j] === '^') j++;
+      if (j < pattern.length && pattern[j] === ']') j++;
+      while (j < pattern.length && pattern[j] !== ']') j++;
+      const chars = pattern.substring(i, j+1);
+      tok = {chars, type:'charclass', en:'Character class: match one of ' + chars, zh:'字符类：匹配 ' + chars + ' 中的任意一个'};
+      i = j + 1;
+    } else if (ch === '(') {
+      let chars = '(';
+      if (pattern[i+1] === '?' && pattern[i+2] === ':') { chars = '(?:'; tok = {chars,type:'group',en:'Non-capturing group',zh:'非捕获组'}; i+=3; }
+      else if (pattern[i+1] === '?' && pattern[i+2] === '=') { chars = '(?='; tok = {chars,type:'group',en:'Positive lookahead',zh:'正向前瞻'}; i+=3; }
+      else if (pattern[i+1] === '?' && pattern[i+2] === '!') { chars = '(?!'; tok = {chars,type:'group',en:'Negative lookahead',zh:'负向前瞻'}; i+=3; }
+      else if (pattern[i+1] === '?' && pattern[i+2] === '<' && pattern[i+3] === '=') { chars = '(?<='; tok = {chars,type:'group',en:'Positive lookbehind',zh:'正向后瞻'}; i+=4; }
+      else if (pattern[i+1] === '?' && pattern[i+2] === '<' && pattern[i+3] === '!') { chars = '(?<!'; tok = {chars,type:'group',en:'Negative lookbehind',zh:'负向后瞻'}; i+=4; }
+      else if (pattern[i+1] === '?' && pattern[i+2] === '<') { let name=''; let k=i+3; while(k<pattern.length && pattern[k]!=='>') {name+=pattern[k];k++;} chars = '(?<' + name + '>'; tok = {chars,type:'group',en:'Named capture group "'+name+'"',zh:'命名捕获组 "'+name+'"'}; i=k+1; }
+      else { tok = {chars:'(', ...DESC['(']}; i++; }
+    } else if (ch === ')') { tok = {chars:')', ...DESC[')']}; i++; }
+    else if (ch === '{') {
+      let j = i; while (j < pattern.length && pattern[j] !== '}') j++;
+      const q = pattern.substring(i, j+1);
+      tok = {chars:q, type:'quantifier', en:'Repeat ' + q.replace(/[{}]/g,'') + ' times', zh:'重复 ' + q.replace(/[{}]/g,'') + ' 次'};
+      i = j + 1;
+    } else if (DESC[ch]) {
+      tok = {chars:ch, ...DESC[ch]};
+      i++;
+    } else {
+      tok = {chars:ch, type:'literal', en:'Literal "' + ch + '"', zh:'字面字符 "' + ch + '"'};
+      i++;
+    }
+    if (tok) tokens.push(tok);
+  }
+
+  const typeColors = {anchor:'#4CAF50',charclass:'#2196F3',quantifier:'#FF9800',group:'#9C27B0',alternation:'#F44336',escape:'#607D8B',literal:'#78909C'};
+
+  $('#explanation').innerHTML = tokens.map(tk => `<div class="token"><span class="token-chars">${tk.chars.replace(/</g,'&lt;')}</span><span class="token-desc">${isZh ? tk.zh : tk.en}</span><span class="token-type" style="background:${typeColors[tk.type]||'#78909C'}">${tk.type}</span></div>`).join('');
+
+  testMatch();
+}
+
+function testMatch() {
+  const pattern = $('#input').value;
+  const flags = $('#flags').value || '';
+  const testStr = $('#teststr').value;
+  const res = $('#matchResult');
+  if (!pattern || !testStr) { res.innerHTML=''; return; }
+  try {
+    const re = new RegExp(pattern, flags);
+    const matches = [...testStr.matchAll(new RegExp(pattern, flags.includes('g') ? flags : flags + 'g'))];
+    if (matches.length === 0) {
+      res.innerHTML = '<span style="color:var(--gz-text-secondary,#aaa)">No matches found</span>';
+    } else {
+      const groups = matches[0].length > 1 ? ` | Groups: ${matches.slice(0,1).map(m => Array.from(m).slice(1).map((g,i)=>`$${i+1}="${g||''}"`).join(', ')).join('; ')}` : '';
+      res.innerHTML = `<span style="color:var(--gz-success,#4CAF50)">✓ ${matches.length} match${matches.length>1?'es':''}${groups}</span>`;
+    }
+  } catch(e) {
+    res.innerHTML = `<span style="color:var(--gz-accent,#e94560)">${t('invalidRegex')}${e.message}</span>`;
+  }
+}
+
+$('#input').addEventListener('input', explain);
+$('#flags').addEventListener('input', testMatch);
+$('#teststr').addEventListener('input', testMatch);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="explain()">${t('explain')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='^([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+)\\.([a-zA-Z]{2,})$';$('#flags').value='gi';explain()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#flags').value='gi';$('#teststr').value='';$('#explanation').innerHTML='';$('#matchResult').innerHTML=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🧪', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'📊', href:'/dev/regex-visualizer.html', name:'Regex Visualizer'},
+    {icon:'📖', href:'/dev/regex-cheatsheet.html', name:'Regex Cheatsheet'},
+    {icon:'🔧', href:'/dev/regex-generator.html', name:'Regex Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>猜词游戏 (Hangman) - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="经典英文猜词游戏，在火柴人画完之前猜出隐藏的单词！">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/hangman.html">
+  <meta property="og:title" content="猜词游戏 (Hangman)">
+  <meta property="og:description" content="经典英文猜词游戏，在火柴人画完之前猜出隐藏的单词！">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/hangman.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="猜词游戏 (Hangman)">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#hangman-canvas{display:block;margin:0 auto}
+.word-display{display:flex;gap:8px;justify-content:center;margin:20px 0;flex-wrap:wrap}
+.letter-slot{width:36px;height:44px;border-bottom:3px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.5em;font-weight:700;font-family:monospace}
+.letter-slot.revealed{color:var(--accent)}
+.letter-slot.wrong{color:var(--gz-accent)}
+.keyboard{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:500px;margin:0 auto}
+.key-btn{width:38px;height:42px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);cursor:pointer;font-size:1em;font-weight:600;transition:all .15s}
+.key-btn:hover:not(:disabled){background:var(--accent);color:#000;transform:translateY(-2px)}
+.key-btn:disabled{opacity:.3;cursor:default;transform:none}
+.key-btn.correct{background:var(--gz-success,#22c55e);color:#fff;border-color:var(--gz-success,#22c55e)}
+.key-btn.wrong{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent);opacity:.5}
+.game-info{display:flex;justify-content:center;gap:24px;margin:12px 0;font-size:.9em;color:var(--text2)}
+.game-info strong{color:var(--text)}
+.game-msg{text-align:center;font-size:1.3em;font-weight:700;padding:16px;margin:12px 0;border-radius:12px}
+.game-msg.win{background:rgba(34,197,94,.15);color:var(--gz-success,#22c55e)}
+.game-msg.lose{background:rgba(239,68,68,.15);color:var(--gz-accent)}
+.hint-text{text-align:center;font-size:.85em;color:var(--text3);margin-top:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hangman Game Online","description":"Play Hangman online for free. Guess the word letter by letter before the stick figure is complete. 500+ words, multiple categories and difficulty levels.","url": "https://tools.gamezipper.com/zh/fun/hangman.html","applicationCategory":"Game","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do you play Hangman?", "acceptedAnswer": {"@type": "Answer", "text": "Click letters on the on-screen keyboard (or press keys on your physical keyboard) to guess the hidden word one letter at a time. Each wrong guess adds a body part to the stick figure. You win by guessing the full word before the figure is complete (6 wrong guesses)."}}, {"@type": "Question", "name": "How many wrong guesses do I get?", "acceptedAnswer": {"@type": "Answer", "text": "You get 6 wrong guesses before the game ends. The hangman is built from head, body, left arm, right arm, left leg, and right leg."}}, {"@type": "Question", "name": "Can I use my keyboard?", "acceptedAnswer": {"@type": "Answer", "text": "Yes! Just press any letter key on your physical keyboard to make a guess. The on-screen keyboard will also update."}}, {"@type": "Question", "name": "What categories are available?", "acceptedAnswer": {"@type": "Answer", "text": "Words are drawn from categories including animals, countries, food, technology, nature, sports and more. The difficulty varies with word length and complexity."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/hangman.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/hangman.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/hangman.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area" style="text-align:center">
+    <div class="game-info">
+      <span id="score-display"></span>
+      <span id="streak-display"></span>
+    </div>
+    <canvas id="hangman-canvas" width="200" height="220"></canvas>
+    <div class="word-display" id="word-display"></div>
+    <div class="hint-text" id="hint-text"></div>
+    <div id="game-message"></div>
+    <div class="keyboard" id="keyboard"></div>
+    <div style="margin-top:16px">
+      <button class="gz-btn" id="new-game-btn" style="display:none"></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Hangman Game',
+    toolDesc: 'Play the classic word guessing game online. Guess the hidden word before the hangman is drawn!',
+    newGame: 'New Game',
+    score: 'Score',
+    streak: 'Streak',
+    wins: 'wins',
+    youWin: '🎉 You Win!',
+    youLose: '💀 Game Over!',
+    theWordWas: 'The word was:',
+    category: 'Category',
+    categories: {animals:'Animals',countries:'Countries',food:'Food',technology:'Technology',nature:'Nature',sports:'Sports',science:'Science'},
+    step1: 'Click letters on the keyboard or press keys to guess',
+    step2: 'Correct letters are revealed in the word',
+    step3: 'Wrong letters add body parts to the hangman',
+    step4: 'Guess the word before 6 wrong guesses to win!',
+  },
+  zh: {
+    toolTitle: '猜词游戏 (Hangman)',
+    toolDesc: '经典英文猜词游戏，在火柴人画完之前猜出隐藏的单词！',
+    newGame: '新游戏',
+    score: '得分',
+    streak: '连胜',
+    wins: '胜',
+    youWin: '🎉 你赢了！',
+    youLose: '💀 游戏结束！',
+    theWordWas: '答案是：',
+    category: '分类',
+    categories: {animals:'动物',countries:'国家',food:'食物',technology:'科技',nature:'自然',sports:'运动',science:'科学'},
+    step1: '点击键盘上的字母或按键猜测',
+    step2: '正确的字母会在单词中显示',
+    step3: '猜错的字母会添加火柴人的身体部位',
+    step4: '在 6 次猜错之前猜出单词即可获胜！',
+  }
+});
+
+const { $, t } = GZ;
+
+const WORDS = {
+  animals: ['elephant','giraffe','penguin','dolphin','butterfly','chameleon','kangaroo','octopus','flamingo','hedgehog','leopard','parrot','hamster','jellyfish','lobster','pelican','raccoon','squirrel','tortoise','zebra'],
+  countries: ['australia','brazil','canada','denmark','ethiopia','france','germany','hungary','iceland','jamaica','portugal','singapore','thailand','ukraine','vietnam','argentina','colombia','finland','morocco','sweden'],
+  food: ['avocado','broccoli','chocolate','dumpling','espresso','focaccia','guacamole','hamburger','pancakes','spaghetti','croissant','pineapple','strawberry','blueberry','mushroom','sandwich','cinnamon','pepperoni','tiramisu','lavender'],
+  technology: ['algorithm','bluetooth','database','ethernet','firmware','graphics','hardware','internet','keyboard','software','compiler','database','function','variable','protocol','terminal','debugger','overflow','binary','quantum'],
+  nature: ['avalanche','blizzard','cyclone','drought','eclipse','glacier','hurricane','island','mountain','volcano','waterfall','wildfire','tsunami','rainbow','thunder','magnetic','mineral','crystal','blossom','canyon'],
+  sports: ['baseball','cricket','fencing','gymnastics','hockey','javelin','lacrosse','marathon','rowing','swimming','archery','badminton','football','surfing','volleyball','wrestling','cycling','karate','sailing','skating'],
+  science: ['molecule','electron','neutron','proton','gravity','nucleus','quantum','spectrum','catalyst','chemical','isotope','element','entropy','nuclear','polymer','crystal','voltage','circuit','photon','osmosis'],
+};
+
+let word = '', category = '', guessed = new Set(), wrong = 0, gameOver = false;
+let score = 0, streak = 0;
+
+const canvas = $('#hangman-canvas');
+const ctx = canvas.getContext('2d');
+const bodyParts = 6;
+
+function drawHangman() {
+  const s = getComputedStyle(document.documentElement);
+  const accent = s.getPropertyValue('--gz-accent').trim() || '#e94560';
+  const text = s.getPropertyValue('--text').trim() || '#eee';
+  ctx.clearRect(0, 0, 200, 220);
+  ctx.strokeStyle = text;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+
+  // Base
+  ctx.beginPath(); ctx.moveTo(20, 200); ctx.lineTo(100, 200); ctx.stroke();
+  // Pole
+  ctx.beginPath(); ctx.moveTo(60, 200); ctx.lineTo(60, 30); ctx.stroke();
+  // Top
+  ctx.beginPath(); ctx.moveTo(60, 30); ctx.lineTo(140, 30); ctx.stroke();
+  // Rope
+  ctx.beginPath(); ctx.moveTo(140, 30); ctx.lineTo(140, 50); ctx.stroke();
+
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+
+  if (wrong >= 1) { // Head
+    ctx.beginPath(); ctx.arc(140, 68, 18, 0, Math.PI * 2); ctx.stroke();
+  }
+  if (wrong >= 2) { // Body
+    ctx.beginPath(); ctx.moveTo(140, 86); ctx.lineTo(140, 140); ctx.stroke();
+  }
+  if (wrong >= 3) { // Left arm
+    ctx.beginPath(); ctx.moveTo(140, 100); ctx.lineTo(110, 125); ctx.stroke();
+  }
+  if (wrong >= 4) { // Right arm
+    ctx.beginPath(); ctx.moveTo(140, 100); ctx.lineTo(170, 125); ctx.stroke();
+  }
+  if (wrong >= 5) { // Left leg
+    ctx.beginPath(); ctx.moveTo(140, 140); ctx.lineTo(110, 180); ctx.stroke();
+  }
+  if (wrong >= 6) { // Right leg
+    ctx.beginPath(); ctx.moveTo(140, 140); ctx.lineTo(170, 180); ctx.stroke();
+  }
+}
+
+function renderWord() {
+  const el = $('#word-display');
+  el.innerHTML = word.split('').map(c => {
+    const cls = guessed.has(c) ? 'revealed' : '';
+    return `<div class="letter-slot ${cls}">${guessed.has(c) ? c.toUpperCase() : ''}</div>`;
+  }).join('');
+}
+
+function renderKeyboard() {
+  const el = $('#keyboard');
+  el.innerHTML = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(c => {
+    let cls = '';
+    if (guessed.has(c.toLowerCase())) {
+      cls = word.includes(c.toLowerCase()) ? 'correct' : 'wrong';
+    }
+    return `<button class="key-btn ${cls}" ${guessed.has(c.toLowerCase()) || gameOver ? 'disabled' : ''} onclick="guess('${c.toLowerCase()}')">${c}</button>`;
+  }).join('');
+}
+
+function updateInfo() {
+  const lang = GZI18n.getLang();
+  const cats = t('categories');
+  $('#score-display').innerHTML = `${t('score')}: <strong>${score}</strong>`;
+  $('#streak-display').innerHTML = `${t('streak')}: <strong>${streak}</strong>`;
+  $('#hint-text').textContent = `${t('category')}: ${cats[category] || category}`;
+}
+
+function checkWin() {
+  if (word.split('').every(c => guessed.has(c))) {
+    gameOver = true;
+    score += word.length + (bodyParts - wrong) * 2;
+    streak++;
+    $('#game-message').innerHTML = `<div class="game-msg win">${t('youWin')}</div>`;
+    $('#new-game-btn').style.display = 'inline-block';
+    return true;
+  }
+  return false;
+}
+
+function checkLose() {
+  if (wrong >= bodyParts) {
+    gameOver = true;
+    streak = 0;
+    word.split('').forEach(c => guessed.add(c));
+    renderWord();
+    $('#game-message').innerHTML = `<div class="game-msg lose">${t('youLose')}<br><small>${t('theWordWas')} <strong>${word.toUpperCase()}</strong></small></div>`;
+    $('#new-game-btn').style.display = 'inline-block';
+    return true;
+  }
+  return false;
+}
+
+window.guess = function(c) {
+  if (gameOver || guessed.has(c)) return;
+  guessed.add(c);
+  if (!word.includes(c)) wrong++;
+  drawHangman();
+  renderWord();
+  renderKeyboard();
+  updateInfo();
+  if (!checkWin()) checkLose();
+};
+
+function newGame() {
+  const cats = Object.keys(WORDS);
+  category = cats[Math.floor(Math.random() * cats.length)];
+  const list = WORDS[category];
+  word = list[Math.floor(Math.random() * list.length)];
+  guessed = new Set();
+  wrong = 0;
+  gameOver = false;
+  $('#game-message').innerHTML = '';
+  $('#new-game-btn').style.display = 'none';
+  drawHangman();
+  renderWord();
+  renderKeyboard();
+  updateInfo();
+}
+
+// Keyboard input
+document.addEventListener('keydown', e => {
+  if (gameOver) return;
+  const c = e.key.toLowerCase();
+  if (/^[a-z]$/.test(c)) guess(c);
+});
+
+$('#new-game-btn').textContent = t('newGame');
+$('#new-game-btn').addEventListener('click', newGame);
+
+newGame();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⌨️', href:'/fun/typing-test.html', name:'Typing Test'},
+    {icon:'🧩', href:'/fun/sudoku.html', name:'Sudoku'},
+    {icon:'🔢', href:'/fun/2048.html', name:'2048'},
+    {icon:'🐍', href:'/fun/snake.html', name:'Snake'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

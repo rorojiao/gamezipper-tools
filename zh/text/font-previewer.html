@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>字体预览与对比工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="并排预览和比较网页字体。使用自定义文本、大小、粗细和颜色测试 Google Fonts。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/font-previewer.html">
+  <meta property="og:title" content="字体预览与对比工具">
+  <meta property="og:description" content="并排预览和比较网页字体。使用自定义文本、大小、粗细和颜色测试 Google Fonts。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/font-previewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="字体预览与对比工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.font-row{display:grid;grid-template-columns:200px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--glass)}
+.font-preview{font-size:24px;line-height:1.4;word-break:break-word;min-height:40px}
+.font-name{font-weight:700;font-size:.9em}
+.font-meta{font-size:.75em;color:var(--gz-muted)}
+.ctrl-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.ctrl-row label{font-weight:600;font-size:.85em}
+.ctrl-row input,.ctrl-row select{flex:1;min-width:100px}
+@media(max-width:700px){.font-row{grid-template-columns:1fr;}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Font Previewer & Comparer","description":"Preview and compare web fonts side by side. Test Google Fonts with custom text, sizes, weights and colors.","url": "https://tools.gamezipper.com/zh/text/font-previewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I preview Google Fonts?", "acceptedAnswer": {"@type": "Answer", "text": "Type a font name or browse the dropdown, enter your preview text, and see how it looks instantly. You can compare multiple fonts side by side."}}, {"@type": "Question", "name": "Can I compare fonts side by side?", "acceptedAnswer": {"@type": "Answer", "text": "Yes! Add multiple fonts and they will be displayed side by side with the same preview text, making it easy to compare and choose."}}, {"@type": "Question", "name": "What font weights are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Most Google Fonts support weights from 100 (Thin) to 900 (Black). The available weights depend on the specific font family."}}, {"@type": "Question", "name": "Does this tool work offline?", "acceptedAnswer": {"@type": "Answer", "text": "The tool requires an internet connection to load Google Fonts. However, all font rendering and comparison happens locally in your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/font-previewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/font-previewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/font-previewer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div>
+      <div class="ctrl-row">
+        <label>Preview Text</label>
+        <input type="text" id="preview-text" value="The quick brown fox jumps over the lazy dog. 0123456789">
+      </div>
+      <div class="ctrl-row">
+        <label>Size</label>
+        <input type="range" id="font-size" min="12" max="72" value="28" style="max-width:200px">
+        <span id="size-val">28px</span>
+        <label>Weight</label>
+        <select id="font-weight">
+          <option value="100">100 Thin</option>
+          <option value="200">200 Extra Light</option>
+          <option value="300">300 Light</option>
+          <option value="400" selected>400 Regular</option>
+          <option value="500">500 Medium</option>
+          <option value="600">600 Semi Bold</option>
+          <option value="700">700 Bold</option>
+          <option value="800">800 Extra Bold</option>
+          <option value="900">900 Black</option>
+        </select>
+        <label>Color</label>
+        <input type="color" id="font-color" value="#ffffff" style="width:40px;height:30px">
+      </div>
+      <div class="ctrl-row">
+        <label>Add Font</label>
+        <input type="text" id="font-input" placeholder="Type font name (e.g. Roboto, Inter, Poppins)" list="font-datalist">
+        <datalist id="font-datalist"></datalist>
+        <button class="gz-btn" id="add-font-btn">Add</button>
+        <button class="gz-btn gz-btn-secondary" id="add-popular-btn">+ Popular</button>
+      </div>
+      <div id="font-list"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Font Previewer & Comparer',
+    toolDesc: 'Preview and compare web fonts side by side. Test Google Fonts with custom text, sizes, weights and colors.',
+    step1: 'Type a font name or click "+ Popular" to load popular fonts',
+    step2: 'Customize the preview text, size, weight and color',
+    step3: 'Add multiple fonts to compare them side by side',
+    step4: 'Click any font to copy the CSS font-family declaration',
+    copied: 'CSS copied!',
+    remove: 'Remove',
+  },
+  zh: {
+    toolTitle: '字体预览与对比工具',
+    toolDesc: '并排预览和比较网页字体。使用自定义文本、大小、粗细和颜色测试 Google Fonts。',
+    step1: '输入字体名称或点击「+ 常用」加载热门字体',
+    step2: '自定义预览文本、大小、粗细和颜色',
+    step3: '添加多个字体进行并排对比',
+    step4: '点击任意字体复制 CSS font-family 声明',
+    copied: 'CSS 已复制！',
+    remove: '移除',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const POPULAR_FONTS = ['Inter','Roboto','Open Sans','Poppins','Montserrat','Lato','Playfair Display','Merriweather','Source Sans 3','Nunito','Raleway','Oswald','PT Sans','Fira Code','JetBrains Mono','DM Sans','Work Sans','Space Grotesk','Manrope','Plus Jakarta Sans'];
+
+const ALL_FONTS = ['Inter','Roboto','Open Sans','Poppins','Montserrat','Lato','Playfair Display','Merriweather','Source Sans 3','Nunito','Raleway','Oswald','PT Sans','Fira Code','JetBrains Mono','DM Sans','Work Sans','Space Grotesk','Manrope','Plus Jakarta Sans','Ubuntu','Noto Sans','Libre Baskerville','Crimson Text','Lora','Bitter','Inconsolata','Source Code Pro','Karla','Rubik','Quicksand','Pacifico','Dancing Script','Shadows Into Light','Indie Flower','Caveat','Satisfy','Great Vibes','Permanent Marker','Bebas Neue','Anton','Lobster','Righteous','Abril Fatface','Zilla Slab','IBM Plex Sans','IBM Plex Mono','Outfit','Sora'];
+
+let activeFonts = [];
+
+// Populate datalist
+$('#font-datalist').innerHTML = ALL_FONTS.map(f => `<option value="${f}">`).join('');
+
+function loadFont(name, weight, cb) {
+  const id = 'gf-' + name.replace(/\s+/g, '-').toLowerCase();
+  if (document.getElementById(id)) { if(cb) cb(); return; }
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name)}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
+  link.onload = cb;
+  document.head.appendChild(link);
+}
+
+function render() {
+  const text = $('#preview-text').value;
+  const size = $('#font-size').value;
+  const weight = $('#font-weight').value;
+  const color = $('#font-color').value;
+  $('#size-val').textContent = size + 'px';
+
+  $('#font-list').innerHTML = activeFonts.map((f, i) => `
+    <div class="font-row" onclick="copyText('font-family: \\'${f}\\', sans-serif;')" style="cursor:pointer" title="Click to copy CSS">
+      <div>
+        <div class="font-name">${f}</div>
+        <div class="font-meta">Click to copy CSS</div>
+        <button class="gz-btn gz-btn-secondary" style="margin-top:6px;font-size:.75em" onclick="event.stopPropagation();removeFont(${i})">${t('remove')}</button>
+      </div>
+      <div class="font-preview" style="font-family:'${f}',sans-serif;font-size:${size}px;font-weight:${weight};color:${color}">${text}</div>
+      <div style="font-size:.75em;color:var(--gz-muted)">font-weight: ${weight}</div>
+    </div>
+  `).join('');
+}
+
+function addFont(name) {
+  name = name.trim();
+  if (!name || activeFonts.includes(name)) return;
+  loadFont(name, null, render);
+  activeFonts.push(name);
+  render();
+}
+
+function removeFont(i) {
+  activeFonts.splice(i, 1);
+  render();
+}
+
+$('#add-font-btn').addEventListener('click', () => {
+  addFont($('#font-input').value);
+  $('#font-input').value = '';
+});
+
+$('#font-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    addFont($('#font-input').value);
+    $('#font-input').value = '';
+  }
+});
+
+$('#add-popular-btn').addEventListener('click', () => {
+  POPULAR_FONTS.slice(0, 6).forEach(f => {
+    if (!activeFonts.includes(f)) {
+      loadFont(f, null, render);
+      activeFonts.push(f);
+    }
+  });
+  render();
+});
+
+['preview-text','font-size','font-weight','font-color'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', render);
+  el.addEventListener('change', render);
+});
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="activeFonts=[];render()">${t('clear')}</button>`;
+
+// Start with a few fonts
+['Inter','Roboto','Poppins'].forEach(f => {
+  loadFont(f);
+  activeFonts.push(f);
+});
+render();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔤', href:'/text/google-fonts.html', name:'Google Fonts Pair Finder'},
+    {icon:'📏', href:'/css-tools/line-height.html', name:'Line Height'},
+    {icon:'📐', href:'/css-tools/clamp.html', name:'CSS Clamp()'},
+    {icon:'✏️', href:'/css-tools/text-shadow.html', name:'Text Shadow'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

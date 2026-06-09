@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>凯撒密码 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用凯撒密码加密和解密文本，支持自定义偏移量、暴力破解和频率分析。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/caesar-cipher.html">
+  <meta property="og:title" content="凯撒密码">
+  <meta property="og:description" content="使用凯撒密码加密和解密文本，支持自定义偏移量、暴力破解和频率分析。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/caesar-cipher.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="凯撒密码">
+<meta name="twitter:description" content="使用凯撒密码加密和解密文本，支持自定义偏移量、暴力破解和频率分析。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.9em;line-height:1.5}
+.shift-control{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.shift-control label{font-weight:600;font-size:.9em}
+.shift-control input[type=range]{flex:1;min-width:120px;max-width:300px;accent-color:var(--gz-accent)}
+.shift-value{font-weight:700;color:var(--gz-accent);min-width:30px;text-align:center}
+.brute-section{margin-top:16px}
+.brute-row{display:flex;gap:8px;padding:4px 8px;border-bottom:1px solid var(--gz-border);font-family:monospace;font-size:.85em;align-items:center}
+.brute-row .shift-num{font-weight:700;color:var(--gz-accent);min-width:50px}
+.brute-row .brute-text{flex:1;word-break:break-all}
+.brute-row .gz-btn{flex-shrink:0;font-size:.75em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Caesar Cipher","description":"Encrypt and decrypt text using the Caesar cipher with adjustable shift, brute force decoder, and frequency analysis. Free online tool.","url": "https://tools.gamezipper.com/zh/dev/caesar-cipher.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is the Caesar cipher?","acceptedAnswer":{"@type":"Answer","text":"The Caesar cipher is one of the oldest encryption methods, named after Julius Caesar. It works by shifting each letter in the text by a fixed number of positions in the alphabet."}},{"@type":"Question","name":"How do I decrypt a Caesar cipher?","acceptedAnswer":{"@type":"Answer","text":"Use the brute force mode to see all 25 possible shifts. Look for the shift that produces readable text, or use frequency analysis to identify the most likely shift."}},{"@type":"Question","name":"Is the Caesar cipher secure?","acceptedAnswer":{"@type":"Answer","text":"No, the Caesar cipher is not secure by modern standards. It has only 25 possible keys and can be easily broken. It is used for educational purposes and fun."}},{"@type":"Question","name":"What shift value is ROT13?","acceptedAnswer":{"@type":"Answer","text":"ROT13 is a Caesar cipher with a shift of 13. Since the alphabet has 26 letters, applying ROT13 twice returns the original text."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/caesar-cipher.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/caesar-cipher.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/caesar-cipher.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="shift-control">
+      <label id="lbl-shift"></label>
+      <input type="range" id="shift" min="1" max="25" value="3" oninput="updateShift()">
+      <span class="shift-value" id="shiftVal">3</span>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="6" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div class="brute-section" id="brute-section" style="display:none">
+      <h3 id="brute-title" style="font-size:1em;margin-bottom:8px"></h3>
+      <div id="brute-output"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Caesar Cipher',
+    toolDesc: 'Encrypt and decrypt text using the Caesar cipher with adjustable shift, brute force decoder, and frequency analysis.',
+    inputLabel: 'Input Text',
+    outputLabel: 'Result',
+    shiftLabel: 'Shift:',
+    encrypt: 'Encrypt',
+    decrypt: 'Decrypt',
+    bruteForce: 'Brute Force (All Shifts)',
+    bruteTitle: 'All Possible Shifts',
+    copy: 'Copy',
+    clear: 'Clear',
+    example: 'Example',
+    step1: 'Enter your text in the input area',
+    step2: 'Set the shift value using the slider (1-25)',
+    step3: 'Click Encrypt to shift forward or Decrypt to shift backward',
+    step4: 'Use Brute Force to see all 25 possible decryptions',
+  },
+  zh: {
+    toolTitle: '凯撒密码',
+    toolDesc: '使用凯撒密码加密和解密文本，支持自定义偏移量、暴力破解和频率分析。',
+    inputLabel: '输入文本',
+    outputLabel: '结果',
+    shiftLabel: '偏移量：',
+    encrypt: '加密',
+    decrypt: '解密',
+    bruteForce: '暴力破解（所有偏移）',
+    bruteTitle: '所有可能的偏移',
+    copy: '复制',
+    clear: '清空',
+    example: '示例',
+    step1: '在输入区输入文本',
+    step2: '使用滑块设置偏移量（1-25）',
+    step3: '点击「加密」向前偏移或「解密」向后偏移',
+    step4: '使用「暴力破解」查看所有 25 种可能的解密',
+  }
+});
+
+const {$, copyText, t} = GZ;
+
+function caesarShift(text, shift) {
+  return [...text].map(ch => {
+    const code = ch.charCodeAt(0);
+    if (code >= 65 && code <= 90) return String.fromCharCode(((code - 65 + shift % 26 + 26) % 26) + 65);
+    if (code >= 97 && code <= 122) return String.fromCharCode(((code - 97 + shift % 26 + 26) % 26) + 97);
+    return ch;
+  }).join('');
+}
+
+function updateShift() {
+  $('#shiftVal').textContent = $('#shift').value;
+}
+
+function doEncrypt() {
+  const text = $('#input').value;
+  const shift = parseInt($('#shift').value);
+  if (!text) return;
+  $('#output').textContent = caesarShift(text, shift);
+  $('#brute-section').style.display = 'none';
+}
+
+function doDecrypt() {
+  const text = $('#input').value;
+  const shift = parseInt($('#shift').value);
+  if (!text) return;
+  $('#output').textContent = caesarShift(text, -shift);
+  $('#brute-section').style.display = 'none';
+}
+
+function doBruteForce() {
+  const text = $('#input').value;
+  if (!text) return;
+  $('#brute-title').textContent = t('bruteTitle');
+  let html = '';
+  for (let i = 1; i <= 25; i++) {
+    const decoded = caesarShift(text, -i);
+    html += `<div class="brute-row">
+      <span class="shift-num">-${i}</span>
+      <span class="brute-text">${decoded.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>
+      <button class="gz-btn" onclick="copyText(this.previousElementSibling.textContent)">${t('copy')}</button>
+    </div>`;
+  }
+  $('#brute-output').innerHTML = html;
+  $('#brute-section').style.display = 'block';
+  $('#output').textContent = '';
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#output').textContent = '';
+  $('#brute-section').style.display = 'none';
+}
+
+function loadExample() {
+  $('#input').value = 'The quick brown fox jumps over the lazy dog';
+  doEncrypt();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doEncrypt()">${t('encrypt')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDecrypt()">${t('decrypt')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doBruteForce()">${t('bruteForce')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-shift').textContent = t('shiftLabel');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/rot13-cipher.html', name:'ROT13 Cipher'},
+    {icon:'🗝️', href:'/dev/vigenere.html', name:'Vigenère Cipher'},
+    {icon:'🔒', href:'/dev/aes.html', name:'AES Encrypt'},
+    {icon:'🔤', href:'/dev/base64.html', name:'Base64'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
