@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Bcrypt Password Hash Generator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Generate and verify bcrypt password hashes online. Free bcrypt generator with adjustable cost factor, instant hashing and verification. No data sent to servers.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/bcrypt-generator.html">
+  <meta property="og:title" content="Bcrypt Password Hash Generator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Generate and verify bcrypt password hashes online. Free bcrypt generator with adjustable cost factor, instant hashing and verification. No data sent to servers.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/bcrypt-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Bcrypt Password Hash Generator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+<style>
+#hash-output{font-family:monospace;font-size:.85em;word-break:break-all;background:var(--gz-card);border-radius:8px;padding:12px;min-height:48px;color:var(--gz-success)}
+#verify-result{padding:8px 12px;border-radius:6px;margin-top:8px;font-weight:600}
+.match{background:#00d67222;color:#00d672}
+.no-match{background:#e9456022;color:#e94560}
+.gz-field{margin-bottom:12px}
+.gz-field label{display:block;margin-bottom:4px;font-weight:600;font-size:.9em}
+.gz-field input,.gz-field textarea{width:100%;padding:8px;border-radius:6px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-text);font-size:.9em}
+.gz-field textarea{font-family:monospace;font-size:.85em;min-height:60px;resize:vertical}
+.cost-display{font-size:.85em;opacity:.7;margin-left:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Bcrypt Password Hash Generator","description":"Generate and verify bcrypt password hashes online. Free bcrypt generator with adjustable cost factor, instant hashing and verification.","url":"https://tools.gamezipper.com/dev/bcrypt-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is bcrypt?", "acceptedAnswer": {"@type": "Answer", "text": "Bcrypt is a password hashing algorithm designed to be slow and resistant to brute-force attacks. It incorporates a salt to protect against rainbow table attacks and a cost factor that controls the computational complexity."}}, {"@type": "Question", "name": "What cost factor should I use?", "acceptedAnswer": {"@type": "Answer", "text": "A cost factor of 10-12 is recommended for most applications in 2025. Higher values increase security but also increase computation time. Factor 12 takes about 250ms, while factor 14 takes about 1 second."}}, {"@type": "Question", "name": "Is my password sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All hashing happens in your browser using the bcryptjs library. Your password never leaves your device."}}, {"@type": "Question", "name": "What is a bcrypt salt?", "acceptedAnswer": {"@type": "Answer", "text": "A salt is random data added to the password before hashing. Bcrypt automatically generates a unique salt for each hash, which prevents attackers from using precomputed tables to crack passwords."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/bcrypt-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/bcrypt-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/bcrypt-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+      <div>
+        <h3 id="gen-title" style="margin:0 0 12px"></h3>
+        <div class="gz-field">
+          <label id="lbl-password"></label>
+          <input type="text" id="password" placeholder="Enter password..." autocomplete="off">
+        </div>
+        <div class="gz-field">
+          <label id="lbl-cost"></label>
+          <input type="range" id="cost" min="4" max="15" value="10">
+          <span class="cost-display" id="cost-val">10</span>
+        </div>
+        <button class="gz-btn" id="btn-hash" style="width:100%"></button>
+        <div style="margin-top:12px">
+          <label id="lbl-hash-out"></label>
+          <div id="hash-output"></div>
+        </div>
+        <div id="hash-time" style="margin-top:6px;font-size:.8em;opacity:.7"></div>
+      </div>
+      <div>
+        <h3 id="verify-title" style="margin:0 0 12px"></h3>
+        <div class="gz-field">
+          <label id="lbl-verify-pass"></label>
+          <input type="text" id="verify-password" placeholder="Enter password..." autocomplete="off">
+        </div>
+        <div class="gz-field">
+          <label id="lbl-verify-hash"></label>
+          <textarea id="verify-hash" placeholder="$2a$10$..." spellcheck="false"></textarea>
+        </div>
+        <button class="gz-btn gz-btn-secondary" id="btn-verify" style="width:100%"></button>
+        <div id="verify-result"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Bcrypt Password Hash Generator',
+    toolDesc: 'Generate and verify bcrypt password hashes with adjustable cost factor. All processing happens locally in your browser.',
+    generate: '🔒 Generate Hash',
+    verify: '✓ Verify Password',
+    passwordLabel: 'Password',
+    costLabel: 'Cost Factor',
+    hashOutput: 'Generated Hash',
+    genSection: 'Generate Hash',
+    verifySection: 'Verify Hash',
+    verifyPassLabel: 'Password to Verify',
+    verifyHashLabel: 'Bcrypt Hash',
+    match: '✓ Password matches!',
+    noMatch: '✗ Password does NOT match',
+    copied: '✓ Copied!',
+    copy: '📋 Copy Hash',
+    timeTaken: 'Hash generated in {ms}ms',
+    step1: 'Enter a password and adjust the cost factor (4-15)',
+    step2: 'Click Generate Hash to create a bcrypt hash',
+    step3: 'Use the Verify section to check a password against a hash',
+    step4: 'Copy the hash for use in your application',
+  },
+  zh: {
+    toolTitle: 'Bcrypt 密码哈希生成器',
+    toolDesc: '生成和验证 bcrypt 密码哈希，可调节 cost 因子。所有处理在浏览器本地完成。',
+    generate: '🔒 生成哈希',
+    verify: '✓ 验证密码',
+    passwordLabel: '密码',
+    costLabel: 'Cost 因子',
+    hashOutput: '生成的哈希',
+    genSection: '生成哈希',
+    verifySection: '验证哈希',
+    verifyPassLabel: '待验证密码',
+    verifyHashLabel: 'Bcrypt 哈希',
+    match: '✓ 密码匹配！',
+    noMatch: '✗ 密码不匹配',
+    copied: '✓ 已复制！',
+    copy: '📋 复制哈希',
+    timeTaken: '哈希生成耗时 {ms}ms',
+    step1: '输入密码并调整 cost 因子（4-15）',
+    step2: '点击「生成哈希」创建 bcrypt 哈希',
+    step3: '使用验证区域检查密码与哈希是否匹配',
+    step4: '复制哈希值用于你的应用程序',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#gen-title').textContent=t('genSection');
+$('#verify-title').textContent=t('verifySection');
+$('#lbl-password').textContent=t('passwordLabel');
+$('#lbl-cost').textContent=t('costLabel');
+$('#lbl-hash-out').textContent=t('hashOutput');
+$('#lbl-verify-pass').textContent=t('verifyPassLabel');
+$('#lbl-verify-hash').textContent=t('verifyHashLabel');
+$('#btn-hash').textContent=t('generate');
+$('#btn-verify').textContent=t('verify');
+
+$('#cost').addEventListener('input', function(){ $('#cost-val').textContent=this.value; });
+
+$('#btn-hash').addEventListener('click', function(){
+  const pass=$('#password').value;
+  if(!pass) return;
+  const cost=parseInt($('#cost').value);
+  const salt=bcryptjs.genSaltSync(cost);
+  const start=performance.now();
+  const hash=bcryptjs.hashSync(pass, salt);
+  const elapsed=Math.round(performance.now()-start);
+  $('#hash-output').textContent=hash;
+  $('#hash-time').textContent=t('timeTaken').replace('{ms}',elapsed);
+});
+
+$('#btn-verify').addEventListener('click', function(){
+  const pass=$('#verify-password').value;
+  const hash=$('#verify-hash').value.trim();
+  if(!pass||!hash){ $('#verify-result').innerHTML=''; return; }
+  try{
+    const match=bcryptjs.compareSync(pass, hash);
+    $('#verify-result').innerHTML=`<div id="verify-result" class="${match?'match':'no-match'}">${match?t('match'):t('noMatch')}</div>`;
+  }catch(e){
+    $('#verify-result').innerHTML=`<div class="no-match">✗ Invalid hash format</div>`;
+  }
+});
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn gz-btn-secondary" onclick="copyText(document.getElementById('hash-output').textContent)">${t('copy')}</button>`;
+
+GZ.renderToolPage({
+  category:'dev',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🔑',href:'/dev/hash.html',name:'Hash Generator'},
+    {icon:'🔐',href:'/dev/password-generator.html',name:'Password Generator'},
+    {icon:'🛡️',href:'/dev/password-strength-checker.html',name:'Password Strength'},
+    {icon:'🔏',href:'/dev/hmac.html',name:'HMAC Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
