@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Percentile Calculator - Calculate Percentile Rank & Value | GameZipper Tools</title>
+  <meta name="description" content="Calculate percentile rank, percentile value and z-score from any dataset. Supports multiple methods — instant, free, and browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/percentile-calculator.html">
+  <meta property="og:title" content="Percentile Calculator - Calculate Percentile Rank & Value | GameZipper Tools">
+  <meta property="og:description" content="Calculate percentile rank, percentile value and z-score from any dataset. Supports multiple methods — instant, free, and browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/percentile-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Percentile Calculator - Calculate Percentile Rank & Value | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+.result-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.result-card .value{font-size:2em;font-weight:900;color:var(--accent)}
+.result-card .label{font-size:.85em;color:var(--text2);margin-top:4px}
+textarea{width:100%;min-height:120px;font-family:monospace;font-size:.9em}
+.gz-control{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.gz-control label{font-size:.85em;color:var(--text2);font-weight:600}
+.gz-control select,.gz-control input{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:.9em}
+.mode-toggle{display:flex;gap:8px;margin-bottom:16px}
+.mode-toggle button{flex:1}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Percentile Calculator","description":"Calculate percentile rank, percentile value and z-score from any dataset. Supports multiple methods — instant, free, and browser-based.","url":"https://tools.gamezipper.com/calc/percentile-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a percentile?","acceptedAnswer":{"@type":"Answer","text":"A percentile is the value below which a given percentage of observations fall. For example, the 75th percentile means 75% of the data is below that value."}},{"@type":"Question","name":"What methods does this calculator support?","acceptedAnswer":{"@type":"Answer","text":"It supports the nearest-rank method, linear interpolation (exclusive and inclusive), and can calculate percentile rank for a specific value."}},{"@type":"Question","name":"How do I enter my data?","acceptedAnswer":{"@type":"Answer","text":"Enter numbers separated by commas, spaces, or new lines. The calculator will sort and process them automatically."}},{"@type":"Question","name":"Is this tool free?","acceptedAnswer":{"@type":"Answer","text":"Yes, this percentile calculator is completely free and runs entirely in your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/percentile-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/percentile-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/percentile-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-toggle">
+      <button class="gz-btn active" id="btn-value" onclick="setMode('value')"></button>
+      <button class="gz-btn gz-btn-secondary" id="btn-rank" onclick="setMode('rank')"></button>
+    </div>
+    <div id="mode-value">
+      <div class="gz-control">
+        <label id="lbl-data"></label>
+        <textarea id="input-data" placeholder="85, 90, 78, 92, 88, 76, 95, 89, 83, 91"></textarea>
+      </div>
+      <div class="gz-control">
+        <label id="lbl-percentile"></label>
+        <input type="number" id="inp-percentile" value="75" min="0" max="100" step="1">
+      </div>
+    </div>
+    <div id="mode-rank" style="display:none">
+      <div class="gz-control">
+        <label id="lbl-data2"></label>
+        <textarea id="input-data2" placeholder="85, 90, 78, 92, 88, 76, 95, 89, 83, 91"></textarea>
+      </div>
+      <div class="gz-control">
+        <label id="lbl-target"></label>
+        <input type="number" id="inp-target" value="88" step="0.01">
+      </div>
+    </div>
+    <div class="result-grid" id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Percentile Calculator',
+    toolDesc: 'Calculate percentile values and ranks from any dataset. Supports nearest-rank and linear interpolation methods.',
+    enterData: 'Enter your data (comma, space or line separated)',
+    enterPercentile: 'Percentile to find (0-100)',
+    enterData2: 'Enter your dataset',
+    enterTarget: 'Target value to find rank for',
+    modeValue: 'Find Percentile Value',
+    modeRank: 'Find Percentile Rank',
+    calculate: 'Calculate',
+    example: 'Example',
+    clear: 'Clear',
+    percentileValue: 'Percentile Value',
+    rank: 'Percentile Rank',
+    count: 'Data Count',
+    mean: 'Mean',
+    median: 'Median',
+    stdDev: 'Std Deviation',
+    min: 'Minimum',
+    max: 'Maximum',
+    p25: '25th (Q1)',
+    p50: '50th (Median)',
+    p75: '75th (Q3)',
+    iqr: 'IQR',
+    step1: 'Enter your dataset as comma or space separated numbers',
+    step2: 'Choose mode: find a percentile value or a value\'s rank',
+    step3: 'Click Calculate to see results',
+    step4: 'Review percentile value, rank, and summary statistics',
+  },
+  zh: {
+    toolTitle: '百分位数计算器',
+    toolDesc: '从任意数据集计算百分位数值和百分位排名。支持最近秩和线性插值方法。',
+    enterData: '输入数据（用逗号、空格或换行分隔）',
+    enterPercentile: '要查找的百分位数 (0-100)',
+    enterData2: '输入你的数据集',
+    enterTarget: '要查找百分位排名的目标值',
+    modeValue: '查找百分位数值',
+    modeRank: '查找百分位排名',
+    calculate: '计算',
+    example: '示例',
+    clear: '清除',
+    percentileValue: '百分位数值',
+    rank: '百分位排名',
+    count: '数据量',
+    mean: '均值',
+    median: '中位数',
+    stdDev: '标准差',
+    min: '最小值',
+    max: '最大值',
+    p25: '第25百分位 (Q1)',
+    p50: '第50百分位 (中位数)',
+    p75: '第75百分位 (Q3)',
+    iqr: '四分位距',
+    step1: '输入数据集，用逗号、空格或换行分隔',
+    step2: '选择模式：查找百分位数值或某个值的百分位排名',
+    step3: '点击计算查看结果',
+    step4: '查看百分位数值、排名和统计摘要',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'value';
+
+function setMode(m) {
+  mode = m;
+  $('#mode-value').style.display = m === 'value' ? '' : 'none';
+  $('#mode-rank').style.display = m === 'rank' ? '' : 'none';
+  $('#btn-value').className = 'gz-btn' + (m === 'value' ? ' active' : ' gz-btn-secondary');
+  $('#btn-rank').className = 'gz-btn' + (m === 'rank' ? ' active' : ' gz-btn-secondary');
+}
+
+function parseData(text) {
+  return text.split(/[,\s\n]+/).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+}
+
+function percentileValue(sorted, p) {
+  if (sorted.length === 0) return NaN;
+  if (p <= 0) return sorted[0];
+  if (p >= 100) return sorted[sorted.length - 1];
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+function percentileRank(sorted, val) {
+  let below = 0, equal = 0;
+  for (const v of sorted) {
+    if (v < val) below++;
+    else if (v === val) equal++;
+  }
+  return ((below + 0.5 * equal) / sorted.length) * 100;
+}
+
+function mean(arr) { return arr.reduce((s, v) => s + v, 0) / arr.length; }
+function median(arr) {
+  const m = Math.floor(arr.length / 2);
+  return arr.length % 2 ? arr[m] : (arr[m - 1] + arr[m]) / 2;
+}
+function stdDev(arr) {
+  const m = mean(arr);
+  return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
+}
+
+function calculate() {
+  let data, resultHTML = '';
+  if (mode === 'value') {
+    data = parseData($('#input-data').value);
+    const p = parseFloat($('#inp-percentile').value) || 75;
+    if (data.length === 0) { $('#results').innerHTML = '<p style="color:var(--gz-accent)">Please enter valid numbers.</p>'; return; }
+    const val = percentileValue(data, p);
+    resultHTML = `
+      <div class="result-card"><div class="value">${val.toFixed(2)}</div><div class="label">${t('percentileValue')} (P${p})</div></div>
+      <div class="result-card"><div class="value">${data.length}</div><div class="label">${t('count')}</div></div>
+      <div class="result-card"><div class="value">${mean(data).toFixed(2)}</div><div class="label">${t('mean')}</div></div>
+      <div class="result-card"><div class="value">${median(data).toFixed(2)}</div><div class="label">${t('median')}</div></div>
+      <div class="result-card"><div class="value">${stdDev(data).toFixed(2)}</div><div class="label">${t('stdDev')}</div></div>
+      <div class="result-card"><div class="value">${data[0]}</div><div class="label">${t('min')}</div></div>
+      <div class="result-card"><div class="value">${data[data.length - 1]}</div><div class="label">${t('max')}</div></div>
+      <div class="result-card"><div class="value">${percentileValue(data, 25).toFixed(2)}</div><div class="label">${t('p25')}</div></div>
+      <div class="result-card"><div class="value">${percentileValue(data, 50).toFixed(2)}</div><div class="label">${t('p50')}</div></div>
+      <div class="result-card"><div class="value">${percentileValue(data, 75).toFixed(2)}</div><div class="label">${t('p75')}</div></div>
+      <div class="result-card"><div class="value">${(percentileValue(data, 75) - percentileValue(data, 25)).toFixed(2)}</div><div class="label">${t('iqr')}</div></div>
+    `;
+  } else {
+    data = parseData($('#input-data2').value);
+    const target = parseFloat($('#inp-target').value);
+    if (data.length === 0 || isNaN(target)) { $('#results').innerHTML = '<p style="color:var(--gz-accent)">Please enter valid data and target value.</p>'; return; }
+    const rank = percentileRank(data, target);
+    resultHTML = `
+      <div class="result-card"><div class="value">${rank.toFixed(2)}%</div><div class="label">${t('rank')}</div></div>
+      <div class="result-card"><div class="value">${data.length}</div><div class="label">${t('count')}</div></div>
+      <div class="result-card"><div class="value">${mean(data).toFixed(2)}</div><div class="label">${t('mean')}</div></div>
+      <div class="result-card"><div class="value">${median(data).toFixed(2)}</div><div class="label">${t('median')}</div></div>
+      <div class="result-card"><div class="value">${data[0]}</div><div class="label">${t('min')}</div></div>
+      <div class="result-card"><div class="value">${data[data.length - 1]}</div><div class="label">${t('max')}</div></div>
+    `;
+  }
+  $('#results').innerHTML = resultHTML;
+}
+
+function loadExample() {
+  const data = '85, 90, 78, 92, 88, 76, 95, 89, 83, 91, 82, 87, 93, 79, 86, 94, 81, 84, 77, 96';
+  if (mode === 'value') {
+    $('#input-data').value = data;
+    $('#inp-percentile').value = 75;
+  } else {
+    $('#input-data2').value = data;
+    $('#inp-target').value = 88;
+  }
+  calculate();
+}
+
+function doClear() {
+  $('#input-data').value = '';
+  $('#input-data2').value = '';
+  $('#results').innerHTML = '';
+}
+
+// Labels
+$('#btn-value').textContent = t('modeValue');
+$('#btn-rank').textContent = t('modeRank');
+$('#lbl-data').textContent = t('enterData');
+$('#lbl-percentile').textContent = t('enterPercentile');
+$('#lbl-data2').textContent = t('enterData2');
+$('#lbl-target').textContent = t('enterTarget');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="calculate()">${t('calculate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>
+`;
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/calc/statistics-calculator.html', name:'Statistics'},
+    {icon:'🔢', href:'/calc/percentage-calculator.html', name:'Percentage'},
+    {icon:'📐', href:'/calc/bmi-calculator.html', name:'BMI'},
+    {icon:'🧮', href:'/calc/scientific-calculator.html', name:'Scientific Calc'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

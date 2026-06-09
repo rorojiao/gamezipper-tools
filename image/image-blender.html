@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image Blender - Blend Two Images with Blend Modes | GameZipper Tools</title>
+  <meta name="description" content="Blend two images together with 20+ blend modes — multiply, screen, overlay, soft light and more. Free, runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/image/image-blender.html">
+  <meta property="og:title" content="Image Blender - Blend Two Images with Blend Modes | GameZipper Tools">
+  <meta property="og:description" content="Blend two images together with 20+ blend modes — multiply, screen, overlay, soft light and more. Free, runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/image/image-blender.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Image Blender - Blend Two Images with Blend Modes | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:border-color .2s;min-height:120px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent)}
+.drop-zone img{max-width:100%;max-height:200px;border-radius:8px}
+.blend-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:16px}
+@media(max-width:700px){.blend-row{grid-template-columns:1fr}}
+.blend-arrow{font-size:2em;text-align:center;color:var(--accent)}
+#result-canvas{border-radius:12px;max-width:100%;display:block;margin:0 auto}
+.gz-control{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.gz-control label{font-size:.85em;color:var(--text2);font-weight:600}
+.gz-control select,.gz-control input{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Blender","description":"Blend two images together with 20+ blend modes — multiply, screen, overlay, soft light and more. Free, runs entirely in your browser.","url":"https://tools.gamezipper.com/image/image-blender.html","applicationCategory":"Design","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What blend modes are available?","acceptedAnswer":{"@type":"Answer","text":"Over 20 modes including multiply, screen, overlay, soft light, hard light, difference, exclusion, color dodge, color burn and more."}},{"@type":"Question","name":"Is my image data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All blending is done locally in your browser using Canvas. Your images never leave your device."}},{"@type":"Question","name":"Can I adjust the opacity of the blend?","acceptedAnswer":{"@type":"Answer","text":"Yes, you can control the opacity of the top layer from 0% to 100% for fine-tuning the blend effect."}},{"@type":"Question","name":"What image formats are supported?","acceptedAnswer":{"@type":"Answer","text":"You can upload PNG, JPG, WebP, GIF and BMP images. The result can be downloaded as PNG or JPG."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/image-blender.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/image-blender.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/image-blender.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="blend-row">
+      <div class="drop-zone" id="drop1"><span id="lbl1">📷 Drop Image A</span></div>
+      <div class="blend-arrow">⚡</div>
+      <div class="drop-zone" id="drop2"><span id="lbl2">📷 Drop Image B</span></div>
+    </div>
+    <div class="gz-control"><label id="lbl-mode"></label>
+      <select id="sel-mode"></select>
+    </div>
+    <div class="gz-control"><label id="lbl-opacity"></label>
+      <input type="range" id="inp-opacity" min="0" max="100" value="50">
+      <span id="lbl-opacity-val">50%</span>
+    </div>
+    <canvas id="result-canvas" style="display:none"></canvas>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Blender',
+    toolDesc: 'Blend two images together with 20+ blend modes. Upload, adjust opacity and download — all in your browser.',
+    dropA: '📷 Drop or click to upload Image A',
+    dropB: '📷 Drop or click to upload Image B',
+    blendMode: 'Blend Mode',
+    opacity: 'Top Layer Opacity',
+    blend: 'Blend',
+    download: 'Download PNG',
+    downloadJPG: 'Download JPG',
+    clear: 'Clear',
+    step1: 'Upload two images (drag & drop or click)',
+    step2: 'Choose a blend mode from the dropdown',
+    step3: 'Adjust the top layer opacity',
+    step4: 'Click Blend and download the result',
+  },
+  zh: {
+    toolTitle: '图片混合工具',
+    toolDesc: '使用 20+ 混合模式将两张图片混合在一起。上传、调整透明度并下载 — 完全浏览器本地处理。',
+    dropA: '📷 拖拽或点击上传图片 A',
+    dropB: '📷 拖拽或点击上传图片 B',
+    blendMode: '混合模式',
+    opacity: '上层透明度',
+    blend: '混合',
+    download: '下载 PNG',
+    downloadJPG: '下载 JPG',
+    clear: '清除',
+    step1: '上传两张图片（拖拽或点击）',
+    step2: '从下拉菜单选择混合模式',
+    step3: '调整上层图片的透明度',
+    step4: '点击混合并下载结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let imgA = null, imgB = null;
+const canvas = $('#result-canvas');
+const ctx = canvas.getContext('2d');
+
+const modes = ['source-over','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion','hue','saturation','color','luminosity','normal'];
+
+$('#sel-mode').innerHTML = modes.map(m => `<option value="${m}">${m}</option>`).join('');
+
+function setupDrop(id, labelId, setter) {
+  const zone = $(id);
+  const label = $(labelId);
+  zone.addEventListener('click', () => {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.onchange = () => { if (inp.files[0]) loadImg(inp.files[0], zone, setter); };
+    inp.click();
+  });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadImg(e.dataTransfer.files[0], zone, setter); });
+}
+
+function loadImg(file, zone, setter) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      setter(img);
+      zone.innerHTML = '';
+      const preview = document.createElement('img');
+      preview.src = img.src;
+      zone.appendChild(preview);
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+setupDrop('#drop1', '#lbl1', img => { imgA = img; });
+setupDrop('#drop2', '#lbl2', img => { imgB = img; });
+
+$('#inp-opacity').addEventListener('input', function() {
+  $('#lbl-opacity-val').textContent = this.value + '%';
+});
+
+function doBlend() {
+  if (!imgA || !imgB) { alert(t('dropA').replace('📷 ', '')); return; }
+  const w = Math.max(imgA.width, imgB.width);
+  const h = Math.max(imgA.height, imgB.height);
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.display = 'block';
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.drawImage(imgA, 0, 0, w, h);
+  ctx.globalCompositeOperation = $('#sel-mode').value;
+  ctx.globalAlpha = $('#inp-opacity').value / 100;
+  ctx.drawImage(imgB, 0, 0, w, h);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+}
+
+function downloadPNG() {
+  if (!canvas.width) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'blended.png';
+  a.click();
+}
+
+function downloadJPG() {
+  if (!canvas.width) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/jpeg', 0.92);
+  a.download = 'blended.jpg';
+  a.click();
+}
+
+function doClear() {
+  imgA = null; imgB = null;
+  canvas.style.display = 'none';
+  $('#drop1').innerHTML = `<span>${t('dropA')}</span>`;
+  $('#drop2').innerHTML = `<span>${t('dropB')}</span>`;
+}
+
+$('#lbl-mode').textContent = t('blendMode');
+$('#lbl-opacity').textContent = t('opacity');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doBlend()">${t('blend')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadPNG()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadJPG()">${t('downloadJPG')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>
+`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/filters.html', name:'Image Filters'},
+    {icon:'🖼️', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'🪄', href:'/image/background-remover.html', name:'Background Remover'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
