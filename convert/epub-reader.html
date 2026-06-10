@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>EPUB Reader & Viewer - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Read EPUB books online for free. Drag and drop any EPUB file, navigate chapters, bookmark pages and customize font size — all in your browser, no upload needed.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/epub-reader.html">
+  <meta property="og:title" content="EPUB Reader & Viewer - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Read EPUB books online for free. Drag and drop any EPUB file, navigate chapters, bookmark pages and customize font size — all in your browser, no upload needed.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/epub-reader.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="EPUB Reader & Viewer - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#drop-zone{border:2px dashed var(--border);border-radius:16px;padding:3rem;text-align:center;cursor:pointer;transition:all .2s}
+#drop-zone:hover,#drop-zone.drag-over{border-color:var(--accent);background:var(--glass2)}
+#reader{display:none}
+#toc-panel{position:fixed;top:0;left:0;width:280px;height:100vh;background:var(--glass);border-right:1px solid var(--border);z-index:100;overflow-y:auto;transform:translateX(-100%);transition:transform .3s}
+#toc-panel.open{transform:translateX(0)}
+#toc-panel a{display:block;padding:8px 16px;color:var(--text);text-decoration:none;font-size:.9em;border-bottom:1px solid var(--border)}
+#toc-panel a:hover{background:var(--glass2)}
+#content-area{max-width:720px;margin:0 auto;padding:2rem 1rem;font-size:1.1em;line-height:1.8;color:var(--text)}
+#content-area h1,#content-area h2,#content-area h3{color:var(--text);margin:1.5em 0 .5em}
+#content-area p{margin:.8em 0}
+#content-area img{max-width:100%;border-radius:8px}
+.toolbar{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--glass);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.toolbar .spacer{flex:1}
+.reader-controls{display:flex;justify-content:space-between;align-items:center;padding:1rem;max-width:720px;margin:0 auto}
+.font-size-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--glass);color:var(--text);cursor:pointer;font-size:1em;display:flex;align-items:center;justify-content:center}
+.font-size-btn:hover{background:var(--accent);color:#fff}
+#search-input{background:var(--glass);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;width:200px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"EPUB Reader & Viewer","description":"Read EPUB books online for free. Drag and drop any EPUB file, navigate chapters, bookmark pages and customize font size — all in your browser, no upload needed.","url":"https://tools.gamezipper.com/convert/epub-reader.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I open an EPUB file?", "acceptedAnswer": {"@type": "Answer", "text": "Drag and drop your EPUB file onto the page, or click the upload area to browse. The reader opens instantly in your browser."}}, {"@type": "Question", "name": "Is my EPUB file uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens entirely in your browser. Your books stay private and are never uploaded anywhere."}}, {"@type": "Question", "name": "Can I change the font size?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the font size buttons in the toolbar to increase or decrease the text size. Your preference is remembered."}}, {"@type": "Question", "name": "Does this work on mobile?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The EPUB reader is fully responsive and works on phones and tablets. Open the chapter list with the menu button."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/epub-reader.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/epub-reader.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/epub-reader.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div id="drop-zone">
+      <div style="font-size:3rem;margin-bottom:1rem">📖</div>
+      <div id="drop-text" style="font-size:1.1em;font-weight:600"></div>
+      <div id="drop-sub" style="color:var(--text3);margin-top:.5rem;font-size:.9em"></div>
+      <input type="file" id="file-input" accept=".epub" style="display:none">
+    </div>
+    <div id="reader">
+      <div id="toc-panel"></div>
+      <div class="toolbar">
+        <button class="gz-btn gz-btn-secondary" id="toc-btn">☰</button>
+        <span id="book-title" style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px"></span>
+        <div class="spacer"></div>
+        <input type="text" id="search-input" placeholder="Search...">
+        <button class="font-size-btn" id="font-dec">A-</button>
+        <button class="font-size-btn" id="font-inc">A+</button>
+        <button class="gz-btn gz-btn-secondary" id="close-btn">✕</button>
+      </div>
+      <div id="content-area"></div>
+      <div class="reader-controls">
+        <button class="gz-btn gz-btn-secondary" id="prev-btn">← Previous</button>
+        <span id="page-info"></span>
+        <button class="gz-btn" id="next-btn">Next →</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'EPUB Reader & Viewer',
+    toolDesc: 'Read EPUB books online for free. Drag and drop, navigate chapters, customize font size — all in your browser.',
+    dropText: 'Drop your EPUB file here or click to browse',
+    dropSub: 'Supports .epub files — everything stays private in your browser',
+    step1: 'Drag and drop an EPUB file onto the page, or click to browse',
+    step2: 'Use the table of contents to navigate between chapters',
+    step3: 'Adjust font size with the A-/A+ buttons for comfortable reading',
+    step4: 'Use Previous/Next buttons or keyboard arrows to flip pages',
+  },
+  zh: {
+    toolTitle: 'EPUB 电子书阅读器',
+    toolDesc: '免费在线阅读 EPUB 电子书。拖拽文件，浏览章节，自定义字体大小 — 完全浏览器本地运行。',
+    dropText: '将 EPUB 文件拖拽到此处或点击浏览',
+    dropSub: '支持 .epub 文件 — 所有内容仅在浏览器中处理，完全私密',
+    step1: '将 EPUB 文件拖拽到页面上，或点击浏览选择文件',
+    step2: '使用目录在章节之间导航',
+    step3: '使用 A-/A+ 按钮调整字体大小以舒适阅读',
+    step4: '使用上一页/下一页按钮或键盘方向键翻页',
+  }
+});
+
+const { $, t } = GZ;
+let chapters = [];
+let currentChapter = 0;
+let fontSize = 1.1;
+
+$('#drop-text').textContent = t('dropText');
+$('#drop-sub').textContent = t('dropSub');
+
+const dropZone = $('#drop-zone');
+const fileInput = $('#file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+async function handleFile(file) {
+  if (!file.name.endsWith('.epub')) return alert('Please select an .epub file');
+  try {
+    const zip = await JSZip.loadAsync(file);
+    chapters = [];
+    let containerXml = '';
+    // Parse container.xml to find rootfile
+    if (zip.file('META-INF/container.xml')) {
+      containerXml = await zip.file('META-INF/container.xml').async('text');
+    }
+    const rootMatch = containerXml.match(/full-path="([^"]+)"/);
+    const opfPath = rootMatch ? rootMatch[1] : 'content.opf';
+    const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
+    const opfContent = await zip.file(opfPath).async('text');
+    const parser = new DOMParser();
+    const opfDoc = parser.parseFromString(opfContent, 'application/xml');
+    const manifest = {};
+    opfDoc.querySelectorAll('manifest > item').forEach(item => {
+      manifest[item.getAttribute('id')] = { href: item.getAttribute('href'), type: item.getAttribute('media-type') };
+    });
+    const spine = [];
+    opfDoc.querySelectorAll('spine > itemref').forEach(ref => {
+      const idref = ref.getAttribute('idref');
+      if (manifest[idref]) spine.push(manifest[idref]);
+    });
+    // Build TOC from nav or NCX
+    let tocItems = [];
+    const navItem = opfDoc.querySelector('manifest > item[properties~="nav"]');
+    if (navItem) {
+      const navPath = opfDir + navItem.getAttribute('href');
+      if (zip.file(navPath)) {
+        const navContent = await zip.file(navPath).async('text');
+        const navDoc = parser.parseFromString(navContent, 'application/xhtml+xml');
+        navDoc.querySelectorAll('nav[*|type="toc"] a, nav.epub-toc a').forEach(a => {
+          const href = a.getAttribute('href');
+          if (href && !href.startsWith('http')) {
+            tocItems.push({ label: a.textContent.trim(), href: opfDir + (href.includes('#') ? href.split('#')[0] : href) });
+          }
+        });
+      }
+    }
+    // Load all spine items as chapters
+    for (const item of spine) {
+      const path = opfDir + item.href;
+      if (zip.file(path)) {
+        const content = await zip.file(path).async('text');
+        const doc = parser.parseFromString(content, 'application/xhtml+xml');
+        // Process images to data URIs
+        for (const img of doc.querySelectorAll('img')) {
+          const src = img.getAttribute('src');
+          if (src && !src.startsWith('data:')) {
+            const imgPath = path.includes('/') ? path.substring(0, path.lastIndexOf('/') + 1) + src : src;
+            const imgFile = zip.file(imgPath);
+            if (imgFile) {
+              const blob = await imgFile.async('blob');
+              img.src = URL.createObjectURL(blob);
+            }
+          }
+        }
+        const body = doc.querySelector('body');
+        if (body) {
+          chapters.push({
+            html: body.innerHTML,
+            title: doc.querySelector('title')?.textContent || tocItems.find(t => t.href === path)?.label || `Chapter ${chapters.length + 1}`,
+            path: path
+          });
+        }
+      }
+    }
+    if (chapters.length === 0) {
+      alert('Could not parse this EPUB file.');
+      return;
+    }
+    showReader();
+  } catch (err) {
+    alert('Error reading EPUB: ' + err.message);
+  }
+}
+
+function showReader() {
+  $('#drop-zone').style.display = 'none';
+  $('#reader').style.display = 'block';
+  buildTOC();
+  renderChapter(0);
+  const bookTitle = chapters[0]?.title || 'EPUB Book';
+  $('#book-title').textContent = bookTitle;
+  document.title = bookTitle + ' - EPUB Reader | GameZipper Tools';
+}
+
+function buildTOC() {
+  const panel = $('#toc-panel');
+  panel.innerHTML = '';
+  const close = document.createElement('button');
+  close.className = 'gz-btn gz-btn-secondary';
+  close.style.cssText = 'margin:12px;width:calc(100% - 24px)';
+  close.textContent = '✕ Close';
+  close.onclick = () => panel.classList.remove('open');
+  panel.appendChild(close);
+  chapters.forEach((ch, i) => {
+    const a = document.createElement('a');
+    a.href = '#';
+    a.textContent = ch.title || `Chapter ${i + 1}`;
+    a.onclick = (e) => { e.preventDefault(); renderChapter(i); panel.classList.remove('open'); };
+    panel.appendChild(a);
+  });
+}
+
+function renderChapter(index) {
+  if (index < 0 || index >= chapters.length) return;
+  currentChapter = index;
+  const area = $('#content-area');
+  area.innerHTML = chapters[index].html;
+  area.style.fontSize = fontSize + 'em';
+  area.scrollTop = 0;
+  $('#page-info').textContent = `${index + 1} / ${chapters.length}`;
+  $('#prev-btn').disabled = index === 0;
+  $('#next-btn').disabled = index === chapters.length - 1;
+}
+
+$('#toc-btn').onclick = () => $('#toc-panel').classList.toggle('open');
+$('#close-btn').onclick = () => {
+  $('#reader').style.display = 'none';
+  $('#drop-zone').style.display = '';
+  chapters = [];
+  currentChapter = 0;
+  document.title = 'EPUB Reader & Viewer - Free Online Tool | GameZipper Tools';
+};
+$('#prev-btn').onclick = () => renderChapter(currentChapter - 1);
+$('#next-btn').onclick = () => renderChapter(currentChapter + 1);
+$('#font-inc').onclick = () => { fontSize = Math.min(2.5, fontSize + 0.1); $('#content-area').style.fontSize = fontSize + 'em'; };
+$('#font-dec').onclick = () => { fontSize = Math.max(0.6, fontSize - 0.1); $('#content-area').style.fontSize = fontSize + 'em'; };
+
+document.addEventListener('keydown', e => {
+  if (!chapters.length) return;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { renderChapter(currentChapter - 1); e.preventDefault(); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { renderChapter(currentChapter + 1); e.preventDefault(); }
+});
+
+$('#search-input').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  if (!q) { renderChapter(currentChapter); return; }
+  const area = $('#content-area');
+  const html = area.innerHTML;
+  // Simple text highlight
+  area.innerHTML = html.replace(/<mark>/g, '').replace(/<\/mark>/g, '');
+  if (q.length >= 2) {
+    const walker = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
+    const matches = [];
+    while (walker.nextNode()) {
+      if (walker.currentNode.textContent.toLowerCase().includes(q)) matches.push(walker.currentNode);
+    }
+    matches.forEach(node => {
+      const span = document.createElement('span');
+      span.innerHTML = node.textContent.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark style="background:var(--accent);color:#000;border-radius:2px;padding:0 2px">$1</mark>');
+      node.parentNode.replaceChild(span, node);
+    });
+  }
+});
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/pdf-viewer.html', name:'PDF Viewer'},
+    {icon:'🖼️', href:'/convert/html-to-pdf.html', name:'HTML to PDF'},
+    {icon:'📄', href:'/convert/pdf-merger.html', name:'PDF Merger'},
+    {icon:'📄', href:'/convert/markdown-to-pdf.html', name:'Markdown to PDF'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Flashcard Maker & Study Tool - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Create, study and memorize flashcards online for free. Add cards with front/back, shuffle, track progress, import/export — all in your browser, no signup needed.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/flashcard-maker.html">
+  <meta property="og:title" content="Flashcard Maker & Study Tool - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Create, study and memorize flashcards online for free. Add cards with front/back, shuffle, track progress, import/export — all in your browser, no signup needed.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/flashcard-maker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Flashcard Maker & Study Tool - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.flashcard{perspective:1000px;width:100%;max-width:500px;height:280px;margin:20px auto;cursor:pointer}
+.flashcard-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flashcard.flipped .flashcard-inner{transform:rotateY(180deg)}
+.flashcard-front,.flashcard-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:1.2em;line-height:1.6;word-break:break-word}
+.flashcard-front{background:linear-gradient(135deg,var(--glass),var(--glass2));border:2px solid var(--border)}
+.flashcard-back{background:linear-gradient(135deg,rgba(78,205,196,.15),rgba(100,150,255,.15));border:2px solid var(--accent);transform:rotateY(180deg)}
+.card-nav{display:flex;justify-content:center;gap:12px;margin:12px 0;align-items:center}
+.card-nav span{min-width:80px;text-align:center;color:var(--text3);font-size:.9em}
+.deck-area{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:16px}
+.deck-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:.85em}
+.deck-card .q{font-weight:600;margin-bottom:4px}
+.deck-card .a{color:var(--text3)}
+.deck-card .actions{display:flex;gap:6px;margin-top:8px}
+.deck-card .actions button{font-size:.8em;padding:4px 8px}
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab-bar button{padding:8px 20px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:.95em;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab-bar button.active{color:var(--accent);border-bottom-color:var(--accent)}
+.progress-bar{height:6px;background:var(--glass);border-radius:3px;overflow:hidden;margin:8px 0}
+.progress-bar .fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Flashcard Maker & Study Tool","description":"Create, study and memorize flashcards online for free. Add cards with front/back, shuffle, track progress, import/export — all in your browser, no signup needed.","url":"https://tools.gamezipper.com/fun/flashcard-maker.html","applicationCategory":"EducationalApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I create flashcards?", "acceptedAnswer": {"@type": "Answer", "text": "Click the Create tab, type a question and answer, then click Add Card. Repeat for as many cards as you need."}}, {"@type": "Question", "name": "Are my flashcards saved?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Your flashcards are automatically saved to your browser's local storage. They persist between sessions."}}, {"@type": "Question", "name": "Can I import flashcards?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the Import button to paste cards in tab-separated format (question\\tanswer), one per line."}}, {"@type": "Question", "name": "How does spaced repetition work?", "acceptedAnswer": {"@type": "Answer", "text": "Cards you mark as wrong reappear more frequently in shuffled mode, while cards you know well appear less often."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/flashcard-maker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/flashcard-maker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/flashcard-maker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tab-bar">
+      <button class="active" id="tab-study">Study</button>
+      <button id="tab-create">Create</button>
+      <button id="tab-list">Card List</button>
+    </div>
+
+    <!-- Study Tab -->
+    <div id="panel-study">
+      <div class="progress-bar"><div class="fill" id="progress-fill" style="width:0%"></div></div>
+      <div id="study-stats" style="display:flex;gap:16px;justify-content:center;margin-bottom:8px;font-size:.85em;color:var(--text3)"></div>
+      <div class="flashcard" id="flashcard" onclick="this.classList.toggle('flipped')">
+        <div class="flashcard-inner">
+          <div class="flashcard-front" id="card-front"></div>
+          <div class="flashcard-back" id="card-back"></div>
+        </div>
+      </div>
+      <div class="card-nav">
+        <button class="gz-btn gz-btn-secondary" id="btn-wrong" style="background:rgba(255,80,80,.2);border-color:#ff5050">✗ Again</button>
+        <span id="card-counter">0 / 0</span>
+        <button class="gz-btn" id="btn-correct" style="background:rgba(0,214,114,.2);border-color:#00d672">✓ Got it</button>
+      </div>
+      <div style="text-align:center;margin-top:8px">
+        <button class="gz-btn gz-btn-secondary" id="btn-shuffle">🔀 Shuffle</button>
+        <button class="gz-btn gz-btn-secondary" id="btn-reset-progress">Reset Progress</button>
+      </div>
+    </div>
+
+    <!-- Create Tab -->
+    <div id="panel-create" style="display:none">
+      <div style="max-width:500px;margin:0 auto">
+        <label id="lbl-q" style="font-weight:600;display:block;margin-bottom:4px"></label>
+        <textarea id="input-q" class="gz-textarea" rows="3" placeholder="What is the capital of France?"></textarea>
+        <label id="lbl-a" style="font-weight:600;display:block;margin:12px 0 4px"></label>
+        <textarea id="input-a" class="gz-textarea" rows="3" placeholder="Paris"></textarea>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="gz-btn" id="btn-add">+ Add Card</button>
+          <button class="gz-btn gz-btn-secondary" id="btn-import">Import</button>
+          <button class="gz-btn gz-btn-secondary" id="btn-export">Export</button>
+          <button class="gz-btn gz-btn-secondary" id="btn-clear-all" style="margin-left:auto;color:#ff5050">Delete All</button>
+        </div>
+        <div id="import-area" style="display:none;margin-top:12px">
+          <textarea id="import-text" class="gz-textarea" rows="6" placeholder="question&#9;answer&#10;What is 2+2?&#9;4&#10;Capital of Japan?&#9;Tokyo"></textarea>
+          <button class="gz-btn" id="btn-do-import" style="margin-top:8px">Import Cards</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List Tab -->
+    <div id="panel-list" style="display:none">
+      <div class="deck-area" id="deck-area"></div>
+      <div id="empty-msg" style="text-align:center;padding:3rem;color:var(--text3)"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Flashcard Maker & Study Tool',
+    toolDesc: 'Create, study and memorize flashcards online. Add cards, shuffle, track progress — all in your browser, no signup needed.',
+    lblQ: 'Question / Front',
+    lblA: 'Answer / Back',
+    emptyMsg: 'No flashcards yet. Go to the Create tab to add some!',
+    step1: 'Switch to the Create tab and add questions and answers',
+    step2: 'Go to Study tab and click the card to flip it',
+    step3: 'Mark Got it if you knew the answer, or Again to review later',
+    step4: 'Use Import/Export to save or share your flashcard decks',
+  },
+  zh: {
+    toolTitle: '闪卡制作与学习工具',
+    toolDesc: '在线创建、学习和记忆闪卡。添加卡片、随机排序、追踪进度 — 完全浏览器本地运行，无需注册。',
+    lblQ: '问题 / 正面',
+    lblA: '答案 / 背面',
+    emptyMsg: '还没有闪卡。去"创建"标签添加吧！',
+    step1: '切换到"创建"标签，添加问题和答案',
+    step2: '进入"学习"标签，点击卡片翻转',
+    step3: '如果答对了点"会了"，需要复习点"再来"',
+    step4: '使用导入/导出功能保存或分享你的闪卡组',
+  }
+});
+
+const { $, t, copyText } = GZ;
+const STORAGE_KEY = 'gz-flashcards';
+let cards = [];
+let studyOrder = [];
+let studyIndex = 0;
+let correct = 0;
+let wrong = 0;
+
+function loadCards() {
+  try { cards = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { cards = []; }
+}
+function saveCards() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+}
+
+$('#lbl-q').textContent = t('lblQ');
+$('#lbl-a').textContent = t('lblA');
+$('#empty-msg').textContent = t('emptyMsg');
+
+// Tab switching
+document.querySelectorAll('.tab-bar button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['study','create','list'].forEach(p => $('#panel-' + p).style.display = 'none');
+    const tab = btn.id.replace('tab-', '');
+    $('#panel-' + tab).style.display = '';
+    if (tab === 'list') renderDeck();
+    if (tab === 'study') startStudy();
+  };
+});
+
+// Add card
+$('#btn-add').onclick = () => {
+  const q = $('#input-q').value.trim();
+  const a = $('#input-a').value.trim();
+  if (!q || !a) return;
+  cards.push({ q, a });
+  saveCards();
+  $('#input-q').value = '';
+  $('#input-a').value = '';
+  $('#input-q').focus();
+};
+
+// Import/Export
+$('#btn-import').onclick = () => {
+  const area = $('#import-area');
+  area.style.display = area.style.display === 'none' ? '' : 'none';
+};
+$('#btn-do-import').onclick = () => {
+  const text = $('#import-text').value.trim();
+  if (!text) return;
+  const lines = text.split('\n').filter(l => l.trim());
+  let count = 0;
+  for (const line of lines) {
+    const parts = line.split('\t');
+    if (parts.length >= 2) {
+      cards.push({ q: parts[0].trim(), a: parts[1].trim() });
+      count++;
+    }
+  }
+  saveCards();
+  $('#import-text').value = '';
+  $('#import-area').style.display = 'none';
+  alert(`Imported ${count} cards`);
+};
+$('#btn-export').onclick = () => {
+  if (!cards.length) return;
+  const text = cards.map(c => c.q + '\t' + c.a).join('\n');
+  copyText(text);
+  alert(`Copied ${cards.length} cards to clipboard (tab-separated)`);
+};
+$('#btn-clear-all').onclick = () => {
+  if (!cards.length) return;
+  if (!confirm('Delete all flashcards?')) return;
+  cards = [];
+  saveCards();
+  renderDeck();
+};
+
+function renderDeck() {
+  const area = $('#deck-area');
+  area.innerHTML = '';
+  if (!cards.length) {
+    $('#empty-msg').style.display = '';
+    return;
+  }
+  $('#empty-msg').style.display = 'none';
+  cards.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'deck-card';
+    div.innerHTML = `<div class="q">${c.q}</div><div class="a">${c.a}</div><div class="actions"><button class="gz-btn gz-btn-secondary" onclick="editCard(${i})">Edit</button><button class="gz-btn gz-btn-secondary" style="color:#ff5050" onclick="deleteCard(${i})">Delete</button></div>`;
+    area.appendChild(div);
+  });
+}
+window.editCard = (i) => {
+  const q = prompt('Question:', cards[i].q);
+  if (q === null) return;
+  const a = prompt('Answer:', cards[i].a);
+  if (a === null) return;
+  cards[i] = { q, a };
+  saveCards();
+  renderDeck();
+};
+window.deleteCard = (i) => {
+  cards.splice(i, 1);
+  saveCards();
+  renderDeck();
+};
+
+// Study mode
+function startStudy() {
+  if (!cards.length) {
+    $('#card-front').textContent = 'No cards yet';
+    $('#card-back').textContent = 'Create some first!';
+    $('#card-counter').textContent = '0 / 0';
+    return;
+  }
+  studyOrder = cards.map((_, i) => i);
+  shuffleArr(studyOrder);
+  studyIndex = 0;
+  correct = 0;
+  wrong = 0;
+  showCard();
+}
+
+function showCard() {
+  if (!studyOrder.length) return;
+  const idx = studyOrder[studyIndex % studyOrder.length];
+  const card = cards[idx];
+  $('#card-front').textContent = card.q;
+  $('#card-back').textContent = card.a;
+  $('#flashcard').classList.remove('flipped');
+  updateStats();
+}
+
+function updateStats() {
+  const total = studyOrder.length;
+  const current = (studyIndex % total) + 1;
+  $('#card-counter').textContent = `${current} / ${total}`;
+  const pct = total > 0 ? Math.round((correct / (correct + wrong || 1)) * 100) : 0;
+  $('#study-stats').innerHTML = `<span>✓ ${correct}</span><span>✗ ${wrong}</span><span>Accuracy: ${pct}%</span>`;
+  $('#progress-fill').style.width = (total > 0 ? (studyIndex / Math.max(total, studyIndex)) * 100 : 0) + '%';
+}
+
+$('#btn-correct').onclick = () => {
+  correct++;
+  studyIndex++;
+  if (studyIndex >= studyOrder.length) {
+    shuffleArr(studyOrder);
+    studyIndex = 0;
+  }
+  showCard();
+};
+$('#btn-wrong').onclick = () => {
+  wrong++;
+  // Put current card back in queue
+  const idx = studyOrder.splice(studyIndex % studyOrder.length, 1)[0];
+  const insertPos = Math.min(studyIndex + 3, studyOrder.length);
+  studyOrder.splice(insertPos, 0, idx);
+  showCard();
+};
+$('#btn-shuffle').onclick = () => {
+  shuffleArr(studyOrder);
+  studyIndex = 0;
+  showCard();
+};
+$('#btn-reset-progress').onclick = () => {
+  correct = 0;
+  wrong = 0;
+  studyIndex = 0;
+  showCard();
+};
+
+function shuffleArr(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === ' ') { $('#flashcard').classList.toggle('flipped'); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { $('#btn-correct').click(); e.preventDefault(); }
+  if (e.key === 'ArrowLeft') { $('#btn-wrong').click(); e.preventDefault(); }
+});
+
+// Init
+loadCards();
+startStudy();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📚', href:'/fun/quiz-maker.html', name:'Quiz Maker'},
+    {icon:'📖', href:'/fun/study-planner.html', name:'Study Planner'},
+    {icon:'🧠', href:'/fun/mind-map.html', name:'Mind Map'},
+    {icon:'⏱️', href:'/calc/pomodoro.html', name:'Pomodoro Timer'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
