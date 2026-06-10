@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image to PNG Converter — Free Online | GameZipper Tools</title>
+<meta name="description" content="Convert JPG, WebP, BMP, GIF, SVG, TIFF and HEIC images to PNG format instantly. Free, private, runs entirely in your browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/convert/image-to-png.html">
+<meta property="og:title" content="Image to PNG Converter — Free Online | GameZipper Tools">
+<meta property="og:description" content="Convert JPG, WebP, BMP, GIF, SVG, TIFF and HEIC images to PNG format instantly. Free, private, runs entirely in your browser.">
+<meta property="og:url" content="https://tools.gamezipper.com/convert/image-to-png.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Image to PNG Converter — Free Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass)}
+.preview-grid{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}
+.preview-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;width:160px}
+.preview-card img{max-width:100%;max-height:120px;border-radius:6px}
+.preview-card .name{font-size:.8em;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-card .size{font-size:.75em;opacity:.6}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image to PNG Converter","description":"Convert JPG, WebP, BMP, GIF, SVG, TIFF and HEIC images to PNG format instantly. Free, private, runs entirely in your browser.","url":"https://tools.gamezipper.com/convert/image-to-png.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert an image to PNG?","acceptedAnswer":{"@type":"Answer","text":"Drag and drop your image files onto the page, or click to browse. They are converted to PNG instantly. Click Download to save each one."}},{"@type":"Question","name":"What image formats are supported?","acceptedAnswer":{"@type":"Answer","text":"You can convert JPG, JPEG, WebP, BMP, GIF, SVG, AVIF, ICO and TIFF images to PNG."}},{"@type":"Question","name":"Is my data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All conversion happens in your browser. Your images never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/image-to-png.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/image-to-png.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/image-to-png.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="drop-zone" id="dropZone">
+      <div style="font-size:3em">🖼️</div>
+      <div id="dropText"></div>
+      <input type="file" accept="image/*" id="fileInput" multiple style="display:none">
+    </div>
+    <div style="margin:10px 0;display:flex;gap:8px" id="actions" style="display:none">
+      <button class="gz-btn" id="downloadAll" style="display:none" onclick="downloadAllFiles()"></button>
+      <button class="gz-btn gz-btn-secondary" id="clearAll" style="display:none" onclick="clearFiles()"></button>
+    </div>
+    <div class="preview-grid" id="previewGrid"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image to PNG Converter',
+    toolDesc: 'Convert JPG, WebP, BMP, GIF, SVG and more to PNG format instantly. Drag, drop and download — free, private, all in your browser.',
+    step1: 'Drag and drop image files onto the page',
+    step2: 'Images are automatically converted to PNG format',
+    step3: 'Preview the converted images',
+    step4: 'Click Download on each image or Download All',
+    dropHere: 'Drop images here or click to browse',
+    downloadAll: 'Download All',
+    clearAll: 'Clear All',
+    download: 'Download',
+    convertedSize: 'PNG size',
+  },
+  zh: {
+    toolTitle: '图片转 PNG 转换器',
+    toolDesc: '将 JPG、WebP、BMP、GIF、SVG 等格式即时转换为 PNG。拖放上传、一键下载 — 免费、私密、完全浏览器本地处理。',
+    step1: '拖放图片文件到页面上',
+    step2: '图片会自动转换为 PNG 格式',
+    step3: '预览转换后的图片',
+    step4: '点击每张图片的「下载」或「下载全部」',
+    dropHere: '拖放图片到这里，或点击选择文件',
+    downloadAll: '下载全部',
+    clearAll: '清除全部',
+    download: '下载',
+    convertedSize: 'PNG 大小',
+  }
+});
+
+const { $, t } = GZ;
+let convertedFiles = [];
+
+const dz = $('#dropZone');
+const fi = $('#fileInput');
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+fi.addEventListener('change', () => handleFiles(fi.files));
+
+$('#dropText').textContent = t('dropHere');
+$('#downloadAll').textContent = t('downloadAll');
+$('#clearAll').textContent = t('clearAll');
+
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => {
+        const pngUrl = URL.createObjectURL(blob);
+        const sizeKB = (blob.size / 1024).toFixed(1);
+        const name = file.name.replace(/\.[^.]+$/, '') + '.png';
+        convertedFiles.push({ name, url: pngUrl, blob });
+        renderCard(name, pngUrl, sizeKB, convertedFiles.length - 1);
+        updateButtons();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    };
+    img.src = url;
+  });
+}
+
+function renderCard(name, url, sizeKB, index) {
+  const card = document.createElement('div');
+  card.className = 'preview-card';
+  card.innerHTML = `<img src="${url}" alt="${name}"><div class="name">${name}</div><div class="size">${t('convertedSize')}: ${sizeKB} KB</div><button class="gz-btn" style="margin-top:6px;font-size:.85em" onclick="downloadFile(${index})">${t('download')}</button>`;
+  $('#previewGrid').appendChild(card);
+}
+
+function downloadFile(i) {
+  const a = document.createElement('a');
+  a.href = convertedFiles[i].url;
+  a.download = convertedFiles[i].name;
+  a.click();
+}
+
+function downloadAllFiles() {
+  convertedFiles.forEach((f, i) => setTimeout(() => downloadFile(i), i * 300));
+}
+
+function clearFiles() {
+  convertedFiles.forEach(f => URL.revokeObjectURL(f.url));
+  convertedFiles = [];
+  $('#previewGrid').innerHTML = '';
+  fi.value = '';
+  updateButtons();
+}
+
+function updateButtons() {
+  const show = convertedFiles.length > 0;
+  $('#downloadAll').style.display = show ? 'inline-block' : 'none';
+  $('#clearAll').style.display = show ? 'inline-block' : 'none';
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/convert/png-to-jpg.html', name:'PNG to JPG'},
+    {icon:'🖼️', href:'/convert/webp-converter.html', name:'WebP Converter'},
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

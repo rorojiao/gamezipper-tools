@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PDF Viewer — Read PDFs Online Free | GameZipper Tools</title>
+<meta name="description" content="View and read PDF files directly in your browser. Drag and drop any PDF to view it instantly — no upload, no signup, 100% private.">
+<link rel="canonical" href="https://tools.gamezipper.com/convert/pdf-viewer.html">
+<meta property="og:title" content="PDF Viewer — Read PDFs Online Free | GameZipper Tools">
+<meta property="og:description" content="View and read PDF files directly in your browser. Drag and drop any PDF to view it instantly — no upload, no signup, 100% private.">
+<meta property="og:url" content="https://tools.gamezipper.com/convert/pdf-viewer.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PDF Viewer — Read PDFs Online Free | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;margin:16px 0;cursor:pointer;transition:border-color .2s,background .2s;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass)}
+.drop-zone .icon{font-size:3em}
+.pdf-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;padding:10px;background:var(--glass);border:1px solid var(--border);border-radius:12px}
+.pdf-controls span{font-size:.9em;opacity:.8}
+.pdf-viewer{display:flex;justify-content:center;overflow:auto;max-height:80vh;padding:10px}
+.pdf-viewer canvas{max-width:100%;height:auto!important;box-shadow:0 4px 20px rgba(0,0,0,.3);margin:8px auto;display:block}
+.page-nav{display:flex;gap:8px;align-items:center}
+input[type=number]{width:60px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9em;text-align:center}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PDF Viewer","description":"View and read PDF files directly in your browser. Drag and drop any PDF to view it instantly — no upload, no signup, 100% private.","url":"https://tools.gamezipper.com/convert/pdf-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I view a PDF online?","acceptedAnswer":{"@type":"Answer","text":"Drag and drop your PDF file onto the page, or click to browse. Your PDF is rendered instantly in your browser — nothing is uploaded to any server."}},{"@type":"Question","name":"Is my PDF file private?","acceptedAnswer":{"@type":"Answer","text":"Yes. Your PDF never leaves your browser. All rendering happens locally using the PDF.js library."}},{"@type":"Question","name":"Can I navigate between pages?","acceptedAnswer":{"@type":"Answer","text":"Yes. Use the Previous and Next buttons, or type a page number to jump directly to any page."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/pdf-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/pdf-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/pdf-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="drop-zone" id="dropZone">
+      <div class="icon">📄</div>
+      <div id="dropText"></div>
+      <input type="file" accept=".pdf" id="fileInput" style="display:none">
+    </div>
+    <div class="pdf-controls" id="pdfControls" style="display:none">
+      <div class="page-nav">
+        <button class="gz-btn gz-btn-secondary" id="prevBtn" onclick="prevPage()">‹</button>
+        <span id="pageInfo"></span>
+        <button class="gz-btn gz-btn-secondary" id="nextBtn" onclick="nextPage()">›</button>
+      </div>
+      <span id="fileName" style="flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button class="gz-btn gz-btn-secondary" onclick="closePdf()">✕</button>
+    </div>
+    <div class="pdf-viewer" id="pdfViewer"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script type="module">
+const pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs');
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+
+GZI18n.register({
+  en: {
+    toolTitle: 'PDF Viewer — Read PDFs Online',
+    toolDesc: 'Drag and drop any PDF to view it instantly in your browser. Navigate pages, zoom in/out — no upload, no signup, 100% private.',
+    step1: 'Drag and drop a PDF file onto the page, or click to browse',
+    step2: 'Use Previous / Next buttons to navigate pages',
+    step3: 'Type a page number to jump directly to any page',
+    step4: 'Click ✕ to close and view another PDF',
+    dropHere: 'Drop PDF here or click to browse',
+    of: 'of',
+  },
+  zh: {
+    toolTitle: 'PDF 在线查看器',
+    toolDesc: '拖放任意 PDF 文件即可在浏览器中即时查看。翻页、缩放 — 无需上传、无需注册、完全私密。',
+    step1: '拖放 PDF 文件到页面上，或点击浏览文件',
+    step2: '使用"上一页/下一页"按钮翻页',
+    step3: '输入页码可直接跳转到指定页面',
+    step4: '点击 ✕ 关闭当前 PDF，查看其他文件',
+    dropHere: '拖放 PDF 到这里，或点击选择文件',
+    of: '/',
+  }
+});
+
+const { $, t } = GZ;
+let pdfDoc = null;
+let currentPage = 1;
+let totalPages = 0;
+
+$('#dropText').textContent = t('dropHere');
+
+const dz = $('#dropZone');
+const fi = $('#fileInput');
+
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') loadPdf(file);
+});
+fi.addEventListener('change', () => { if (fi.files[0]) loadPdf(fi.files[0]); });
+
+async function loadPdf(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  totalPages = pdfDoc.numPages;
+  currentPage = 1;
+  $('#fileName').textContent = file.name;
+  $('#pdfControls').style.display = 'flex';
+  dz.style.display = 'none';
+  renderPage(currentPage);
+}
+
+async function renderPage(num) {
+  if (!pdfDoc) return;
+  const page = await pdfDoc.getPage(num);
+  const viewport = page.getViewport({ scale: 1.5 });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  $('#pdfViewer').innerHTML = '';
+  $('#pdfViewer').appendChild(canvas);
+  $('#pageInfo').textContent = `${num} ${t('of')} ${totalPages}`;
+  $('#prevBtn').disabled = num <= 1;
+  $('#nextBtn').disabled = num >= totalPages;
+}
+
+window.prevPage = () => { if (currentPage > 1) renderPage(--currentPage); };
+window.nextPage = () => { if (currentPage < totalPages) renderPage(++currentPage); };
+window.closePdf = () => {
+  pdfDoc = null; currentPage = 1; totalPages = 0;
+  $('#pdfViewer').innerHTML = '';
+  $('#pdfControls').style.display = 'none';
+  dz.style.display = 'flex';
+  fi.value = '';
+};
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/pdf-merger.html', name:'PDF Merger'},
+    {icon:'🖼️', href:'/convert/pdf-to-image.html', name:'PDF to Image'},
+    {icon:'🗜️', href:'/convert/pdf-compressor.html', name:'PDF Compressor'},
+    {icon:'💧', href:'/convert/pdf-watermark.html', name:'PDF Watermark'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

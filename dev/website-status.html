@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Website Status Checker — Is It Down? | GameZipper Tools</title>
+<meta name="description" content="Check if any website is down or up. Test website availability, response time and HTTP status code from your browser — free and instant.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/website-status.html">
+<meta property="og:title" content="Website Status Checker — Is It Down? | GameZipper Tools">
+<meta property="og:description" content="Check if any website is down or up. Test website availability, response time and HTTP status code from your browser — free and instant.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/website-status.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Website Status Checker — Is It Down? | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.url-input{display:flex;gap:8px;margin:16px 0}
+.url-input input{flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:1em}
+.result-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:20px;margin:12px 0}
+.result-card.up{border-left:4px solid #00b894}
+.result-card.down{border-left:4px solid #e94560}
+.result-card.checking{border-left:4px solid #f9c80e}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px}
+.status-item{padding:10px;background:var(--glass2);border-radius:10px}
+.status-item .label{font-size:.8em;opacity:.6;margin-bottom:4px}
+.status-item .value{font-size:1.1em;font-weight:600}
+.up-text{color:#00b894} .down-text{color:#e94560} .warn-text{color:#f9c80e}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Website Status Checker","description":"Check if any website is down or up. Test website availability, response time and HTTP status code from your browser — free and instant.","url":"https://tools.gamezipper.com/dev/website-status.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I check if a website is down?","acceptedAnswer":{"@type":"Answer","text":"Enter the website URL and click Check. The tool sends a request and reports whether the site is reachable, along with response time and HTTP status."}},{"@type":"Question","name":"Does this tool work for any website?","acceptedAnswer":{"@type":"Answer","text":"It works for most public websites. Some sites may block CORS requests from browsers, in which case the tool uses a fallback check."}},{"@type":"Question","name":"Is this tool accurate?","acceptedAnswer":{"@type":"Answer","text":"The tool checks from your browser's perspective. If a site blocks cross-origin requests, the result may show as unreachable even if the site is up."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/website-status.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/website-status.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/website-status.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="url-input">
+      <input type="url" id="urlInput" placeholder="https://example.com" spellcheck="false">
+      <button class="gz-btn" id="checkBtn" onclick="checkSite()"></button>
+    </div>
+    <div id="result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Website Status Checker — Is It Down?',
+    toolDesc: 'Check if any website is up or down. Measure response time and HTTP status code from your browser — free and instant.',
+    step1: 'Enter the website URL you want to check',
+    step2: 'Click the Check button to start the test',
+    step3: 'See the website status, response time and details',
+    step4: 'Try multiple sites to compare availability',
+    check: 'Check',
+    checking: 'Checking…',
+    up: '✅ Website is UP',
+    down: '❌ Website is DOWN or Unreachable',
+    error: '⚠️ Could not reach the website',
+    url: 'URL',
+    status: 'HTTP Status',
+    responseTime: 'Response Time',
+    checkedAt: 'Checked At',
+    enterUrl: 'Please enter a valid URL',
+    ms: 'ms',
+  },
+  zh: {
+    toolTitle: '网站状态检查器 — 网站挂了吗？',
+    toolDesc: '检查任意网站是否正常运行。测量响应时间和 HTTP 状态码 — 免费即时，浏览器本地运行。',
+    step1: '输入要检查的网站 URL',
+    step2: '点击「检查」按钮开始测试',
+    step3: '查看网站状态、响应时间和详细信息',
+    step4: '可以同时检查多个网站进行对比',
+    check: '检查',
+    checking: '检查中…',
+    up: '✅ 网站正常运行',
+    down: '❌ 网站无法访问',
+    error: '⚠️ 无法连接到网站',
+    url: 'URL',
+    status: 'HTTP 状态码',
+    responseTime: '响应时间',
+    checkedAt: '检查时间',
+    enterUrl: '请输入有效的 URL',
+    ms: '毫秒',
+  }
+});
+
+const { $, t } = GZ;
+
+$('#checkBtn').textContent = t('check');
+$('#urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkSite(); });
+
+async function checkSite() {
+  let url = $('#urlInput').value.trim();
+  if (!url) { alert(t('enterUrl')); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  $('#urlInput').value = url;
+
+  $('#result').innerHTML = `<div class="result-card checking"><h3>${t('checking')}</h3></div>`;
+  $('#checkBtn').disabled = true;
+  $('#checkBtn').textContent = t('checking');
+
+  const startTime = performance.now();
+  let isUp = false;
+  let statusCode = '—';
+  let errorMsg = '';
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+    clearTimeout(timeoutId);
+    const elapsed = Math.round(performance.now() - startTime);
+    // no-cors mode: opaque response, type='opaque' means reachable
+    isUp = resp.type === 'opaque' || resp.ok;
+    statusCode = resp.status || (resp.type === 'opaque' ? '200 (opaque)' : '—');
+    showResult(url, isUp, statusCode, elapsed);
+  } catch (e) {
+    const elapsed = Math.round(performance.now() - startTime);
+    isUp = false;
+    errorMsg = e.name === 'AbortError' ? 'Timeout (10s)' : e.message;
+    showResult(url, false, '—', elapsed, errorMsg);
+  }
+  $('#checkBtn').disabled = false;
+  $('#checkBtn').textContent = t('check');
+}
+
+function showResult(url, isUp, statusCode, elapsed, errorMsg) {
+  const statusClass = isUp ? 'up' : 'down';
+  const statusText = isUp ? t('up') : (errorMsg ? t('error') : t('down'));
+  const now = new Date().toLocaleString();
+  $('#result').innerHTML = `
+    <div class="result-card ${statusClass}">
+      <h3 class="${isUp ? 'up-text' : 'down-text'}">${statusText}</h3>
+      ${errorMsg ? `<p style="opacity:.7;margin:4px 0">${errorMsg}</p>` : ''}
+      <div class="status-grid">
+        <div class="status-item"><div class="label">${t('url')}</div><div class="value" style="font-size:.85em;word-break:break-all">${url}</div></div>
+        <div class="status-item"><div class="label">${t('status')}</div><div class="value ${isUp ? 'up-text' : 'down-text'}">${statusCode}</div></div>
+        <div class="status-item"><div class="label">${t('responseTime')}</div><div class="value">${elapsed} ${t('ms')}</div></div>
+        <div class="status-item"><div class="label">${t('checkedAt')}</div><div class="value" style="font-size:.85em">${now}</div></div>
+      </div>
+    </div>`;
+}
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+    {icon:'📡', href:'/dev/http-headers.html', name:'HTTP Headers'},
+    {icon:'🔁', href:'/dev/redirect-checker.html', name:'Redirect Checker'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
