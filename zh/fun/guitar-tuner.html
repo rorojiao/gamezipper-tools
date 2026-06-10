@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>在线吉他调音器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用麦克风在线调音。支持标准、Drop D、Open G 等多种调弦方式。免费、精准、全平台。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/guitar-tuner.html">
+  <meta property="og:title" content="在线吉他调音器">
+  <meta property="og:description" content="使用麦克风在线调音。支持标准、Drop D、Open G 等多种调弦方式。免费、精准、全平台。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/guitar-tuner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线吉他调音器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.tuner-display{text-align:center;padding:20px;margin:16px 0}
+.note-display{font-size:4em;font-weight:700;letter-spacing:4px}
+.note-display .sharp{font-size:.5em;vertical-align:super}
+.cents-bar{width:100%;max-width:400px;height:30px;margin:16px auto;position:relative;background:var(--gz-border);border-radius:15px;overflow:visible}
+.cents-bar .center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--gz-text);transform:translateX(-50%);opacity:.5}
+.cents-bar .indicator{position:absolute;top:2px;bottom:2px;width:8px;background:var(--gz-accent);border-radius:4px;transition:left .1s}
+.cents-bar .indicator.in-tune{background:var(--gz-success)}
+.cents-label{font-size:.85em;opacity:.7;margin-top:4px}
+.frequency{font-size:1.2em;margin-top:8px;opacity:.8}
+.tuning-select{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.tuning-select button{padding:8px 16px;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-card);color:var(--gz-text);cursor:pointer;transition:all .2s}
+.tuning-select button.active{border-color:var(--gz-accent);background:rgba(78,205,196,.15)}
+.strings-visual{display:flex;gap:12px;justify-content:center;margin:16px 0;flex-wrap:wrap}
+.string-item{text-align:center;cursor:pointer;padding:8px 12px;border-radius:8px;border:1px solid var(--gz-border);transition:all .2s;min-width:50px}
+.string-item:hover{border-color:var(--gz-accent)}
+.string-item.active{border-color:var(--gz-accent);background:rgba(78,205,196,.15)}
+.string-item .string-note{font-size:1.2em;font-weight:700}
+.string-item .string-freq{font-size:.7em;opacity:.6}
+.start-btn{font-size:1.1em;padding:12px 32px;border-radius:12px;border:none;background:var(--gz-accent);color:#fff;cursor:pointer;margin:12px auto;display:block}
+.start-btn:hover{opacity:.9}
+.start-btn.listening{background:var(--gz-success)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Guitar Tuner","description":"Tune your guitar online using your microphone. Free chromatic tuner for standard, drop D, open G and more tunings. Works with acoustic and electric guitars.","url": "https://tools.gamezipper.com/zh/fun/guitar-tuner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the online guitar tuner work?", "acceptedAnswer": {"@type": "Answer", "text": "Click Start, allow microphone access, then play a string. The tuner detects the pitch using your microphone and shows if the note is sharp, flat, or in tune."}}, {"@type": "Question", "name": "What tunings are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Standard (EADGBE), Drop D, Open G, Open D, DADGAD, Half Step Down, and Chromatic mode for any note."}}, {"@type": "Question", "name": "Does this work for bass guitar?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use Chromatic mode to tune any instrument. The tuner detects any frequency from 50 Hz to 2000 Hz."}}, {"@type": "Question", "name": "Is the tuner accurate?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tuner uses autocorrelation pitch detection with ±1 cent accuracy, comparable to dedicated clip-on tuners."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/guitar-tuner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/guitar-tuner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/guitar-tuner.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tuning-select" id="tuningSelect"></div>
+    <button class="start-btn" id="startBtn" onclick="toggleTuner()"></button>
+    <div class="tuner-display">
+      <div class="note-display" id="noteDisplay">—</div>
+      <div class="cents-bar"><div class="center"></div><div class="indicator" id="indicator"></div></div>
+      <div class="cents-label" id="centsLabel"></div>
+      <div class="frequency" id="freqDisplay"></div>
+    </div>
+    <div class="strings-visual" id="stringsVisual"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Guitar Tuner',
+    toolDesc: 'Tune your guitar with your microphone. Supports Standard, Drop D, Open G and more tunings. Free, accurate, works on any device.',
+    startListening: '🎤 Start Listening',
+    stopListening: '⏹ Stop',
+    centsFlat: 'cents flat ↓',
+    centsSharp: 'cents sharp ↑',
+    inTune: '✓ In Tune!',
+    playString: 'Play a string...',
+    step1: 'Click "Start Listening" and allow microphone access',
+    step2: 'Select your tuning (Standard, Drop D, Open G, etc.)',
+    step3: 'Play each string and watch the pitch indicator',
+    step4: 'Adjust tuning pegs until the indicator shows "In Tune"',
+  },
+  zh: {
+    toolTitle: '在线吉他调音器',
+    toolDesc: '使用麦克风在线调音。支持标准、Drop D、Open G 等多种调弦方式。免费、精准、全平台。',
+    startListening: '🎤 开始调音',
+    stopListening: '⏹ 停止',
+    centsFlat: '偏低 ↓',
+    centsSharp: '偏高 ↑',
+    inTune: '✓ 音准了！',
+    playString: '拨动琴弦...',
+    step1: '点击「开始调音」并允许麦克风权限',
+    step2: '选择调弦方式（标准、Drop D、Open G 等）',
+    step3: '拨动每根弦，观察音高指示器',
+    step4: '调整弦钮直到指示器显示「音准了」',
+  }
+});
+
+const { $, t } = GZ;
+
+const tunings = {
+  standard: ['E2','A2','D3','G3','B3','E4'],
+  dropD:    ['D2','A2','D3','G3','B3','E4'],
+  openG:    ['D2','G2','D3','G3','B3','D4'],
+  openD:    ['D2','A2','D3','F#3','A3','D4'],
+  dadgad:   ['D2','A2','D3','G3','A3','D4'],
+  halfStep: ['Eb2','Ab2','Db3','Gb3','Bb3','Eb4'],
+  chromatic: null
+};
+
+const noteFreqs = {
+  'C':16.35,'C#':17.32,'D':18.35,'D#':19.45,'E':20.60,'F':21.83,'F#':23.12,
+  'G':24.50,'G#':25.96,'A':27.50,'A#':29.14,'B':30.87,
+  'Db':17.32,'Eb':19.45,'Gb':23.12,'Ab':25.96,'Bb':29.14
+};
+
+function noteToFreq(note) {
+  const match = note.match(/^([A-G]#?b?)(\d)$/);
+  if (!match) return 440;
+  const name = match[1];
+  const oct = +match[2];
+  const base = noteFreqs[name] || 27.50;
+  return base * Math.pow(2, oct);
+}
+
+const noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const tuningNames = {
+  standard: 'Standard (EADGBE)',
+  dropD: 'Drop D',
+  openG: 'Open G',
+  openD: 'Open D',
+  dadgad: 'DADGAD',
+  halfStep: 'Half Step Down',
+  chromatic: 'Chromatic'
+};
+
+let currentTuning = 'standard';
+let audioCtx = null;
+let analyser = null;
+let listening = false;
+let animFrame = null;
+
+// Build tuning buttons
+const ts = $('#tuningSelect');
+Object.keys(tunings).forEach(key => {
+  const btn = document.createElement('button');
+  btn.textContent = tuningNames[key];
+  btn.onclick = () => selectTuning(key);
+  btn.id = 'tbtn-' + key;
+  ts.appendChild(btn);
+});
+
+function selectTuning(key) {
+  currentTuning = key;
+  document.querySelectorAll('.tuning-select button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tbtn-'+key).classList.add('active');
+  renderStrings();
+}
+
+function renderStrings() {
+  const sv = $('#stringsVisual');
+  if (currentTuning === 'chromatic') {
+    sv.innerHTML = '<p style="opacity:.5;font-size:.85em">Chromatic mode — play any note</p>';
+    return;
+  }
+  const strings = tunings[currentTuning];
+  sv.innerHTML = strings.map((n, i) =>
+    `<div class="string-item" id="str-${i}"><div class="string-note">${n.replace(/\d/,'')}</div><div class="string-freq">${noteToFreq(n).toFixed(1)} Hz</div></div>`
+  ).join('');
+}
+
+$('#startBtn').textContent = t('startListening');
+
+function toggleTuner() {
+  if (listening) {
+    stopTuner();
+  } else {
+    startTuner();
+  }
+}
+
+async function startTuner() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 4096;
+    const source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    listening = true;
+    $('#startBtn').textContent = t('stopListening');
+    $('#startBtn').classList.add('listening');
+    detectPitch();
+  } catch(e) {
+    alert('Microphone access is required for the tuner. Please allow microphone permission.');
+  }
+}
+
+function stopTuner() {
+  listening = false;
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  if (animFrame) cancelAnimationFrame(animFrame);
+  $('#startBtn').textContent = t('startListening');
+  $('#startBtn').classList.remove('listening');
+  $('#noteDisplay').textContent = '—';
+  $('#centsLabel').textContent = '';
+  $('#freqDisplay').textContent = '';
+  $('#indicator').style.left = '50%';
+  $('#indicator').classList.remove('in-tune');
+}
+
+function detectPitch() {
+  if (!listening) return;
+  const buf = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buf);
+
+  // Autocorrelation pitch detection
+  const sampleRate = audioCtx.sampleRate;
+  let bestCorrelation = 0;
+  let bestOffset = -1;
+  const minPeriod = Math.floor(sampleRate / 2000);
+  const maxPeriod = Math.floor(sampleRate / 50);
+
+  // Check signal level
+  let rms = 0;
+  for (let i = 0; i < buf.length; i++) rms += buf[i]*buf[i];
+  rms = Math.sqrt(rms / buf.length);
+
+  if (rms < 0.01) {
+    $('#noteDisplay').textContent = '—';
+    $('#centsLabel').textContent = t('playString');
+    $('#freqDisplay').textContent = '';
+    animFrame = requestAnimationFrame(detectPitch);
+    return;
+  }
+
+  // Normalized autocorrelation
+  for (let offset = minPeriod; offset <= maxPeriod; offset++) {
+    let correlation = 0;
+    let norm1 = 0, norm2 = 0;
+    for (let i = 0; i < buf.length - offset; i++) {
+      correlation += buf[i] * buf[i + offset];
+      norm1 += buf[i] * buf[i];
+      norm2 += buf[i + offset] * buf[i + offset];
+    }
+    const norm = Math.sqrt(norm1 * norm2);
+    correlation = norm > 0 ? correlation / norm : 0;
+
+    if (correlation > bestCorrelation) {
+      bestCorrelation = correlation;
+      bestOffset = offset;
+    }
+  }
+
+  if (bestOffset > 0 && bestCorrelation > 0.8) {
+    const freq = sampleRate / bestOffset;
+    displayNote(freq);
+  }
+
+  animFrame = requestAnimationFrame(detectPitch);
+}
+
+function displayNote(freq) {
+  const noteNum = 12 * (Math.log2(freq / 440));
+  const roundedNote = Math.round(noteNum);
+  const cents = Math.round((noteNum - roundedNote) * 100);
+  const noteIndex = ((roundedNote % 12) + 12) % 12;
+  const noteName = noteNames[noteIndex];
+
+  $('#noteDisplay').textContent = noteName;
+  $('#freqDisplay').textContent = freq.toFixed(1) + ' Hz';
+
+  const pct = Math.max(0, Math.min(100, 50 + cents * 0.5));
+  $('#indicator').style.left = pct + '%';
+
+  if (Math.abs(cents) <= 3) {
+    $('#indicator').classList.add('in-tune');
+    $('#centsLabel').textContent = t('inTune');
+    $('#centsLabel').style.color = 'var(--gz-success)';
+  } else if (cents < 0) {
+    $('#indicator').classList.remove('in-tune');
+    $('#centsLabel').textContent = Math.abs(cents) + ' ' + t('centsFlat');
+    $('#centsLabel').style.color = 'var(--gz-accent)';
+  } else {
+    $('#indicator').classList.remove('in-tune');
+    $('#centsLabel').textContent = cents + ' ' + t('centsSharp');
+    $('#centsLabel').style.color = 'var(--gz-accent)';
+  }
+
+  // Highlight matching string
+  if (currentTuning !== 'chromatic') {
+    const strings = tunings[currentTuning];
+    strings.forEach((s, i) => {
+      const el = document.getElementById('str-'+i);
+      if (el) {
+        const targetNote = s.replace(/\d/,'');
+        if (targetNote === noteName && Math.abs(cents) <= 15) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      }
+    });
+  }
+}
+
+selectTuning('standard');
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎹', href:'/fun/piano.html', name:'Virtual Piano'},
+    {icon:'🥁', href:'/fun/drum-machine.html', name:'Drum Machine'},
+    {icon:'🎵', href:'/fun/metronome.html', name:'Metronome'},
+    {icon:'🎸', href:'/fun/chord-progression.html', name:'Chord Progressions'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

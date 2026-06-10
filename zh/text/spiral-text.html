@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>螺旋文字生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="创建炫酷的螺旋文字效果。自定义颜色、字体和螺旋紧密度，下载为 PNG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/spiral-text.html">
+  <meta property="og:title" content="螺旋文字生成器">
+  <meta property="og:description" content="创建炫酷的螺旋文字效果。自定义颜色、字体和螺旋紧密度，下载为 PNG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/spiral-text.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="螺旋文字生成器">
+<meta name="twitter:description" content="创建炫酷的螺旋文字效果。自定义颜色、字体和螺旋紧密度，下载为 PNG。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#canvas-wrap{display:flex;justify-content:center;margin:16px 0;background:var(--gz-bg,#0f0f1a);border-radius:12px;padding:20px}
+canvas{border-radius:8px;max-width:100%}
+.gz-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.gz-controls label{font-size:.85em;color:var(--text2)}
+.gz-controls input,.gz-controls select{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--gz-border,#333);background:var(--gz-bg,#1a1a2e);color:inherit}
+.gz-controls input[type="range"]{padding:0}
+.gz-controls input[type="color"]{height:36px;padding:2px;cursor:pointer}
+.full-width{grid-column:1/-1}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Spiral Text Generator","description":"Create spiral text effects online. Wrap text in a spiral pattern with custom colors, fonts and sizes. Download as PNG — free and browser-based.","url": "https://tools.gamezipper.com/zh/text/spiral-text.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I make spiral text?","acceptedAnswer":{"@type":"Answer","text":"Enter your text, adjust the spiral tightness, font size and colors, then click Download to save as PNG. All rendering happens in your browser."}},{"@type":"Question","name":"Can I customize the spiral direction?","acceptedAnswer":{"@type":"Answer","text":"Yes, you can choose clockwise or counterclockwise direction and adjust the spiral tightness to control how many rotations the text makes."}},{"@type":"Question","name":"Is there a text length limit?","acceptedAnswer":{"@type":"Answer","text":"There is no strict limit, but longer texts may overlap or extend beyond the canvas. Use a larger font size or tighter spiral for very long text."}},{"@type":"Question","name":"What format is the download?","acceptedAnswer":{"@type":"Answer","text":"The spiral text is downloaded as a high-quality PNG image. You can choose transparent or colored background."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/spiral-text.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/spiral-text.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/spiral-text.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-controls" id="controls"></div>
+    <div id="canvas-wrap"><canvas id="canvas" width="600" height="600"></canvas></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Spiral Text Generator',
+    toolDesc: 'Create stunning spiral text effects. Wrap your words in a spiral with custom colors, fonts and tightness — download as PNG.',
+    enterText: 'Your text',
+    fontSize: 'Font size',
+    tightness: 'Spiral tightness',
+    direction: 'Direction',
+    clockwise: 'Clockwise',
+    counterClockwise: 'Counter-clockwise',
+    textColor: 'Text color',
+    bgColor: 'Background',
+    transparent: 'Transparent',
+    step1: 'Enter your text in the input field',
+    step2: 'Adjust font size and spiral tightness',
+    step3: 'Choose colors and spiral direction',
+    step4: 'Click Download to save as PNG',
+  },
+  zh: {
+    toolTitle: '螺旋文字生成器',
+    toolDesc: '创建炫酷的螺旋文字效果。自定义颜色、字体和螺旋紧密度，下载为 PNG。',
+    enterText: '输入文字',
+    fontSize: '字体大小',
+    tightness: '螺旋紧密度',
+    direction: '方向',
+    clockwise: '顺时针',
+    counterClockwise: '逆时针',
+    textColor: '文字颜色',
+    bgColor: '背景色',
+    transparent: '透明',
+    step1: '在输入框中输入文字',
+    step2: '调整字体大小和螺旋紧密度',
+    step3: '选择颜色和螺旋方向',
+    step4: '点击「下载」保存为 PNG',
+  }
+});
+
+const { $, t } = GZ;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+
+let text = 'Spiral Text Generator ';
+let fontSize = 18;
+let tightness = 3;
+let spiralDir = 1;
+let fontFamily = 'Arial';
+let textColor = '#ffd93d';
+let bgColor = '#0f0f1a';
+let transparentBg = false;
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!transparentBg) {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  ctx.font = `bold ${fontSize}px ${fontFamily}`;
+  ctx.fillStyle = textColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const fullText = text.repeat(Math.ceil(500 / text.length));
+  let angle = 0;
+  let r = 0;
+  const maxR = Math.min(cx, cy) - 20;
+
+  for (let i = 0; i < fullText.length && r < maxR; i++) {
+    const ch = fullText[i];
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.globalAlpha = Math.max(0.2, 1 - (r / maxR) * 0.6);
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+
+    const charWidth = ctx.measureText(ch).width;
+    const arcLen = charWidth;
+    const dAngle = arcLen / Math.max(r, 10);
+    angle += spiralDir * dAngle;
+    r += tightness * dAngle / (2 * Math.PI);
+  }
+}
+
+function download() {
+  const link = document.createElement('a');
+  link.download = 'spiral-text.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download()">${t('download')} PNG</button>`;
+
+$('#controls').innerHTML = `
+  <div class="full-width"><label>${t('enterText')}</label><input type="text" id="txt" value="${text}" oninput="text=this.value;draw()"></div>
+  <div><label>${t('fontSize')}</label><input type="range" min="10" max="48" value="${fontSize}" oninput="fontSize=+this.value;$('#fsVal').textContent=this.value;draw()"><span id="fsVal">${fontSize}</span>px</div>
+  <div><label>${t('tightness')}</label><input type="range" min="1" max="20" value="${tightness}" oninput="tightness=+this.value;$('#tVal').textContent=this.value;draw()"><span id="tVal">${tightness}</span></div>
+  <div><label>${t('direction')}</label><select onchange="spiralDir=this.value==='cw'?1:-1;draw()"><option value="cw">${t('clockwise')}</option><option value="ccw">${t('counterClockwise')}</option></select></div>
+  <div><label>Font</label><select onchange="fontFamily=this.value;draw()"><option>Arial</option><option>Georgia</option><option>Impact</option><option>Courier New</option><option>Verdana</option><option>Times New Roman</option></select></div>
+  <div><label>${t('textColor')}</label><input type="color" value="${textColor}" oninput="textColor=this.value;draw()"></div>
+  <div><label>${t('bgColor')}</label><input type="color" value="${bgColor}" oninput="bgColor=this.value;draw()"></div>
+  <div><label><input type="checkbox" onchange="transparentBg=this.checked;draw()"> ${t('transparent')}</label></div>`;
+
+draw();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⭕', href:'/text/curved-text.html', name:'Curved Text'},
+    {icon:'🌈', href:'/text/wavy-text.html', name:'Wavy Text'},
+    {icon:'✨', href:'/text/fancy-text.html', name:'Fancy Text'},
+    {icon:'🎨', href:'/text/3d-text.html', name:'3D Text'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

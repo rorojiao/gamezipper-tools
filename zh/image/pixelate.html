@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片像素化工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将图片像素化以遮挡面部、隐藏细节或创建像素风格效果。可调整块大小 — 免费且完全浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/pixelate.html">
+  <meta property="og:title" content="图片像素化工具">
+  <meta property="og:description" content="将图片像素化以遮挡面部、隐藏细节或创建像素风格效果。可调整块大小 — 免费且完全浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/pixelate.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片像素化工具">
+<meta name="twitter:description" content="将图片像素化以遮挡面部、隐藏细节或创建像素风格效果。可调整块大小 — 免费且完全浏览器本地处理。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gz-split>div{min-height:200px}
+.gz-split canvas,.gz-split .drop-area{width:100%;border-radius:8px;background:var(--gz-bg,#1a1a2e)}
+.drop-area{display:flex;align-items:center;justify-content:center;min-height:250px;border:2px dashed var(--gz-border,#444);cursor:pointer;text-align:center;padding:20px;transition:border-color .2s}
+.drop-area:hover{border-color:var(--gz-accent,#e94560)}
+.gz-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.gz-controls label{font-size:.85em;color:var(--text2)}
+.gz-controls input[type="range"]{width:160px}
+@media(max-width:700px){.gz-split{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pixelate Image","description":"Pixelate images online for free. Adjust pixel block size to censor faces, hide details or create pixel art effects. No upload — 100% browser-based.","url": "https://tools.gamezipper.com/zh/image/pixelate.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I pixelate an image?","acceptedAnswer":{"@type":"Answer","text":"Upload your image, adjust the pixel block size slider, then download the pixelated result. Everything runs in your browser."}},{"@type":"Question","name":"Can I pixelate just part of an image?","acceptedAnswer":{"@type":"Answer","text":"This tool pixelates the entire image. For selective area pixelation, you can crop the area first, pixelate it, then overlay it back."}},{"@type":"Question","name":"What is pixelation used for?","acceptedAnswer":{"@type":"Answer","text":"Pixelation is commonly used to censor faces or sensitive information, create retro pixel art effects, or reduce image detail for privacy."}},{"@type":"Question","name":"Does this tool compress my image quality?","acceptedAnswer":{"@type":"Answer","text":"The pixelation effect intentionally reduces detail by averaging color in blocks, but the output PNG preserves the pixelated result at full resolution."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/pixelate.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/pixelate.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/pixelate.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-controls" id="controls"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><div class="drop-area" id="drop"><p>📷 <span id="drop-label"></span></p><input type="file" id="file-input" accept="image/*" style="display:none"></div></div>
+      <div><label id="lbl-out"></label><canvas id="output"></canvas></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Pixelate Image',
+    toolDesc: 'Pixelate any image to censor faces, hide details or create pixel art effects. Adjust block size — free and browser-based.',
+    dropImage: 'Drop an image here or click to upload',
+    blockSize: 'Block size',
+    step1: 'Upload an image by dragging or clicking',
+    step2: 'Adjust the pixel block size slider',
+    step3: 'Preview the pixelation effect in real-time',
+    step4: 'Download the pixelated image as PNG',
+  },
+  zh: {
+    toolTitle: '图片像素化工具',
+    toolDesc: '将图片像素化以遮挡面部、隐藏细节或创建像素风格效果。可调整块大小 — 免费且完全浏览器本地处理。',
+    dropImage: '拖拽图片到此处或点击上传',
+    blockSize: '块大小',
+    step1: '拖拽或点击上传图片',
+    step2: '调整像素块大小滑块',
+    step3: '实时预览像素化效果',
+    step4: '下载像素化后的 PNG 图片',
+  }
+});
+
+const { $, t } = GZ;
+let srcImg = null;
+let blockSize = 10;
+
+const drop = $('#drop');
+const fileInput = $('#file-input');
+$('#drop-label').textContent = t('dropImage');
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.borderColor = 'var(--gz-accent)'; });
+drop.addEventListener('dragleave', () => { drop.style.borderColor = ''; });
+drop.addEventListener('drop', e => { e.preventDefault(); drop.style.borderColor = ''; loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => { srcImg = img; applyPixelate(); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyPixelate() {
+  if (!srcImg) return;
+  const canvas = $('#output');
+  const maxW = 800;
+  const scale = Math.min(1, maxW / srcImg.width);
+  const w = Math.round(srcImg.width * scale);
+  const h = Math.round(srcImg.height * scale);
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // Draw original at reduced size
+  const sw = Math.max(1, Math.round(w / blockSize));
+  const sh = Math.max(1, Math.round(h / blockSize));
+
+  // Use offscreen canvas for downscaling
+  const tmp = document.createElement('canvas');
+  tmp.width = sw; tmp.height = sh;
+  const tCtx = tmp.getContext('2d');
+  tCtx.drawImage(srcImg, 0, 0, sw, sh);
+
+  // Draw back at full size with image-smoothing disabled
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmp, 0, 0, sw, sh, 0, 0, w, h);
+}
+
+function download() {
+  const canvas = $('#output');
+  if (!canvas.width) return;
+  const a = document.createElement('a');
+  a.download = 'pixelated-image.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download()">${t('download')} PNG</button>`;
+
+$('#controls').innerHTML = `
+  <label>${t('blockSize')}: <input type="range" min="2" max="50" value="${blockSize}" oninput="blockSize=+this.value;$('#bsVal').textContent=this.value;applyPixelate()"><span id="bsVal">${blockSize}</span>px</label>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/filters.html', name:'Image Filters'},
+    {icon:'🖌️', href:'/image/pixel-art-editor.html', name:'Pixel Art Editor'},
+    {icon:'✏️', href:'/image/pencil-sketch.html', name:'Pencil Sketch'},
+    {icon:'🔒', href:'/image/censor.html', name:'Censor Image'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

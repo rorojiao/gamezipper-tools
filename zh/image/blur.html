@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片模糊工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线模糊图片 — 调整模糊强度，模糊整张图片或选定区域。免费、私密、浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/blur.html">
+  <meta property="og:title" content="图片模糊工具">
+  <meta property="og:description" content="在线模糊图片 — 调整模糊强度，模糊整张图片或选定区域。免费、私密、浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/blur.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片模糊工具">
+<meta name="twitter:description" content="在线模糊图片 — 调整模糊强度，模糊整张图片或选定区域。免费、私密、浏览器本地处理。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--gz-accent);background:var(--glass2)}
+.drop-zone svg{width:48px;height:48px;opacity:.5;margin-bottom:12px}
+.preview-area{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+.preview-area canvas{max-width:100%;border-radius:12px;border:1px solid var(--border)}
+.slider-group{display:flex;align-items:center;gap:12px;margin:12px 0}
+.slider-group label{min-width:100px;font-weight:600}
+.slider-group input[type=range]{flex:1;accent-color:var(--gz-accent)}
+.slider-group .val{min-width:40px;text-align:right;font-size:.9em}
+.gz-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Blur Tool","description":"Blur images online for free. Adjust blur intensity with a slider, blur entire image or selected areas. No upload, browser-based and private.","url": "https://tools.gamezipper.com/zh/image/blur.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I blur an image online?", "acceptedAnswer": {"@type": "Answer", "text": "Upload or drag and drop your image, adjust the blur intensity slider, then click Download to save the blurred image. Everything runs in your browser."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All image processing happens entirely in your browser using Canvas. Your images never leave your device."}}, {"@type": "Question", "name": "What image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports PNG, JPG, WebP, BMP and GIF images. The output is downloaded as PNG."}}, {"@type": "Question", "name": "Can I blur only a specific area of the image?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the rectangle selection mode to draw a region on the image, then apply blur only to that selected area."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/blur.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/blur.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/blur.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p id="dropLabel"></p>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+    <div id="controls" style="display:none">
+      <div class="slider-group">
+        <label id="lblBlur"></label>
+        <input type="range" id="blurRange" min="1" max="50" value="10">
+        <span class="val" id="blurVal">10px</span>
+      </div>
+      <div class="preview-area">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Blur Tool',
+    toolDesc: 'Blur images online — adjust intensity, blur entire image or selected areas. Free, private and browser-based.',
+    dropLabel: 'Drop an image here or click to upload',
+    blurAmount: 'Blur Intensity',
+    selectMode: 'Select Area',
+    fullMode: 'Full Image',
+    step1: 'Upload or drag and drop your image',
+    step2: 'Adjust the blur intensity slider',
+    step3: 'Choose Full Image or select a specific area to blur',
+    step4: 'Click Download to save the blurred image',
+  },
+  zh: {
+    toolTitle: '图片模糊工具',
+    toolDesc: '在线模糊图片 — 调整模糊强度，模糊整张图片或选定区域。免费、私密、浏览器本地处理。',
+    dropLabel: '拖拽图片到此处或点击上传',
+    blurAmount: '模糊强度',
+    selectMode: '区域模糊',
+    fullMode: '整图模糊',
+    step1: '上传或拖拽图片到页面',
+    step2: '调整模糊强度滑块',
+    step3: '选择整图模糊或框选特定区域模糊',
+    step4: '点击下载保存模糊后的图片',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let img = null, mode = 'full', selRect = null, dragging = false, sx, sy;
+
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    img = new Image();
+    img.onload = () => {
+      const maxW = 800;
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      canvas.width = w; canvas.height = h;
+      $('#controls').style.display = 'block';
+      $('#dropZone').style.display = 'none';
+      selRect = null;
+      applyBlur();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyBlur() {
+  if (!img) return;
+  const blur = +$('#blurRange').value;
+  ctx.filter = 'none';
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  ctx.filter = 'none';
+
+  if (mode === 'full') {
+    ctx.filter = `blur(${blur}px)`;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.filter = 'none';
+  } else if (selRect) {
+    const r = selRect;
+    const temp = document.createElement('canvas');
+    temp.width = r.w; temp.height = r.h;
+    const tctx = temp.getContext('2d');
+    tctx.filter = `blur(${blur}px)`;
+    tctx.drawImage(canvas, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    ctx.drawImage(temp, r.x, r.y);
+  }
+}
+
+function download() {
+  if (!img) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'blurred-image.png';
+  a.click();
+}
+
+// Canvas selection drawing
+canvas.addEventListener('mousedown', e => {
+  if (mode !== 'select') return;
+  const rect = canvas.getBoundingClientRect();
+  sx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  sy = (e.clientY - rect.top) * (canvas.height / rect.height);
+  dragging = true;
+});
+canvas.addEventListener('mousemove', e => {
+  if (!dragging || mode !== 'select') return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+  selRect = { x: Math.min(sx, mx), y: Math.min(sy, my), w: Math.abs(mx - sx), h: Math.abs(my - sy) };
+  applyBlur();
+  // Draw selection rectangle
+  if (selRect.w > 2 && selRect.h > 2) {
+    ctx.strokeStyle = 'var(--gz-accent)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 3]);
+    ctx.strokeRect(selRect.x, selRect.y, selRect.w, selRect.h);
+    ctx.setLineDash([]);
+  }
+});
+canvas.addEventListener('mouseup', () => { dragging = false; });
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  if (mode !== 'select') return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  sx = (touch.clientX - rect.left) * (canvas.width / rect.width);
+  sy = (touch.clientY - rect.top) * (canvas.height / rect.height);
+  dragging = true;
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  if (!dragging || mode !== 'select') return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const mx = (touch.clientX - rect.left) * (canvas.width / rect.width);
+  const my = (touch.clientY - rect.top) * (canvas.height / rect.height);
+  selRect = { x: Math.min(sx, mx), y: Math.min(sy, my), w: Math.abs(mx - sx), h: Math.abs(my - sy) };
+  applyBlur();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { dragging = false; });
+
+$('#blurRange').addEventListener('input', e => {
+  $('#blurVal').textContent = e.target.value + 'px';
+  applyBlur();
+});
+
+$('#dropZone').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => { if (e.target.files[0]) loadImage(e.target.files[0]); });
+$('#dropZone').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
+$('#dropZone').addEventListener('dragleave', e => { e.currentTarget.classList.remove('dragover'); });
+$('#dropZone').addEventListener('drop', e => { e.preventDefault(); e.currentTarget.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]); });
+
+$('#dropLabel').textContent = t('dropLabel');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" id="btnFull" onclick="mode='full';selRect=null;applyBlur();document.getElementById('btnFull').style.opacity=1;document.getElementById('btnSel').style.opacity=.6">${t('fullMode')}</button>
+  <button class="gz-btn gz-btn-secondary" id="btnSel" style="opacity:.6" onclick="mode='select';document.getElementById('btnSel').style.opacity=1;document.getElementById('btnFull').style.opacity=.6">${t('selectMode')}</button>
+  <button class="gz-btn" onclick="download()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('controls').style.display='none';document.getElementById('dropZone').style.display='block';img=null">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'🖼️', href:'/image/pixelate.html', name:'Pixelate Image'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'🎨', href:'/image/filters.html', name:'Image Filters'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

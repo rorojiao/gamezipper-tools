@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>思维导图生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="创建可视化思维导图，用于头脑风暴、规划和整理想法。添加节点、连接分支、自定义颜色，导出为 PNG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/mind-map.html">
+  <meta property="og:title" content="思维导图生成器">
+  <meta property="og:description" content="创建可视化思维导图，用于头脑风暴、规划和整理想法。添加节点、连接分支、自定义颜色，导出为 PNG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/mind-map.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="思维导图生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#mm-canvas{background:var(--glass);border:1px solid var(--border);border-radius:12px;cursor:grab;width:100%;height:500px;display:block}
+#mm-canvas:active{cursor:grabbing}
+#node-editor{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:20px;z-index:100;min-width:300px}
+#node-editor.active{display:block}
+#node-editor input{width:100%;padding:8px;margin:8px 0;background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1em}
+#node-editor .btns{display:flex;gap:8px;margin-top:12px}
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+#overlay.active{display:block}
+.mm-info{font-size:.8em;color:var(--text2);margin:8px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Mind Map Generator","description":"Create mind maps online for free. Add nodes, connect ideas, customize colors and layout. Export as PNG or SVG. No signup required — all in your browser.","url": "https://tools.gamezipper.com/zh/fun/mind-map.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I create a mind map?","acceptedAnswer":{"@type":"Answer","text":"Click the canvas to add a central topic node. Double-click a node to edit its text. Click a node then click Add Child to create a sub-topic. Drag nodes to rearrange your layout."}},{"@type":"Question","name":"Can I export my mind map?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click Download PNG to save your mind map as an image file. You can also copy the mind map data as JSON for backup."}},{"@type":"Question","name":"Is there a limit on nodes?","acceptedAnswer":{"@type":"Answer","text":"No hard limit, but for best performance keep it under 100 nodes. All rendering happens in your browser using Canvas."}},{"@type":"Question","name":"Can I change node colors?","acceptedAnswer":{"@type":"Answer","text":"Yes. Select a node, then pick a new color from the color picker in the toolbar. The central node and branch colors update automatically."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/mind-map.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/mind-map.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/mind-map.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <p class="mm-info" id="mm-info"></p>
+    <canvas id="mm-canvas"></canvas>
+  </div>
+  <div id="overlay" onclick="closeEditor()"></div>
+  <div id="node-editor">
+    <label id="lbl-node-text"></label>
+    <input id="node-text" type="text" maxlength="80">
+    <label id="lbl-node-color"></label>
+    <input id="node-color" type="color" value="#4ecdc4">
+    <div class="btns">
+      <button class="gz-btn" id="btn-save-node"></button>
+      <button class="gz-btn gz-btn-secondary" id="btn-delete-node"></button>
+      <button class="gz-btn gz-btn-secondary" onclick="closeEditor()"></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Mind Map Generator',
+    toolDesc: 'Create visual mind maps for brainstorming, planning and organizing ideas. Add nodes, connect branches, customize colors — export as PNG.',
+    addChild: 'Add Child', editNode: 'Edit', deleteNode: 'Delete',
+    downloadPNG: 'Download PNG', clearAll: 'Clear All',
+    centralTopic: 'Central Topic', newIdea: 'New Idea',
+    nodeText: 'Node Text', nodeColor: 'Node Color',
+    save: 'Save', del: 'Delete', cancel: 'Cancel',
+    info: 'Double-click a node to edit. Click to select, then add children.',
+    step1: 'Click the canvas to start — a central node is created automatically',
+    step2: 'Select a node and click Add Child to branch out ideas',
+    step3: 'Double-click any node to edit its text and color',
+    step4: 'Drag nodes to rearrange, then download your mind map as PNG',
+  },
+  zh: {
+    toolTitle: '思维导图生成器',
+    toolDesc: '创建可视化思维导图，用于头脑风暴、规划和整理想法。添加节点、连接分支、自定义颜色，导出为 PNG。',
+    addChild: '添加子节点', editNode: '编辑', deleteNode: '删除',
+    downloadPNG: '下载 PNG', clearAll: '清空全部',
+    centralTopic: '中心主题', newIdea: '新想法',
+    nodeText: '节点文字', nodeColor: '节点颜色',
+    save: '保存', del: '删除', cancel: '取消',
+    info: '双击节点编辑文字，单击选中后可添加子节点。',
+    step1: '点击画布自动创建中心节点',
+    step2: '选中节点后点击「添加子节点」展开想法',
+    step3: '双击任意节点编辑文字和颜色',
+    step4: '拖动节点调整布局，然后下载思维导图为 PNG',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const canvas = $('#mm-canvas');
+const ctx = canvas.getContext('2d');
+let nodes = [], selectedId = null, editingId = null;
+let dragging = null, dragOff = {x:0,y:0};
+let nextId = 1;
+
+const COLORS = ['#4ecdc4','#ff6b6b','#ffd93d','#6c5ce7','#a8e6cf','#fd9644','#74b9ff','#fd79a8','#00cec9','#e17055'];
+
+function resize() {
+  const r = canvas.parentElement.getBoundingClientRect();
+  canvas.width = r.width;
+  canvas.height = 500;
+  draw();
+}
+
+function addNode(parentId, text, x, y) {
+  const node = {
+    id: nextId++,
+    text: text || t('newIdea') + ' ' + nextId,
+    x: x || canvas.width/2,
+    y: y || canvas.height/2,
+    color: parentId ? COLORS[(nextId-1) % COLORS.length] : '#4ecdc4',
+    parent: parentId,
+    children: []
+  };
+  nodes.push(node);
+  if (parentId) {
+    const p = nodes.find(n=>n.id===parentId);
+    if (p) p.children.push(node.id);
+  }
+  draw();
+  return node;
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // Draw connections
+  nodes.forEach(n => {
+    if (n.parent) {
+      const p = nodes.find(nd=>nd.id===n.parent);
+      if (p) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        const cpx = (p.x + n.x) / 2;
+        ctx.bezierCurveTo(cpx, p.y, cpx, n.y, n.x, n.y);
+        ctx.strokeStyle = n.color + '88';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+    }
+  });
+  // Draw nodes
+  nodes.forEach(n => {
+    const isSelected = n.id === selectedId;
+    const w = Math.max(80, ctx.measureText(n.text).width + 30);
+    ctx.font = (n.parent ? '14px' : 'bold 16px') + ' system-ui, sans-serif';
+    const tw = ctx.measureText(n.text).width;
+    const nw = Math.max(80, tw + 28);
+    const nh = n.parent ? 36 : 42;
+
+    // Node body
+    ctx.beginPath();
+    const rx = 10;
+    roundRect(ctx, n.x - nw/2, n.y - nh/2, nw, nh, rx);
+    ctx.fillStyle = isSelected ? n.color : n.color + 'cc';
+    ctx.fill();
+    if (isSelected) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
+    // Text
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = (n.parent ? '13px' : 'bold 15px') + ' system-ui, sans-serif';
+    ctx.fillText(n.text, n.x, n.y, nw - 12);
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function getNodeAt(x, y) {
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    ctx.font = (n.parent ? '13px' : 'bold 15px') + ' system-ui, sans-serif';
+    const tw = ctx.measureText(n.text).width;
+    const nw = Math.max(80, tw + 28);
+    const nh = n.parent ? 36 : 42;
+    if (x >= n.x-nw/2 && x <= n.x+nw/2 && y >= n.y-nh/2 && y <= n.y+nh/2) return n;
+  }
+  return null;
+}
+
+// Mouse events
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const node = getNodeAt(x, y);
+  if (node) {
+    selectedId = node.id;
+    dragging = node;
+    dragOff = {x: x - node.x, y: y - node.y};
+  } else {
+    selectedId = null;
+  }
+  draw();
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  dragging.x = e.clientX - rect.left - dragOff.x;
+  dragging.y = e.clientY - rect.top - dragOff.y;
+  draw();
+});
+
+canvas.addEventListener('mouseup', () => { dragging = null; });
+canvas.addEventListener('mouseleave', () => { dragging = null; });
+
+canvas.addEventListener('dblclick', e => {
+  const rect = canvas.getBoundingClientRect();
+  const node = getNodeAt(e.clientX - rect.left, e.clientY - rect.top);
+  if (node) openEditor(node.id);
+});
+
+function openEditor(id) {
+  editingId = id;
+  const node = nodes.find(n=>n.id===id);
+  if (!node) return;
+  $('#node-text').value = node.text;
+  $('#node-color').value = node.color;
+  $('#node-editor').classList.add('active');
+  $('#overlay').classList.add('active');
+  $('#node-text').focus();
+}
+
+function closeEditor() {
+  $('#node-editor').classList.remove('active');
+  $('#overlay').classList.remove('active');
+  editingId = null;
+}
+
+$('#btn-save-node').textContent = t('save');
+$('#btn-delete-node').textContent = t('del');
+$('#btn-save-node').onclick = () => {
+  const node = nodes.find(n=>n.id===editingId);
+  if (node) {
+    node.text = $('#node-text').value || node.text;
+    node.color = $('#node-color').value;
+    draw();
+  }
+  closeEditor();
+};
+$('#btn-delete-node').onclick = () => {
+  if (editingId && editingId !== nodes[0]?.id) {
+    const node = nodes.find(n=>n.id===editingId);
+    if (node && node.parent) {
+      const p = nodes.find(n=>n.id===node.parent);
+      if (p) p.children = p.children.filter(c=>c!==editingId);
+    }
+    // Remove children recursively
+    function removeChildren(id) {
+      const ch = nodes.filter(n=>n.parent===id);
+      ch.forEach(c => removeChildren(c.id));
+      nodes = nodes.filter(n=>n.id!==id);
+    }
+    removeChildren(editingId);
+    nodes = nodes.filter(n=>n.id!==editingId);
+    selectedId = null;
+    draw();
+  }
+  closeEditor();
+};
+
+// Toolbar
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="addChildNode()">${t('addChild')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadPNG()">${t('downloadPNG')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearMap()">${t('clearAll')}</button>`;
+
+$('#lbl-node-text').textContent = t('nodeText');
+$('#lbl-node-color').textContent = t('nodeColor');
+$('#mm-info').textContent = t('info');
+
+function addChildNode() {
+  if (!selectedId) return;
+  const parent = nodes.find(n=>n.id===selectedId);
+  if (!parent) return;
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 100 + Math.random() * 40;
+  const child = addNode(selectedId, null, parent.x + Math.cos(angle)*dist, parent.y + Math.sin(angle)*dist);
+  selectedId = child.id;
+  draw();
+}
+
+function clearMap() {
+  nodes = [];
+  nextId = 1;
+  selectedId = null;
+  const root = addNode(null, t('centralTopic'), canvas.width/2, canvas.height/2);
+  selectedId = root.id;
+}
+
+function downloadPNG() {
+  const link = document.createElement('a');
+  // Redraw on white background for PNG
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
+  link.download = 'mind-map.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  draw();
+}
+
+// Init
+window.addEventListener('resize', resize);
+resize();
+clearMap();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/text/notepad.html', name:'Notepad'},
+    {icon:'🎨', href:'/fun/whiteboard.html', name:'Whiteboard'},
+    {icon:'✏️', href:'/text/todo.html', name:'Todo List'},
+    {icon:'📊', href:'/image/chart-maker.html', name:'Chart Maker'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

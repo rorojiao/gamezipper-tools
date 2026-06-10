@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>组织架构图生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线创建组织架构图 — 添加成员、定义层级、自定义颜色并下载为 PNG。免费浏览器工具。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/org-chart.html">
+  <meta property="og:title" content="组织架构图生成器">
+  <meta property="og:description" content="在线创建组织架构图 — 添加成员、定义层级、自定义颜色并下载为 PNG。免费浏览器工具。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/org-chart.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="组织架构图生成器">
+<meta name="twitter:description" content="在线创建组织架构图 — 添加成员、定义层级、自定义颜色并下载为 PNG。免费浏览器工具。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-split{display:grid;grid-template-columns:300px 1fr;gap:16px}
+@media(max-width:700px){.gz-split{grid-template-columns:1fr}}
+.gz-split input,.gz-split select{width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.9em;box-sizing:border-box}
+.gz-split label{font-size:.85em;font-weight:600;margin-top:8px;display:block}
+.member-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px;margin:8px 0;position:relative}
+.member-card .name{font-weight:700;font-size:.95em}
+.member-card .title{font-size:.8em;opacity:.7}
+.member-card .del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--gz-accent);cursor:pointer;font-size:1.1em}
+.chart-canvas{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:auto;min-height:400px}
+#orgCanvas{display:block}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Org Chart Generator","description":"Create organizational charts online for free. Add members, define hierarchy, customize colors and download as PNG. No signup, browser-based.","url": "https://tools.gamezipper.com/zh/image/org-chart.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I create an org chart?", "acceptedAnswer": {"@type": "Answer", "text": "Add members by entering their name, title and selecting who they report to. The chart auto-generates. Click Download to save as PNG."}}, {"@type": "Question", "name": "Can I customize the chart colors?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can customize the header color, box color, text color and connection line color to match your brand."}}, {"@type": "Question", "name": "How many levels of hierarchy are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports unlimited hierarchy levels. The chart automatically adjusts its layout to accommodate all levels."}}, {"@type": "Question", "name": "Can I edit or remove members?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click the ✕ button on any member card to remove them. Their children will be reassigned to the removed member's parent."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/org-chart.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/org-chart.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/org-chart.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lblName"></label><input id="memberName" value="">
+        <label id="lblTitle"></label><input id="memberTitle" value="">
+        <label id="lblReports"></label>
+        <select id="reportsTo">
+          <option value="">-- Top Level --</option>
+        </select>
+        <label id="lblColor"></label><input id="boxColor" type="color" value="#4ecdc4">
+        <button class="gz-btn" onclick="addMember()" id="btnAdd" style="margin-top:12px;width:100%"></button>
+        <hr style="border-color:var(--border);margin:16px 0">
+        <div id="memberList"></div>
+      </div>
+      <div class="chart-canvas" id="chartContainer">
+        <canvas id="orgCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Org Chart Generator',
+    toolDesc: 'Create organizational charts online — add members, define hierarchy, customize and download as PNG. Free and browser-based.',
+    memberName: 'Name',
+    memberTitle: 'Job Title',
+    reportsTo: 'Reports To',
+    boxColor: 'Box Color',
+    addMember: '+ Add Member',
+    topLevel: '-- Top Level --',
+    step1: 'Enter member name and job title',
+    step2: 'Select who they report to (or leave as Top Level)',
+    step3: 'Customize the box color for each member',
+    step4: 'Click Download to save the org chart as PNG',
+  },
+  zh: {
+    toolTitle: '组织架构图生成器',
+    toolDesc: '在线创建组织架构图 — 添加成员、定义层级、自定义颜色并下载为 PNG。免费浏览器工具。',
+    memberName: '姓名',
+    memberTitle: '职位',
+    reportsTo: '上级',
+    boxColor: '方框颜色',
+    addMember: '+ 添加成员',
+    topLevel: '-- 顶层 --',
+    step1: '输入成员姓名和职位',
+    step2: '选择其上级（或留空为顶层）',
+    step3: '自定义每个成员的方框颜色',
+    step4: '点击下载将组织架构图保存为 PNG',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let members = [];
+let nextId = 1;
+
+$('#lblName').textContent = t('memberName');
+$('#lblTitle').textContent = t('memberTitle');
+$('#lblReports').textContent = t('reportsTo');
+$('#lblColor').textContent = t('boxColor');
+$('#btnAdd').textContent = t('addMember');
+
+function addMember() {
+  const name = $('#memberName').value.trim();
+  const title = $('#memberTitle').value.trim();
+  const reportsTo = $('#reportsTo').value;
+  const color = $('#boxColor').value;
+  if (!name) return;
+
+  members.push({ id: nextId++, name, title, reportsTo: reportsTo ? +reportsTo : null, color });
+  $('#memberName').value = '';
+  $('#memberTitle').value = '';
+  updateUI();
+}
+
+function removeMember(id) {
+  const parent = members.find(m => m.id === id);
+  // Reassign children to the removed member's parent
+  members.forEach(m => {
+    if (m.reportsTo === id) m.reportsTo = parent ? parent.reportsTo : null;
+  });
+  members = members.filter(m => m.id !== id);
+  updateUI();
+}
+
+function updateUI() {
+  // Update member list
+  $('#memberList').innerHTML = members.map(m => `
+    <div class="member-card" style="border-left:3px solid ${m.color}">
+      <button class="del" onclick="removeMember(${m.id})">✕</button>
+      <div class="name">${m.name}</div>
+      <div class="title">${m.title || '—'}</div>
+    </div>
+  `).join('');
+
+  // Update reportsTo dropdown
+  const current = $('#reportsTo').value;
+  $('#reportsTo').innerHTML = `<option value="">${t('topLevel')}</option>` +
+    members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  $('#reportsTo').value = current;
+
+  renderChart();
+}
+
+function renderChart() {
+  const canvas = $('#orgCanvas');
+  const ctx = canvas.getContext('2d');
+  const boxW = 160, boxH = 60, gapX = 20, gapY = 60, padX = 40, padY = 30;
+
+  // Build tree
+  function getChildren(parentId) {
+    return members.filter(m => m.reportsTo === parentId);
+  }
+
+  // Calculate subtree width
+  function getWidth(id) {
+    const children = getChildren(id);
+    if (!children.length) return boxW + gapX;
+    return children.reduce((sum, c) => sum + getWidth(c.id), 0);
+  }
+
+  const roots = getChildren(null);
+  const totalW = roots.reduce((sum, r) => sum + getWidth(r.id), 0) + padX * 2;
+  
+  // Calculate max depth
+  function getDepth(id) {
+    const children = getChildren(id);
+    if (!children.length) return 1;
+    return 1 + Math.max(...children.map(c => getDepth(c.id)));
+  }
+  const maxDepth = roots.length ? Math.max(...roots.map(r => getDepth(r.id))) : 0;
+  const totalH = maxDepth * (boxH + gapY) + padY * 2;
+
+  canvas.width = Math.max(totalW, 400);
+  canvas.height = Math.max(totalH, 200);
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (!members.length) {
+    ctx.fillStyle = '#aaa';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Add members to generate chart', canvas.width/2, canvas.height/2);
+    return;
+  }
+
+  // Draw nodes
+  function drawNode(member, x, y) {
+    // Box
+    ctx.fillStyle = member.color || '#4ecdc4';
+    const radius = 8;
+    ctx.beginPath();
+    ctx.roundRect(x, y, boxW, boxH, radius);
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(member.name, x + boxW/2, y + 24, boxW - 16);
+    ctx.font = '11px sans-serif';
+    ctx.fillText(member.title || '', x + boxW/2, y + 42, boxW - 16);
+
+    // Children
+    const children = getChildren(member.id);
+    if (children.length) {
+      const childTotalW = children.reduce((sum, c) => sum + getWidth(c.id), 0);
+      let cx = x + boxW/2 - childTotalW/2;
+      const cy = y + boxH + gapY;
+
+      children.forEach(child => {
+        const cw = getWidth(child.id);
+        const childX = cx + cw/2 - boxW/2;
+
+        // Draw connection line
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + boxW/2, y + boxH);
+        ctx.lineTo(x + boxW/2, y + boxH + gapY/2);
+        ctx.lineTo(cx + cw/2, y + boxH + gapY/2);
+        ctx.lineTo(cx + cw/2, cy);
+        ctx.stroke();
+
+        drawNode(child, childX, cy);
+        cx += cw;
+      });
+    }
+  }
+
+  let startX = padX;
+  roots.forEach(root => {
+    const w = getWidth(root.id);
+    drawNode(root, startX + w/2 - boxW/2, padY);
+    startX += w;
+  });
+}
+
+function downloadChart() {
+  const a = document.createElement('a');
+  a.href = $('#orgCanvas').toDataURL('image/png');
+  a.download = 'org-chart.png';
+  a.click();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="downloadChart()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="members=[];nextId=1;updateUI()">${t('clear')}</button>`;
+
+// Add default example data
+members = [
+  { id: nextId++, name: 'CEO', title: 'Chief Executive', reportsTo: null, color: '#4ecdc4' },
+  { id: nextId++, name: 'CTO', title: 'Technology', reportsTo: 1, color: '#ff6b6b' },
+  { id: nextId++, name: 'CFO', title: 'Finance', reportsTo: 1, color: '#ffd93d' },
+  { id: nextId++, name: 'VP Eng', title: 'Engineering', reportsTo: 2, color: '#a8e6cf' },
+  { id: nextId++, name: 'VP Design', title: 'Design', reportsTo: 2, color: '#a8e6cf' },
+  { id: nextId++, name: 'Accounting', title: 'Accounting', reportsTo: 3, color: '#dcedc1' },
+];
+updateUI();
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⭕', href:'/image/venn-diagram.html', name:'Venn Diagram'},
+    {icon:'🧠', href:'/fun/mind-map.html', name:'Mind Map'},
+    {icon:'📊', href:'/image/chart-maker.html', name:'Chart Maker'},
+    {icon:'📜', href:'/image/certificate-generator.html', name:'Certificate Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

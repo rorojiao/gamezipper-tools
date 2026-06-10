@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>预算规划器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="规划每月收支预算。按类别追踪支出、可视化消费分布，轻松管理财务。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/budget-planner.html">
+  <meta property="og:title" content="预算规划器">
+  <meta property="og:description" content="规划每月收支预算。按类别追踪支出、可视化消费分布，轻松管理财务。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/budget-planner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="预算规划器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.budget-section{margin-bottom:16px;padding:16px;border:1px solid var(--gz-border);border-radius:10px;background:var(--gz-card)}
+.budget-section h3{margin:0 0 10px;font-size:1em}
+.budget-row{display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.budget-row input{padding:6px 10px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--gz-text);font-size:.9em}
+.budget-row input[type=text]{flex:1;min-width:100px}
+.budget-row input[type=number]{width:100px}
+.budget-row select{padding:6px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--gz-text)}
+.budget-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+.summary-card{padding:12px;border-radius:8px;text-align:center}
+.summary-card h4{margin:0;font-size:.8em;opacity:.7}
+.summary-card .amount{font-size:1.4em;font-weight:700;margin-top:4px}
+.summary-card.income{background:rgba(78,205,196,.15);color:#4ecdc4}
+.summary-card.expense{background:rgba(255,107,107,.15);color:#ff6b6b}
+.summary-card.savings{background:rgba(100,149,237,.15);color:#6495ed}
+.summary-card.rate{background:rgba(255,193,7,.15);color:#ffc107}
+.bar-chart{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:.8em}
+.bar-row .bar-label{width:90px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .bar-track{flex:1;height:20px;background:var(--gz-border);border-radius:4px;overflow:hidden}
+.bar-row .bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.bar-row .bar-val{width:60px;font-weight:600}
+.remove-btn{background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:1.1em;padding:2px 6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Budget Planner Calculator","description":"Plan your monthly budget with income, expenses and savings. Track spending by category, visualize breakdowns, and export as PNG. Free, private, no signup.","url": "https://tools.gamezipper.com/zh/calc/budget-planner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I use the budget planner?", "acceptedAnswer": {"@type": "Answer", "text": "Add your income sources and expense items with amounts. The tool automatically calculates totals, savings, and visualizes your spending breakdown by category."}}, {"@type": "Question", "name": "Is my financial data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All calculations happen in your browser. No data is sent to any server. Your budget information stays completely private on your device."}}, {"@type": "Question", "name": "Can I export my budget?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can download a summary as PNG image or copy the budget data to clipboard for pasting into a spreadsheet."}}, {"@type": "Question", "name": "What expense categories are available?", "acceptedAnswer": {"@type": "Answer", "text": "The planner includes categories like Housing, Food, Transport, Utilities, Entertainment, Healthcare, Education, Shopping, and Other. You can also type custom names."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/budget-planner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/budget-planner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/budget-planner.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="budget-summary" id="summary"></div>
+    <div class="budget-section" id="income-section">
+      <h3 id="income-title"></h3>
+      <div id="income-rows"></div>
+    </div>
+    <div class="budget-section" id="expense-section">
+      <h3 id="expense-title"></h3>
+      <div id="expense-rows"></div>
+    </div>
+    <div class="budget-section">
+      <h3 id="chart-title"></h3>
+      <div class="bar-chart" id="chart"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Budget Planner',
+    toolDesc: 'Plan your monthly budget with income and expenses. Track spending by category, visualize your breakdown, and stay on top of your finances.',
+    incomeSection: '💰 Income',
+    expenseSection: '💸 Expenses',
+    chartSection: '📊 Spending Breakdown',
+    totalIncome: 'Total Income',
+    totalExpenses: 'Total Expenses',
+    netSavings: 'Net Savings',
+    savingsRate: 'Savings Rate',
+    addItem: '+ Add',
+    remove: '×',
+    download: 'Download Summary',
+    clear: 'Clear All',
+    step1: 'Add your income sources with amounts',
+    step2: 'Add expense items and assign categories',
+    step3: 'Review the summary cards for totals and savings',
+    step4: 'Download the summary as PNG or adjust your budget',
+  },
+  zh: {
+    toolTitle: '预算规划器',
+    toolDesc: '规划每月收支预算。按类别追踪支出、可视化消费分布，轻松管理财务。',
+    incomeSection: '💰 收入',
+    expenseSection: '💸 支出',
+    chartSection: '📊 支出分布',
+    totalIncome: '总收入',
+    totalExpenses: '总支出',
+    netSavings: '净储蓄',
+    savingsRate: '储蓄率',
+    addItem: '+ 添加',
+    remove: '×',
+    download: '下载摘要',
+    clear: '清空',
+    step1: '添加收入来源和金额',
+    step2: '添加支出项目并分配类别',
+    step3: '查看摘要卡片中的总计和储蓄',
+    step4: '下载摘要为 PNG 或调整预算',
+  }
+});
+
+const { $, t } = GZ;
+
+const categories = {
+  en: ['Housing','Food','Transport','Utilities','Entertainment','Healthcare','Education','Shopping','Other'],
+  zh: ['住房','餐饮','交通','水电','娱乐','医疗','教育','购物','其他']
+};
+const catColors = ['#4ecdc4','#ff6b6b','#ffc107','#6495ed','#e91e63','#9c27b0','#ff9800','#4caf50','#607d8b'];
+const lang = document.documentElement.lang === 'zh' ? 'zh' : 'en';
+
+let incomes = [{name:'', amount:0}];
+let expenses = [{name:'', amount:0, cat: categories[lang][0]}];
+
+$('#income-title').textContent = t('incomeSection');
+$('#expense-title').textContent = t('expenseSection');
+$('#chart-title').textContent = t('chartSection');
+
+function renderRows() {
+  const ir = $('#income-rows');
+  ir.innerHTML = '';
+  incomes.forEach((item, i) => {
+    ir.innerHTML += `<div class="budget-row">
+      <input type="text" value="${item.name}" data-type="income" data-idx="${i}" data-field="name" placeholder="Income source">
+      <input type="number" value="${item.amount||''}" data-type="income" data-idx="${i}" data-field="amount" placeholder="0" min="0">
+      ${incomes.length > 1 ? `<button class="remove-btn" onclick="removeItem('income',${i})">${t('remove')}</button>` : ''}
+    </div>`;
+  });
+
+  const er = $('#expense-rows');
+  er.innerHTML = '';
+  expenses.forEach((item, i) => {
+    const opts = categories[lang].map(c => `<option ${c===item.cat?'selected':''}>${c}</option>`).join('');
+    er.innerHTML += `<div class="budget-row">
+      <input type="text" value="${item.name}" data-type="expense" data-idx="${i}" data-field="name" placeholder="Expense item">
+      <input type="number" value="${item.amount||''}" data-type="expense" data-idx="${i}" data-field="amount" placeholder="0" min="0">
+      <select data-type="expense" data-idx="${i}" data-field="cat">${opts}</select>
+      ${expenses.length > 1 ? `<button class="remove-btn" onclick="removeItem('expense',${i})">${t('remove')}</button>` : ''}
+    </div>`;
+  });
+
+  // Add buttons
+  ir.innerHTML += `<button class="gz-btn gz-btn-secondary" onclick="addItem('income')" style="margin-top:4px;font-size:.8em">${t('addItem')}</button>`;
+  er.innerHTML += `<button class="gz-btn gz-btn-secondary" onclick="addItem('expense')" style="margin-top:4px;font-size:.8em">${t('addItem')}</button>`;
+
+  // Bind inputs
+  document.querySelectorAll('#income-rows input, #expense-rows input, #expense-rows select').forEach(el => {
+    el.oninput = el.onchange = function() {
+      const type = this.dataset.type;
+      const idx = +this.dataset.idx;
+      const field = this.dataset.field;
+      const arr = type === 'income' ? incomes : expenses;
+      if (field === 'amount') arr[idx].amount = +this.value || 0;
+      else arr[idx][field] = this.value;
+      updateSummary();
+    };
+  });
+
+  updateSummary();
+}
+
+function addItem(type) {
+  if (type === 'income') incomes.push({name:'', amount:0});
+  else expenses.push({name:'', amount:0, cat: categories[lang][0]});
+  renderRows();
+}
+
+function removeItem(type, idx) {
+  if (type === 'income') incomes.splice(idx, 1);
+  else expenses.splice(idx, 1);
+  renderRows();
+}
+
+function updateSummary() {
+  const totalIn = incomes.reduce((s, i) => s + i.amount, 0);
+  const totalOut = expenses.reduce((s, i) => s + i.amount, 0);
+  const net = totalIn - totalOut;
+  const rate = totalIn > 0 ? ((net / totalIn) * 100).toFixed(1) : '0.0';
+
+  $('#summary').innerHTML = `
+    <div class="summary-card income"><h4>${t('totalIncome')}</h4><div class="amount">$${totalIn.toLocaleString()}</div></div>
+    <div class="summary-card expense"><h4>${t('totalExpenses')}</h4><div class="amount">$${totalOut.toLocaleString()}</div></div>
+    <div class="summary-card savings"><h4>${t('netSavings')}</h4><div class="amount">$${net.toLocaleString()}</div></div>
+    <div class="summary-card rate"><h4>${t('savingsRate')}</h4><div class="amount">${rate}%</div></div>`;
+
+  // Chart - breakdown by category
+  const catTotals = {};
+  expenses.forEach(e => {
+    catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount;
+  });
+  const maxVal = Math.max(...Object.values(catTotals), 1);
+  let chartHTML = '';
+  let ci = 0;
+  for (const [cat, val] of Object.entries(catTotals)) {
+    if (val <= 0) continue;
+    const pct = (val / maxVal * 100).toFixed(0);
+    const colorIdx = categories[lang].indexOf(cat);
+    const color = catColors[colorIdx >= 0 ? colorIdx : ci % catColors.length];
+    chartHTML += `<div class="bar-row">
+      <span class="bar-label">${cat}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="bar-val">$${val.toLocaleString()}</span>
+    </div>`;
+    ci++;
+  }
+  $('#chart').innerHTML = chartHTML || '<p style="opacity:.5;font-size:.85em">No expenses yet</p>';
+}
+
+function doClear() {
+  incomes = [{name:'', amount:0}];
+  expenses = [{name:'', amount:0, cat: categories[lang][0]}];
+  renderRows();
+}
+
+function downloadSummary() {
+  const totalIn = incomes.reduce((s, i) => s + i.amount, 0);
+  const totalOut = expenses.reduce((s, i) => s + i.amount, 0);
+  const lines = [
+    '=== Budget Summary ===',
+    `Total Income: $${totalIn.toLocaleString()}`,
+    `Total Expenses: $${totalOut.toLocaleString()}`,
+    `Net Savings: $${(totalIn-totalOut).toLocaleString()}`,
+    '',
+    '--- Income ---',
+    ...incomes.filter(i=>i.name).map(i => `${i.name}: $${i.amount.toLocaleString()}`),
+    '',
+    '--- Expenses ---',
+    ...expenses.filter(e=>e.name).map(e => `${e.name} (${e.cat}): $${e.amount.toLocaleString()}`),
+  ];
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.download = 'budget-summary.txt';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="downloadSummary()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+renderRows();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💰', href:'/calc/compound-interest.html', name:'Compound Interest'},
+    {icon:'🏠', href:'/calc/mortgage.html', name:'Mortgage Calculator'},
+    {icon:'💸', href:'/calc/salary-calculator.html', name:'Salary Calculator'},
+    {icon:'📊', href:'/calc/expense-tracker.html', name:'Expense Tracker'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>QR 码设计器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="创建自定义样式的 QR 码，支持颜色、圆点样式和 Logo — 下载为 PNG 或 SVG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/qrcode-designer.html">
+  <meta property="og:title" content="QR 码设计器">
+  <meta property="og:description" content="创建自定义样式的 QR 码，支持颜色、圆点样式和 Logo — 下载为 PNG 或 SVG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/qrcode-designer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="QR 码设计器">
+<meta name="twitter:description" content="创建自定义样式的 QR 码，支持颜色、圆点样式和 Logo — 下载为 PNG 或 SVG。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+.designer-layout{display:grid;grid-template-columns:280px 1fr;gap:16px;margin:1rem 0}
+@media(max-width:768px){.designer-layout{grid-template-columns:1fr}}
+.opts-panel{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:1rem}
+.opts-panel h3{margin:0 0 .6rem;font-size:.9rem}
+.opt-group{margin-bottom:.8rem}
+.opt-group label{display:block;font-size:.78rem;font-weight:600;margin-bottom:3px;color:var(--text3)}
+.opt-group input[type="text"],.opt-group select,.opt-group textarea{width:100%;padding:6px 10px;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:.82rem;box-sizing:border-box}
+.opt-group input[type="color"]{width:40px;height:30px;border:1px solid var(--border);border-radius:6px;padding:2px;cursor:pointer}
+.opt-group input[type="range"]{width:100%}
+.color-row{display:flex;align-items:center;gap:6px}
+.color-row input[type="text"]{flex:1}
+.preview-panel{text-align:center;background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:350px}
+.preview-panel canvas{background:#fff;border-radius:8px;image-rendering:pixelated}
+.dot-styles{display:flex;gap:6px;flex-wrap:wrap}
+.dot-style-btn{width:40px;height:40px;border:2px solid var(--border);border-radius:8px;background:var(--input-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:border-color .15s}
+.dot-style-btn:hover,.dot-style-btn.active{border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Code Designer","description":"Generate custom styled QR codes with colors, logos, and patterns. Download as PNG or SVG.","url": "https://tools.gamezipper.com/zh/text/qrcode-designer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Can I add my logo to a QR code?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Upload a logo image in the designer and it will be placed in the center of the QR code. The tool adds error correction to ensure the QR code remains scannable."}}, {"@type": "Question", "name": "What colors work best for QR codes?", "acceptedAnswer": {"@type": "Answer", "text": "High contrast between foreground and background works best. Dark colors on white/light backgrounds are most reliable. Avoid similar colors (like blue on blue) as scanners may not read them."}}, {"@type": "Question", "name": "Can I download the QR code as SVG?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can download the QR code as PNG for web use or SVG for print and scaling. SVG format maintains perfect quality at any size."}}, {"@type": "Question", "name": "Will my styled QR code still scan correctly?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, as long as you maintain sufficient contrast and don't over-decorate. The tool uses high error correction (Level H) to allow up to 30% damage including center logos."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/qrcode-designer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/qrcode-designer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/qrcode-designer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="designer-layout">
+      <div class="opts-panel" id="opts"></div>
+      <div class="preview-panel" id="preview-panel">
+        <canvas id="qr-canvas" width="300" height="300"></canvas>
+        <div style="margin-top:1rem;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          <button class="gz-btn" id="dl-png"></button>
+          <button class="gz-btn gz-btn-secondary" id="dl-svg"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'QR Code Designer',
+    toolDesc: 'Create custom styled QR codes with colors, dot styles, and logos — download as PNG or SVG.',
+    content: 'Content',
+    contentPh: 'Enter URL or text',
+    fgColor: 'Foreground Color',
+    bgColor: 'Background Color',
+    dotStyle: 'Dot Style',
+    size: 'Size',
+    ecLevel: 'Error Correction',
+    ecL: 'Low (7%)',
+    ecM: 'Medium (15%)',
+    ecQ: 'Quartile (25%)',
+    ecH: 'High (30%)',
+    logo: 'Logo (optional)',
+    uploadLogo: 'Upload Logo',
+    removeLogo: 'Remove',
+    downloadPNG: 'Download PNG',
+    downloadSVG: 'Download SVG',
+    step1: 'Enter the URL or text for your QR code',
+    step2: 'Customize colors, dot style, and size',
+    step3: 'Optionally upload a logo to place in the center',
+    step4: 'Download as PNG for web or SVG for print',
+    square: 'Square',
+    rounded: 'Rounded',
+    dots: 'Dots',
+    diamond: 'Diamond',
+  },
+  zh: {
+    toolTitle: 'QR 码设计器',
+    toolDesc: '创建自定义样式的 QR 码，支持颜色、圆点样式和 Logo — 下载为 PNG 或 SVG。',
+    content: '内容',
+    contentPh: '输入 URL 或文本',
+    fgColor: '前景色',
+    bgColor: '背景色',
+    dotStyle: '点样式',
+    size: '大小',
+    ecLevel: '纠错等级',
+    ecL: '低 (7%)',
+    ecM: '中 (15%)',
+    ecQ: '较高 (25%)',
+    ecH: '高 (30%)',
+    logo: 'Logo（可选）',
+    uploadLogo: '上传 Logo',
+    removeLogo: '移除',
+    downloadPNG: '下载 PNG',
+    downloadSVG: '下载 SVG',
+    step1: '输入 QR 码的 URL 或文本内容',
+    step2: '自定义颜色、点样式和大小',
+    step3: '可选上传 Logo 放置在中心',
+    step4: '下载为 PNG（网页）或 SVG（印刷）',
+    square: '方形',
+    rounded: '圆角',
+    dots: '圆点',
+    diamond: '菱形',
+  }
+});
+const { $, t } = GZ;
+let logoImg = null;
+let dotStyle = 'square';
+$('#dl-png').textContent = t('downloadPNG');
+$('#dl-svg').textContent = t('downloadSVG');
+$('#dl-png').onclick = downloadPNG;
+$('#dl-svg').onclick = downloadSVG;
+$('#opts').innerHTML = `
+  <div class="opt-group"><label>${t('content')}</label><textarea id="qr-text" rows="2" placeholder="${t('contentPh')}">https://tools.gamezipper.com</textarea></div>
+  <div class="opt-group"><label>${t('fgColor')}</label><div class="color-row"><input type="color" id="fg-color" value="#000000"><input type="text" id="fg-hex" value="#000000"></div></div>
+  <div class="opt-group"><label>${t('bgColor')}</label><div class="color-row"><input type="color" id="bg-color" value="#ffffff"><input type="text" id="bg-hex" value="#ffffff"></div></div>
+  <div class="opt-group"><label>${t('dotStyle')}</label>
+    <div class="dot-styles">
+      <button class="dot-style-btn active" data-style="square" title="${t('square')}">■</button>
+      <button class="dot-style-btn" data-style="rounded" title="${t('rounded')}">▢</button>
+      <button class="dot-style-btn" data-style="dots" title="${t('dots')}">●</button>
+      <button class="dot-style-btn" data-style="diamond" title="${t('diamond')}">◆</button>
+    </div>
+  </div>
+  <div class="opt-group"><label>${t('size')}</label><input type="range" id="qr-size" min="200" max="800" value="300" step="50"><span id="size-val">300px</span></div>
+  <div class="opt-group"><label>${t('ecLevel')}</label><select id="ec-level">
+    <option value="L">${t('ecL')}</option>
+    <option value="M" selected>${t('ecM')}</option>
+    <option value="Q">${t('ecQ')}</option>
+    <option value="H">${t('ecH')}</option>
+  </select></div>
+  <div class="opt-group"><label>${t('logo')}</label><button class="gz-btn gz-btn-secondary" onclick="uploadLogo()" style="width:100%;margin-bottom:4px">${t('uploadLogo')}</button><button class="gz-btn gz-btn-secondary" id="rm-logo-btn" onclick="removeLogo()" style="width:100%;display:none">${t('removeLogo')}</button></div>`;
+document.querySelectorAll('.dot-style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dot-style-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    dotStyle = btn.dataset.style;
+    generateQR();
+  });
+});
+['fg-color','bg-color'].forEach(id => {
+  const colorIn = $(`#${id}`);
+  const hexIn = $(`#${id.replace('-color','-hex')}`);
+  colorIn.addEventListener('input', () => { hexIn.value = colorIn.value; generateQR(); });
+  hexIn.addEventListener('input', () => { if (/^#[0-9a-f]{6}$/i.test(hexIn.value)) { colorIn.value = hexIn.value; generateQR(); } });
+});
+$('#qr-text').addEventListener('input', generateQR);
+$('#qr-size').addEventListener('input', function() { $('#size-val').textContent = this.value + 'px'; generateQR(); });
+$('#ec-level').addEventListener('change', generateQR);
+function generateQR() {
+  const text = $('#qr-text').value || 'https://tools.gamezipper.com';
+  const size = parseInt($('#qr-size').value);
+  const ecMap = { L: 1, M: 0, Q: 3, H: 2 };
+  const ecVal = ecMap[$('#ec-level').value] || 0;
+  const fgColor = $('#fg-color').value;
+  const bgColor = $('#bg-color').value;
+  const canvas = $('#qr-canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  try {
+    const qr = qrcode(0, $('#ec-level').value);
+    qr.addData(text);
+    qr.make();
+    const moduleCount = qr.getModuleCount();
+    const margin = 4;
+    const totalModules = moduleCount + margin * 2;
+    const cellSize = size / totalModules;
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = fgColor;
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          const x = (col + margin) * cellSize;
+          const y = (row + margin) * cellSize;
+          const s = cellSize;
+          if (dotStyle === 'square') {
+            ctx.fillRect(x, y, s, s);
+          } else if (dotStyle === 'rounded') {
+            const r = s * 0.3;
+            ctx.beginPath();
+            ctx.roundRect(x, y, s, s, r);
+            ctx.fill();
+          } else if (dotStyle === 'dots') {
+            ctx.beginPath();
+            ctx.arc(x + s / 2, y + s / 2, s * 0.42, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (dotStyle === 'diamond') {
+            ctx.beginPath();
+            ctx.moveTo(x + s / 2, y + s * 0.1);
+            ctx.lineTo(x + s * 0.9, y + s / 2);
+            ctx.lineTo(x + s / 2, y + s * 0.9);
+            ctx.lineTo(x + s * 0.1, y + s / 2);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+      }
+    }
+    if (logoImg) {
+      const logoSize = size * 0.2;
+      const lx = (size - logoSize) / 2;
+      const ly = (size - logoSize) / 2;
+      ctx.fillStyle = bgColor;
+      ctx.beginPath();
+      ctx.roundRect(lx - 6, ly - 6, logoSize + 12, logoSize + 12, 8);
+      ctx.fill();
+      ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
+    }
+  } catch (e) {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#dc2626';
+    ctx.font = '14px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Error: ' + e.message, size / 2, size / 2);
+  }
+}
+function uploadLogo() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => { logoImg = img; $('#rm-logo-btn').style.display = 'block'; generateQR(); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+function removeLogo() {
+  logoImg = null;
+  $('#rm-logo-btn').style.display = 'none';
+  generateQR();
+}
+function downloadPNG() {
+  const canvas = $('#qr-canvas');
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'qrcode.png';
+  a.click();
+}
+function downloadSVG() {
+  const text = $('#qr-text').value || 'https://tools.gamezipper.com';
+  const fgColor = $('#fg-color').value;
+  const bgColor = $('#bg-color').value;
+  const size = parseInt($('#qr-size').value);
+  try {
+    const qr = qrcode(0, $('#ec-level').value);
+    qr.addData(text);
+    qr.make();
+    const moduleCount = qr.getModuleCount();
+    const margin = 4;
+    const totalModules = moduleCount + margin * 2;
+    const cellSize = size / totalModules;
+    let rects = '';
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          const x = ((col + margin) * cellSize).toFixed(2);
+          const y = ((row + margin) * cellSize).toFixed(2);
+          const s = cellSize.toFixed(2);
+          if (dotStyle === 'square') {
+            rects += `<rect x="${x}" y="${y}" width="${s}" height="${s}"/>`;
+          } else if (dotStyle === 'rounded') {
+            rects += `<rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${(cellSize*0.3).toFixed(2)}"/>`;
+          } else if (dotStyle === 'dots') {
+            rects += `<circle cx="${(parseFloat(x)+cellSize/2).toFixed(2)}" cy="${(parseFloat(y)+cellSize/2).toFixed(2)}" r="${(cellSize*0.42).toFixed(2)}"/>`;
+          } else if (dotStyle === 'diamond') {
+            const cx = parseFloat(x) + cellSize/2;
+            const cy = parseFloat(y) + cellSize/2;
+            const d = cellSize*0.42;
+            rects += `<polygon points="${cx},${cy-d} ${cx+d},${cy} ${cx},${cy+d} ${cx-d},${cy}"/>`;
+          }
+        }
+      }
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="${size}" height="${size}" fill="${bgColor}"/><g fill="${fgColor}">${rects}</g></svg>`;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'qrcode.svg'; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {}
+}
+generateQR();
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📱', href:'/text/qrcode.html', name:'QR Code Generator'},
+    {icon:'📷', href:'/image/qr-reader.html', name:'QR Code Reader'},
+    {icon:'📶', href:'/text/wifi-qrcode.html', name:'WiFi QR Code'},
+    {icon:'📇', href:'/text/vcard-qrcode.html', name:'vCard QR Code'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

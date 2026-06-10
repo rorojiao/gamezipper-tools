@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>在线录音器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在线麦克风录音工具。实时波形可视化，下载为 WAV 格式，无需安装，完全浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/voice-recorder.html">
+  <meta property="og:title" content="在线录音器">
+  <meta property="og:description" content="免费在线麦克风录音工具。实时波形可视化，下载为 WAV 格式，无需安装，完全浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/voice-recorder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线录音器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#viz{width:100%;height:120px;border-radius:12px;background:var(--glass2)}
+.rec-btns{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;align-items:center}
+.timer{font-size:2em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--gz-accent)}
+.rec-indicator{display:inline-block;width:12px;height:12px;border-radius:50%;background:#e94560;margin-right:8px;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#recordings{margin-top:16px}
+.rec-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--glass2);border-radius:8px;margin-bottom:8px;flex-wrap:wrap}
+.rec-item audio{height:36px;flex:1;min-width:200px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Voice Recorder","description":"Record audio from your microphone online for free. Start, pause, resume recording and download as WAV. Live waveform visualization. No installation, no upload.","url": "https://tools.gamezipper.com/zh/convert/voice-recorder.html","applicationCategory":"Multimedia","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I record audio online?", "acceptedAnswer": {"@type": "Answer", "text": "Click the Record button, grant microphone access, speak or play your audio, then click Stop. Download the recording as a WAV file instantly."}}, {"@type": "Question", "name": "Is my recording sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All recording and processing happens in your browser. Your audio never leaves your device."}}, {"@type": "Question", "name": "What format is the recording saved as?", "acceptedAnswer": {"@type": "Answer", "text": "Recordings are saved as WAV files for maximum quality. WAV is a lossless format compatible with all audio players and editors."}}, {"@type": "Question", "name": "Can I record multiple clips?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each time you stop recording, a new clip is added to the list. You can record as many clips as you need and download each one individually."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/voice-recorder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/voice-recorder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/voice-recorder.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <canvas id="viz"></canvas>
+    <div class="rec-btns">
+      <button class="gz-btn" id="rec-btn" style="font-size:1.1em">⏺ Record</button>
+      <button class="gz-btn gz-btn-secondary" id="pause-btn" disabled>⏸ Pause</button>
+      <button class="gz-btn gz-btn-secondary" id="stop-btn" disabled>■ Stop</button>
+      <span class="timer" id="timer">0:00</span>
+      <span id="status-text"></span>
+    </div>
+    <div id="recordings"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Voice Recorder',
+    toolDesc: 'Record audio from your microphone online for free. Download recordings as WAV with live waveform visualization. No installation needed.',
+    record: '⏺ Record',
+    stop: '■ Stop',
+    pause: '⏸ Pause',
+    resume: '▶ Resume',
+    recording: 'Recording…',
+    paused: 'Paused',
+    ready: 'Ready',
+    download: 'Download WAV',
+    step1: 'Click the Record button and allow microphone access',
+    step2: 'Speak or play your audio — watch the live waveform',
+    step3: 'Click Stop to finish the recording',
+    step4: 'Click Download on any recording to save it as a WAV file',
+  },
+  zh: {
+    toolTitle: '在线录音器',
+    toolDesc: '免费在线麦克风录音工具。实时波形可视化，下载为 WAV 格式，无需安装，完全浏览器本地运行。',
+    record: '⏺ 录音',
+    stop: '■ 停止',
+    pause: '⏸ 暂停',
+    resume: '▶ 继续',
+    recording: '录音中…',
+    paused: '已暂停',
+    ready: '就绪',
+    download: '下载 WAV',
+    step1: '点击「录音」按钮并允许麦克风权限',
+    step2: '说话或播放音频 — 观看实时波形',
+    step3: '点击「停止」完成录音',
+    step4: '点击录音旁边的「下载」保存为 WAV 文件',
+  }
+});
+
+const { $, t } = GZ;
+let mediaRec, chunks = [], isRecording = false, isPaused = false, recCount = 0;
+let timerStart, timerElapsed = 0, timerInterval;
+let audioCtx, analyser, dataArray, animId;
+
+const canvas = $('#viz');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawIdle() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+}
+drawIdle();
+
+function drawWave() {
+  if (!analyser) return;
+  animId = requestAnimationFrame(drawWave);
+  analyser.getByteTimeDomainData(dataArray);
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--gz-accent').trim() || '#e94560';
+  ctx.beginPath();
+  const sl = w / dataArray.length;
+  let x = 0;
+  for (let i = 0; i < dataArray.length; i++) {
+    const v = dataArray[i] / 128.0;
+    const y = (v * h) / 2;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    x += sl;
+  }
+  ctx.lineTo(w, h / 2);
+  ctx.stroke();
+}
+
+function formatTimer(ms) {
+  const s = Math.floor(ms / 1000);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function startTimer() {
+  timerStart = Date.now() - timerElapsed;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerElapsed = Date.now() - timerStart;
+    $('#timer').textContent = formatTimer(timerElapsed);
+  }, 200);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+$('#rec-btn').onclick = async () => {
+  if (isRecording) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    drawWave();
+
+    mediaRec = new MediaRecorder(stream);
+    chunks = [];
+    mediaRec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    mediaRec.onstop = () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      stream.getTracks().forEach(t => t.stop());
+      cancelAnimationFrame(animId);
+      addRecording(blob);
+    };
+    mediaRec.start();
+    isRecording = true; isPaused = false;
+    timerElapsed = 0; startTimer();
+    $('#rec-btn').disabled = true;
+    $('#pause-btn').disabled = false;
+    $('#stop-btn').disabled = false;
+    $('#status-text').innerHTML = '<span class="rec-indicator"></span>' + t('recording');
+  } catch(e) {
+    alert('Microphone access denied or unavailable.');
+  }
+};
+
+$('#pause-btn').onclick = () => {
+  if (!isRecording) return;
+  if (isPaused) {
+    mediaRec.resume(); isPaused = false;
+    $('#pause-btn').textContent = t('pause');
+    $('#status-text').innerHTML = '<span class="rec-indicator"></span>' + t('recording');
+    startTimer();
+  } else {
+    mediaRec.pause(); isPaused = true;
+    $('#pause-btn').textContent = t('resume');
+    $('#status-text').textContent = t('paused');
+    stopTimer();
+  }
+};
+
+$('#stop-btn').onclick = () => {
+  if (!isRecording) return;
+  mediaRec.stop();
+  isRecording = false; isPaused = false;
+  stopTimer();
+  $('#rec-btn').disabled = false;
+  $('#pause-btn').disabled = true;
+  $('#stop-btn').disabled = true;
+  $('#pause-btn').textContent = t('pause');
+  $('#status-text').textContent = t('ready');
+  drawIdle();
+};
+
+async function addRecording(blob) {
+  recCount++;
+  const arrayBuf = await blob.arrayBuffer();
+  const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const audioBuf = await tempCtx.decodeAudioData(arrayBuf);
+  const wav = audioBufferToWav(audioBuf);
+  const wavBlob = new Blob([wav], { type: 'audio/wav' });
+  const url = URL.createObjectURL(wavBlob);
+
+  const div = document.createElement('div');
+  div.className = 'rec-item';
+  const audio = document.createElement('audio');
+  audio.controls = true;
+  audio.src = url;
+  const label = document.createElement('span');
+  label.textContent = 'Recording ' + recCount + ' (' + formatTimer(timerElapsed) + ')';
+  const dl = document.createElement('a');
+  dl.href = url;
+  dl.download = 'recording_' + recCount + '.wav';
+  dl.className = 'gz-btn gz-btn-secondary';
+  dl.textContent = t('download');
+  dl.style.fontSize = '.85em';
+  div.appendChild(label);
+  div.appendChild(audio);
+  div.appendChild(dl);
+  $('#recordings').prepend(div);
+}
+
+function audioBufferToWav(buf) {
+  const numCh = buf.numberOfChannels, sr = buf.sampleRate, len = buf.length;
+  const bps = 16, byteRate = sr * numCh * bps / 8, blockAlign = numCh * bps / 8;
+  const dataSize = len * numCh * bps / 8;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const v = new DataView(buffer);
+  function ws(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+  ws(0, 'RIFF'); v.setUint32(4, 36 + dataSize, true); ws(8, 'WAVE');
+  ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, numCh, true); v.setUint32(24, sr, true);
+  v.setUint32(28, byteRate, true); v.setUint16(32, blockAlign, true); v.setUint16(34, bps, true);
+  ws(36, 'data'); v.setUint32(40, dataSize, true);
+  let off = 44;
+  for (let i = 0; i < len; i++) {
+    for (let ch = 0; ch < numCh; ch++) {
+      const s = Math.max(-1, Math.min(1, buf.getChannelData(ch)[i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return buffer;
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎵', href:'/convert/audio-converter.html', name:'Audio Converter'},
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🔊', href:'/convert/audio-volume.html', name:'Volume Normalizer'},
+    {icon:'🎤', href:'/dev/microphone-test.html', name:'Microphone Test'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

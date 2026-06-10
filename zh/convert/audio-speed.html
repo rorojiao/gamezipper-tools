@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>音频变速器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线调整音频文件播放速度，支持 0.25x 到 4x 变速，即时预览和下载。完全浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/audio-speed.html">
+  <meta property="og:title" content="音频变速器">
+  <meta property="og:description" content="在线调整音频文件播放速度，支持 0.25x 到 4x 变速，即时预览和下载。完全浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/audio-speed.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="音频变速器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#audio-drop{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+#audio-drop:hover,#audio-drop.dragover{border-color:var(--gz-accent);background:rgba(255,255,255,.03)}
+#audio-drop svg{width:48px;height:48px;fill:var(--gz-accent);margin-bottom:8px}
+input[type=range]{width:100%;max-width:400px;accent-color:var(--gz-accent)}
+.controls-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.speed-val{font-size:1.5em;font-weight:700;color:var(--gz-accent);min-width:60px;text-align:center}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.presets button{padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--glass2);color:inherit;cursor:pointer;font-size:.85em;transition:.15s}
+.presets button:hover,.presets button.active{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+#waveform-canvas{width:100%;height:80px;border-radius:8px;background:var(--glass2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Speed Changer","description":"Change audio speed and pitch online for free. Speed up or slow down MP3, WAV, OGG, WebM audio files. Adjustable playback rate 0.25x–4x. Runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/convert/audio-speed.html","applicationCategory":"Multimedia","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I change the speed of an audio file?", "acceptedAnswer": {"@type": "Answer", "text": "Upload your audio file (MP3, WAV, OGG, WebM), use the slider to set the speed (0.25x to 4x), preview the result, and click Download to save the modified audio."}}, {"@type": "Question", "name": "Does changing speed affect audio pitch?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, by default changing playback speed also shifts pitch. Slower = lower pitch, faster = higher pitch. This is natural speed change behavior, similar to a tape recorder."}}, {"@type": "Question", "name": "Is my audio file uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens entirely in your browser using the Web Audio API. Your audio files never leave your device."}}, {"@type": "Question", "name": "What audio formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports MP3, WAV, OGG, WebM, AAC, FLAC and any format your browser can decode. Output is saved as WAV for lossless quality."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/audio-speed.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/audio-speed.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/audio-speed.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div id="audio-drop">
+      <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6zM10 19a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
+      <div id="drop-text"></div>
+      <input type="file" id="file-input" accept="audio/*" style="display:none">
+    </div>
+    <div id="editor" style="display:none">
+      <canvas id="waveform-canvas"></canvas>
+      <div class="controls-bar">
+        <button class="gz-btn" id="play-btn">▶</button>
+        <button class="gz-btn gz-btn-secondary" id="stop-btn">■</button>
+        <span id="time-display">0:00 / 0:00</span>
+      </div>
+      <div style="margin:12px 0">
+        <label id="speed-label"></label>
+        <div style="display:flex;align-items:center;gap:12px;margin:8px 0">
+          <input type="range" id="speed-slider" min="0.25" max="4" step="0.05" value="1">
+          <span class="speed-val" id="speed-display">1.00x</span>
+        </div>
+        <div class="presets" id="presets"></div>
+      </div>
+      <div class="controls-bar">
+        <button class="gz-btn" id="download-btn"></button>
+        <button class="gz-btn gz-btn-secondary" id="reset-btn"></button>
+      </div>
+      <div id="status" style="margin-top:8px;font-size:.85em"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Speed Changer',
+    toolDesc: 'Speed up or slow down audio files online. Change playback rate from 0.25x to 4x — preview and download instantly. 100% browser-based.',
+    dropText: 'Drop audio file here or click to browse',
+    speedLabel: 'Playback Speed',
+    download: 'Download Modified Audio',
+    reset: 'Load New File',
+    step1: 'Upload an audio file (MP3, WAV, OGG, WebM)',
+    step2: 'Adjust the speed slider (0.25x to 4x)',
+    step3: 'Click Play to preview the changed speed',
+    step4: 'Click Download to save the modified audio as WAV',
+    processing: 'Processing…',
+    done: '✓ Download ready!',
+    noFile: 'Please upload an audio file first',
+  },
+  zh: {
+    toolTitle: '音频变速器',
+    toolDesc: '在线调整音频文件播放速度，支持 0.25x 到 4x 变速，即时预览和下载。完全浏览器本地处理。',
+    dropText: '拖拽音频文件到此处或点击选择',
+    speedLabel: '播放速度',
+    download: '下载变速后的音频',
+    reset: '加载新文件',
+    step1: '上传音频文件（MP3、WAV、OGG、WebM）',
+    step2: '调整速度滑块（0.25x 到 4x）',
+    step3: '点击播放按钮预览变速效果',
+    step4: '点击下载按钮保存变速后的音频（WAV 格式）',
+    processing: '处理中…',
+    done: '✓ 下载已准备！',
+    noFile: '请先上传音频文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let audioCtx, audioBuffer, sourceNode, isPlaying = false, startTime = 0, pauseOffset = 0, currentSpeed = 1;
+
+const speedPresets = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 3];
+
+$('#drop-text').textContent = t('dropText');
+$('#speed-label').textContent = t('speedLabel');
+$('#download-btn').textContent = t('download');
+$('#reset-btn').textContent = t('reset');
+
+const presetsEl = $('#presets');
+speedPresets.forEach(s => {
+  const btn = document.createElement('button');
+  btn.textContent = s + 'x';
+  btn.dataset.speed = s;
+  if (s === 1) btn.classList.add('active');
+  btn.onclick = () => {
+    currentSpeed = s;
+    $('#speed-slider').value = s;
+    $('#speed-display').textContent = s.toFixed(2) + 'x';
+    presetsEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+  presetsEl.appendChild(btn);
+});
+
+$('#speed-slider').oninput = function() {
+  currentSpeed = parseFloat(this.value);
+  $('#speed-display').textContent = currentSpeed.toFixed(2) + 'x';
+  presetsEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.speed) === currentSpeed));
+};
+
+const drop = $('#audio-drop');
+drop.onclick = () => $('#file-input').click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('dragover'); };
+drop.ondragleave = () => drop.classList.remove('dragover');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); };
+$('#file-input').onchange = function() { if (this.files[0]) loadFile(this.files[0]); };
+
+function loadFile(file) {
+  if (!file.type.startsWith('audio/')) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+    drawWaveform();
+    drop.style.display = 'none';
+    $('#editor').style.display = 'block';
+    updateTimeDisplay();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function drawWaveform() {
+  const canvas = $('#waveform-canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  const data = audioBuffer.getChannelData(0);
+  const step = Math.ceil(data.length / w);
+  const mid = h / 2;
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--gz-accent').trim() || '#e94560';
+  for (let i = 0; i < w; i++) {
+    let min = 1, max = -1;
+    for (let j = 0; j < step; j++) {
+      const val = data[(i * step) + j] || 0;
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    const barH = Math.max(1, (max - min) * mid);
+    ctx.fillRect(i, mid - barH / 2, 1, barH);
+  }
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+function updateTimeDisplay() {
+  if (!audioBuffer) return;
+  const dur = audioBuffer.duration / currentSpeed;
+  const elapsed = isPlaying ? ((audioCtx.currentTime - startTime) * currentSpeed) : 0;
+  $('#time-display').textContent = formatTime(Math.min(elapsed, dur)) + ' / ' + formatTime(dur);
+}
+
+$('#play-btn').onclick = () => {
+  if (!audioBuffer) return;
+  if (isPlaying) { stopPlayback(); return; }
+  sourceNode = audioCtx.createBufferSource();
+  sourceNode.buffer = audioBuffer;
+  sourceNode.playbackRate.value = currentSpeed;
+  sourceNode.connect(audioCtx.destination);
+  sourceNode.start(0, pauseOffset);
+  startTime = audioCtx.currentTime;
+  isPlaying = true;
+  $('#play-btn').textContent = '⏸';
+  sourceNode.onended = () => { if (isPlaying) { stopPlayback(); pauseOffset = 0; } };
+  requestAnimationFrame(tick);
+};
+
+function tick() { if (isPlaying) { updateTimeDisplay(); requestAnimationFrame(tick); } }
+
+function stopPlayback() {
+  if (sourceNode) { try { sourceNode.stop(); } catch(e){} sourceNode = null; }
+  isPlaying = false;
+  pauseOffset = Math.min((audioCtx.currentTime - startTime) * currentSpeed, audioBuffer.duration);
+  $('#play-btn').textContent = '▶';
+  updateTimeDisplay();
+}
+
+$('#stop-btn').onclick = () => { stopPlayback(); pauseOffset = 0; updateTimeDisplay(); };
+
+$('#download-btn').onclick = () => {
+  if (!audioBuffer) { $('#status').textContent = t('noFile'); return; }
+  $('#status').textContent = t('processing');
+  const offCtx = new OfflineAudioContext(audioBuffer.numberOfChannels, Math.ceil(audioBuffer.length / currentSpeed), audioBuffer.sampleRate);
+  const src = offCtx.createBufferSource();
+  src.buffer = audioBuffer;
+  src.playbackRate.value = currentSpeed;
+  src.connect(offCtx.destination);
+  src.start();
+  offCtx.startRendering().then(rendered => {
+    const wav = audioBufferToWav(rendered);
+    const blob = new Blob([wav], { type: 'audio/wav' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'audio_' + currentSpeed + 'x.wav';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    $('#status').textContent = t('done');
+  });
+};
+
+$('#reset-btn').onclick = () => {
+  stopPlayback();
+  pauseOffset = 0;
+  audioBuffer = null;
+  currentSpeed = 1;
+  $('#speed-slider').value = 1;
+  $('#speed-display').textContent = '1.00x';
+  presetsEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.speed === '1'));
+  $('#editor').style.display = 'none';
+  drop.style.display = '';
+  $('#status').textContent = '';
+  $('#file-input').value = '';
+};
+
+function audioBufferToWav(buf) {
+  const numCh = buf.numberOfChannels, sr = buf.sampleRate, len = buf.length;
+  const bps = 16, byteRate = sr * numCh * bps / 8, blockAlign = numCh * bps / 8;
+  const dataSize = len * numCh * bps / 8;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const v = new DataView(buffer);
+  function ws(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+  ws(0, 'RIFF'); v.setUint32(4, 36 + dataSize, true); ws(8, 'WAVE');
+  ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, numCh, true); v.setUint32(24, sr, true);
+  v.setUint32(28, byteRate, true); v.setUint16(32, blockAlign, true); v.setUint16(34, bps, true);
+  ws(36, 'data'); v.setUint32(40, dataSize, true);
+  let off = 44;
+  for (let i = 0; i < len; i++) {
+    for (let ch = 0; ch < numCh; ch++) {
+      const s = Math.max(-1, Math.min(1, buf.getChannelData(ch)[i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return buffer;
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎵', href:'/convert/audio-converter.html', name:'Audio Converter'},
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🔊', href:'/convert/audio-volume.html', name:'Volume Normalizer'},
+    {icon:'🎞️', href:'/convert/video-to-gif.html', name:'Video to GIF'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

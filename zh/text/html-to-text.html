@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>HTML 转纯文本工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="去除 HTML 标签，从任意 HTML 代码中提取干净的纯文本。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/html-to-text.html">
+  <meta property="og:title" content="HTML 转纯文本工具">
+  <meta property="og:description" content="去除 HTML 标签，从任意 HTML 代码中提取干净的纯文本。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/html-to-text.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HTML 转纯文本工具">
+<meta name="twitter:description" content="去除 HTML 标签，从任意 HTML 代码中提取干净的纯文本。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.5}
+#stats{margin-top:8px;font-size:.85em;color:var(--text2);display:flex;gap:16px;flex-wrap:wrap}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HTML to Text Converter","description":"Convert HTML to plain text online. Strip HTML tags and extract clean text from any HTML code instantly.","url": "https://tools.gamezipper.com/zh/text/html-to-text.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert HTML to plain text?","acceptedAnswer":{"@type":"Answer","text":"Paste your HTML code into the input area and the tool will instantly strip all tags and display clean text. You can toggle options like preserving links or list formatting."}},{"@type":"Question","name":"Does this tool keep links and images?","acceptedAnswer":{"@type":"Answer","text":"By default, the tool strips everything. Enable 'Preserve Links' to keep URLs inline, or 'Show Alt Text' to display image descriptions."}},{"@type":"Question","name":"Is my HTML data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All processing happens locally in your browser. Your HTML never leaves your device."}},{"@type":"Question","name":"Can I convert HTML emails to text?","acceptedAnswer":{"@type":"Answer","text":"Yes. Paste the raw HTML source of any email and the tool will extract the readable text content, stripping formatting, styles, and markup."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/html-to-text.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/html-to-text.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/html-to-text.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="stats"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HTML to Text Converter',
+    toolDesc: 'Strip HTML tags and extract clean, readable plain text from any HTML code.',
+    lblIn: 'Input HTML',
+    lblOut: 'Plain Text Output',
+    preserveLinks: 'Preserve Links',
+    showAltText: 'Show Alt Text',
+    statsWords: 'words',
+    statsChars: 'chars',
+    statsLines: 'lines',
+    step1: 'Paste your HTML code into the input area',
+    step2: 'Toggle options to preserve links or show image alt text',
+    step3: 'The converted plain text appears instantly on the right',
+    step4: 'Click Copy to save the result to clipboard',
+  },
+  zh: {
+    toolTitle: 'HTML 转纯文本工具',
+    toolDesc: '去除 HTML 标签，从任意 HTML 代码中提取干净的纯文本。',
+    lblIn: '输入 HTML',
+    lblOut: '纯文本输出',
+    preserveLinks: '保留链接',
+    showAltText: '显示 Alt 文本',
+    statsWords: '词',
+    statsChars: '字符',
+    statsLines: '行',
+    step1: '在输入区粘贴 HTML 代码',
+    step2: '切换选项以保留链接或显示图片 alt 文本',
+    step3: '转换后的纯文本即时显示在右侧',
+    step4: '点击「复制」将结果保存到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function htmlToText(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const preserveLinks = $('#opt-links').checked;
+  const showAlt = $('#opt-alt').checked;
+
+  if (preserveLinks) {
+    doc.querySelectorAll('a[href]').forEach(a => {
+      const href = a.getAttribute('href');
+      if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+        a.textContent = `${a.textContent} (${href})`;
+      }
+    });
+  }
+  if (showAlt) {
+    doc.querySelectorAll('img[alt]').forEach(img => {
+      const alt = img.getAttribute('alt');
+      if (alt) {
+        const span = doc.createTextNode(`[Image: ${alt}]`);
+        img.parentNode.replaceChild(span, img);
+      }
+    });
+  }
+
+  // Handle block elements for proper line breaks
+  const blocks = 'div,p,br,h1,h2,h3,h4,h5,h6,li,tr,hr,blockquote,pre,section,article,header,footer,nav,aside';
+  doc.querySelectorAll(blocks).forEach(el => {
+    el.prepend(doc.createTextNode('\n'));
+  });
+
+  let text = doc.body ? doc.body.textContent : '';
+  // Clean up excessive whitespace but preserve intentional line breaks
+  text = text.replace(/[ \t]+/g, ' ').replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+  return text;
+}
+
+function convert() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').textContent = ''; $('#stats').innerHTML = ''; return; }
+  const text = htmlToText(inp);
+  $('#output').textContent = text;
+  const words = text.split(/\s+/).filter(Boolean).length;
+  const chars = text.length;
+  const lines = text.split('\n').length;
+  $('#stats').innerHTML = `${words} ${t('statsWords')} · ${chars} ${t('statsChars')} · ${lines} ${t('statsLines')}`;
+}
+
+function loadExample() {
+  $('#input').value = `<html>
+<head><title>Sample Page</title><link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/html-to-text.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/html-to-text.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/html-to-text.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+  <h1>Welcome to GameZipper Tools</h1>
+  <p>This is a <strong>free</strong> online toolbox with <em>680+ utilities</em> for developers and creators.</p>
+  <h2>Features</h2>
+  <ul>
+    <li>JSON Formatter & Validator</li>
+    <li>Base64 Encoder/Decoder</li>
+    <li>Color Picker & Converter</li>
+  </ul>
+  <p>Visit our <a href="https://tools.gamezipper.com">homepage</a> for more tools.</p>
+  <img src="banner.png" alt="GameZipper Banner Image">
+  <p>Contact us at <a href="mailto:hello@gamezipper.com">hello@gamezipper.com</a></p>
+</body>
+</html>`;
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#stats').innerHTML = ''; }
+
+$('#input').addEventListener('input', convert);
+$('#opt-links').addEventListener('change', convert);
+$('#opt-alt').addEventListener('change', convert);
+
+$('#toolbar').innerHTML = `
+  <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:.85em"><input type="checkbox" id="opt-links"> ${t('preserveLinks')}</label>
+  <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:.85em"><input type="checkbox" id="opt-alt"> ${t('showAltText')}</label>
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('lblIn');
+$('#lbl-out').textContent = t('lblOut');
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🏷️', href:'/text/remove-html-tags.html', name:'Remove HTML Tags'},
+    {icon:'🔧', href:'/dev/html-formatter.html', name:'HTML Formatter'},
+    {icon:'📋', href:'/text/html-to-markdown.html', name:'HTML to Markdown'},
+    {icon:'🔄', href:'/text/text-to-html.html', name:'Text to HTML'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

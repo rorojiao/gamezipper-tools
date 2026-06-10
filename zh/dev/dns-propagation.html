@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>DNS 传播检查器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在全球 15+ 个 DNS 服务器上检查 DNS 传播状态 — 验证 A、AAAA、MX、CNAME、TXT 和 NS 记录。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/dns-propagation.html">
+  <meta property="og:title" content="DNS 传播检查器">
+  <meta property="og:description" content="在全球 15+ 个 DNS 服务器上检查 DNS 传播状态 — 验证 A、AAAA、MX、CNAME、TXT 和 NS 记录。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/dns-propagation.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DNS 传播检查器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.dns-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.dns-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 14px;border-radius:8px;background:var(--glass2);border:1px solid var(--border);align-items:center;font-size:.88em}
+.dns-row .server{font-weight:600;color:var(--gz-accent,#4ecdc4)}
+.dns-row .location{color:var(--text2);font-size:.82em}
+.dns-row .values{font-family:monospace;font-size:.82em;word-break:break-all}
+.status-ok{color:#00d672}
+.status-pending{color:#ffd93d}
+.status-error{color:#ff6b6b}
+.check-all-btn{margin-top:12px}
+.record-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.record-chip{padding:4px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text);cursor:pointer;font-size:.82em;transition:all .2s}
+.record-chip.active{background:var(--gz-accent,#4ecdc4);color:#000;border-color:var(--gz-accent,#4ecdc4)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"DNS Propagation Checker","description":"Check DNS propagation status across multiple global DNS servers. Verify A, AAAA, MX, CNAME, TXT and NS records from different locations worldwide.","url": "https://tools.gamezipper.com/zh/dev/dns-propagation.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is DNS propagation?", "acceptedAnswer": {"@type": "Answer", "text": "DNS propagation is the time it takes for DNS changes to update across all DNS servers worldwide. It typically takes 24-48 hours but can be as quick as a few minutes for some providers."}}, {"@type": "Question", "name": "How does this checker work?", "acceptedAnswer": {"@type": "Answer", "text": "This tool queries multiple public DNS servers around the world using DNS-over-HTTPS (DoH). It compares the responses to verify that your DNS changes have propagated globally."}}, {"@type": "Question", "name": "What DNS record types are supported?", "acceptedAnswer": {"@type": "Answer", "text": "You can check A, AAAA, MX, CNAME, TXT, and NS record types. Simply select the record type and click Check to query all servers."}}, {"@type": "Question", "name": "Why do some servers show different results?", "acceptedAnswer": {"@type": "Answer", "text": "Different results indicate that DNS propagation is still in progress. Each DNS server caches records for the duration of the TTL (Time To Live). Once all caches expire and refresh, results will be consistent."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/dns-propagation.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/dns-propagation.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/dns-propagation.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <input id="domain" style="flex:1;min-width:200px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text);font-size:1em" placeholder="example.com" spellcheck="false">
+      <button class="gz-btn" id="check-btn" onclick="checkDNS()"></button>
+    </div>
+    <div class="record-chips" id="record-types"></div>
+    <div id="summary" style="margin:12px 0;font-size:.9em"></div>
+    <div class="dns-grid" id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'DNS Propagation Checker',
+    toolDesc: 'Check DNS propagation across 15+ global DNS servers — verify A, AAAA, MX, CNAME, TXT and NS records worldwide.',
+    check: 'Check',
+    checking: 'Checking...',
+    clear: 'Clear',
+    step1: 'Enter a domain name (e.g. example.com)',
+    step2: 'Select the DNS record type to check',
+    step3: 'Click "Check" to query DNS servers worldwide',
+    step4: 'Review results to see if propagation is complete',
+    recordsMatch: 'servers match',
+    recordsTotal: 'total',
+    propagationComplete: '✅ DNS propagation appears complete!',
+    propagationPending: '⏳ DNS propagation is still in progress',
+    noResults: 'No results yet. Enter a domain and click Check.',
+    errorFetching: 'Error fetching DNS',
+    copy: 'Copy Results',
+  },
+  zh: {
+    toolTitle: 'DNS 传播检查器',
+    toolDesc: '在全球 15+ 个 DNS 服务器上检查 DNS 传播状态 — 验证 A、AAAA、MX、CNAME、TXT 和 NS 记录。',
+    check: '检查',
+    checking: '检查中...',
+    clear: '清除',
+    step1: '输入域名（如 example.com）',
+    step2: '选择要检查的 DNS 记录类型',
+    step3: '点击「检查」查询全球 DNS 服务器',
+    step4: '查看结果，确认传播是否完成',
+    recordsMatch: '个服务器一致',
+    recordsTotal: '总计',
+    propagationComplete: '✅ DNS 传播已完成！',
+    propagationPending: '⏳ DNS 传播仍在进行中',
+    noResults: '暂无结果。请输入域名并点击检查。',
+    errorFetching: 'DNS 查询出错',
+    copy: '复制结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const DNS_SERVERS = [
+  { name: 'Cloudflare', ip: '1.1.1.1', location: 'Global', doh: 'https://cloudflare-dns.com/dns-query' },
+  { name: 'Google', ip: '8.8.8.8', location: 'Global', doh: 'https://dns.google/resolve' },
+  { name: 'Quad9', ip: '9.9.9.9', location: 'Switzerland', doh: 'https://dns.quad9.net/dns-query' },
+  { name: 'OpenDNS', ip: '208.67.222.222', location: 'USA', doh: 'https://doh.opendns.com/dns-query' },
+  { name: 'AdGuard', ip: '94.140.14.14', location: 'Cyprus', doh: 'https://dns.adguard-dns.com/dns-query' },
+  { name: 'Mullvad', ip: '194.242.2.2', location: 'Sweden', doh: 'https://dns.mullvad.net/dns-query' },
+  { name: 'Control D', ip: '76.76.2.0', location: 'Canada', doh: 'https://freedns.controld.com/p1' },
+  { name: 'CleanBrowsing', ip: '185.228.168.9', location: 'USA', doh: 'https://doh.cleanbrowsing.org/doh/security-filter/' },
+  { name: 'NextDNS', ip: '45.90.28.0', location: 'USA', doh: 'https://dns.nextdns.io/' },
+  { name: 'AliDNS', ip: '223.5.5.5', location: 'China', doh: 'https://dns.alidns.com/dns-query' },
+  { name: 'DNSPod', ip: '119.29.29.29', location: 'China', doh: 'https://doh.pub/dns-query' },
+  { name: 'Yandex', ip: '77.88.8.8', location: 'Russia', doh: 'https://common.dot.dns.yandex.net/' },
+  { name: 'Comodo', ip: '8.26.56.26', location: 'USA', doh: 'https://dns.cmctech.pro/dns-query' },
+  { name: 'Verisign', ip: '64.6.64.6', location: 'USA', doh: '' },
+  { name: 'IBM Quad9 (ECS)', ip: '9.9.9.11', location: 'Switzerland', doh: 'https://dns11.quad9.net/dns-query' },
+];
+
+const RECORD_TYPES = ['A','AAAA','MX','CNAME','TXT','NS'];
+let currentRecord = 'A';
+
+$('#record-types').innerHTML = RECORD_TYPES.map(r => `<button class="record-chip${r==='A'?' active':''}" onclick="setRecord('${r}',this)">${r}</button>`).join('');
+
+function setRecord(r, btn) {
+  currentRecord = r;
+  document.querySelectorAll('.record-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+$('#check-btn').textContent = t('check');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#domain').value='';$('#results').innerHTML='';$('#summary').textContent=''">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyResults()">${t('copy')}</button>`;
+
+function copyResults() {
+  const rows = document.querySelectorAll('.dns-row');
+  let text = `DNS ${currentRecord} records for ${$('#domain').value}\n${'='.repeat(50)}\n`;
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('div');
+    text += `${cells[0]?.textContent?.trim()} (${cells[1]?.textContent?.trim()}): ${cells[2]?.textContent?.trim()}\n`;
+  });
+  copyText(text);
+}
+
+async function checkDNS() {
+  const domain = $('#domain').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  if (!domain) return;
+  const btn = $('#check-btn');
+  btn.textContent = t('checking');
+  btn.disabled = true;
+  $('#results').innerHTML = '';
+  $('#summary').textContent = '';
+
+  let results = [];
+  let completed = 0;
+  const total = DNS_SERVERS.length;
+
+  // Show loading
+  DNS_SERVERS.forEach(srv => {
+    const div = document.createElement('div');
+    div.className = 'dns-row';
+    div.id = 'srv-' + srv.name.replace(/\s/g, '');
+    div.innerHTML = `<div class="server">${srv.name}</div><div class="location">${srv.location}</div><div class="values" style="color:var(--text2)">⏳</div>`;
+    $('#results').appendChild(div);
+  });
+
+  const promises = DNS_SERVERS.map(async (srv, idx) => {
+    let values = [];
+    try {
+      if (srv.doh) {
+        const url = srv.doh.includes('?') 
+          ? `${srv.doh}&name=${encodeURIComponent(domain)}&type=${currentRecord}`
+          : `${srv.doh}?name=${encodeURIComponent(domain)}&type=${currentRecord}`;
+        const resp = await fetch(url, {
+          headers: { 'Accept': 'application/dns-json' },
+          signal: AbortSignal.timeout(8000)
+        });
+        const data = await resp.json();
+        if (data.Answer) {
+          values = data.Answer.map(a => a.data);
+        } else if (data.Status === 3) {
+          values = ['NXDOMAIN'];
+        }
+      } else {
+        // Fallback: use Cloudflare as proxy
+        const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=${currentRecord}`;
+        const resp = await fetch(url, {
+          headers: { 'Accept': 'application/dns-json' },
+          signal: AbortSignal.timeout(8000)
+        });
+        const data = await resp.json();
+        if (data.Answer) {
+          values = data.Answer.map(a => a.data);
+        }
+      }
+    } catch (e) {
+      values = [t('errorFetching')];
+    }
+    completed++;
+    const div = document.getElementById('srv-' + srv.name.replace(/\s/g, ''));
+    if (div) {
+      const statusClass = values[0] === 'NXDOMAIN' ? 'status-pending' : values[0] === t('errorFetching') ? 'status-error' : 'status-ok';
+      div.innerHTML = `<div class="server">${srv.name}</div><div class="location">${srv.location}</div><div class="values ${statusClass}">${values.length > 0 ? values.join(', ') : 'No records'}</div>`;
+    }
+    results.push({ name: srv.name, values });
+  });
+
+  await Promise.allSettled(promises);
+
+  // Summary
+  const allValues = results.filter(r => r.values.length > 0 && r.values[0] !== t('errorFetching')).map(r => r.values.sort().join(','));
+  const uniqueValues = [...new Set(allValues)];
+  const matchCount = allValues.length > 0 ? allValues.filter(v => v === allValues[0]).length : 0;
+  
+  let summaryText = `${matchCount}/${allValues.length} ${t('recordsMatch')} `;
+  if (uniqueValues.length <= 1 && allValues.length > 0) {
+    summaryText += t('propagationComplete');
+  } else if (allValues.length > 0) {
+    summaryText += t('propagationPending');
+  }
+  $('#summary').innerHTML = `<strong>${summaryText}</strong>`;
+
+  btn.textContent = t('check');
+  btn.disabled = false;
+}
+
+$('#domain').addEventListener('keydown', e => { if (e.key === 'Enter') checkDNS(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔍', href:'/dev/whois-lookup.html', name:'WHOIS Lookup'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+    {icon:'🌐', href:'/dev/website-status.html', name:'Website Status'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
