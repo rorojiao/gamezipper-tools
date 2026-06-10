@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image Denoiser - Remove Noise from Images Free | GameZipper Tools</title>
+  <meta name="description" content="Remove noise from images online for free. Reduce grain, artifacts and improve image quality with adjustable denoise strength. Browser-based and private.">
+  <link rel="canonical" href="https://tools.gamezipper.com/image/denoise.html">
+  <meta property="og:title" content="Image Denoiser - Remove Noise from Images Free | GameZipper Tools">
+  <meta property="og:description" content="Remove noise from images online for free. Reduce grain and artifacts with adjustable strength. No upload, browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/image/denoise.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Image Denoiser - Remove Noise from Images Free | GameZipper Tools">
+<meta name="twitter:description" content="Remove noise from images online. Reduce grain and artifacts. Free, private, browser-based.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--gz-accent);background:var(--glass2)}
+.drop-zone svg{width:48px;height:48px;opacity:.5;margin-bottom:12px}
+.slider-group{display:flex;align-items:center;gap:12px;margin:12px 0}
+.slider-group label{min-width:100px;font-weight:600}
+.slider-group input[type=range]{flex:1;accent-color:var(--gz-accent)}
+.slider-group .val{min-width:40px;text-align:right;font-size:.9em}
+.compare-container{position:relative;margin-top:16px;text-align:center}
+.compare-container canvas{max-width:100%;border-radius:12px;border:1px solid var(--border)}
+.compare-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:.85em;opacity:.7}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Denoiser","description":"Remove noise from images online for free. Reduce grain, artifacts and improve image quality with adjustable denoise strength. Browser-based and private.","url":"https://tools.gamezipper.com/image/denoise.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does image denoising work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool uses a bilateral filter algorithm that smooths noise while preserving edges. It compares neighboring pixels and averages similar ones, removing grain while keeping important details."}}, {"@type": "Question", "name": "What types of noise can it remove?", "acceptedAnswer": {"@type": "Answer", "text": "It works best on Gaussian noise (grain from low-light photos), JPEG artifacts, and general sensor noise from phone or digital cameras."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens entirely in your browser using Canvas and JavaScript. Your images never leave your device."}}, {"@type": "Question", "name": "What is the recommended denoise strength?", "acceptedAnswer": {"@type": "Answer", "text": "Start with a strength of 3-5 for mild noise. Use 7-10 for heavy grain. Very high values may blur fine details."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/denoise.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/denoise.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/denoise.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p id="dropLabel"></p>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+    <div id="controls" style="display:none">
+      <div class="slider-group">
+        <label id="lblStrength"></label>
+        <input type="range" id="strengthRange" min="1" max="15" value="5">
+        <span class="val" id="strengthVal">5</span>
+      </div>
+      <div class="slider-group">
+        <label id="lblRadius"></label>
+        <input type="range" id="radiusRange" min="1" max="5" value="2">
+        <span class="val" id="radiusVal">2px</span>
+      </div>
+      <div class="compare-container">
+        <canvas id="canvas"></canvas>
+        <div class="compare-labels">
+          <span id="lblOriginal"></span>
+          <span id="lblDenoised"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Denoiser',
+    toolDesc: 'Remove noise from images — reduce grain and artifacts with adjustable strength. Free, private and browser-based.',
+    dropLabel: 'Drop an image here or click to upload',
+    strength: 'Denoise Strength',
+    radius: 'Filter Radius',
+    original: 'Original',
+    denoised: 'Denoised',
+    step1: 'Upload or drag and drop your noisy image',
+    step2: 'Adjust the denoise strength and filter radius',
+    step3: 'Preview the before/after result',
+    step4: 'Click Download to save the clean image',
+  },
+  zh: {
+    toolTitle: '图片降噪工具',
+    toolDesc: '去除图片噪点 — 减少颗粒感和伪影，可调整强度。免费、私密、浏览器本地处理。',
+    dropLabel: '拖拽图片到此处或点击上传',
+    strength: '降噪强度',
+    radius: '滤波半径',
+    original: '原图',
+    denoised: '降噪后',
+    step1: '上传或拖拽有噪点的图片',
+    step2: '调整降噪强度和滤波半径',
+    step3: '预览前后对比效果',
+    step4: '点击下载保存降噪后的图片',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let originalData = null;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 800;
+      let w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      originalData = ctx.getImageData(0, 0, w, h);
+      $('#controls').style.display = 'block';
+      $('#dropZone').style.display = 'none';
+      applyDenoise();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyDenoise() {
+  if (!originalData) return;
+  const strength = +$('#strengthRange').value;
+  const radius = +$('#radiusRange').value;
+  const w = canvas.width, h = canvas.height;
+  const src = originalData.data;
+  const output = new Uint8ClampedArray(src);
+
+  // Simple bilateral-like denoising (box blur with edge preservation)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let rSum = 0, gSum = 0, bSum = 0, count = 0;
+      const centerIdx = (y * w + x) * 4;
+      const cr = src[centerIdx], cg = src[centerIdx+1], cb = src[centerIdx+2];
+
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+          const nIdx = (ny * w + nx) * 4;
+          const nr = src[nIdx], ng = src[nIdx+1], nb = src[nIdx+2];
+          // Color distance for edge preservation
+          const diff = Math.abs(cr-nr) + Math.abs(cg-ng) + Math.abs(cb-nb);
+          const weight = diff < strength * 30 ? 1 : 0;
+          if (weight) {
+            rSum += nr; gSum += ng; bSum += nb; count++;
+          }
+        }
+      }
+      if (count > 0) {
+        output[centerIdx] = Math.round(rSum / count);
+        output[centerIdx+1] = Math.round(gSum / count);
+        output[centerIdx+2] = Math.round(bSum / count);
+        output[centerIdx+3] = src[centerIdx+3];
+      }
+    }
+  }
+
+  ctx.putImageData(new ImageData(output, w, h), 0, 0);
+}
+
+function download() {
+  if (!originalData) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'denoised-image.png';
+  a.click();
+}
+
+$('#strengthRange').addEventListener('input', e => {
+  $('#strengthVal').textContent = e.target.value;
+  applyDenoise();
+});
+$('#radiusRange').addEventListener('input', e => {
+  $('#radiusVal').textContent = e.target.value + 'px';
+  applyDenoise();
+});
+
+$('#dropZone').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => { if (e.target.files[0]) loadImage(e.target.files[0]); });
+$('#dropZone').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
+$('#dropZone').addEventListener('dragleave', e => { e.currentTarget.classList.remove('dragover'); });
+$('#dropZone').addEventListener('drop', e => { e.preventDefault(); e.currentTarget.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]); });
+
+$('#dropLabel').textContent = t('dropLabel');
+$('#lblStrength').textContent = t('strength');
+$('#lblRadius').textContent = t('radius');
+$('#lblOriginal').textContent = t('original');
+$('#lblDenoised').textContent = t('denoised');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('controls').style.display='none';document.getElementById('dropZone').style.display='block';originalData=null">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'🎨', href:'/image/filters.html', name:'Image Filters'},
+    {icon:'🖼️', href:'/image/blur.html', name:'Image Blur'},
+    {icon:'✏️', href:'/image/pencil-sketch.html', name:'Pencil Sketch'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
