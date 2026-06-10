@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JWT Debugger & Inspector - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Decode, inspect and debug JWT tokens online. Visualize header, payload, claims, expiration and issuer with detailed error reporting. Free, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/jwt-debugger.html">
+  <meta property="og:title" content="JWT Debugger & Inspector - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Decode, inspect and debug JWT tokens online. Visualize header, payload, claims, expiration and issuer with detailed error reporting.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/jwt-debugger.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JWT Debugger & Inspector - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Decode, inspect and debug JWT tokens online. Visualize header, payload, claims, expiration and issuer with detailed error reporting.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.jwt-section{margin:12px 0;padding:12px;border-radius:8px;background:var(--bg-alt)}
+.jwt-section h3{margin:0 0 8px;font-size:.95em;color:var(--accent)}
+.jwt-section pre{white-space:pre-wrap;word-break:break-all;font-size:.85em;margin:0}
+.claim-row{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)}
+.claim-key{font-weight:600;min-width:120px;color:var(--accent)}
+.claim-val{flex:1;font-family:monospace;font-size:.9em}
+.status-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.8em;font-weight:600}
+.status-ok{background:#00d67222;color:#00d672}
+.status-warn{background:#ffaa0022;color:#ffaa00}
+.status-err{background:#e9456022;color:#e94560}
+#token-input{font-family:monospace;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JWT Debugger & Inspector","description":"Decode, inspect and debug JWT tokens online. Visualize header, payload, claims, expiration and issuer with detailed error reporting.","url":"https://tools.gamezipper.com/dev/jwt-debugger.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a JWT token?", "acceptedAnswer": {"@type": "Answer", "text": "JWT (JSON Web Token) is an open standard (RFC 7519) for securely transmitting information between parties as a JSON object. It consists of three parts: header, payload, and signature, separated by dots."}}, {"@type": "Question", "name": "Is my JWT token safe to paste here?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing happens entirely in your browser. No data is ever sent to any server. Your tokens never leave your device."}}, {"@type": "Question", "name": "Can I verify the signature of a JWT?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Paste your JWT and optionally provide a secret key. The tool will verify the HMAC SHA signature and show whether it matches."}}, {"@type": "Question", "name": "What claims does this tool check?", "acceptedAnswer": {"@type": "Answer", "text": "It checks standard claims including exp (expiration), iat (issued at), nbf (not before), iss (issuer), aud (audience), sub (subject) and jti (JWT ID)."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jwt-debugger.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jwt-debugger.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jwt-debugger.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="token-input" rows="6" placeholder="eyJhbGciOiJIUzI1NiIs..." spellcheck="false"></textarea></div>
+      <div id="output">
+        <div id="header-section" class="jwt-section" style="display:none"><h3 id="hdr-title"></h3><pre id="header-json"></pre></div>
+        <div id="payload-section" class="jwt-section" style="display:none"><h3 id="pay-title"></h3><pre id="payload-json"></pre></div>
+        <div id="claims-section" class="jwt-section" style="display:none"><h3 id="claims-title"></h3><div id="claims-list"></div></div>
+        <div id="status-section" class="jwt-section" style="display:none"><h3 id="status-title"></h3><div id="status-list"></div></div>
+      </div>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:.85em" id="lbl-secret"></label>
+      <input type="text" id="secret-input" placeholder="your-256-bit-secret" style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-family:monospace;font-size:.85em">
+      <button id="btn-verify" class="gz-btn"></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JWT Debugger & Inspector',
+    toolDesc: 'Decode, inspect and debug JWT tokens with detailed claims analysis, expiration check and signature verification.',
+    btnDecode: 'Decode',
+    btnClear: 'Clear',
+    btnVerify: 'Verify Signature',
+    lblSecret: 'Secret Key:',
+    headerPart: '🔑 Header (ALGORITHM & TOKEN TYPE)',
+    payloadPart: '📦 Payload (DATA)',
+    claimsTitle: '📋 Standard Claims',
+    statusTitle: '🩺 Health Check',
+    lblIn: 'Paste your JWT token',
+    step1: 'Paste your JWT token in the input area',
+    step2: 'Click Decode to parse the header and payload',
+    step3: 'Review the decoded claims and health status',
+    step4: 'Optionally enter a secret key and click Verify Signature',
+    faq1q: 'What is a JWT token?',
+    faq1a: 'JWT (JSON Web Token) is an open standard (RFC 7519) for securely transmitting information between parties as a JSON object.',
+    faq2q: 'Is my JWT token safe here?',
+    faq2a: 'Yes. All processing happens entirely in your browser. No data is ever sent to any server.',
+    faq3q: 'What claims are checked?',
+    faq3a: 'Standard claims including exp (expiration), iat (issued at), nbf (not before), iss (issuer), aud (audience), sub (subject) and jti (JWT ID).',
+    expired: 'Token is EXPIRED',
+    notYetValid: 'Token is not yet valid',
+    valid: 'Token is within valid period',
+    noExp: 'No expiration claim (exp) found',
+    sigValid: '✓ Signature is VALID',
+    sigInvalid: '✗ Signature is INVALID',
+    algo: 'Algorithm',
+    typ: 'Type',
+    issuedAt: 'Issued At',
+    expires: 'Expires',
+    notBefore: 'Not Before',
+    issuer: 'Issuer',
+    audience: 'Audience',
+    subject: 'Subject',
+    jwtId: 'JWT ID',
+    copyJson: 'Copy JSON',
+  },
+  zh: {
+    toolTitle: 'JWT 调试器与检查器',
+    toolDesc: '解码、检查和调试 JWT 令牌，支持详细的声明分析、过期检查和签名验证。',
+    btnDecode: '解码',
+    btnClear: '清空',
+    btnVerify: '验证签名',
+    lblSecret: '密钥：',
+    headerPart: '🔑 头部（算法与令牌类型）',
+    payloadPart: '📦 载荷（数据）',
+    claimsTitle: '📋 标准声明',
+    statusTitle: '🩺 健康检查',
+    lblIn: '粘贴 JWT 令牌',
+    step1: '在输入区粘贴你的 JWT 令牌',
+    step2: '点击「解码」解析头部和载荷',
+    step3: '查看解码后的声明和健康状态',
+    step4: '可选：输入密钥并点击「验证签名」',
+    faq1q: '什么是 JWT 令牌？',
+    faq1a: 'JWT（JSON Web Token）是一种开放标准 (RFC 7519)，用于在各方之间安全地传输 JSON 对象信息。',
+    faq2q: '我的 JWT 安全吗？',
+    faq2a: '是的。所有处理完全在浏览器中进行，数据不会发送到任何服务器。',
+    faq3q: '检查哪些声明？',
+    faq3a: '标准声明包括 exp（过期时间）、iat（签发时间）、nbf（生效时间）、iss（签发者）、aud（受众）、sub（主题）和 jti（JWT ID）。',
+    expired: '令牌已过期',
+    notYetValid: '令牌尚未生效',
+    valid: '令牌在有效期内',
+    noExp: '未找到过期声明 (exp)',
+    sigValid: '✓ 签名有效',
+    sigInvalid: '✗ 签名无效',
+    algo: '算法',
+    typ: '类型',
+    issuedAt: '签发时间',
+    expires: '过期时间',
+    notBefore: '生效时间',
+    issuer: '签发者',
+    audience: '受众',
+    subject: '主题',
+    jwtId: 'JWT ID',
+    copyJson: '复制 JSON',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function b64UrlDecode(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return atob(str);
+}
+
+function b64UrlEncode(str) {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function formatTimestamp(ts) {
+  if (!ts || isNaN(ts)) return '—';
+  const d = new Date(ts * 1000);
+  return d.toLocaleString() + ' (' + Math.round((Date.now()/1000 - ts) / 86400) + ' days ago)';
+}
+
+function formatFuture(ts) {
+  if (!ts || isNaN(ts)) return '—';
+  const d = new Date(ts * 1000);
+  const diff = ts - Date.now()/1000;
+  const days = Math.round(diff / 86400);
+  return d.toLocaleString() + (days > 0 ? ` (in ${days} days)` : ` (${Math.abs(days)} days ago)`);
+}
+
+function decode() {
+  const token = $('#token-input').value.trim();
+  if (!token) return;
+
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    alert('Invalid JWT: must have at least 2 parts separated by dots');
+    return;
+  }
+
+  try {
+    const header = JSON.parse(b64UrlDecode(parts[0]));
+    const payload = JSON.parse(b64UrlDecode(parts[1]));
+
+    // Show header
+    $('#header-section').style.display = '';
+    $('#hdr-title').textContent = t('headerPart');
+    $('#header-json').textContent = JSON.stringify(header, null, 2);
+
+    // Show payload
+    $('#payload-section').style.display = '';
+    $('#pay-title').textContent = t('payloadPart');
+    $('#payload-json').textContent = JSON.stringify(payload, null, 2);
+
+    // Show claims
+    $('#claims-section').style.display = '';
+    $('#claims-title').textContent = t('claimsTitle');
+    const claims = [
+      [t('algo'), header.alg || '—'],
+      [t('typ'), header.typ || '—'],
+      [t('issuer'), payload.iss || '—'],
+      [t('subject'), payload.sub || '—'],
+      [t('audience'), payload.aud || '—'],
+      [t('issuedAt'), payload.iat ? formatTimestamp(payload.iat) : '—'],
+      [t('expires'), payload.exp ? formatFuture(payload.exp) : '—'],
+      [t('notBefore'), payload.nbf ? formatFuture(payload.nbf) : '—'],
+      [t('jwtId'), payload.jti || '—'],
+    ];
+    $('#claims-list').innerHTML = claims.map(([k,v]) =>
+      `<div class="claim-row"><span class="claim-key">${k}</span><span class="claim-val">${v}</span></div>`
+    ).join('');
+
+    // Health check
+    $('#status-section').style.display = '';
+    $('#status-title').textContent = t('statusTitle');
+    let statusHtml = '';
+    const now = Math.floor(Date.now()/1000);
+
+    if (payload.exp) {
+      if (now > payload.exp) {
+        statusHtml += `<div><span class="status-badge status-err">${t('expired')}</span></div>`;
+      } else {
+        statusHtml += `<div><span class="status-badge status-ok">${t('valid')}</span></div>`;
+      }
+    } else {
+      statusHtml += `<div><span class="status-badge status-warn">${t('noExp')}</span></div>`;
+    }
+
+    if (payload.nbf && now < payload.nbf) {
+      statusHtml += `<div><span class="status-badge status-err">${t('notYetValid')}</span></div>`;
+    }
+
+    $('#status-list').innerHTML = statusHtml;
+
+  } catch (e) {
+    alert('Failed to decode JWT: ' + e.message);
+  }
+}
+
+async function verifySignature() {
+  const token = $('#token-input').value.trim();
+  const secret = $('#secret-input').value;
+  if (!token) return;
+
+  const parts = token.split('.');
+  if (parts.length < 3) {
+    alert('Cannot verify: JWT must have 3 parts for signature verification');
+    return;
+  }
+
+  try {
+    const header = JSON.parse(b64UrlDecode(parts[0]));
+    const alg = (header.alg || '').toUpperCase();
+    let algName;
+    if (alg === 'HS256') algName = 'SHA-256';
+    else if (alg === 'HS384') algName = 'SHA-384';
+    else if (alg === 'HS512') algName = 'SHA-512';
+    else {
+      alert('Unsupported algorithm: ' + header.alg + '. Only HS256, HS384, HS512 are supported.');
+      return;
+    }
+
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: algName }, false, ['sign']);
+    const data = encoder.encode(parts[0] + '.' + parts[1]);
+    const sig = await crypto.subtle.sign('HMAC', key, data);
+    const expected = b64UrlEncode(String.fromCharCode(...new Uint8Array(sig)));
+
+    $('#status-section').style.display = '';
+    $('#status-title').textContent = t('statusTitle');
+    const existing = $('#status-list').innerHTML;
+    const result = expected === parts[2]
+      ? `<div><span class="status-badge status-ok">${t('sigValid')}</span></div>`
+      : `<div><span class="status-badge status-err">${t('sigInvalid')}</span></div>`;
+    $('#status-list').innerHTML = existing + result;
+
+  } catch(e) {
+    alert('Verification failed: ' + e.message);
+  }
+}
+
+function clearAll() {
+  $('#token-input').value = '';
+  $('#secret-input').value = '';
+  ['#header-section','#payload-section','#claims-section','#status-section'].forEach(s => $(s).style.display='none');
+}
+
+GZ.renderToolPage({
+  toolbar: [
+    { label: t('btnDecode'), action: decode },
+    { label: t('btnClear'), action: clearAll },
+  ],
+  howto: [t('step1'), t('step2'), t('step3'), t('step4')],
+  faq: [
+    { q: t('faq1q'), a: t('faq1a') },
+    { q: t('faq2q'), a: t('faq2a') },
+    { q: t('faq3q'), a: t('faq3a') },
+  ],
+  related: ['jwt-decoder', 'base64', 'hash-generator', 'json-formatter', 'jwt-sign']
+});
+
+$('#btn-verify').textContent = t('btnVerify');
+$('#btn-verify').className = 'gz-btn';
+$('#btn-verify').onclick = verifySignature;
+$('#lbl-secret').textContent = t('lblSecret');
+</script>
+</body>
+</html>
