@@ -3,7 +3,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://lessons-jennifer-conditions-instrument.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://powered-keep-economics-epic.trycloudflare.com/api/collect';
   var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260611v5';s1.defer=true;document.head.appendChild(s1);
   // adsterra-manager.js removed — zone IDs were placeholders, wasting resources
   var s4=document.createElement('script');s4.src='/adsense-auto.js';s4.defer=true;document.head.appendChild(s4);
