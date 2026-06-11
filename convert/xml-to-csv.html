@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>XML to CSV Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert XML data to CSV format online. Flatten nested XML elements, auto-detect fields and export as comma-separated values — free and instant.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/xml-to-csv.html">
+  <meta property="og:title" content="XML to CSV Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert XML data to CSV format online. Flatten nested XML elements, auto-detect fields and export as comma-separated values — free and instant.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/xml-to-csv.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="XML to CSV Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{font-family:monospace;font-size:.85em;resize:vertical}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"XML to CSV Converter","description":"Convert XML data to CSV format online. Flatten nested XML elements, auto-detect fields and export as comma-separated values — free and instant.","url":"https://tools.gamezipper.com/convert/xml-to-csv.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert XML to CSV?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your XML data into the input area and click Convert. The tool parses the XML, flattens nested elements, and outputs clean CSV with headers."}}, {"@type": "Question", "name": "Does it handle nested XML elements?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool flattens nested XML elements into dot-notation column names (e.g., address.city) so all data appears in the CSV."}}, {"@type": "Question", "name": "Is my data safe?", "acceptedAnswer": {"@type": "Answer", "text": "All processing happens in your browser. No data is ever sent to any server."}}, {"@type": "Question", "name": "What delimiter does the CSV use?", "acceptedAnswer": {"@type": "Answer", "text": "By default it uses comma (,), but you can switch to semicolon (;), tab, or pipe (|) using the delimiter selector."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/xml-to-csv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/xml-to-csv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/xml-to-csv.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" placeholder='<?xml version="1.0"?>&#10;<items>&#10;  <item>&#10;    <name>Apple</name>&#10;    <price>1.20</price>&#10;  </item>&#10;</items>'></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" rows="14" readonly spellcheck="false"></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'XML to CSV Converter',
+    toolDesc: 'Convert XML data to CSV format with auto-detected headers, nested element flattening and custom delimiters.',
+    delimiter: 'Delimiter',
+    converted: '✓ Converted successfully',
+    error: '✗ XML Error',
+    noData: 'No convertible data found',
+    step1: 'Paste your XML data into the input area',
+    step2: 'Select your preferred CSV delimiter',
+    step3: 'Click Convert to generate CSV output',
+    step4: 'Use Copy or Download to save the result',
+  },
+  zh: {
+    toolTitle: 'XML 转 CSV 转换器',
+    toolDesc: '将 XML 数据转换为 CSV 格式，自动检测列头、扁平化嵌套元素并支持自定义分隔符。',
+    delimiter: '分隔符',
+    converted: '✓ 转换成功',
+    error: '✗ XML 错误',
+    noData: '未找到可转换的数据',
+    step1: '在输入区粘贴 XML 数据',
+    step2: '选择 CSV 分隔符',
+    step3: '点击「转换」生成 CSV 输出',
+    step4: '使用「复制」或「下载」保存结果',
+  }
+});
+
+let delimiter = ',';
+const { $, copyText, t } = GZ;
+
+function flattenXml(node, prefix, obj) {
+  if (!obj) obj = {};
+  if (node.nodeType === 1) {
+    const tag = node.tagName;
+    const key = prefix ? prefix + '.' + tag : tag;
+    let textOnly = true;
+    for (let i = 0; i < node.childNodes.length; i++) {
+      if (node.childNodes[i].nodeType === 1) { textOnly = false; break; }
+    }
+    if (textOnly) {
+      const val = node.textContent.trim();
+      if (val) obj[key] = val;
+    } else {
+      let hasMixed = false, childCount = 0, lastTag = '';
+      const children = [];
+      for (let i = 0; i < node.childNodes.length; i++) {
+        if (node.childNodes[i].nodeType === 1) {
+          childCount++;
+          if (lastTag && node.childNodes[i].tagName === lastTag) hasMixed = false;
+          else if (childCount > 1 && node.childNodes[i].tagName !== lastTag) hasMixed = true;
+          lastTag = node.childNodes[i].tagName;
+          children.push(node.childNodes[i]);
+        }
+      }
+      if (childCount === 0) {
+        const val = node.textContent.trim();
+        if (val) obj[key] = val;
+      } else {
+        for (const child of children) {
+          flattenXml(child, key, obj);
+        }
+      }
+    }
+  }
+  return obj;
+}
+
+function escapeCsv(val, d) {
+  const s = String(val == null ? '' : val);
+  if (s.includes(d) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(inp, 'text/xml');
+    const errNode = doc.querySelector('parsererror');
+    if (errNode) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}: ${errNode.textContent.substring(0, 200)}</span>`;
+      $('#output').value = '';
+      return;
+    }
+    const root = doc.documentElement;
+    const rows = [];
+    const headers = new Set();
+
+    // Find repeating elements (array-like children)
+    let childTags = {};
+    for (let i = 0; i < root.childNodes.length; i++) {
+      if (root.childNodes[i].nodeType === 1) {
+        const tag = root.childNodes[i].tagName;
+        childTags[tag] = (childTags[tag] || 0) + 1;
+      }
+    }
+
+    // If root itself looks like a single row, treat it as one row
+    let itemNodes = [];
+    let isArray = false;
+    for (const tag in childTags) {
+      if (childTags[tag] > 1) isArray = true;
+    }
+
+    if (isArray) {
+      // Find the repeating tag
+      let repTag = '';
+      for (const tag in childTags) {
+        if (childTags[tag] > 1) { repTag = tag; break; }
+      }
+      itemNodes = Array.from(root.childNodes).filter(n => n.nodeType === 1 && n.tagName === repTag);
+    } else {
+      itemNodes = [root];
+    }
+
+    for (const node of itemNodes) {
+      const flat = {};
+      flattenXml(node, '', flat);
+      // strip first-level tag name prefix if all have same prefix
+      const prefix = node.tagName;
+      const cleaned = {};
+      for (const k in flat) {
+        let key = k;
+        if (k.startsWith(prefix + '.')) key = k.substring(prefix.length + 1);
+        else if (k === prefix) key = '_value';
+        else key = k;
+        headers.add(key);
+        cleaned[key] = flat[k];
+      }
+      rows.push(cleaned);
+    }
+
+    if (rows.length === 0) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noData')}</span>`;
+      $('#output').value = '';
+      return;
+    }
+
+    const headerArr = Array.from(headers);
+    const lines = [headerArr.map(h => escapeCsv(h, delimiter)).join(delimiter)];
+    for (const row of rows) {
+      lines.push(headerArr.map(h => escapeCsv(row[h], delimiter)).join(delimiter));
+    }
+    $('#output').value = lines.join('\n');
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('converted')} (${rows.length} rows, ${headerArr.length} cols)</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}: ${e.message}</span>`;
+    $('#output').value = '';
+  }
+}
+
+function doDownload() {
+  const text = $('#output').value;
+  if (!text) return;
+  const blob = new Blob([text], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'data.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadExample() {
+  $('#input').value = `<?xml version="1.0"?>
+<products>
+  <product>
+    <name>Wireless Mouse</name>
+    <category>Electronics</category>
+    <price>29.99</price>
+    <stock>150</stock>
+  </product>
+  <product>
+    <name>Mechanical Keyboard</name>
+    <category>Electronics</category>
+    <price>79.99</price>
+    <stock>85</stock>
+  </product>
+  <product>
+    <name>USB-C Hub</name>
+    <category>Accessories</category>
+    <price>45.50</price>
+    <stock>200</stock>
+  </product>
+</products>`;
+  doConvert();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="delimiter=this.value;doConvert()">
+    <option value=",">Comma (,)</option>
+    <option value=";">Semicolon (;)</option>
+    <option value="\t">Tab</option>
+    <option value="|">Pipe (|)</option>
+  </select>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ CSV</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📄', href:'/convert/json-to-xml.html', name:'JSON to XML'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
