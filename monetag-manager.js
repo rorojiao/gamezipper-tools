@@ -1,7 +1,15 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.2-monetag-events (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.3-zone-backoff (Poki-style)
  * ────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.3-zone-backoff Changes (2026-06-11):
+ *   - Per-zone exponential backoff (10min → 30min → 60min) when loadZone returns no_fill.
+ *     Stops wasting ad-provider.js bandwidth on broken Monetag zones.
+ *     Data: last 3 days showed 36 attempts → 0 fills (0% fill rate).
+ *   - Disable demonstrably-dead legacy zones (10689345, 10689346 — 0/6 and 0/1
+ *     fills in 3 days). Re-enable via CONFIG.ZONES.legacyEnabled=true.
+ *   - Persist backoff state in localStorage (cross-tab) + window.gzZoneBackoff (debug).
  *
  * v5.2-monetag-events Changes (2026-06-09):
  *   - 新增 ad events tracker (window.gzAdEvents + GTM dataLayer 推送)
@@ -41,9 +49,11 @@
     vignette:   11012011,
     // pushNotif: 11012012  // DISABLED
     // Legacy fallback (Pungent tag - was filling in March 2026)
-    // Re-activated 2026-06-08 after Superior zones showed 0 imp for 14 days
+    // DISABLED in v5.3 (2026-06-11): 0/6 fills in 3 days, no point retrying.
+    // Re-enable by setting legacyEnabled=true if Monetag account recovers.
     inpagePushLegacy: 10689345,
     vignetteLegacy:   10689346,
+    legacyEnabled: false,  // v5.3: kill switch for legacy zones (proven dead)
   };
 
   var CONFIG = {
@@ -68,7 +78,14 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.2-monetag-events',  // 2026-06-09: 移植 gzAdEvents tracker 对齐 gamezipper.com v5.2
+    VERSION: '5.3-zone-backoff',  // 2026-06-11: per-zone backoff + kill legacy zones
+    // v5.3: Monetag zone backoff (skip zones that recently returned no_fill)
+    ZONE_BACKOFF: {
+      enabled: true,
+      storageKey: 'gzt4_zone_backoff_v1',
+      backoffs: [10 * 60 * 1000, 30 * 60 * 1000, 60 * 60 * 1000],
+      minRecordIntervalMs: 60 * 1000,
+    },
   };
 
   // ==================== AD EVENTS TRACKER (v5.2) ====================
@@ -115,11 +132,60 @@
     firstInteraction: 0,
     loaded: {},
     channel: null,
+    zoneBackoff: {},          // v5.3: per-zone backoff
   };
 
   function now() { return Date.now(); }
   function storageGet(k) { try { return JSON.parse(localStorage.getItem(CONFIG.STORAGE_PREFIX + k)); } catch(e) { return null; } }
   function storageSet(k, v) { try { localStorage.setItem(CONFIG.STORAGE_PREFIX + k, JSON.stringify(v)); } catch(e) {} }
+
+  // ==================== ZONE BACKOFF (v5.3) ====================
+  function loadZoneBackoff() {
+    try {
+      var raw = localStorage.getItem(CONFIG.ZONE_BACKOFF.storageKey);
+      if (!raw) return {};
+      var parsed = JSON.parse(raw);
+      var n = now();
+      var keep = {};
+      for (var zid in parsed) {
+        if (parsed[zid] && parsed[zid].until > n) keep[zid] = parsed[zid];
+      }
+      return keep;
+    } catch(e) { return {}; }
+  }
+  function saveZoneBackoff() {
+    try { localStorage.setItem(CONFIG.ZONE_BACKOFF.storageKey, JSON.stringify(state.zoneBackoff)); } catch(e) {}
+  }
+  function getZoneBackoffMs(zoneId) {
+    if (!CONFIG.ZONE_BACKOFF.enabled) return 0;
+    if (!state.zoneBackoff || !state.zoneBackoff[zoneId]) state.zoneBackoff = loadZoneBackoff();
+    var entry = state.zoneBackoff[zoneId];
+    if (!entry) return 0;
+    var remaining = entry.until - now();
+    if (remaining <= 0) { delete state.zoneBackoff[zoneId]; saveZoneBackoff(); return 0; }
+    return remaining;
+  }
+  function isZoneInBackoff(zoneId) { return getZoneBackoffMs(zoneId) > 0; }
+  function recordZoneNoFill(zoneId) {
+    if (!CONFIG.ZONE_BACKOFF.enabled) return;
+    if (!state.zoneBackoff[zoneId]) state.zoneBackoff[zoneId] = { until: 0, streak: 0, lastAt: 0 };
+    var entry = state.zoneBackoff[zoneId];
+    var n = now();
+    if (n - entry.lastAt < CONFIG.ZONE_BACKOFF.minRecordIntervalMs) return;
+    entry.streak = Math.min(entry.streak + 1, CONFIG.ZONE_BACKOFF.backoffs.length);
+    var backoffMs = CONFIG.ZONE_BACKOFF.backoffs[entry.streak - 1];
+    entry.until = n + backoffMs;
+    entry.lastAt = n;
+    saveZoneBackoff();
+    trackAdEvent('zone_backoff', { zoneId: zoneId, streak: entry.streak, minutes: Math.round(backoffMs/60000) });
+  }
+  function clearZoneBackoff(zoneId) {
+    if (state.zoneBackoff && state.zoneBackoff[zoneId]) {
+      delete state.zoneBackoff[zoneId];
+      saveZoneBackoff();
+    }
+  }
+  function refreshDebugBackoff() { try { window.gzZoneBackoff = state.zoneBackoff; } catch(e) {} }
 
   // ==================== 频率控制 (Poki-model) ====================
   function canShowAd() {
@@ -161,10 +227,24 @@
   } catch(e) {}
 
   // ==================== 广告加载 ====================
+  // v5.3: legacy zones (Pungent tag) have shown 0% fill for weeks. legacyEnabled kill switch.
   // v5.2: 实际 DOM fill 检测 (Monetag 脚本加载不等于有广告)
   //       全程 trackAdEvent() 上报 fill/script_loaded/no_fill/load_error
   function loadZone(zoneId, targetEl) {
     return new Promise(function(resolve, reject) {
+      // v5.3: skip disabled legacy zones
+      if (!ZONES.legacyEnabled && (zoneId === ZONES.inpagePushLegacy || zoneId === ZONES.vignetteLegacy)) {
+        trackAdEvent('zone_legacy_disabled_skip', { zoneId: zoneId });
+        reject(new Error('legacy_disabled'));
+        return;
+      }
+      // v5.3: short-circuit if zone in backoff
+      if (isZoneInBackoff(zoneId)) {
+        trackAdEvent('zone_backoff_skip', { zoneId: zoneId, remainingMs: getZoneBackoffMs(zoneId) });
+        reject(new Error('zone_in_backoff'));
+        return;
+      }
+
       var timeout = setTimeout(function() { reject(new Error('timeout')); }, CONFIG.TIMING.adLoadTimeout);
       var resolved = false;
       var observer = null;
@@ -178,6 +258,7 @@
           if (w >= 50 && h >= 50) {
             resolved = true; clearTimeout(timeout);
             if (observer) observer.disconnect();
+            clearZoneBackoff(zoneId);  // v5.3: zone just proved it fills
             trackAdEvent('fill', { network: 'monetag', zoneId: zoneId, containerId: targetEl.id || '' });
             resolve(true); return;
           }
@@ -203,6 +284,7 @@
               if (resolved) return;
               if (observer) observer.disconnect();
               clearTimeout(timeout);
+              recordZoneNoFill(zoneId);  // v5.3: exponential backoff
               trackAdEvent('no_fill', { network: 'monetag', zoneId: zoneId });
               reject(new Error('no_visible_fill'));
             }, 1500);
@@ -212,6 +294,7 @@
       s.onerror = function() {
         clearTimeout(timeout);
         if (observer) observer.disconnect();
+        recordZoneNoFill(zoneId);  // v5.3: backoff on load_error too
         trackAdEvent('load_error', { network: 'monetag', zoneId: zoneId });
         reject(new Error('err'));
       };
@@ -446,6 +529,10 @@
   }
 
   // ==================== 初始化 ====================
+  // v5.3: load zone backoff state on startup
+  state.zoneBackoff = loadZoneBackoff();
+  refreshDebugBackoff();
+
   // Preconnect to ad provider for faster loading
   ['https://a.magsrv.com', 'https://static.magsrv.com'].forEach(function(origin) {
     try {
