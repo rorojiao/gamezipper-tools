@@ -6,7 +6,7 @@
   window.GZ_COLLECT_ENDPOINT = 'https://silly-code-stuff-finances.trycloudflare.com/api/collect';
   var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260612v1';s1.defer=true;document.head.appendChild(s1);
   // adsterra-manager.js removed — zone IDs were placeholders, wasting resources
-  var s4=document.createElement('script');s4.src='/adsense-auto.js';s4.defer=true;document.head.appendChild(s4);
+  var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260612a';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
   var s5=document.createElement('script');s5.src='https://bi.gamezipper.com/t.js';s5.defer=true;document.head.appendChild(s5);
 })();
