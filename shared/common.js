@@ -4,7 +4,7 @@
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
   window.GZ_COLLECT_ENDPOINT = 'https://knew-controllers-assumption-executive.trycloudflare.com/api/collect';
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260611v5';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260612v1';s1.defer=true;document.head.appendChild(s1);
   // adsterra-manager.js removed — zone IDs were placeholders, wasting resources
   var s4=document.createElement('script');s4.src='/adsense-auto.js';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);

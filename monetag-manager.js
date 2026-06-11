@@ -1,7 +1,19 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.3-zone-backoff (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.4-tools-tuning (Poki-style)
  * ────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.4-tools-tuning Changes (2026-06-12):
+ *   - Per-zone backoff raised: 30min → 60min → 24h (was 10→30→60min).
+ *     Reason: v5.3's 10min streak-1 backoff was too aggressive — a real
+ *     fill could land on attempt #2 within seconds, but streak-1 already
+ *     blocked the zone for 10min. For tools.gamezipper.com 11012010
+ *     (Superior) saw 49 events / 0 fills, the new curve gives Monetag
+ *     30min breathing room before its first no_fill is even recorded.
+ *   - Re-enable Pungent 10689345 (legacyEnabled=true) for 7-day trial.
+ *     3-5月 showed 3-4 imp/day, so zone is not actually dead — just
+ *     sporadically alive. Kill switch remains for easy revert.
+ *   - Persist backoff state in localStorage (cross-tab) + window.gzZoneBackoff (debug).
  *
  * v5.3-zone-backoff Changes (2026-06-11):
  *   - Per-zone exponential backoff (10min → 30min → 60min) when loadZone returns no_fill.
@@ -48,12 +60,15 @@
     inpagePush: 11012010,
     vignette:   11012011,
     // pushNotif: 11012012  // DISABLED
-    // Legacy fallback (Pungent tag - was filling in March 2026)
-    // DISABLED in v5.3 (2026-06-11): 0/6 fills in 3 days, no point retrying.
-    // Re-enable by setting legacyEnabled=true if Monetag account recovers.
+    // v5.4 (2026-06-12): Pungent 10689345 re-enabled for 7-day A/B test
+    //   - Was disabled in v5.3 because of 0% fill. Pungent zones had 3-4 imp/天 in March 2026, but
+    //     Superior 11012010 alone isn't filling tools.gamezipper.com.
+    //   - Re-enable so visitors get a chance to see Pungent (which historically had higher
+    //     eCPM in this vertical) instead of just AdSense + dead Superior zone.
+    //   - Revert via legacyEnabled=false if 7-day data shows Pungent 10689345 still at 0% fill.
     inpagePushLegacy: 10689345,
     vignetteLegacy:   10689346,
-    legacyEnabled: false,  // v5.3: kill switch for legacy zones (proven dead)
+    legacyEnabled: true,  // v5.4: re-enabled 2026-06-12 for A/B test (kill switch via false)
   };
 
   var CONFIG = {
@@ -78,12 +93,19 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.3-zone-backoff',  // 2026-06-11: per-zone backoff + kill legacy zones
-    // v5.3: Monetag zone backoff (skip zones that recently returned no_fill)
+    VERSION: '5.4-pungent-retry',  // 2026-06-12: tune backoff + re-enable Pungent 10689345 (A/B 7d)
+    // v5.4 (2026-06-12): backoff tuning + Pungent 10689345 re-enabled
+    //   - tools.gamezipper.com fill rate 0% — Superior 11012010 has 0/49 fills, Pungent 10689345 0/40 fills (3-5月曾 3-4 imp/天)
+    //   - 10min streak-1 backoff was too aggressive — Pungent zones had no chance to retry meaningfully
+    VERSION: '5.4-tools-tuning',  // 2026-06-12: tune tools backoff curve + re-enable Pungent legacy
+    // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
+    //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
+    //   streak 2 → 60min (was 30): same logic
+    //   streak 3+ → 24h (was 60min): if a zone misses 3 times, give it a full day
     ZONE_BACKOFF: {
       enabled: true,
       storageKey: 'gzt4_zone_backoff_v1',
-      backoffs: [10 * 60 * 1000, 30 * 60 * 1000, 60 * 60 * 1000],
+      backoffs: [30 * 60 * 1000, 60 * 60 * 1000, 24 * 60 * 60 * 1000],
       minRecordIntervalMs: 60 * 1000,
     },
   };
