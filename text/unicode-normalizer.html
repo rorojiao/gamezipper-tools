@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Unicode Normalizer — NFC, NFD, NFKC, NFKD | GameZipper Tools</title>
+  <meta name="description" content="Normalize Unicode text to NFC, NFD, NFKC or NFKD forms. Visualize code points, detect invisible characters and fix encoding issues — free, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/unicode-normalizer.html">
+  <meta property="og:title" content="Unicode Normalizer — NFC, NFD, NFKC, NFKD | GameZipper Tools">
+  <meta property="og:description" content="Normalize Unicode text to NFC, NFD, NFKC or NFKD forms. Visualize code points, detect invisible characters and fix encoding issues — free, browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/unicode-normalizer.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Unicode Normalizer — NFC, NFD, NFKC, NFKD | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.norm-btns{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.norm-btn{padding:10px 16px;border:1px solid var(--border);background:var(--glass);color:var(--text);border-radius:10px;cursor:pointer;font-size:.9rem;transition:all .2s}
+.norm-btn:hover,.norm-btn.active{border-color:var(--accent);background:var(--glass2)}
+.norm-btn .code{font-weight:700;color:var(--accent)}
+.norm-btn .label{font-size:.75rem;color:var(--text2);display:block}
+.result-box{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:16px;margin:12px 0;min-height:60px;font-family:inherit;white-space:pre-wrap;word-break:break-all}
+.codepoint-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin:12px 0}
+.cp-card{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;font-size:.8rem}
+.cp-card .char{font-size:1.4rem;margin-bottom:2px}
+.cp-card .hex{color:var(--accent);font-family:monospace;font-size:.75rem}
+.cp-card .name{color:var(--text2);font-size:.7rem;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-card.invisible{border-color:var(--gz-accent,#e94560);background:rgba(233,69,96,.08)}
+.cp-card.invisible .char{color:var(--gz-accent,#e94560)}
+.diff-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;margin-left:4px}
+.diff-badge.changed{background:rgba(78,205,196,.15);color:var(--accent)}
+.gz-textarea{width:100%;min-height:120px;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px;font-size:.9rem;resize:vertical;font-family:inherit}
+.gz-textarea:focus{outline:none;border-color:var(--accent)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:12px 0}
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.stat-card .value{font-size:1.2rem;font-weight:700;color:var(--accent)}
+.stat-card .label{font-size:.75rem;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Unicode Normalizer","description":"Normalize Unicode text to NFC, NFD, NFKC or NFKD forms. Visualize code points, detect invisible characters and fix encoding issues.","url":"https://tools.gamezipper.com/text/unicode-normalizer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Unicode normalization?", "acceptedAnswer": {"@type": "Answer", "text": "Unicode normalization converts text to a standard form so that visually identical strings have the same binary representation. There are 4 forms: NFC, NFD, NFKC, and NFKD."}}, {"@type": "Question", "name": "What is the difference between NFC and NFD?", "acceptedAnswer": {"@type": "Answer", "text": "NFC (Canonical Decomposition followed by Canonical Composition) composes characters where possible (e.g., e + combining accent → é). NFD (Canonical Decomposition) decomposes characters into base + combining marks."}}, {"@type": "Question", "name": "When should I use NFKC vs NFC?", "acceptedAnswer": {"@type": "Answer", "text": "Use NFKC for text comparison and search — it also handles compatibility equivalences (e.g., fullwidth Ａ → A, superscript ² → 2). Use NFC for general storage and interchange."}}, {"@type": "Question", "name": "Can this tool detect invisible characters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The Code Points view highlights zero-width characters, combining marks, control characters and other invisible Unicode code points in red."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/unicode-normalizer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/unicode-normalizer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/unicode-normalizer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <textarea class="gz-textarea" id="input" placeholder="café résumé naïve"></textarea>
+    <div class="norm-btns" id="normBtns"></div>
+    <div id="resultBox" class="result-box" style="display:none"></div>
+    <div id="statsGrid" class="stats-grid"></div>
+    <div id="codepointSection" style="display:none">
+      <h3 id="cpTitle" style="font-size:.95rem;margin:12px 0 4px"></h3>
+      <div id="codepointGrid" class="codepoint-grid"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Unicode Normalizer',
+    toolDesc: 'Normalize Unicode text to NFC, NFD, NFKC or NFKD forms. Visualize code points, detect invisible characters and fix encoding issues.',
+    normalizeBtn: 'Normalize',
+    codePointsTitle: 'Code Points',
+    chars: 'characters',
+    codePoints: 'code points',
+    invisibleChars: 'invisible',
+    normalizedTo: 'Normalized to',
+    identical: 'Identical to input',
+    changed: 'Changed',
+    step1: 'Paste or type text with Unicode characters',
+    step2: 'Click a normalization form button (NFC, NFD, NFKC, NFKD)',
+    step3: 'View the normalized result and code point breakdown',
+    step4: 'Detect invisible characters highlighted in red',
+  },
+  zh: {
+    toolTitle: 'Unicode 规范化工具',
+    toolDesc: '将 Unicode 文本规范化为 NFC、NFD、NFKC 或 NFKD 形式。可视化码点、检测不可见字符并修复编码问题。',
+    normalizeBtn: '规范化',
+    codePointsTitle: '码点分析',
+    chars: '字符',
+    codePoints: '码点',
+    invisibleChars: '不可见',
+    normalizedTo: '规范化为',
+    identical: '与输入相同',
+    changed: '已变更',
+    step1: '粘贴或输入包含 Unicode 字符的文本',
+    step2: '点击规范化按钮（NFC、NFD、NFKC、NFKD）',
+    step3: '查看规范化结果和码点分解',
+    step4: '检测以红色高亮显示的不可见字符',
+  }
+});
+
+const { $, t } = GZ;
+
+const FORMS = [
+  { key: 'NFC', label: 'Canonical Composition', desc: 'Most common; composes chars where possible' },
+  { key: 'NFD', label: 'Canonical Decomposition', desc: 'Decomposes into base + combining marks' },
+  { key: 'NFKC', label: 'Compatibility Composition', desc: 'Also normalizes compatibility chars (fullwidth → ASCII)' },
+  { key: 'NFKD', label: 'Compatibility Decomposition', desc: 'Full decomposition including compatibility' },
+];
+
+const INVISIBLE_RANGES = [
+  [0x0000, 0x0020],   // C0 controls & space
+  [0x007F, 0x009F],   // DEL + C1 controls
+  [0x00AD, 0x00AD],   // Soft hyphen
+  [0x200B, 0x200F],   // Zero-width chars + direction
+  [0x2028, 0x202F],   // Line/paragraph sep, narrow no-break
+  [0x2060, 0x206F],   // Word joiner + invisible operators
+  [0xFEFF, 0xFEFF],   // BOM
+  [0xFFF0, 0xFFF8],   // Unassigned
+  [0x034F, 0x034F],   // Combining grapheme joiner
+];
+
+function isInvisible(cp) {
+  return INVISIBLE_RANGES.some(([lo, hi]) => cp >= lo && cp <= hi);
+}
+
+const cpNames = {
+  0x0000:'NULL',0x0009:'TAB',0x000A:'LF',0x000D:'CR',0x001B:'ESC',0x0020:'SPACE',
+  0x007F:'DEL',0x00A0:'NBSP',0x00AD:'SHY',0x200B:'ZWSP',0x200C:'ZWNJ',0x200D:'ZWJ',
+  0x200E:'LRM',0x200F:'RLM',0x2028:'LSEP',0x2029:'PSEP',0x202A:'LRE',0x202B:'RLE',
+  0x202C:'PDF',0x202D:'LRO',0x202E:'RLO',0x202F:'NNBSP',0x2060:'WJ',0xFEFF:'BOM',
+  0x034F:'CGJ',0x00AD:'SOFT HYPHEN',0x2061:'INVISIBLE TIMES',0x2062:'INVISIBLE PLUS',
+  0x2063:'INVISIBLE SEPARATOR',0x2064:'INVISIBLE PLUS (extra)',
+};
+
+function getCPName(cp) {
+  if(cpNames[cp]) return cpNames[cp];
+  if(cp >= 0x0300 && cp <= 0x036F) return 'COMBINING MARK';
+  if(cp >= 0xFE00 && cp <= 0xFE0F) return 'VS';
+  return '';
+}
+
+// Build form buttons
+const btnsContainer = $('#normBtns');
+FORMS.forEach(f => {
+  const btn = document.createElement('button');
+  btn.className = 'norm-btn';
+  btn.innerHTML = `<span class="code">${f.key}</span><span class="label">${f.label}</span>`;
+  btn.onclick = () => normalize(f.key);
+  btnsContainer.appendChild(btn);
+});
+
+function normalize(form) {
+  const input = $('#input').value;
+  if(!input) return;
+
+  // Update active button
+  document.querySelectorAll('.norm-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  const normalized = input.normalize(form);
+  const resultBox = $('#resultBox');
+  resultBox.style.display = 'block';
+
+  const isIdentical = input === normalized;
+  resultBox.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <strong>${t('normalizedTo')} ${form}</strong>
+      ${isIdentical 
+        ? `<span class="diff-badge" style="background:rgba(0,214,114,.1);color:var(--gz-success,#00d672)">✓ ${t('identical')}</span>`
+        : `<span class="diff-badge changed">⚡ ${t('changed')}</span>`
+      }
+    </div>
+    <div id="resultText" style="cursor:pointer" title="Click to copy">${escapeHtml(normalized)}</div>
+  `;
+  document.getElementById('resultText').onclick = () => {
+    navigator.clipboard.writeText(normalized);
+    GZ?.toast?.('Copied!') || alert('Copied!');
+  };
+
+  // Stats
+  let invisibleCount = 0;
+  for(const ch of normalized) {
+    if(isInvisible(ch.codePointAt(0))) invisibleCount++;
+  }
+  $('#statsGrid').innerHTML = `
+    <div class="stat-card"><div class="value">${[...normalized].length}</div><div class="label">${t('chars')}</div></div>
+    <div class="stat-card"><div class="value">${[...normalized].length}</div><div class="label">${t('codePoints')}</div></div>
+    <div class="stat-card"><div class="value" style="color:var(--gz-accent,#e94560)">${invisibleCount}</div><div class="label">${t('invisibleChars')}</div></div>
+  `;
+
+  // Code points
+  const cpGrid = $('#codepointGrid');
+  cpGrid.innerHTML = '';
+  const chars = [...normalized];
+  chars.forEach(ch => {
+    const cp = ch.codePointAt(0);
+    const inv = isInvisible(cp);
+    const name = getCPName(cp);
+    const display = inv ? (cp === 0x0020 ? '␣' : '·') : ch;
+    const card = document.createElement('div');
+    card.className = `cp-card${inv ? ' invisible' : ''}`;
+    card.innerHTML = `<div class="char">${escapeHtml(display)}</div><div class="hex">U+${cp.toString(16).toUpperCase().padStart(4,'0')}</div>${name ? `<div class="name">${name}</div>` : ''}`;
+    cpGrid.appendChild(card);
+  });
+
+  $('#codepointSection').style.display = 'block';
+  $('#cpTitle').textContent = t('codePointsTitle');
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/text/unicode-search.html', name:'Unicode Search'},
+    {icon:'🔤', href:'/text/character-encoding-converter.html', name:'Character Encoding Converter'},
+    {icon:'👁️', href:'/text/zero-width-remover.html', name:'Zero Width Remover'},
+    {icon:'⠿', href:'/text/braille.html', name:'Braille Translator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

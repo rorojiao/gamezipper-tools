@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Domain Availability Checker - Check Domain Names Free | GameZipper Tools</title>
+  <meta name="description" content="Check if a domain name is available for registration. Instantly look up .com, .net, .org, .io and other TLDs via RDAP/DNS — free, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/domain-availability.html">
+  <meta property="og:title" content="Domain Availability Checker - Check Domain Names Free | GameZipper Tools">
+  <meta property="og:description" content="Check if a domain name is available for registration. Instantly look up .com, .net, .org, .io and other TLDs via RDAP/DNS — free, browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/domain-availability.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Domain Availability Checker - Check Domain Names Free | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.search-row{display:flex;gap:8px;margin:12px 0}
+.search-row input{flex:1;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px 16px;font-size:1rem}
+.search-row input:focus{outline:none;border-color:var(--accent)}
+.tld-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:12px 0}
+.tld-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;transition:border-color .2s}
+.tld-card.available{border-color:var(--gz-success,#00d672)}
+.tld-card.taken{border-color:var(--gz-accent,#e94560)}
+.tld-card .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.tld-card .dot.available{background:var(--gz-success,#00d672)}
+.tld-card .dot.taken{background:var(--gz-accent,#e94560)}
+.tld-card .dot.checking{background:var(--text3);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.tld-card .info{flex:1;min-width:0}
+.tld-card .domain{font-weight:600;font-size:.95rem;word-break:break-all}
+.tld-card .status{font-size:.8rem;color:var(--text2)}
+.tld-card .details{font-size:.75rem;color:var(--text3)}
+.gz-select{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px}
+.bulk-input{width:100%;min-height:100px;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px;font-size:.9rem;resize:vertical;font-family:inherit}
+.bulk-input:focus{outline:none;border-color:var(--accent)}
+.summary-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;display:inline-flex;align-items:center;gap:6px;margin:4px;font-size:.9rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Domain Availability Checker","description":"Check if a domain name is available for registration. Instantly look up .com, .net, .org, .io and other TLDs via RDAP/DNS — free, browser-based.","url":"https://tools.gamezipper.com/dev/domain-availability.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does domain availability checking work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool queries the RDAP (Registration Data Access Protocol) service for each domain. If no registration data is found, the domain is likely available. This is a quick check — for definitive results, verify with a domain registrar."}}, {"@type": "Question", "name": "What TLDs can I check?", "acceptedAnswer": {"@type": "Answer", "text": "You can check .com, .net, .org, .io, .dev, .app, .co, .info, .me, .xyz, .tech, .ai, .cc, .tv, .us, .uk, .de, .fr, .eu and many more generic and country-code TLDs."}}, {"@type": "Question", "name": "Is this a definitive availability check?", "acceptedAnswer": {"@type": "Answer", "text": "No. RDAP queries indicate whether a domain has registration data, but some domains may be reserved, in grace period, or otherwise unavailable even without RDAP data. Always confirm with a registrar before purchasing."}}, {"@type": "Question", "name": "Can I check multiple domains at once?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enter multiple domain names (one per line) or use the bulk mode to check many domains and TLDs simultaneously."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/domain-availability.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/domain-availability.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/domain-availability.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="search-row">
+      <input type="text" id="domainInput" placeholder="example.com" spellcheck="false">
+      <button class="gz-btn" id="checkBtn" onclick="checkDomain()"></button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <label id="tldLabel" style="font-size:.85rem;color:var(--text2)"></label>
+      <select id="tldSelect" class="gz-select" onchange="updatePlaceholder()">
+        <option value="popular">Popular TLDs</option>
+        <option value="all">All TLDs</option>
+        <option value="custom">Custom</option>
+      </select>
+      <input type="text" id="customTlds" placeholder=".com, .net, .org" style="display:none;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-size:.85rem;width:200px">
+    </div>
+    <div id="summary" style="margin:8px 0"></div>
+    <div id="results" class="tld-grid"></div>
+    <div id="bulkSection" style="margin-top:16px">
+      <label id="bulkLabel" style="font-size:.9rem;font-weight:600;display:block;margin-bottom:8px"></label>
+      <textarea id="bulkInput" class="bulk-input" placeholder="example.com&#10;myproject.io&#10;coolname.dev"></textarea>
+      <button class="gz-btn gz-btn-secondary" id="bulkBtn" onclick="checkBulk()" style="margin-top:8px"></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Domain Availability Checker',
+    toolDesc: 'Check if a domain name is available for registration. Look up .com, .net, .org, .io and other TLDs via RDAP — free and instant.',
+    checkBtn: '🔍 Check',
+    tldLabel: 'TLDs:',
+    available: 'Likely Available',
+    taken: 'Taken',
+    checking: 'Checking…',
+    error: 'Error',
+    registrar: 'Registrar',
+    expires: 'Expires',
+    registered: 'Registered',
+    daysAgo: 'days ago',
+    popularTlds: 'Popular TLDs',
+    bulkLabel: 'Bulk Check (one domain per line)',
+    bulkBtn: 'Check All',
+    results: 'results',
+    step1: 'Enter a domain name (e.g. myproject.com)',
+    step2: 'Select which TLDs to check',
+    step3: 'Click "Check" to query RDAP for each TLD',
+    step4: 'Review availability status and registration details',
+  },
+  zh: {
+    toolTitle: '域名可用性查询',
+    toolDesc: '查询域名是否可以注册。支持 .com、.net、.org、.io 等多种后缀，通过 RDAP 即时查询 — 免费在线工具。',
+    checkBtn: '🔍 查询',
+    tldLabel: '域名后缀：',
+    available: '可能可用',
+    taken: '已注册',
+    checking: '查询中…',
+    error: '查询失败',
+    registrar: '注册商',
+    expires: '到期时间',
+    registered: '注册时间',
+    daysAgo: '天前',
+    popularTlds: '热门后缀',
+    bulkLabel: '批量查询（每行一个域名）',
+    bulkBtn: '查询全部',
+    results: '条结果',
+    step1: '输入域名（如 myproject.com）',
+    step2: '选择要查询的域名后缀',
+    step3: '点击「查询」通过 RDAP 查询每个后缀',
+    step4: '查看可用性状态和注册详情',
+  }
+});
+
+const { $, t } = GZ;
+
+const POPULAR_TLDS = ['com','net','org','io','dev','app','co','info','me','xyz','tech','ai','cc','tv','us'];
+const ALL_TLDS = [...POPULAR_TLDS,'uk','de','fr','eu','cn','jp','in','ca','au','ru','br','es','it','nl','se','no','ch','be','at','dk','pl','cz','fi','ie','pt','nz','sg','hk','tw','kr','za','mx','ar','cl','pe','co.uk','com.au','co.jp','co.in','com.br','com.mx','studio','design','shop','store','online','site','live','world','space','link','click','top','fun','app','dev'];
+
+$('#checkBtn').textContent = t('checkBtn');
+$('#tldLabel').textContent = t('tldLabel');
+$('#bulkLabel').textContent = t('bulkLabel');
+$('#bulkBtn').textContent = t('bulkBtn');
+
+$('#domainInput').addEventListener('keydown', e => { if(e.key === 'Enter') checkDomain(); });
+$('#tldSelect').addEventListener('change', () => {
+  $('#customTlds').style.display = $('#tldSelect').value === 'custom' ? 'inline-block' : 'none';
+});
+
+function updatePlaceholder() {
+  const ph = $('#tldSelect').value === 'custom' ? 'example' : 'example.com';
+  $('#domainInput').placeholder = ph;
+}
+
+function getTlds() {
+  const sel = $('#tldSelect').value;
+  if(sel === 'popular') return POPULAR_TLDS;
+  if(sel === 'all') return ALL_TLDS;
+  const custom = $('#customTlds').value.trim();
+  if(!custom) return POPULAR_TLDS;
+  return custom.split(',').map(s => s.trim().replace(/^\./, '')).filter(Boolean);
+}
+
+function extractDomain(input) {
+  let d = input.trim().toLowerCase();
+  // Remove protocol
+  d = d.replace(/^https?:\/\//, '');
+  // Remove path
+  d = d.split('/')[0];
+  return d;
+}
+
+async function checkSingleDomain(domain) {
+  const rdapUrl = `https://rdap.org/domain/${encodeURIComponent(domain)}`;
+  try {
+    const res = await fetch(rdapUrl, { signal: AbortSignal.timeout(8000) });
+    if(res.status === 404) {
+      return { status: 'available' };
+    }
+    const data = await res.json();
+    const events = data.events || [];
+    const regDate = events.find(e => e.eventAction === 'registration')?.eventDate;
+    const expDate = events.find(e => e.eventAction === 'expiration')?.eventDate;
+    const registrar = (data.entities || []).find(e => e.roles?.includes('registrar'))?.vcardArray?.[1]?.find(v => v[0] === 'fn')?.[3] || '';
+    return {
+      status: 'taken',
+      registrar,
+      registered: regDate ? new Date(regDate).toLocaleDateString() : '',
+      expires: expDate ? new Date(expDate).toLocaleDateString() : '',
+      ldhName: data.ldhName || domain,
+    };
+  } catch(e) {
+    // If DNS lookup fails or CORS, try a secondary approach - just report error
+    return { status: 'error', error: e.message };
+  }
+}
+
+function createCard(domain, result) {
+  const card = document.createElement('div');
+  card.className = `tld-card ${result.status}`;
+  let statusText = '';
+  let dotClass = result.status;
+  let details = '';
+
+  if(result.status === 'available') {
+    statusText = `✅ ${t('available')}`;
+  } else if(result.status === 'taken') {
+    statusText = `🔴 ${t('taken')}`;
+    if(result.registrar) details += `${t('registrar')}: ${result.registrar} · `;
+    if(result.registered) details += `${t('registered')}: ${result.registered} · `;
+    if(result.expires) details += `${t('expires')}: ${result.expires}`;
+  } else {
+    statusText = `⚠️ ${t('error')}`;
+    dotClass = 'checking';
+  }
+
+  card.innerHTML = `
+    <div class="dot ${dotClass}"></div>
+    <div class="info">
+      <div class="domain">${domain}</div>
+      <div class="status">${statusText}</div>
+      ${details ? `<div class="details">${details}</div>` : ''}
+    </div>
+  `;
+  return card;
+}
+
+async function checkDomain() {
+  const raw = $('#domainInput').value.trim();
+  if(!raw) return;
+
+  const resultsEl = $('#results');
+  const summaryEl = $('#summary');
+  resultsEl.innerHTML = '';
+  summaryEl.innerHTML = '';
+
+  const tlds = getTlds();
+  let baseName = extractDomain(raw);
+  // If user typed full domain with TLD, extract just the name
+  const parts = baseName.split('.');
+  if(parts.length >= 2) {
+    baseName = parts.slice(0, -1).join('.');
+    // If using custom, just check the full domain
+    if($('#tldSelect').value === 'custom') {
+      tlds.length = 0;
+      tlds.push(parts.slice(-1)[0]);
+    }
+  }
+
+  const domains = tlds.map(tld => `${baseName}.${tld}`);
+
+  // Create placeholder cards
+  domains.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'tld-card';
+    card.id = 'card-' + d.replace(/\./g, '-');
+    card.innerHTML = `<div class="dot checking"></div><div class="info"><div class="domain">${d}</div><div class="status">${t('checking')}</div></div>`;
+    resultsEl.appendChild(card);
+  });
+
+  // Check all domains
+  let available = 0, taken = 0, errors = 0;
+  const promises = domains.map(async (d, i) => {
+    // Stagger requests
+    await new Promise(r => setTimeout(r, i * 100));
+    const result = await checkSingleDomain(d);
+    const oldCard = document.getElementById('card-' + d.replace(/\./g, '-'));
+    if(oldCard) {
+      const newCard = createCard(d, result);
+      oldCard.replaceWith(newCard);
+    }
+    if(result.status === 'available') available++;
+    else if(result.status === 'taken') taken++;
+    else errors++;
+  });
+
+  await Promise.all(promises);
+  summaryEl.innerHTML = `
+    <span class="summary-card">✅ ${available} ${t('available')}</span>
+    <span class="summary-card">🔴 ${taken} ${t('taken')}</span>
+    ${errors ? `<span class="summary-card">⚠️ ${errors} ${t('error')}</span>` : ''}
+    <span class="summary-card">${domains.length} ${t('results')}</span>
+  `;
+}
+
+async function checkBulk() {
+  const text = $('#bulkInput').value.trim();
+  if(!text) return;
+  const domains = text.split('\n').map(d => extractDomain(d)).filter(Boolean);
+  if(!domains.length) return;
+
+  const resultsEl = $('#results');
+  const summaryEl = $('#summary');
+  resultsEl.innerHTML = '';
+  summaryEl.innerHTML = '';
+
+  domains.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'tld-card';
+    card.id = 'card-' + d.replace(/\./g, '-');
+    card.innerHTML = `<div class="dot checking"></div><div class="info"><div class="domain">${d}</div><div class="status">${t('checking')}</div></div>`;
+    resultsEl.appendChild(card);
+  });
+
+  let available = 0, taken = 0, errors = 0;
+  for(let i = 0; i < domains.length; i++) {
+    const d = domains[i];
+    if(i > 0) await new Promise(r => setTimeout(r, 150));
+    const result = await checkSingleDomain(d);
+    const oldCard = document.getElementById('card-' + d.replace(/\./g, '-'));
+    if(oldCard) {
+      const newCard = createCard(d, result);
+      oldCard.replaceWith(newCard);
+    }
+    if(result.status === 'available') available++;
+    else if(result.status === 'taken') taken++;
+    else errors++;
+  }
+
+  summaryEl.innerHTML = `
+    <span class="summary-card">✅ ${available} ${t('available')}</span>
+    <span class="summary-card">🔴 ${taken} ${t('taken')}</span>
+    ${errors ? `<span class="summary-card">⚠️ ${errors} ${t('error')}</span>` : ''}
+    <span class="summary-card">${domains.length} ${t('results')}</span>
+  `;
+}
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/dev/whois-lookup.html', name:'WHOIS Lookup'},
+    {icon:'📅', href:'/dev/domain-age.html', name:'Domain Age'},
+    {icon:'🌐', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

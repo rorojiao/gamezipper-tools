@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Audio Splitter - Split MP3 WAV Audio Online Free | GameZipper Tools</title>
+  <meta name="description" content="Split and cut audio files into multiple parts online. Set split points on a visual waveform, preview segments and download — 100% browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/audio-splitter.html">
+  <meta property="og:title" content="Audio Splitter - Split MP3 WAV Audio Online Free | GameZipper Tools">
+  <meta property="og:description" content="Split and cut audio files into multiple parts online. Set split points on a visual waveform, preview segments and download — 100% browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/audio-splitter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Audio Splitter - Split MP3 WAV Audio Online Free | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:border-color .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent)}
+canvas#waveform{width:100%;height:120px;border-radius:8px;cursor:crosshair;background:var(--glass2)}
+.split-marker{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);cursor:ew-resize;z-index:2}
+.split-marker::before{content:'×';position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--accent);cursor:pointer}
+.marker-label{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text2);white-space:nowrap;background:var(--glass);padding:1px 4px;border-radius:3px}
+.segment-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;margin:8px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.segment-card audio{height:32px;flex:1;min-width:200px}
+.segment-info{font-size:.85rem;color:var(--text2)}
+.waveform-wrap{position:relative;margin:12px 0}
+.gz-select{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Splitter","description":"Split and cut audio files into multiple parts online. Set split points on a visual waveform, preview segments and download — 100% browser-based.","url":"https://tools.gamezipper.com/convert/audio-splitter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I split an audio file online?", "acceptedAnswer": {"@type": "Answer", "text": "Upload your audio file, click on the waveform to add split points, then click Split. Each segment can be previewed and downloaded individually as a WAV file."}}, {"@type": "Question", "name": "What audio formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports MP3, WAV, OGG, WebM, AAC and any format your browser can decode with the Web Audio API."}}, {"@type": "Question", "name": "Can I split audio into equal parts?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the 'Split into N parts' option to automatically divide the audio into equal-length segments."}}, {"@type": "Question", "name": "Is my audio data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All audio processing happens in your browser. No files are uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/audio-splitter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/audio-splitter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/audio-splitter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="dropZone" class="drop-zone">
+      <div style="font-size:3rem">🎵</div>
+      <p id="dropLabel" style="color:var(--text2)"></p>
+    </div>
+    <input type="file" id="fileInput" accept="audio/*" style="display:none">
+    <div id="editorSection" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <span id="audioInfo" style="font-size:.85rem;color:var(--text2)"></span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label id="splitNLabel" style="font-size:.85rem;color:var(--text2)"></label>
+          <input type="number" id="splitN" value="2" min="2" max="50" style="width:60px;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:.9rem">
+          <button class="gz-btn gz-btn-secondary" id="autoSplitBtn" onclick="autoSplit()"></button>
+        </div>
+      </div>
+      <div class="waveform-wrap">
+        <canvas id="waveform"></canvas>
+        <div id="markers"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin:8px 0">
+        <button class="gz-btn gz-btn-secondary" id="addMarkerBtn" onclick="addMarkerAtMiddle()"></button>
+        <button class="gz-btn" id="splitBtn" onclick="splitAudio()"></button>
+        <button class="gz-btn gz-btn-secondary" id="clearMarkersBtn" onclick="clearMarkers()"></button>
+      </div>
+      <div id="segments"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Splitter',
+    toolDesc: 'Split any audio file into multiple parts — click the waveform to add split points, preview each segment and download individually.',
+    dropLabel: 'Drag & drop an audio file here, or click to select',
+    addMarker: '➕ Add Split Point',
+    splitBtn: '✂️ Split Audio',
+    clearMarkers: 'Clear All',
+    autoSplit: 'Split into N Parts',
+    segment: 'Segment',
+    duration: 'Duration',
+    download: '⬇ Download',
+    fileSize: 'File Size',
+    step1: 'Upload an audio file (MP3, WAV, OGG, WebM)',
+    step2: 'Click on the waveform to place split markers',
+    step3: 'Click "Split Audio" to process each segment',
+    step4: 'Preview and download each segment as WAV',
+  },
+  zh: {
+    toolTitle: '音频分割工具',
+    toolDesc: '将音频文件分割为多个片段 — 点击波形添加分割点，预览并逐个下载。',
+    dropLabel: '拖拽音频文件到此处，或点击选择',
+    addMarker: '➕ 添加分割点',
+    splitBtn: '✂️ 分割音频',
+    clearMarkers: '清除所有',
+    autoSplit: '等分为 N 段',
+    segment: '片段',
+    duration: '时长',
+    download: '⬇ 下载',
+    fileSize: '文件大小',
+    step1: '上传音频文件（MP3、WAV、OGG、WebM）',
+    step2: '点击波形放置分割标记',
+    step3: '点击「分割音频」处理每个片段',
+    step4: '预览并下载每个片段为 WAV',
+  }
+});
+
+const { $, t } = GZ;
+let audioBuffer = null;
+let markers = [];
+let fileName = '';
+
+const dropZone = $('#dropZone');
+const fileInput = $('#fileInput');
+const canvas = $('#waveform');
+const ctx = canvas.getContext('2d');
+
+$('#dropLabel').textContent = t('dropLabel');
+$('#addMarkerBtn').textContent = t('addMarker');
+$('#splitBtn').textContent = t('splitBtn');
+$('#clearMarkersBtn').textContent = t('clearMarkers');
+$('#autoSplitBtn').textContent = t('autoSplit');
+$('#splitNLabel').textContent = t('autoSplit').replace('Split into N Parts','N =');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if(fileInput.files.length) handleFile(fileInput.files[0]); });
+
+async function handleFile(file) {
+  fileName = file.name.replace(/\.[^.]+$/, '');
+  const arrayBuf = await file.arrayBuffer();
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioBuffer = await audioCtx.decodeAudioData(arrayBuf);
+  dropZone.style.display = 'none';
+  $('#editorSection').style.display = 'block';
+  const dur = audioBuffer.duration;
+  $('#audioInfo').textContent = `${file.name} · ${dur.toFixed(1)}s · ${audioBuffer.sampleRate}Hz · ${audioBuffer.numberOfChannels}ch`;
+  markers = [];
+  drawWaveform();
+}
+
+function drawWaveform() {
+  if(!audioBuffer) return;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = 120 * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const w = rect.width, h = 120;
+  const data = audioBuffer.getChannelData(0);
+  const step = Math.ceil(data.length / w);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4ecdc4';
+  for(let i = 0; i < w; i++) {
+    let min = 1, max = -1;
+    for(let j = 0; j < step; j++) {
+      const val = data[i * step + j] || 0;
+      if(val < min) min = val;
+      if(val > max) max = val;
+    }
+    const y1 = (1 + min) * h / 2;
+    const y2 = (1 + max) * h / 2;
+    ctx.fillRect(i, y1, 1, y2 - y1 || 1);
+  }
+  // Draw markers
+  markers.sort((a, b) => a - b);
+  const dur = audioBuffer.duration;
+  markers.forEach((m, idx) => {
+    const x = (m / dur) * w;
+    ctx.fillStyle = '#e94560';
+    ctx.fillRect(x - 1, 0, 2, h);
+    ctx.fillStyle = '#e94560';
+    ctx.font = '10px sans-serif';
+    const label = formatTime(m);
+    ctx.fillText(label, x + 4, 12);
+  });
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60), s = (sec % 60).toFixed(1);
+  return `${m}:${s.padStart(4, '0')}`;
+}
+
+canvas.addEventListener('click', e => {
+  if(!audioBuffer) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const ratio = x / rect.width;
+  const time = ratio * audioBuffer.duration;
+  // Check if clicking near existing marker to remove
+  const nearIdx = markers.findIndex(m => Math.abs(m - time) < audioBuffer.duration * 0.01);
+  if(nearIdx !== -1) {
+    markers.splice(nearIdx, 1);
+  } else {
+    markers.push(time);
+  }
+  drawWaveform();
+});
+
+function addMarkerAtMiddle() {
+  if(!audioBuffer) return;
+  if(markers.length === 0) {
+    markers.push(audioBuffer.duration / 2);
+  } else {
+    // Find the longest segment and split it
+    const points = [0, ...markers.sort((a,b) => a-b), audioBuffer.duration];
+    let maxLen = 0, maxIdx = 0;
+    for(let i = 1; i < points.length; i++) {
+      const len = points[i] - points[i-1];
+      if(len > maxLen) { maxLen = len; maxIdx = i; }
+    }
+    markers.push((points[maxIdx-1] + points[maxIdx]) / 2);
+  }
+  drawWaveform();
+}
+
+function autoSplit() {
+  if(!audioBuffer) return;
+  const n = parseInt($('#splitN').value) || 2;
+  const dur = audioBuffer.duration;
+  markers = [];
+  for(let i = 1; i < n; i++) {
+    markers.push((dur / n) * i);
+  }
+  drawWaveform();
+}
+
+function clearMarkers() {
+  markers = [];
+  drawWaveform();
+  $('#segments').innerHTML = '';
+}
+
+function splitAudio() {
+  if(!audioBuffer || markers.length === 0) return;
+  const points = [0, ...markers.sort((a,b) => a-b), audioBuffer.duration];
+  const segmentsEl = $('#segments');
+  segmentsEl.innerHTML = '';
+
+  for(let i = 0; i < points.length - 1; i++) {
+    const start = points[i];
+    const end = points[i+1];
+    const duration = end - start;
+    const sampleRate = audioBuffer.sampleRate;
+    const channels = audioBuffer.numberOfChannels;
+    const startSample = Math.floor(start * sampleRate);
+    const endSample = Math.floor(end * sampleRate);
+    const length = endSample - startSample;
+
+    // Create WAV blob
+    const numSamples = length * channels;
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+    // WAV header
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * channels * 2, true);
+    view.setUint16(32, channels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, numSamples * 2, true);
+
+    let offset = 44;
+    for(let s = 0; s < length; s++) {
+      for(let ch = 0; ch < channels; ch++) {
+        const val = audioBuffer.getChannelData(ch)[startSample + s] || 0;
+        const clamped = Math.max(-1, Math.min(1, val));
+        view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+
+    const blob = new Blob([buffer], { type: 'audio/wav' });
+    const url = URL.createObjectURL(blob);
+    const card = document.createElement('div');
+    card.className = 'segment-card';
+    card.innerHTML = `
+      <div class="segment-info">
+        <strong>${t('segment')} ${i+1}</strong><br>
+        ${formatTime(start)} → ${formatTime(end)}<br>
+        ${t('duration')}: ${duration.toFixed(1)}s · ${t('fileSize')}: ${(blob.size/1024).toFixed(0)} KB
+      </div>
+      <audio src="${url}" controls></audio>
+      <a href="${url}" download="${fileName}_part${i+1}.wav" class="gz-btn gz-btn-secondary" style="text-decoration:none;font-size:.8rem">${t('download')}</a>
+    `;
+    segmentsEl.appendChild(card);
+  }
+}
+
+function writeString(view, offset, str) {
+  for(let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+}
+
+window.addEventListener('resize', () => { if(audioBuffer) drawWaveform(); });
+
+$('#toolbar').innerHTML = `<button class="gz-btn gz-btn-secondary" onclick="resetTool()">${t('clear')}</button>`;
+function resetTool() {
+  audioBuffer = null; markers = []; fileName = '';
+  dropZone.style.display = 'block';
+  $('#editorSection').style.display = 'none';
+  $('#segments').innerHTML = '';
+  fileInput.value = '';
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🔗', href:'/convert/audio-joiner.html', name:'Audio Joiner'},
+    {icon:'🏎️', href:'/convert/audio-speed.html', name:'Audio Speed'},
+    {icon:'🔊', href:'/convert/audio-volume.html', name:'Audio Volume'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
