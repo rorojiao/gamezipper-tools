@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Email Header Analyzer - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Analyze email headers online for free. Parse SPF, DKIM, DMARC, routing hops, delays, and spam scores. Paste raw email headers to diagnose delivery issues.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/email-header-analyzer.html">
+  <meta property="og:title" content="Email Header Analyzer - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Analyze email headers online for free. Parse SPF, DKIM, DMARC, routing hops, delays, and spam scores.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/email-header-analyzer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Email Header Analyzer - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Analyze email headers online for free. Parse SPF, DKIM, DMARC, routing hops, and spam scores.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-result-table{width:100%;border-collapse:collapse;font-size:.85em;margin-bottom:16px}
+.gz-result-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.gz-result-table td:first-child{font-weight:600;white-space:nowrap;color:var(--text2);width:160px}
+.gz-result-table td:last-child{word-break:break-all}
+.gz-section-title{font-size:1em;font-weight:700;margin:16px 0 8px;padding:8px 0;border-bottom:2px solid var(--gz-accent);display:flex;align-items:center;gap:8px}
+.gz-hop{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;font-size:.85em}
+.gz-hop-header{font-weight:600;margin-bottom:4px;color:var(--gz-accent)}
+.gz-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75em;font-weight:600;margin-left:4px}
+.gz-tag-pass{background:#00d67220;color:#00d672}
+.gz-tag-fail{background:#e9456020;color:#e94560}
+.gz-tag-neutral{background:#feca5720;color:#feca57}
+.gz-tag-info{background:#48dbfb20;color:#48dbfb}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Email Header Analyzer","description":"Analyze email headers online for free. Parse SPF, DKIM, DMARC, routing hops, delays, and spam scores. Paste raw email headers to diagnose delivery issues.","url":"https://tools.gamezipper.com/dev/email-header-analyzer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are email headers?", "acceptedAnswer": {"@type": "Answer", "text": "Email headers are metadata attached to every email that contain information about the sender, recipient, routing path, authentication results, and delivery timestamps."}}, {"@type": "Question", "name": "How do I view email headers?", "acceptedAnswer": {"@type": "Answer", "text": "In Gmail, open the email, click the three dots, select 'Show Original'. In Outlook, right-click the email, select 'View' then 'Internet Headers'. Copy the raw headers and paste them here."}}, {"@type": "Question", "name": "What is SPF, DKIM, and DMARC?", "acceptedAnswer": {"@type": "Answer", "text": "SPF verifies the sending server is authorized, DKIM verifies the email content hasn't been altered, and DMARC aligns both with the From domain for comprehensive email authentication."}}, {"@type": "Question", "name": "Can this tool detect spam or phishing?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The analyzer checks authentication results, looks for suspicious routing patterns, mismatched domains, and other indicators commonly associated with spam and phishing emails."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/email-header-analyzer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/email-header-analyzer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/email-header-analyzer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div><textarea id="input" rows="12" spellcheck="false" placeholder="Paste raw email headers here..."></textarea></div>
+    <div id="results"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Email Header Analyzer',
+    toolDesc: 'Parse and analyze email headers. Check SPF, DKIM, DMARC authentication, trace routing hops, and detect delivery issues.',
+    step1: 'Copy raw email headers from your email client',
+    step2: 'Paste the headers into the input area above',
+    step3: 'Click Analyze to parse the headers',
+    step4: 'Review authentication results, routing path, and delivery details',
+  },
+  zh: {
+    toolTitle: '邮件头分析器',
+    toolDesc: '解析和分析邮件头。检查 SPF、DKIM、DMARC 认证，追踪路由跳数，检测投递问题。',
+    step1: '从邮件客户端复制原始邮件头',
+    step2: '将邮件头粘贴到上方输入区',
+    step3: '点击「分析」解析邮件头',
+    step4: '查看认证结果、路由路径和投递详情',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseHeaders(raw) {
+  // Parse headers into key-value pairs
+  const headers = {};
+  const lines = raw.split('\n');
+  let currentKey = '';
+  for (const line of lines) {
+    if (/^\s/.test(line) && currentKey) {
+      headers[currentKey] += ' ' + line.trim();
+    } else {
+      const m = line.match(/^([a-zA-Z][\w-]*):\s*(.*)/);
+      if (m) {
+        currentKey = m[1].toLowerCase();
+        const val = m[2].trim();
+        if (headers[currentKey]) {
+          if (Array.isArray(headers[currentKey])) headers[currentKey].push(val);
+          else headers[currentKey] = [headers[currentKey], val];
+        } else {
+          headers[currentKey] = val;
+        }
+      }
+    }
+  }
+  return headers;
+}
+
+function analyze() {
+  const raw = $('#input').value.trim();
+  if (!raw) { $('#results').innerHTML = ''; return; }
+  const h = parseHeaders(raw);
+  let html = '';
+
+  // Basic info
+  html += '<div class="gz-section-title">📋 Basic Information</div>';
+  html += '<table class="gz-result-table">';
+  const basics = [
+    ['from', 'From'],
+    ['to', 'To'],
+    ['cc', 'CC'],
+    ['subject', 'Subject'],
+    ['date', 'Date'],
+    ['message-id', 'Message ID'],
+    ['reply-to', 'Reply-To'],
+    ['return-path', 'Return-Path'],
+    ['x-mailer', 'X-Mailer'],
+    ['mime-version', 'MIME Version'],
+    ['content-type', 'Content Type'],
+  ];
+  for (const [key, label] of basics) {
+    if (h[key]) html += `<tr><td>${label}</td><td>${esc(Array.isArray(h[key]) ? h[key][h[key].length-1] : h[key])}</td></tr>`;
+  }
+  html += '</table>';
+
+  // Authentication results
+  html += '<div class="gz-section-title">🔐 Authentication Results</div>';
+  html += '<table class="gz-result-table">';
+  const authKeys = [
+    ['authentication-results', 'Authentication Results'],
+    ['dkim-signature', 'DKIM Signature'],
+    ['received-spf', 'Received-SPF'],
+    ['dmarc-filter', 'DMARC Filter'],
+    ['x-spam-status', 'Spam Status'],
+    ['x-spam-score', 'Spam Score'],
+    ['x-spam-level', 'Spam Level'],
+  ];
+  let hasAuth = false;
+  for (const [key, label] of authKeys) {
+    if (h[key]) {
+      hasAuth = true;
+      let val = Array.isArray(h[key]) ? h[key].join('<br>') : h[key];
+      // Add tags for common results
+      val = val.replace(/pass/gi, '<span class="gz-tag gz-tag-pass">PASS</span>');
+      val = val.replace(/fail/gi, '<span class="gz-tag gz-tag-fail">FAIL</span>');
+      val = val.replace(/neutral/gi, '<span class="gz-tag gz-tag-neutral">NEUTRAL</span>');
+      html += `<tr><td>${label}</td><td>${val}</td></tr>`;
+    }
+  }
+  // Check auth in received headers
+  const receivedHeaders = Array.isArray(h['received']) ? h['received'] : (h['received'] ? [h['received']] : []);
+  for (const r of receivedHeaders) {
+    if (/spf=pass/i.test(r) || /dkim=pass/i.test(r)) {
+      hasAuth = true;
+      break;
+    }
+  }
+  if (!hasAuth) html += '<tr><td colspan="2"><span class="gz-tag gz-tag-info">No authentication headers found</span></td></tr>';
+  html += '</table>';
+
+  // Routing hops
+  html += '<div class="gz-section-title">🗺️ Routing Path</div>';
+  if (receivedHeaders.length > 0) {
+    const hops = receivedHeaders.reverse();
+    hops.forEach((hop, i) => {
+      const fromMatch = hop.match(/from\s+([^\s]+)/i);
+      const byMatch = hop.match(/by\s+([^\s]+)/i);
+      const timeMatch = hop.match(/;\s*(.+)$/);
+      html += `<div class="gz-hop">
+        <div class="gz-hop-header">Hop ${i + 1}${fromMatch ? ' — From: ' + esc(fromMatch[1]) : ''}${byMatch ? ' → To: ' + esc(byMatch[1]) : ''}</div>
+        <div>${timeMatch ? 'Time: ' + esc(timeMatch[1].trim()) : ''}</div>
+        <div style="opacity:.7;font-size:.85em;margin-top:4px">${esc(hop.substring(0, 200))}</div>
+      </div>`;
+    });
+  } else {
+    html += '<p style="color:var(--text3);font-size:.85em">No Received headers found.</p>';
+  }
+
+  // Security warnings
+  html += '<div class="gz-section-title">⚠️ Security Analysis</div>';
+  const warnings = [];
+  const fromVal = Array.isArray(h['from']) ? h['from'][0] : h['from'];
+  const returnPath = Array.isArray(h['return-path']) ? h['return-path'][0] : h['return-path'];
+  if (fromVal && returnPath) {
+    const fromDomain = (fromVal.match(/@([\w.-]+)/) || [])[1];
+    const rpDomain = (returnPath.match(/@([\w.-]+)/) || [])[1];
+    if (fromDomain && rpDomain && fromDomain.toLowerCase() !== rpDomain.toLowerCase()) {
+      warnings.push('<span class="gz-tag gz-tag-fail">MISMATCH</span> From domain and Return-Path domain differ — may indicate spoofing.');
+    }
+  }
+  const allAuthRaw = JSON.stringify(h).toLowerCase();
+  if (allAuthRaw.includes('spf=fail') || allAuthRaw.includes('spf=softfail')) {
+    warnings.push('<span class="gz-tag gz-tag-fail">SPF FAIL</span> SPF authentication failed — the sending server is not authorized.');
+  }
+  if (allAuthRaw.includes('dkim=fail')) {
+    warnings.push('<span class="gz-tag gz-tag-fail">DKIM FAIL</span> DKIM signature verification failed — email content may have been altered.');
+  }
+  if (allAuthRaw.includes('dmarc=fail')) {
+    warnings.push('<span class="gz-tag gz-tag-fail">DMARC FAIL</span> DMARC policy check failed — email does not meet authentication requirements.');
+  }
+  if (warnings.length === 0) {
+    html += '<p style="color:var(--gz-success);font-size:.85em">✓ No obvious security issues detected in headers.</p>';
+  } else {
+    warnings.forEach(w => { html += `<p style="font-size:.85em;margin-bottom:6px">${w}</p>`; });
+  }
+
+  // Raw headers
+  html += '<div class="gz-section-title">📝 All Headers</div>';
+  html += '<table class="gz-result-table">';
+  for (const [key, val] of Object.entries(h)) {
+    const display = Array.isArray(val) ? val.join('<br>') : val;
+    html += `<tr><td>${esc(key)}</td><td>${esc(display)}</td></tr>`;
+  }
+  html += '</table>';
+
+  $('#results').innerHTML = html;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Analyzed ${Object.keys(h).length} header fields</span>`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function loadExample() {
+  $('#input').value = `From: sender@example.com
+To: recipient@gmail.com
+Subject: Test Email Analysis
+Date: Thu, 11 Jun 2026 10:30:00 +0000
+Message-ID: <abc123@example.com>
+Return-Path: <sender@example.com>
+Received: by 2002:a05:6512:1a0b:b0:3d1:fa8c:ec6b with SMTP id d11-20020a0565121a0b00b003d1fa8cec6bmr12345pqb.10.1718100600016;
+        Thu, 11 Jun 2026 10:30:00 -0700 (PDT)
+Received-SPF: pass (google.com: domain of sender@example.com designates 203.0.113.1 as permitted sender) client-ip=203.0.113.1;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@example.com header.s=default header.b=dGhlIHBhc3M;
+       spf=pass (google.com: domain of sender@example.com designates 203.0.113.1 as permitted sender) smtp.mailfrom=sender@example.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=example.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=example.com; s=default;
+        bh=2jUSOH9NhtXEY3vFnz2MXnZodg2gNG1QZWazJk8bss=;
+        b=dGhlIHBhc3Mgc29tZXRoaW5nIGhlcmUg
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+X-Mailer: ExampleMailer 1.0`;
+  analyze();
+}
+
+function doClear() { $('#input').value = ''; $('#results').innerHTML = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="analyze()">${t('analyze') || 'Analyze'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📧', href:'/dev/email-validator.html', name:'Email Validator'},
+    {icon:'📋', href:'/dev/email-header.html', name:'Email Header Viewer'},
+    {icon:'🔗', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
