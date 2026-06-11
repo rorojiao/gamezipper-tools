@@ -93,10 +93,6 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.4-pungent-retry',  // 2026-06-12: tune backoff + re-enable Pungent 10689345 (A/B 7d)
-    // v5.4 (2026-06-12): backoff tuning + Pungent 10689345 re-enabled
-    //   - tools.gamezipper.com fill rate 0% — Superior 11012010 has 0/49 fills, Pungent 10689345 0/40 fills (3-5月曾 3-4 imp/天)
-    //   - 10min streak-1 backoff was too aggressive — Pungent zones had no chance to retry meaningfully
     VERSION: '5.4-tools-tuning',  // 2026-06-12: tune tools backoff curve + re-enable Pungent legacy
     // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
     //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
