@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>YAML to CSV Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert YAML data to CSV format online for free. Paste YAML and get clean CSV output with headers instantly. Supports nested objects and arrays.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/yaml-to-csv.html">
+  <meta property="og:title" content="YAML to CSV Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert YAML data to CSV format online for free. Paste YAML and get clean CSV output with headers instantly.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/yaml-to-csv.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="YAML to CSV Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert YAML data to CSV format online for free. Paste YAML and get clean CSV output with headers instantly.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"YAML to CSV Converter","description":"Convert YAML data to CSV format online for free. Paste YAML and get clean CSV output with headers instantly. Supports nested objects and arrays.","url":"https://tools.gamezipper.com/convert/yaml-to-csv.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert YAML to CSV?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your YAML data into the input area and click Convert. The tool will automatically flatten nested objects and generate CSV with headers."}}, {"@type": "Question", "name": "Can this tool handle nested YAML objects?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Nested objects are flattened using dot notation (e.g., user.name becomes a column header) for clean CSV output."}}, {"@type": "Question", "name": "What YAML formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports standard YAML including objects, arrays, nested structures, multiline strings, and various data types."}}, {"@type": "Question", "name": "Is my YAML data secure?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All conversion happens entirely in your browser. No data is ever uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/yaml-to-csv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/yaml-to-csv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/yaml-to-csv.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'YAML to CSV Converter',
+    toolDesc: 'Convert YAML data to CSV format instantly. Automatically flattens nested objects and generates headers.',
+    step1: 'Paste your YAML data into the input area',
+    step2: 'Choose your output delimiter (comma, semicolon, or tab)',
+    step3: 'Click Convert to generate CSV output',
+    step4: 'Copy the CSV result to your clipboard',
+  },
+  zh: {
+    toolTitle: 'YAML 转 CSV 转换器',
+    toolDesc: '即时将 YAML 数据转换为 CSV 格式。自动展平嵌套对象并生成表头。',
+    step1: '在输入区粘贴 YAML 数据',
+    step2: '选择输出分隔符（逗号、分号或制表符）',
+    step3: '点击「转换」生成 CSV 输出',
+    step4: '将 CSV 结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let outDelim = ',';
+
+function flatten(obj, prefix) {
+  prefix = prefix || '';
+  const result = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const key = prefix ? prefix + '.' + k : k;
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      Object.assign(result, flatten(v, key));
+    } else if (Array.isArray(v)) {
+      result[key] = JSON.stringify(v);
+    } else {
+      result[key] = v;
+    }
+  }
+  return result;
+}
+
+function escapeCSV(val, delim) {
+  const s = String(val == null ? '' : val);
+  if (s.includes(delim) || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+// Simple YAML parser (handles common cases)
+function parseYAML(text) {
+  const lines = text.split('\n');
+  let i = 0;
+
+  function parseValue(val) {
+    val = val.trim();
+    if (val === 'null' || val === '~') return null;
+    if (val === 'true') return true;
+    if (val === 'false') return false;
+    if (val === '' || val === '|' || val === '>') return '';
+    if (/^-?\d+$/.test(val)) return parseInt(val, 10);
+    if (/^-?\d+\.\d+$/.test(val)) return parseFloat(val);
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      return val.slice(1, -1);
+    }
+    if (val.startsWith('[') && val.endsWith(']')) {
+      try { return JSON.parse(val); } catch(e) { return val; }
+    }
+    return val;
+  }
+
+  function getIndent(line) {
+    const m = line.match(/^(\s*)/);
+    return m ? m[1].length : 0;
+  }
+
+  function parseBlock(startIndent) {
+    const obj = {};
+    let lastKey = null;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (line.trim() === '' || line.trim().startsWith('#')) { i++; continue; }
+      const ind = getIndent(line);
+      if (ind < startIndent) break;
+      const content = line.trim();
+      if (content.startsWith('- ')) {
+        // Array item
+        if (!Array.isArray(obj)) return obj;
+        continue;
+      }
+      const colonIdx = content.indexOf(':');
+      if (colonIdx === -1) { i++; continue; }
+      const key = content.substring(0, colonIdx).trim();
+      const valStr = content.substring(colonIdx + 1).trim();
+      if (valStr === '' || valStr === '|' || valStr === '>') {
+        i++;
+        // Check next line for nested object or array
+        if (i < lines.length) {
+          const nextInd = getIndent(lines[i]);
+          if (nextInd > ind) {
+            if (lines[i].trim().startsWith('- ')) {
+              // Array
+              const arr = [];
+              while (i < lines.length && getIndent(lines[i]) >= nextInd) {
+                const itemLine = lines[i].trim();
+                if (itemLine.startsWith('- ')) {
+                  const itemVal = itemLine.substring(2);
+                  if (itemVal.includes(':')) {
+                    i++;
+                    const nested = parseBlock(getIndent(lines[i - 1]) + 2);
+                    arr.push(nested);
+                  } else {
+                    arr.push(parseValue(itemVal));
+                    i++;
+                  }
+                } else { break; }
+              }
+              obj[key] = arr;
+              continue;
+            } else {
+              obj[key] = parseBlock(nextInd);
+              continue;
+            }
+          }
+        }
+        obj[key] = '';
+      } else {
+        obj[key] = parseValue(valStr);
+        i++;
+      }
+    }
+    return obj;
+  }
+
+  i = 0;
+  // Check if root is array
+  while (i < lines.length && (lines[i].trim() === '' || lines[i].trim().startsWith('#'))) i++;
+  if (i < lines.length && lines[i].trim().startsWith('- ')) {
+    // Root is array
+    const arr = [];
+    const rootInd = getIndent(lines[i]);
+    while (i < lines.length) {
+      const line = lines[i];
+      if (line.trim() === '' || line.trim().startsWith('#')) { i++; continue; }
+      const ind = getIndent(line);
+      if (ind < rootInd) break;
+      if (line.trim().startsWith('- ')) {
+        const itemVal = line.trim().substring(2);
+        if (itemVal.includes(':')) {
+          // Object item
+          i++;
+          const obj = parseBlock(ind + 2);
+          // Merge the first key from the item line
+          const colonIdx = itemVal.indexOf(':');
+          const firstKey = itemVal.substring(0, colonIdx).trim();
+          const firstVal = parseValue(itemVal.substring(colonIdx + 1).trim());
+          if (Object.keys(obj).length > 0) {
+            obj[firstKey] = firstVal;
+            // Reorder keys
+            const ordered = {};
+            ordered[firstKey] = firstVal;
+            Object.assign(ordered, obj);
+            arr.push(ordered);
+          } else {
+            const o = {};
+            o[firstKey] = firstVal;
+            arr.push(o);
+          }
+        } else {
+          arr.push(parseValue(itemVal));
+          i++;
+        }
+      } else { break; }
+    }
+    return arr;
+  }
+
+  return parseBlock(0);
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').value = ''; return; }
+  try {
+    const data = parseYAML(inp);
+    let items = Array.isArray(data) ? data : [data];
+    // Flatten all items
+    const flat = items.map(item => flatten(item));
+    // Collect all keys
+    const keys = new Set();
+    flat.forEach(obj => Object.keys(obj).forEach(k => keys.add(k)));
+    const headers = [...keys];
+    // Build CSV
+    let csv = headers.map(h => escapeCSV(h, outDelim)).join(outDelim) + '\n';
+    for (const row of flat) {
+      csv += headers.map(h => escapeCSV(row[h], outDelim)).join(outDelim) + '\n';
+    }
+    $('#output').value = csv.trimEnd();
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${items.length} rows converted with ${headers.length} columns</span>`;
+  } catch (e) {
+    $('#output').value = '';
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `- name: Alice
+  age: 30
+  city: New York
+  role: Engineer
+- name: Bob
+  age: 25
+  city: London
+  role: Designer
+- name: Carol
+  age: 35
+  city: Tokyo
+  role: Manager`;
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <select class="gz-select" onchange="outDelim=this.value;convert()">
+    <option value=",">Comma (,)</option>
+    <option value=";">Semicolon (;)</option>
+    <option value="\t">Tab</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/convert/csv-to-yaml.html', name:'CSV to YAML'},
+    {icon:'📄', href:'/convert/yaml-json.html', name:'YAML to JSON'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'📋', href:'/convert/yaml-to-json.html', name:'YAML to JSON'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
