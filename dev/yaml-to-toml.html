@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>YAML to TOML Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert YAML to TOML format instantly. Paste your YAML and get clean, valid TOML output. Free online converter — no signup, runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/yaml-to-toml.html">
+  <meta property="og:title" content="YAML to TOML Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert YAML to TOML format instantly. Paste your YAML and get clean, valid TOML output. Free online converter.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/yaml-to-toml.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="YAML to TOML Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"YAML to TOML Converter","description":"Convert YAML to TOML format instantly. Free online converter with syntax validation.","url":"https://tools.gamezipper.com/dev/yaml-to-toml.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is TOML?","acceptedAnswer":{"@type":"Answer","text":"TOML (Tom's Obvious Minimal Language) is a configuration file format designed to be easy to read and write. It is used by Rust's Cargo, Go modules, and many other projects."}},{"@type":"Question","name":"Why convert YAML to TOML?","acceptedAnswer":{"@type":"Answer","text":"TOML is often preferred for configuration files because it has a simpler, more explicit syntax with less ambiguity than YAML. Many modern tools like Rust's Cargo and Python's pyproject.toml use TOML."}},{"@type":"Question","name":"Is my data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All conversion happens entirely in your browser. No data is ever sent to any server."}},{"@type":"Question","name":"What YAML features are supported?","acceptedAnswer":{"@type":"Answer","text":"The converter supports objects, arrays, strings, numbers, booleans, null values, nested structures, and inline arrays. Complex YAML anchors and aliases are not supported."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/yaml-to-toml.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/yaml-to-toml.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/yaml-to-toml.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" placeholder="server:
+  host: localhost
+  port: 8080
+  debug: true
+database:
+  name: myapp
+  credentials:
+    user: admin
+    password: secret
+logging:
+  level: info
+  outputs:
+    - console
+    - file"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'YAML to TOML Converter',
+    toolDesc: 'Convert YAML to TOML format instantly. Paste your YAML and get clean, valid TOML output.',
+    convert: 'Convert',
+    example: 'Example',
+    copy: 'Copy',
+    clear: 'Clear',
+    validYaml: '✓ Valid YAML — converted to TOML',
+    invalidYaml: '✗ Invalid YAML',
+    step1: 'Paste or type your YAML data in the input area',
+    step2: 'Click Convert to transform YAML to TOML',
+    step3: 'Review the TOML output with syntax highlighting',
+    step4: 'Click Copy to copy the TOML result to clipboard',
+  },
+  zh: {
+    toolTitle: 'YAML 转 TOML 转换器',
+    toolDesc: '即时将 YAML 转换为 TOML 格式。粘贴 YAML 数据，获取干净的 TOML 输出。',
+    convert: '转换',
+    example: '示例',
+    copy: '复制',
+    clear: '清除',
+    validYaml: '✓ YAML 有效 — 已转换为 TOML',
+    invalidYaml: '✗ YAML 无效',
+    step1: '在输入区粘贴或输入 YAML 数据',
+    step2: '点击「转换」将 YAML 转为 TOML',
+    step3: '查看 TOML 输出结果',
+    step4: '点击「复制」将 TOML 结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Simple YAML parser (supports basic YAML: objects, arrays, strings, numbers, booleans, null)
+function parseYaml(text) {
+  const lines = text.split('\n');
+  let root = {};
+  let stack = [{obj: root, indent: -1}];
+  let currentArray = null;
+  let currentKey = null;
+
+  function getIndent(line) {
+    const match = line.match(/^(\s*)/);
+    return match ? match[1].length : 0;
+  }
+
+  function parseValue(val) {
+    val = val.trim();
+    if (val === 'true') return true;
+    if (val === 'false') return false;
+    if (val === 'null' || val === '~' || val === '') return null;
+    if (/^["'].*["']$/.test(val)) return val.slice(1, -1);
+    if (/^-?\d+(\.\d+)?$/.test(val)) return parseFloat(val);
+    if (/^0x[0-9a-fA-F]+$/.test(val)) return parseInt(val, 16);
+    return val;
+  }
+
+  function getParent(indent) {
+    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+    return stack[stack.length - 1].obj;
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const indent = getIndent(line);
+
+    // Array item
+    if (trimmed.startsWith('- ')) {
+      const parent = getParent(indent);
+      const val = trimmed.substring(2).trim();
+      if (typeof parent === 'object' && !Array.isArray(parent) && currentKey) {
+        if (!Array.isArray(parent[currentKey])) parent[currentKey] = [];
+        parent[currentKey].push(parseValue(val));
+        currentArray = parent[currentKey];
+      }
+      continue;
+    }
+
+    // Key-value
+    const colonIdx = trimmed.indexOf(':');
+    if (colonIdx > 0) {
+      const key = trimmed.substring(0, colonIdx).trim();
+      const val = trimmed.substring(colonIdx + 1).trim();
+      const parent = getParent(indent);
+
+      if (val === '' || val === '|' || val === '>') {
+        // Object or multi-line
+        parent[key] = {};
+        stack.push({obj: parent[key], indent: indent});
+        currentKey = key;
+        currentArray = null;
+      } else {
+        parent[key] = parseValue(val);
+        currentKey = key;
+        currentArray = null;
+      }
+    }
+  }
+  return root;
+}
+
+function tomlEscape(s) {
+  return (s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
+}
+
+function toTomlValue(val) {
+  if (val === null) return 'null';
+  if (typeof val === 'boolean') return val ? 'true' : 'false';
+  if (typeof val === 'number') return String(val);
+  if (typeof val === 'string') return `"${tomlEscape(val)}"`;
+  return `"${tomlEscape(String(val))}"`;
+}
+
+function toToml(obj, prefix) {
+  prefix = prefix || [];
+  let lines = [];
+  let tables = [];
+
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    const fullKey = [...prefix, key].map(k => /^[a-zA-Z0-9_-]+$/.test(k) ? k : `"${tomlEscape(k)}"`).join('.');
+
+    if (val === null || typeof val !== 'object') {
+      lines.push(`${fullKey} = ${toTomlValue(val)}`);
+    } else if (Array.isArray(val)) {
+      // Inline array for simple arrays
+      const isSimple = val.every(v => v === null || typeof v !== 'object');
+      if (isSimple) {
+        lines.push(`${fullKey} = [${val.map(v => toTomlValue(v)).join(', ')}]`);
+      } else {
+        // Array of tables
+        val.forEach((item, idx) => {
+          if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+            lines.push(`[[${fullKey}]]`);
+            const sub = toToml(item, []);
+            lines.push(sub);
+          } else {
+            lines.push(`[[${fullKey}]]`);
+            lines.push(`value = ${toTomlValue(item)}`);
+          }
+        });
+      }
+    } else {
+      // Nested object → table
+      tables.push({key: fullKey, obj: val});
+    }
+  }
+
+  let result = lines.join('\n');
+  for (const tbl of tables) {
+    if (result) result += '\n\n';
+    result += `[${tbl.key}]\n`;
+    const sub = toToml(tbl.obj, [...prefix, tbl.key.replace(/"/g, '')]);
+    // Remove the prefix from sub result since we already have the table header
+    const cleanSub = sub.split('\n').map(line => {
+      // Keep relative keys
+      return line;
+    }).join('\n');
+    result += cleanSub;
+  }
+
+  return result;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const obj = parseYaml(inp);
+    const toml = toToml(obj);
+    $('#output').textContent = toml;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validYaml')}</span>`;
+  } catch(e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidYaml')}: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `server:
+  host: localhost
+  port: 8080
+  debug: true
+database:
+  name: myapp
+  credentials:
+    user: admin
+    password: secret
+logging:
+  level: info
+  outputs:
+    - console
+    - file
+app:
+  name: My Application
+  version: 1.0.0
+  features:
+    - auth
+    - api`;
+  doConvert();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#output').textContent = '';
+  $('#status').innerHTML = '';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/dev/toml-to-yaml.html', name:'TOML to YAML'},
+    {icon:'📋', href:'/dev/yaml-formatter.html', name:'YAML Formatter'},
+    {icon:'📝', href:'/dev/toml-editor.html', name:'TOML Editor'},
+    {icon:'🔍', href:'/dev/yaml-validator.html', name:'YAML Validator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

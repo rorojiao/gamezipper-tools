@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>IP Geolocation Lookup - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Look up IP address geolocation, ISP, ASN, city, country, timezone and more. Free IP geolocation tool — enter any IP or auto-detect your own.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/ip-geolocation.html">
+  <meta property="og:title" content="IP Geolocation Lookup - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Look up IP address geolocation, ISP, ASN, city, country, timezone and more. Free IP geolocation tool — enter any IP or auto-detect your own.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/ip-geolocation.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="IP Geolocation Lookup - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.ip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:16px}
+.ip-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;transition:transform .2s}
+.ip-card:hover{transform:translateY(-2px)}
+.ip-card .label{font-size:.8em;color:var(--text2);margin-bottom:4px}
+.ip-card .value{font-size:1.05em;font-weight:600;word-break:break-all}
+.ip-card .value.empty{opacity:.4;font-style:italic}
+#ip-input{width:100%;max-width:400px}
+.ip-map{width:100%;height:300px;border-radius:12px;border:1px solid var(--border);margin-top:16px;background:var(--glass)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IP Geolocation Lookup","description":"Look up IP address geolocation, ISP, ASN, city, country, timezone and more. Free IP geolocation tool.","url":"https://tools.gamezipper.com/dev/ip-geolocation.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does IP geolocation work?","acceptedAnswer":{"@type":"Answer","text":"IP geolocation uses public databases to map an IP address to a physical location including country, city, timezone, and ISP information. It queries the IP API in real-time."}},{"@type":"Question","name":"Is my IP lookup private?","acceptedAnswer":{"@type":"Answer","text":"Yes. The lookup is performed client-side using a public API. No data is stored on any server. Your IP is only sent to the free geolocation API to retrieve results."}},{"@type":"Question","name":"How accurate is IP geolocation?","acceptedAnswer":{"@type":"Answer","text":"IP geolocation is accurate to the city level in most cases. It cannot pinpoint exact addresses. Accuracy depends on the IP database and ISP infrastructure."}},{"@type":"Question","name":"Can I look up any IP address?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can enter any public IPv4 or IPv6 address. Private IP addresses (192.168.x.x, 10.x.x.x) cannot be geolocated as they are not routable on the internet."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ip-geolocation.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ip-geolocation.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ip-geolocation.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+      <input id="ip-input" type="text" class="gz-input" placeholder="Enter IP address (e.g. 8.8.8.8)">
+    </div>
+    <div id="status" style="margin-top:12px"></div>
+    <div id="results" class="ip-grid"></div>
+    <div id="map-container" style="display:none">
+      <iframe id="map-frame" class="ip-map" frameborder="0" scrolling="no"></iframe>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'IP Geolocation Lookup',
+    toolDesc: 'Look up any IP address to find its geolocation, ISP, ASN, timezone, and more — or auto-detect your own IP.',
+    lookup: 'Lookup',
+    myIp: 'My IP',
+    clear: 'Clear',
+    loading: 'Looking up...',
+    noResults: 'Enter an IP address and click Lookup, or click My IP to auto-detect.',
+    invalidIp: 'Please enter a valid IPv4 or IPv6 address.',
+    error: 'Lookup failed. Please try again.',
+    field_ip: 'IP Address',
+    field_city: 'City',
+    field_region: 'Region',
+    field_country: 'Country',
+    field_location: 'Location',
+    field_timezone: 'Timezone',
+    field_isp: 'ISP',
+    field_org: 'Organization',
+    field_as: 'AS Number',
+    field_postal: 'Postal Code',
+    field_asn: 'ASN',
+    step1: 'Enter an IP address or click "My IP" to auto-detect',
+    step2: 'Click "Lookup" to fetch geolocation data',
+    step3: 'View detailed results including city, country, ISP, and timezone',
+    step4: 'See the approximate location on the map',
+  },
+  zh: {
+    toolTitle: 'IP 地理位置查询',
+    toolDesc: '查询任意 IP 地址的地理位置、ISP、ASN、时区等信息，也可自动检测您的 IP。',
+    lookup: '查询',
+    myIp: '我的 IP',
+    clear: '清除',
+    loading: '正在查询...',
+    noResults: '输入 IP 地址并点击查询，或点击"我的 IP"自动检测。',
+    invalidIp: '请输入有效的 IPv4 或 IPv6 地址。',
+    error: '查询失败，请重试。',
+    field_ip: 'IP 地址',
+    field_city: '城市',
+    field_region: '地区',
+    field_country: '国家',
+    field_location: '坐标',
+    field_timezone: '时区',
+    field_isp: 'ISP',
+    field_org: '组织',
+    field_as: 'AS 编号',
+    field_postal: '邮政编码',
+    field_asn: 'ASN',
+    step1: '输入 IP 地址或点击"我的 IP"自动检测',
+    step2: '点击"查询"获取地理位置数据',
+    step3: '查看详细结果，包括城市、国家、ISP 和时区',
+    step4: '在地图上查看大致位置',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function isValidIp(ip) {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) || /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/.test(ip);
+}
+
+function renderResult(data) {
+  const fields = [
+    { label: t('field_ip'), value: data.query },
+    { label: t('field_city'), value: data.city },
+    { label: t('field_region'), value: data.regionName },
+    { label: t('field_country'), value: data.country },
+    { label: t('field_location'), value: data.lat && data.lon ? `${data.lat}, ${data.lon}` : '' },
+    { label: t('field_timezone'), value: data.timezone },
+    { label: t('field_isp'), value: data.isp },
+    { label: t('field_org'), value: data.org },
+    { label: t('field_asn'), value: data.as },
+    { label: t('field_postal'), value: data.zip },
+  ];
+
+  $('#results').innerHTML = fields.map(f =>
+    `<div class="ip-card"><div class="label">${f.label}</div><div class="value ${f.value ? '' : 'empty'}">${f.value || '—'}</div></div>`
+  ).join('');
+
+  if (data.lat && data.lon) {
+    $('#map-container').style.display = 'block';
+    $('#map-frame').src = `https://www.openstreetmap.org/export/embed.html?bbox=${data.lon-0.5},${data.lat-0.5},${data.lon+0.5},${data.lat+0.5}&layer=mapnik&marker=${data.lat},${data.lon}`;
+  } else {
+    $('#map-container').style.display = 'none';
+  }
+}
+
+async function doLookup(ip) {
+  const target = ip || '';
+  $('#status').innerHTML = `<span style="color:var(--text2)">${t('loading')}</span>`;
+  $('#results').innerHTML = '';
+  $('#map-container').style.display = 'none';
+
+  try {
+    const url = target ? `http://ip-api.com/json/${target}` : 'http://ip-api.com/json/';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.status === 'success') {
+      renderResult(data);
+      $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${data.query}</span>`;
+    } else {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${data.message || t('error')}</span>`;
+    }
+  } catch(e) {
+    // Fallback to another API
+    try {
+      const url2 = target ? `https://ipapi.co/${target}/json/` : 'https://ipapi.co/json/';
+      const res2 = await fetch(url2);
+      const d = await res2.json();
+      if (d.error) throw new Error(d.reason);
+      renderResult({
+        query: d.ip, city: d.city, regionName: d.region, country: d.country_name,
+        lat: d.latitude, lon: d.longitude, timezone: d.timezone, isp: d.org,
+        org: d.org, as: d.asn, zip: d.postal
+      });
+      $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${d.ip}</span>`;
+    } catch(e2) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}</span>`;
+    }
+  }
+}
+
+function onLookup() {
+  const ip = $('#ip-input').value.trim();
+  if (ip && !isValidIp(ip)) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidIp')}</span>`;
+    return;
+  }
+  doLookup(ip);
+}
+
+function onMyIp() {
+  $('#ip-input').value = '';
+  doLookup('');
+}
+
+function doClear() {
+  $('#ip-input').value = '';
+  $('#results').innerHTML = '';
+  $('#map-container').style.display = 'none';
+  $('#status').innerHTML = `<span style="color:var(--text2)">${t('noResults')}</span>`;
+}
+
+$('#ip-input').addEventListener('keydown', e => { if (e.key === 'Enter') onLookup(); });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="onLookup()">${t('lookup')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="onMyIp()">${t('myIp')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#status').innerHTML = `<span style="color:var(--text2)">${t('noResults')}</span>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/what-is-my-ip.html', name:'What Is My IP'},
+    {icon:'🔍', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📡', href:'/dev/http-headers-checker.html', name:'HTTP Headers'},
+    {icon:'🔐', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
