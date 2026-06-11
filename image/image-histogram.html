@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image Histogram Analyzer - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Analyze image color histograms — view RGB channel distribution, luminance, brightness and contrast stats. Drag and drop, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/image/image-histogram.html">
+  <meta property="og:title" content="Image Histogram Analyzer - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Analyze image color histograms — view RGB channel distribution, luminance, brightness and contrast stats. Drag and drop, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/image/image-histogram.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Image Histogram Analyzer - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--gz-border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;margin:12px 0;transition:border .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--gz-accent)}
+#preview{max-width:100%;max-height:300px;border-radius:8px;display:block;margin:12px auto}
+canvas{max-width:100%;border-radius:8px;display:block;margin:8px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:12px 0}
+.stat-card{background:var(--gz-card);border-radius:8px;padding:12px;text-align:center}
+.stat-card .val{font-size:1.4em;font-weight:700}
+.stat-card .lbl{font-size:.78em;opacity:.7;margin-top:4px}
+.channel-toggle{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
+.channel-toggle button{padding:4px 14px;border-radius:20px;border:2px solid;font-size:.85em;font-weight:600;cursor:pointer;opacity:.4;transition:opacity .2s}
+.channel-toggle button.active{opacity:1}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Histogram Analyzer","description":"Analyze image color histograms — view RGB channel distribution, luminance, brightness and contrast stats. Drag and drop, no upload.","url":"https://tools.gamezipper.com/image/image-histogram.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an image histogram?", "acceptedAnswer": {"@type": "Answer", "text": "An image histogram is a graphical representation of the tonal distribution in a digital image. It plots the number of pixels for each tonal value (0-255) for each RGB channel."}}, {"@type": "Question", "name": "How do I read a histogram?", "acceptedAnswer": {"@type": "Answer", "text": "The left side shows shadows (dark), the middle shows midtones, and the right side shows highlights (bright). A well-exposed photo typically has a balanced spread across the range."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All image analysis happens entirely in your browser using Canvas API. No data is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/image-histogram.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/image-histogram.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/image-histogram.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="drop" data-i18n="drop"></div>
+    <input type="file" id="file" accept="image/*" hidden>
+    <img id="preview" style="display:none">
+    <div class="channel-toggle">
+      <button class="active" style="border-color:#e94560;color:#e94560" onclick="toggleCh(this,'r')">R</button>
+      <button class="active" style="border-color:#00d672;color:#00d672" onclick="toggleCh(this,'g')">G</button>
+      <button class="active" style="border-color:#61afef;color:#61afef" onclick="toggleCh(this,'b')">B</button>
+      <button class="active" style="border-color:#aaa;color:#aaa" onclick="toggleCh(this,'l')">Luma</button>
+    </div>
+    <canvas id="histCanvas" width="512" height="200"></canvas>
+    <div class="stats-grid" id="stats"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Histogram Analyzer',
+    toolDesc: 'Analyze image color histograms — view RGB channel distribution, luminance, brightness and contrast stats. Drag and drop, no upload.',
+    drop: '📷 Drag & drop an image or click to browse',
+    meanR: 'Mean R', meanG: 'Mean G', meanB: 'Mean B',
+    meanLuma: 'Mean Luma', contrast: 'Contrast', brightness: 'Brightness',
+    totalPixels: 'Total Pixels', dominant: 'Dominant',
+    step1: 'Drop or select an image file',
+    step2: 'View the RGB and luminance histograms',
+    step3: 'Check brightness, contrast and channel statistics',
+    step4: 'Toggle channels on/off to compare distributions',
+  },
+  zh: {
+    toolTitle: '图片直方图分析器',
+    toolDesc: '分析图片色彩直方图 — 查看 RGB 通道分布、亮度、对比度统计。拖拽上传，无需上传到服务器。',
+    drop: '📷 拖拽图片到此处或点击选择文件',
+    meanR: '均值 R', meanG: '均值 G', meanB: '均值 B',
+    meanLuma: '均值亮度', contrast: '对比度', brightness: '亮度',
+    totalPixels: '总像素', dominant: '主导通道',
+    step1: '拖拽或选择图片文件',
+    step2: '查看 RGB 和亮度直方图',
+    step3: '检查亮度、对比度和通道统计',
+    step4: '切换通道开关来比较分布',
+  }
+});
+
+const { $, t } = GZ;
+let histData = null;
+const channels = {r:true,g:true,b:true,l:true};
+
+function toggleCh(btn, ch) {
+  channels[ch] = !channels[ch];
+  btn.classList.toggle('active');
+  if (histData) drawHist();
+}
+
+function analyze(img) {
+  const canvas = document.createElement('canvas');
+  const w = Math.min(img.naturalWidth, 800);
+  const h = Math.round(img.naturalHeight * w / img.naturalWidth);
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  const data = ctx.getImageData(0, 0, w, h).data;
+  const rH = new Uint32Array(256), gH = new Uint32Array(256), bH = new Uint32Array(256), lH = new Uint32Array(256);
+  let sumR=0,sumG=0,sumB=0,sumL=0,n=w*h;
+  for (let i=0;i<data.length;i+=4){
+    const r=data[i],g=data[i+1],b=data[i+2];
+    rH[r]++; gH[g]++; bH[b]++;
+    const l=Math.round(0.299*r+0.587*g+0.114*b);
+    lH[l]++;
+    sumR+=r; sumG+=g; sumB+=b; sumL+=l;
+  }
+  const meanR=sumR/n, meanG=sumG/n, meanB=sumB/n, meanL=sumL/n;
+  let contrastSum=0;
+  for (let i=0;i<data.length;i+=4){
+    const l=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
+    contrastSum+=(l-meanL)*(l-meanL);
+  }
+  const contrast = Math.sqrt(contrastSum/n);
+  histData = {rH,gH,bH,lH,meanR,meanG,meanB,meanL,contrast,n};
+  drawHist();
+  const dom = meanR>=meanG&&meanR>=meanB?'Red':meanG>=meanB?'Green':'Blue';
+  $('#stats').innerHTML = `
+    <div class="stat-card"><div class="val" style="color:#e94560">${meanR.toFixed(1)}</div><div class="lbl">${t('meanR')}</div></div>
+    <div class="stat-card"><div class="val" style="color:#00d672">${meanG.toFixed(1)}</div><div class="lbl">${t('meanG')}</div></div>
+    <div class="stat-card"><div class="val" style="color:#61afef">${meanB.toFixed(1)}</div><div class="lbl">${t('meanB')}</div></div>
+    <div class="stat-card"><div class="val">${meanL.toFixed(1)}</div><div class="lbl">${t('meanLuma')}</div></div>
+    <div class="stat-card"><div class="val">${contrast.toFixed(1)}</div><div class="lbl">${t('contrast')}</div></div>
+    <div class="stat-card"><div class="val">${(meanL/255*100).toFixed(0)}%</div><div class="lbl">${t('brightness')}</div></div>
+    <div class="stat-card"><div class="val">${(n/1000000).toFixed(2)}M</div><div class="lbl">${t('totalPixels')}</div></div>
+    <div class="stat-card"><div class="val">${dom}</div><div class="lbl">${t('dominant')}</div></div>`;
+}
+
+function drawHist() {
+  if (!histData) return;
+  const canvas=$('#histCanvas'), ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const maxVal = Math.max(
+    ...(channels.r?histData.rH:[]),
+    ...(channels.g?histData.gH:[]),
+    ...(channels.b?histData.bH:[]),
+    ...(channels.l?histData.lH:[])
+  ) || 1;
+  const w=canvas.width, h=canvas.height;
+  function drawCurve(hist, color) {
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    for (let i=0;i<256;i++){
+      const x = i/255*w;
+      const y = h - (hist[i]/maxVal)*h*0.95;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.fillStyle = color + '33';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i=0;i<256;i++){
+      const x = i/255*w;
+      const y = h - (hist[i]/maxVal)*h*0.95;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  if(channels.r) drawCurve(histData.rH, '#e94560');
+  if(channels.g) drawCurve(histData.gH, '#00d672');
+  if(channels.b) drawCurve(histData.bH, '#61afef');
+  if(channels.l) drawCurve(histData.lH, '#888888');
+}
+
+const drop=$('#drop'), file=$('#file');
+drop.addEventListener('click',()=>file.click());
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('dragover')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('dragover'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');loadFile(e.dataTransfer.files[0])});
+file.addEventListener('change',e=>loadFile(e.target.files[0]));
+
+function loadFile(f) {
+  if(!f||!f.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = $('#preview');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    img.onload = () => analyze(img);
+  };
+  reader.readAsDataURL(f);
+}
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/color-extractor.html', name:'Color Extractor'},
+    {icon:'📸', href:'/image/exif-viewer.html', name:'EXIF Viewer'},
+    {icon:'🎨', href:'/color/picker.html', name:'Color Picker'},
+    {icon:'🔍', href:'/image/format-detector.html', name:'Format Detector'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
