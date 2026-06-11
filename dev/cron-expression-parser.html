@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Cron Expression Parser & Generator - Free Online | GameZipper Tools</title>
+  <meta name="description" content="Parse, validate and generate cron expressions with a visual schedule builder. See next run times, human-readable description — free online tool.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/cron-expression-parser.html">
+  <meta property="og:title" content="Cron Expression Parser & Generator - Free Online | GameZipper Tools">
+  <meta property="og:description" content="Parse, validate and generate cron expressions with a visual schedule builder. See next run times — free online.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/cron-expression-parser.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Cron Expression Parser & Generator - Free Online | GameZipper Tools">
+  <meta name="twitter:description" content="Parse, validate and generate cron expressions with a visual schedule builder. Free online tool.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.cron-input{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.cron-input input{font-family:monospace;font-size:1.1em;background:var(--glass2);border:1px solid var(--border);color:var(--accent);border-radius:8px;padding:10px 16px;flex:1;min-width:200px}
+.fields{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.field{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.field label{display:block;font-size:.75em;color:var(--text2);font-weight:600;margin-bottom:4px}
+.field select{width:100%;background:var(--glass);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.presets button{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);cursor:pointer;font-size:.8em;transition:all .2s}
+.presets button:hover{border-color:var(--accent);color:var(--accent)}
+.result-box{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.result-box h3{margin:0 0 8px;font-size:.95em;color:var(--accent)}
+.desc{font-size:1.1em;font-weight:600;line-height:1.5;margin-bottom:8px}
+.next-runs{font-family:monospace;font-size:.85em;line-height:2}
+.next-runs .run{padding:2px 8px;border-radius:4px;display:inline-block;margin:2px}
+.next-runs .run:nth-child(odd){background:rgba(78,205,196,.1)}
+.error{color:#e94560;font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Cron Expression Parser & Generator","description":"Parse, validate and generate cron expressions with a visual schedule builder. See next run times — free online.","url":"https://tools.gamezipper.com/dev/cron-expression-parser.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a cron expression?", "acceptedAnswer": {"@type": "Answer", "text": "A cron expression is a string of 5 fields (minute, hour, day-of-month, month, day-of-week) used to schedule recurring tasks in Unix-like operating systems and many cloud services."}}, {"@type": "Question", "name": "What does */5 * * * * mean?", "acceptedAnswer": {"@type": "Answer", "text": "It means 'every 5 minutes'. The */5 in the minute field means 'every 5th minute', and the asterisks in other fields mean 'every hour, every day, every month, every day of week'."}}, {"@type": "Question", "name": "Does this support 6-field cron expressions?", "acceptedAnswer": {"@type": "Answer", "text": "This tool supports standard 5-field cron expressions (minute, hour, day-of-month, month, day-of-week) as used in most systems. Some platforms add a seconds field."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/cron-expression-parser.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/cron-expression-parser.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/cron-expression-parser.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="presets" id="presets"></div>
+    <div class="cron-input">
+      <input type="text" id="cron" value="*/5 * * * *" placeholder="*/5 * * * *" spellcheck="false">
+      <button class="gz-btn" id="btn-parse">🔍 Parse</button>
+    </div>
+    <div id="error" class="error" style="display:none"></div>
+    <div class="result-box" id="result-desc" style="display:none">
+      <h3 id="lbl-human"></h3>
+      <div class="desc" id="human-desc"></div>
+    </div>
+    <div class="result-box" id="result-runs" style="display:none">
+      <h3 id="lbl-next"></h3>
+      <div class="next-runs" id="next-runs"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Cron Expression Parser & Generator',
+    toolDesc: 'Parse and validate cron expressions with human-readable descriptions. See next execution times, use presets — free online tool for developers.',
+    parse: '🔍 Parse',
+    lblHuman: '📋 Human-Readable Description',
+    lblNext: '⏰ Next 10 Execution Times',
+    presetEveryMin: 'Every minute',
+    presetEvery5Min: 'Every 5 min',
+    presetEveryHour: 'Every hour',
+    presetDaily: 'Daily midnight',
+    presetWeekly: 'Weekly (Mon)',
+    presetMonthly: 'Monthly (1st)',
+    presetWeekday: 'Weekdays 9am',
+    step1: 'Enter a cron expression or choose a preset',
+    step2: 'Click "Parse" to analyze',
+    step3: 'See the human-readable description',
+    step4: 'View the next 10 scheduled execution times',
+    invalidCron: 'Invalid cron expression. Must have 5 fields: minute hour day-of-month month day-of-week',
+    every: 'Every',
+    minute: 'minute',
+    hour: 'hour',
+    day: 'day',
+    month: 'month',
+    dayOfWeek: 'day of week',
+    at: 'at',
+    from: 'from',
+    through: 'through',
+  },
+  zh: {
+    toolTitle: 'Cron 表达式解析器',
+    toolDesc: '解析和验证 Cron 表达式，提供人类可读的描述。查看下次执行时间，使用预设模板 — 免费开发者工具。',
+    parse: '🔍 解析',
+    lblHuman: '📋 人类可读描述',
+    lblNext: '⏰ 下次 10 次执行时间',
+    presetEveryMin: '每分钟',
+    presetEvery5Min: '每 5 分钟',
+    presetEveryHour: '每小时',
+    presetDaily: '每天午夜',
+    presetWeekly: '每周一',
+    presetMonthly: '每月 1 日',
+    presetWeekday: '工作日 9 点',
+    step1: '输入 Cron 表达式或选择预设',
+    step2: '点击「解析」进行分析',
+    step3: '查看人类可读的描述',
+    step4: '查看下次 10 个计划执行时间',
+    invalidCron: '无效的 Cron 表达式。必须包含 5 个字段：分 时 日 月 周',
+    every: '每',
+    minute: '分钟',
+    hour: '小时',
+    day: '日',
+    month: '月',
+    dayOfWeek: '星期',
+    at: '在',
+    from: '从',
+    through: '到',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const PRESETS = [
+  {label: t('presetEveryMin'), expr: '* * * * *'},
+  {label: t('presetEvery5Min'), expr: '*/5 * * * *'},
+  {label: t('presetEveryHour'), expr: '0 * * * *'},
+  {label: t('presetDaily'), expr: '0 0 * * *'},
+  {label: t('presetWeekly'), expr: '0 0 * * 1'},
+  {label: t('presetMonthly'), expr: '0 0 1 * *'},
+  {label: t('presetWeekday'), expr: '0 9 * * 1-5'},
+];
+
+$('#presets').innerHTML = PRESETS.map(p => `<button data-expr="${p.expr}">${p.label}</button>`).join('');
+document.querySelectorAll('#presets button').forEach(btn => {
+  btn.onclick = () => { $('#cron').value = btn.dataset.expr; parseCron(); };
+});
+
+$('#lbl-human').textContent = t('lblHuman');
+$('#lbl-next').textContent = t('lblNext');
+
+const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW_NAMES = ['','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function parseField(field, min, max, name) {
+  if (field === '*') return t('every') + ' ' + name;
+  if (field.startsWith('*/')) return t('every') + ' ' + field.slice(2) + ' ' + name + 's';
+  if (field.includes('-')) {
+    const [a, b] = field.split('-');
+    return name + ' ' + t('from') + ' ' + a + ' ' + t('through') + ' ' + b;
+  }
+  if (field.includes(',')) return name + ' ' + field.split(',').join(', ');
+  return name + ' ' + field;
+}
+
+function parseCron() {
+  const expr = $('#cron').value.trim();
+  const parts = expr.split(/\s+/);
+  if (parts.length !== 5) {
+    $('#error').textContent = t('invalidCron');
+    $('#error').style.display = 'block';
+    $('#result-desc').style.display = 'none';
+    $('#result-runs').style.display = 'none';
+    return;
+  }
+  $('#error').style.display = 'none';
+
+  const [minute, hour, dom, month, dow] = parts;
+  const desc = [
+    parseField(minute, 0, 59, t('minute')),
+    parseField(hour, 0, 23, t('hour')),
+    parseField(dom, 1, 31, t('day')),
+    parseField(month, 1, 12, t('month')),
+    parseField(dow, 0, 6, t('dayOfWeek')),
+  ].join(', ');
+
+  $('#human-desc').textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
+  $('#result-desc').style.display = 'block';
+
+  // Calculate next run times
+  const nextRuns = getNextRuns(parts, 10);
+  $('#next-runs').innerHTML = nextRuns.map(d => `<span class="run">${d}</span>`).join('');
+  $('#result-runs').style.display = 'block';
+}
+
+function getNextRuns(parts, count) {
+  const runs = [];
+  const [minField, hourField, domField, monthField, dowField] = parts;
+
+  function matches(field, val, min, max) {
+    if (field === '*') return true;
+    if (field.startsWith('*/')) return val % parseInt(field.slice(2)) === 0;
+    if (field.includes(',')) return field.split(',').map(Number).includes(val);
+    if (field.includes('-')) { const [a,b] = field.split('-').map(Number); return val >= a && val <= b; }
+    return parseInt(field) === val;
+  }
+
+  let d = new Date();
+  d.setSeconds(0, 0);
+  d.setMinutes(d.getMinutes() + 1);
+
+  const maxIter = 525600; // max 1 year of minutes
+  let iter = 0;
+  while (runs.length < count && iter < maxIter) {
+    iter++;
+    if (matches(minField, d.getMinutes(), 0, 59) &&
+        matches(hourField, d.getHours(), 0, 23) &&
+        matches(domField, d.getDate(), 1, 31) &&
+        matches(monthField, d.getMonth() + 1, 1, 12) &&
+        matches(dowField, d.getDay(), 0, 6)) {
+      runs.push(d.toLocaleString());
+    }
+    d.setMinutes(d.getMinutes() + 1);
+  }
+  return runs;
+}
+
+$('#btn-parse').onclick = parseCron;
+$('#cron').onkeydown = e => { if (e.key === 'Enter') parseCron(); };
+
+// Parse on load
+parseCron();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {href:'/dev/regex-tester.html',icon:'🔬',name:'Regex Tester'},
+    {href:'/dev/json-formatter.html',icon:'{}',name:'JSON Formatter'},
+    {href:'/dev/jwt-decoder.html',icon:'🔑',name:'JWT Decoder'},
+    {href:'/dev/uuid-generator.html',icon:'🆔',name:'UUID Generator'},
+  ]
+});
+</script>
+</body>
+</html>
