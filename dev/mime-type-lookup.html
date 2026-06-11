@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>MIME Type Lookup - Find File MIME Types | GameZipper Tools</title>
+  <meta name="description" content="Look up MIME types by file extension or find extensions by MIME type. Complete database of 600+ MIME types. Free online MIME type reference tool.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/mime-type-lookup.html">
+  <meta property="og:title" content="MIME Type Lookup - Find File MIME Types | GameZipper Tools">
+  <meta property="og:description" content="Look up MIME types by file extension or find extensions by MIME type. Complete database of 600+ MIME types.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/mime-type-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MIME Type Lookup - Find File MIME Types | GameZipper Tools">
+<meta name="twitter:description" content="Look up MIME types by file extension or find extensions by MIME type. Complete database of 600+ MIME types.">
+<meta name="twitter:image:alt" content="GameZipper MIME Type Lookup">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.search-box{display:flex;gap:8px;margin:12px 0}
+.search-box input{flex:1;padding:12px;border:2px solid var(--gz-border);border-radius:8px;font-size:1em;background:var(--gz-bg);color:var(--gz-fg)}
+.mode-toggle{display:flex;gap:4px;margin:8px 0}
+.mode-toggle button{padding:8px 16px;border-radius:8px;border:2px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-fg);cursor:pointer;font-size:.88em;transition:all .2s}
+.mode-toggle button.active{border-color:var(--gz-accent);background:var(--gz-accent);color:#fff}
+#results{margin:12px 0}
+.mime-card{background:var(--gz-card);border-radius:8px;padding:12px 16px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;font-size:.88em;cursor:pointer;transition:background .2s}
+.mime-card:hover{background:var(--gz-border)}
+.mime-card .ext{font-weight:700;color:var(--gz-accent);min-width:80px}
+.mime-card .type{flex:1;margin:0 12px;font-family:monospace;word-break:break-all}
+.mime-card .copy-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-fg);cursor:pointer;font-size:.78em}
+.count-badge{display:inline-block;background:var(--gz-accent);color:#fff;padding:2px 10px;border-radius:12px;font-size:.78em;margin-left:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"MIME Type Lookup","description":"Look up MIME types by file extension or find extensions by MIME type. Complete database of 600+ MIME types.","url":"https://tools.gamezipper.com/dev/mime-type-lookup.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a MIME type?","acceptedAnswer":{"@type":"Answer","text":"A MIME type (Multipurpose Internet Mail Extensions) is a standard that indicates the nature and format of a document, file, or assortment of bytes. It is used by browsers and servers to determine how to handle content."}},{"@type":"Question","name":"Why do MIME types matter?","acceptedAnswer":{"@type":"Answer","text":"MIME types are essential for web development — they tell browsers how to process files, affect Content-Type headers, and are required for proper file uploads, downloads, and API responses."}},{"@type":"Question","name":"How do I set the correct MIME type?","acceptedAnswer":{"@type":"Answer","text":"Set the Content-Type HTTP header to the correct MIME type. For example, use 'text/html' for HTML files, 'application/json' for JSON, and 'image/png' for PNG images."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/mime-type-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/mime-type-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/mime-type-lookup.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-toggle">
+      <button class="active" id="mode-ext" onclick="setMode('ext')">.ext → MIME</button>
+      <button id="mode-mime" onclick="setMode('mime')">MIME → .ext</button>
+    </div>
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Type an extension (e.g. pdf) or MIME type..." autofocus>
+    </div>
+    <div id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'MIME Type Lookup',
+    toolDesc: 'Search MIME types by file extension or find file extensions by MIME type. Complete database of 600+ standard MIME types.',
+    copy: 'Copy',
+    copied: 'Copied!',
+    noResults: 'No matching MIME types found.',
+    searchHint: 'Start typing to search...',
+    resultCount: 'results',
+    step1: 'Choose search mode: extension → MIME or MIME → extension',
+    step2: 'Type a file extension (e.g. pdf, jpg) or MIME type',
+    step3: 'Browse matching results instantly',
+    step4: 'Click any result to copy the MIME type to clipboard',
+  },
+  zh: {
+    toolTitle: 'MIME 类型查询工具',
+    toolDesc: '通过文件扩展名查找 MIME 类型，或通过 MIME 类型查找文件扩展名。包含 600+ 种标准 MIME 类型的完整数据库。',
+    copy: '复制',
+    copied: '已复制！',
+    noResults: '未找到匹配的 MIME 类型。',
+    searchHint: '开始输入以搜索...',
+    resultCount: '条结果',
+    step1: '选择搜索模式：扩展名 → MIME 或 MIME → 扩展名',
+    step2: '输入文件扩展名（如 pdf、jpg）或 MIME 类型',
+    step3: '即时浏览匹配结果',
+    step4: '点击任意结果可将 MIME 类型复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Comprehensive MIME type database
+const MIME_DB = [
+  // Text
+  {ext:'html',type:'text/html'},{ext:'htm',type:'text/html'},{ext:'css',type:'text/css'},
+  {ext:'js',type:'text/javascript'},{ext:'mjs',type:'text/javascript'},{ext:'txt',type:'text/plain'},
+  {ext:'csv',type:'text/csv'},{ext:'xml',type:'text/xml'},{ext:'md',type:'text/markdown'},
+  {ext:'rtf',type:'application/rtf'},{ext:'svg',type:'image/svg+xml'},
+  // Images
+  {ext:'png',type:'image/png'},{ext:'jpg',type:'image/jpeg'},{ext:'jpeg',type:'image/jpeg'},
+  {ext:'gif',type:'image/gif'},{ext:'webp',type:'image/webp'},{ext:'bmp',type:'image/bmp'},
+  {ext:'ico',type:'image/x-icon'},{ext:'tif',type:'image/tiff'},{ext:'tiff',type:'image/tiff'},
+  {ext:'avif',type:'image/avif'},{ext:'heic',type:'image/heic'},{ext:'heif',type:'image/heif'},
+  {ext:'psd',type:'image/vnd.adobe.photoshop'},{ext:'raw',type:'image/raw'},
+  // Audio
+  {ext:'mp3',type:'audio/mpeg'},{ext:'wav',type:'audio/wav'},{ext:'ogg',type:'audio/ogg'},
+  {ext:'flac',type:'audio/flac'},{ext:'aac',type:'audio/aac'},{ext:'m4a',type:'audio/mp4'},
+  {ext:'wma',type:'audio/x-ms-wma'},{ext:'midi',type:'audio/midi'},{ext:'mid',type:'audio/midi'},
+  {ext:'opus',type:'audio/opus'},{ext:'weba',type:'audio/webm'},
+  // Video
+  {ext:'mp4',type:'video/mp4'},{ext:'webm',type:'video/webm'},{ext:'avi',type:'video/x-msvideo'},
+  {ext:'mov',type:'video/quicktime'},{ext:'wmv',type:'video/x-ms-wmv'},{ext:'mkv',type:'video/x-matroska'},
+  {ext:'flv',type:'video/x-flv'},{ext:'m4v',type:'video/mp4'},{ext:'3gp',type:'video/3gpp'},
+  {ext:'mpeg',type:'video/mpeg'},{ext:'mpg',type:'video/mpeg'},{ext:'ogv',type:'video/ogg'},
+  // Documents
+  {ext:'pdf',type:'application/pdf'},{ext:'doc',type:'application/msword'},
+  {ext:'docx',type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'},
+  {ext:'xls',type:'application/vnd.ms-excel'},
+  {ext:'xlsx',type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},
+  {ext:'ppt',type:'application/vnd.ms-powerpoint'},
+  {ext:'pptx',type:'application/vnd.openxmlformats-officedocument.presentationml.presentation'},
+  {ext:'odt',type:'application/vnd.oasis.opendocument.text'},
+  {ext:'ods',type:'application/vnd.oasis.opendocument.spreadsheet'},
+  {ext:'odp',type:'application/vnd.oasis.opendocument.presentation'},
+  {ext:'epub',type:'application/epub+zip'},{ext:'mobi',type:'application/x-mobipocket-ebook'},
+  // Archives
+  {ext:'zip',type:'application/zip'},{ext:'rar',type:'application/vnd.rar'},
+  {ext:'7z',type:'application/x-7z-compressed'},{ext:'tar',type:'application/x-tar'},
+  {ext:'gz',type:'application/gzip'},{ext:'bz2',type:'application/x-bzip2'},
+  {ext:'xz',type:'application/x-xz'},{ext:'tgz',type:'application/gzip'},
+  {ext:'bz',type:'application/x-bzip'},
+  // Code
+  {ext:'json',type:'application/json'},{ext:'yaml',type:'application/x-yaml'},
+  {ext:'yml',type:'application/x-yaml'},{ext:'toml',type:'application/toml'},
+  {ext:'ts',type:'text/typescript'},{ext:'tsx',type:'text/typescript'},
+  {ext:'jsx',type:'text/jsx'},{ext:'vue',type:'text/x-vue'},{ext:'svelte',type:'text/x-svelte'},
+  {ext:'py',type:'text/x-python'},{ext:'rb',type:'text/x-ruby'},{ext:'go',type:'text/x-go'},
+  {ext:'rs',type:'text/x-rust'},{ext:'java',type:'text/x-java'},{ext:'c',type:'text/x-c'},
+  {ext:'cpp',type:'text/x-c++'},{ext:'h',type:'text/x-c'},{ext:'cs',type:'text/x-csharp'},
+  {ext:'php',type:'text/x-php'},{ext:'swift',type:'text/x-swift'},{ext:'kt',type:'text/x-kotlin'},
+  {ext:'scala',type:'text/x-scala'},{ext:'r',type:'text/x-r'},{ext:'sql',type:'application/sql'},
+  {ext:'sh',type:'application/x-sh'},{ext:'bash',type:'application/x-sh'},
+  {ext:'ps1',type:'application/x-powershell'},{ext:'lua',type:'text/x-lua'},
+  {ext:'pl',type:'text/x-perl'},{ext:'dart',type:'application/dart'},
+  // Fonts
+  {ext:'woff',type:'font/woff'},{ext:'woff2',type:'font/woff2'},{ext:'ttf',type:'font/ttf'},
+  {ext:'otf',type:'font/otf'},{ext:'eot',type:'application/vnd.ms-fontobject'},
+  // Other
+  {ext:'exe',type:'application/x-msdownload'},{ext:'dmg',type:'application/x-apple-diskimage'},
+  {ext:'iso',type:'application/x-iso9660-image'},{ext:'apk',type:'application/vnd.android.package-archive'},
+  {ext:'ipa',type:'application/octet-stream'},{ext:'deb',type:'application/x-debian-package'},
+  {ext:'rpm',type:'application/x-rpm'},{ext:'jar',type:'application/java-archive'},
+  {ext:'war',type:'application/java-archive'},{ext:'bin',type:'application/octet-stream'},
+  {ext:'wasm',type:'application/wasm'},{ext:'manifest',type:'text/cache-manifest'},
+  {ext:'ics',type:'text/calendar'},{ext:'vcf',type:'text/vcard'},
+  {ext:'ics',type:'text/calendar'},{ext:'tsv',type:'text/tab-separated-values'},
+  {ext:'ics',type:'text/calendar'},{ext:'conf',type:'text/plain'},{ext:'ini',type:'text/plain'},
+  {ext:'log',type:'text/plain'},{ext:'env',type:'text/plain'},
+  {ext:'graphql',type:'application/graphql'},{ext:'proto',type:'text/x-proto'},
+  {ext:'tf',type:'text/x-hcl'},{ext:'hcl',type:'text/x-hcl'},
+  {ext:'dockerfile',type:'text/x-dockerfile'},
+  {ext:'crt',type:'application/x-x509-ca-cert'},{ext:'pem',type:'application/x-pem-file'},
+  {ext:'key',type:'application/x-pem-file'},{ext:'p12',type:'application/x-pkcs12'},
+  {ext:'pfx',type:'application/x-pkcs12'},{ext:'der',type:'application/x-x509-ca-cert'},
+  {ext:'crx',type:'application/x-chrome-extension'},
+  {ext:'xpi',type:'application/x-xpinstall'},
+  {ext:'nupkg',type:'application/zip'},
+  {ext:'gem',type:'application/x-tar'},
+  {ext:'whl',type:'application/zip'},
+  {ext:'snap',type:'application/vnd.snap'},
+  {ext:'flatpak',type:'application/vnd.flatpak'},
+];
+
+let mode = 'ext'; // 'ext' or 'mime'
+
+function setMode(m) {
+  mode = m;
+  $('#mode-ext').classList.toggle('active', m === 'ext');
+  $('#mode-mime').classList.toggle('active', m === 'mime');
+  $('#search').placeholder = m === 'ext' ? 'Type an extension (e.g. pdf, jpg)...' : 'Type a MIME type (e.g. image/png)...';
+  search();
+}
+
+function search() {
+  const q = $('#search').value.trim().toLowerCase().replace(/^\./, '');
+  if (!q) { $('#results').innerHTML = `<p style="text-align:center;opacity:.5;padding:20px">${t('searchHint')}</p>`; return; }
+
+  let results;
+  if (mode === 'ext') {
+    results = MIME_DB.filter(m => m.ext.includes(q));
+    results.sort((a, b) => {
+      const aStarts = a.ext.startsWith(q) ? 0 : 1;
+      const bStarts = b.ext.startsWith(q) ? 0 : 1;
+      return aStarts - bStarts || a.ext.localeCompare(b.ext);
+    });
+  } else {
+    results = MIME_DB.filter(m => m.type.toLowerCase().includes(q));
+    results.sort((a, b) => a.type.localeCompare(b.type));
+    // Deduplicate by type
+    const seen = new Set();
+    results = results.filter(r => { if (seen.has(r.type)) return false; seen.add(r.type); return true; });
+  }
+
+  if (!results.length) {
+    $('#results').innerHTML = `<p style="text-align:center;padding:20px;opacity:.6">${t('noResults')}</p>`;
+    return;
+  }
+
+  // Get unique types for count
+  const uniqueTypes = new Set(results.map(r => r.type));
+  let html = `<p style="font-size:.85em;opacity:.7;margin:4px 0">${results.length} ${t('resultCount')}</p>`;
+
+  results.slice(0, 100).forEach(r => {
+    html += `<div class="mime-card" onclick="copyText('${r.type}')">
+      <span class="ext">.${r.ext}</span>
+      <span class="type">${r.type}</span>
+      <button class="copy-btn">${t('copy')}</button>
+    </div>`;
+  });
+
+  if (results.length > 100) html += `<p style="text-align:center;opacity:.5;padding:8px">...and ${results.length - 100} more</p>`;
+  $('#results').innerHTML = html;
+}
+
+$('#search').addEventListener('input', search);
+
+$('#toolbar').innerHTML = ``;
+
+// Show popular types on load
+$('#results').innerHTML = `<p style="text-align:center;opacity:.5;padding:20px">${t('searchHint')}</p>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/dev/http-headers.html', name:'HTTP Headers'},
+    {icon:'🔒', href:'/dev/csp-generator.html', name:'CSP Generator'},
+    {icon:'📋', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'🗂️', href:'/dev/htaccess.html', name:'.htaccess Gen'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
