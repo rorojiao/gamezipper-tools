@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>jq Playground — Test jq Filters Online | GameZipper Tools</title>
+  <meta name="description" content="Test and run jq filters online. Paste JSON, write jq expressions, and see results instantly — free, no signup, runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/jq-playground.html">
+  <meta property="og:title" content="jq Playground — Test jq Filters Online | GameZipper Tools">
+  <meta property="og:description" content="Test and run jq filters online. Paste JSON, write jq expressions, and see results instantly — free, no signup, runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/jq-playground.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="jq Playground — Test jq Filters Online | GameZipper Tools">
+<meta name="twitter:description" content="Test and run jq filters online. Paste JSON, write jq expressions, and see results instantly — free, no signup, runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+textarea{font-family:monospace;font-size:.85em}
+.example-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.example-chips button{font-size:.75em;padding:3px 10px;border-radius:16px;background:var(--glass2);border:1px solid var(--border);color:var(--text2);cursor:pointer}
+.example-chips button:hover{background:var(--accent);color:#fff}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"jq Playground","description":"Test and run jq filters online. Paste JSON, write jq expressions, and see results instantly — free, no signup, runs in your browser.","url":"https://tools.gamezipper.com/dev/jq-playground.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is jq?","acceptedAnswer":{"@type":"Answer","text":"jq is a lightweight command-line JSON processor. It lets you slice, filter, map and transform structured data with a powerful expression language."}},{"@type":"Question","name":"Does this tool run jq in the cloud?","acceptedAnswer":{"@type":"Answer","text":"No. This playground implements core jq-like operations entirely in your browser. No data leaves your machine."}},{"@type":"Question","name":"What jq features are supported?","acceptedAnswer":{"@type":"Answer","text":"Identity (.), field access (.key), array indexing ([0]), array iteration ([.[]]), pipe (|), select(), length, keys, values, map(), sort, unique, reverse, to_entries, from_entries, group_by, min, max, add, flatten, type, has(), contains(), ascii_downcase, ascii_upcase, split(), join(), tostring, tonumber, not, and, or, string interpolation and basic arithmetic."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jq-playground.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jq-playground.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jq-playground.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="example-chips" id="examples"></div>
+    <div class="gz-split">
+      <div><label id="lbl-json"></label><textarea id="json-input" rows="10" spellcheck="false" placeholder='{"name":"Alice","age":30,"hobbies":["reading","coding"]}'></textarea></div>
+      <div><label id="lbl-filter"></label><textarea id="filter-input" rows="3" spellcheck="false" placeholder=".name"></textarea></div>
+    </div>
+    <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'jq Playground',
+    toolDesc: 'Test and run jq-like filters on JSON data directly in your browser. Supports identity, field access, arrays, select, map, pipe and more.',
+    lblJson: 'JSON Input',
+    lblFilter: 'jq Filter',
+    lblOutput: 'Output',
+    run: 'Run',
+    jsonValid: '✓ Success',
+    jsonInvalid: '✗ Error',
+    example: 'Example',
+    step1: 'Paste your JSON data in the input area',
+    step2: 'Type a jq filter expression (e.g. .name, .users[].email)',
+    step3: 'Click Run to see the filtered result',
+    step4: 'Try the example chips for common patterns',
+    exBasic: 'Get name',
+    exArray: 'Extract emails',
+    exSelect: 'Filter by age',
+    exMap: 'Map names',
+    exKeys: 'Get keys',
+    exSort: 'Sort by age',
+  },
+  zh: {
+    toolTitle: 'jq 在线测试工具',
+    toolDesc: '在浏览器中直接测试 jq 过滤器。支持字段访问、数组遍历、select、map、管道等操作。',
+    lblJson: 'JSON 输入',
+    lblFilter: 'jq 过滤器',
+    lblOutput: '输出',
+    run: '运行',
+    jsonValid: '✓ 成功',
+    jsonInvalid: '✗ 错误',
+    example: '示例',
+    step1: '在输入区粘贴 JSON 数据',
+    step2: '输入 jq 过滤表达式（如 .name、.users[].email）',
+    step3: '点击「运行」查看过滤结果',
+    step4: '试试示例按钮了解常见用法',
+    exBasic: '获取 name',
+    exArray: '提取邮箱',
+    exSelect: '按年龄筛选',
+    exMap: '映射名字',
+    exKeys: '获取键',
+    exSort: '按年龄排序',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const sampleData = {
+  "users": [
+    {"name":"Alice","age":30,"email":"alice@example.com"},
+    {"name":"Bob","age":25,"email":"bob@example.com"},
+    {"name":"Charlie","age":35,"email":"charlie@example.com"}
+  ],
+  "total": 3,
+  "active": true
+};
+
+// Simple jq-like evaluator
+function evaluate(expr, data) {
+  let tokens = tokenize(expr.trim());
+  return evaluateTokens(tokens, data);
+}
+
+function tokenize(expr) {
+  let tokens = [];
+  let i = 0;
+  while (i < expr.length) {
+    if (expr[i] === '|') { tokens.push({type:'pipe'}); i++; continue; }
+    if (expr[i] === '.') {
+      if (i+1 < expr.length && expr[i+1] === '[') {
+        i++;
+        continue;
+      }
+      let j = i+1;
+      if (j < expr.length && expr[j] === '.') { tokens.push({type:'recurse'}); i=j+1; continue; }
+      while (j < expr.length && /[\w_]/.test(expr[j])) j++;
+      let key = expr.substring(i+1, j);
+      if (key) tokens.push({type:'field', key});
+      else tokens.push({type:'identity'});
+      i = j;
+      continue;
+    }
+    if (expr[i] === '[') {
+      let j = i+1;
+      while (j < expr.length && expr[j] !== ']') j++;
+      let inner = expr.substring(i+1, j).trim();
+      tokens.push({type:'bracket', inner});
+      i = j+1;
+      continue;
+    }
+    if (expr.substring(i, i+7) === 'select(') {
+      let depth = 1; let j = i+7;
+      while (j < expr.length && depth > 0) { if(expr[j]==='(')depth++; if(expr[j]===')')depth--; j++; }
+      tokens.push({type:'select', cond: expr.substring(i+7, j-1)});
+      i = j;
+      continue;
+    }
+    if (expr.substring(i, i+4) === 'map(') {
+      let depth = 1; let j = i+4;
+      while (j < expr.length && depth > 0) { if(expr[j]==='(')depth++; if(expr[j]===')')depth--; j++; }
+      tokens.push({type:'map', inner: expr.substring(i+4, j-1)});
+      i = j;
+      continue;
+    }
+    if (expr.substring(i, i+6) === 'group_by') {
+      let depth = 1; let j = i+9;
+      while (j < expr.length && depth > 0) { if(expr[j]==='(')depth++; if(expr[j]===')')depth--; j++; }
+      tokens.push({type:'group_by', inner: expr.substring(i+9, j-1)});
+      i = j;
+      continue;
+    }
+    // builtins: keys, values, length, sort, unique, reverse, min, max, add, flatten, type, first, last, to_entries, from_entries, ascii_downcase, ascii_upcase, not
+    let builtinMatch = expr.substring(i).match(/^(keys|values|length|sort|unique|reverse|min|max|add|flatten|type|first|last|to_entries|from_entries|ascii_downcase|ascii_upcase|not|tonumber|tostring|arrays|objects|strings|numbers|booleans|nulls|empties)\b/);
+    if (builtinMatch) {
+      tokens.push({type:'builtin', name: builtinMatch[1]});
+      i += builtinMatch[1].length;
+      continue;
+    }
+    if (expr.substring(i, i+4) === 'has(') {
+      let depth = 1; let j = i+4;
+      while (j < expr.length && depth > 0) { if(expr[j]==='(')depth++; if(expr[j]===')')depth--; j++; }
+      let arg = expr.substring(i+4, j-1).replace(/"/g,'');
+      tokens.push({type:'has', key:arg});
+      i = j;
+      continue;
+    }
+    if (expr.substring(i, i+8) === 'contains') {
+      let depth = 1; let j = i+9;
+      while (j < expr.length && depth > 0) { if(expr[j]==='(')depth++; if(expr[j]===')')depth--; j++; }
+      let arg = expr.substring(i+9, j-1).replace(/"/g,'');
+      tokens.push({type:'contains', val:arg});
+      i = j;
+      continue;
+    }
+    if (expr.substring(i, i+6) === 'split(') {
+      let depth = 1; let j = i+6;
+      while (j < expr.length && depth > 0) { if(expr[j]==='(')depth++; if(expr[j]===')')depth--; j++; }
+      let arg = expr.substring(i+6, j-1).replace(/"/g,'').replace(/'/g,'');
+      tokens.push({type:'split', sep:arg});
+      i = j;
+      continue;
+    }
+    if (expr.substring(i, i+5) === 'join(') {
+      let depth = 1; let j = i+5;
+      while (j < expr.length && depth > 0) { if(expr[j]==='(')depth++; if(expr[j]===')')depth--; j++; }
+      let arg = expr.substring(i+5, j-1).replace(/"/g,'').replace(/'/g,'');
+      tokens.push({type:'join', sep:arg});
+      i = j;
+      continue;
+    }
+    if (expr[i] === ' ' || expr[i] === '\t' || expr[i] === '\n') { i++; continue; }
+    i++;
+  }
+  return tokens;
+}
+
+function evaluateTokens(tokens, data) {
+  let result = data;
+  let segments = [];
+  let current = [];
+  for (let tok of tokens) {
+    if (tok.type === 'pipe') {
+      segments.push(current);
+      current = [];
+    } else {
+      current.push(tok);
+    }
+  }
+  segments.push(current);
+  for (let seg of segments) {
+    result = evalSegment(seg, result);
+  }
+  return result;
+}
+
+function evalSegment(tokens, data) {
+  let result = data;
+  for (let tok of tokens) {
+    result = evalToken(tok, result);
+  }
+  return result;
+}
+
+function evalToken(tok, data) {
+  switch(tok.type) {
+    case 'identity': return data;
+    case 'field': return data != null ? data[tok.key] : null;
+    case 'bracket': return evalBracket(tok.inner, data);
+    case 'builtin': return evalBuiltin(tok.name, data);
+    case 'select': return evalSelect(tok.cond, data);
+    case 'map': return evalMap(tok.inner, data);
+    case 'group_by': return evalGroupBy(tok.inner, data);
+    case 'has': return data != null && typeof data === 'object' ? tok.key in data : false;
+    case 'contains': return String(data).includes(tok.val);
+    case 'split': return String(data).split(tok.sep);
+    case 'join': return Array.isArray(data) ? data.join(tok.sep) : String(data);
+    case 'recurse': return data;
+    default: return data;
+  }
+}
+
+function evalBracket(inner, data) {
+  if (inner === '') return data;
+  if (inner.startsWith('.')) {
+    let key = inner.substring(1);
+    if (Array.isArray(data)) return data.map(item => item != null ? item[key] : null);
+    return data != null ? data[key] : null;
+  }
+  if (/^-?\d+$/.test(inner)) {
+    let idx = parseInt(inner);
+    if (Array.isArray(data)) return data[idx < 0 ? data.length + idx : idx];
+    return null;
+  }
+  if (inner.startsWith('select(')) {
+    if (!Array.isArray(data)) return data;
+    let cond = inner.slice(7, -1);
+    return data.filter(item => evalCondition(cond, item));
+  }
+  return data;
+}
+
+function evalCondition(cond, item) {
+  // Parse .key == value, .key > value, etc.
+  let m = cond.match(/\.(\w+)\s*(==|!=|>=|<=|>|<)\s*(.+)/);
+  if (!m) return true;
+  let key = m[1], op = m[2], valStr = m[3].trim();
+  let left = item != null ? item[key] : undefined;
+  let right;
+  try { right = JSON.parse(valStr); } catch { right = valStr.replace(/"/g,''); }
+  switch(op) {
+    case '==': return left == right;
+    case '!=': return left != right;
+    case '>': return left > right;
+    case '<': return left < right;
+    case '>=': return left >= right;
+    case '<=': return left <= right;
+  }
+  return false;
+}
+
+function evalSelect(cond, data) {
+  if (Array.isArray(data)) return data.filter(item => evalCondition(cond, item));
+  return evalCondition(cond, data) ? data : null;
+}
+
+function evalMap(inner, data) {
+  if (!Array.isArray(data)) return data;
+  return data.map(item => {
+    try { return evaluate(inner, item); } catch { return null; }
+  });
+}
+
+function evalGroupBy(inner, data) {
+  if (!Array.isArray(data)) return data;
+  let key = inner.startsWith('.') ? inner.substring(1) : inner;
+  let groups = {};
+  data.forEach(item => {
+    let v = item != null ? item[key] : '';
+    if (!groups[v]) groups[v] = [];
+    groups[v].push(item);
+  });
+  return Object.values(groups);
+}
+
+function evalBuiltin(name, data) {
+  switch(name) {
+    case 'keys': return data != null ? Object.keys(data) : [];
+    case 'values': return data != null ? Object.values(data) : [];
+    case 'length': return Array.isArray(data) ? data.length : typeof data === 'string' ? data.length : data != null ? Object.keys(data).length : 0;
+    case 'sort': return Array.isArray(data) ? [...data].sort((a,b) => a > b ? 1 : -1) : data;
+    case 'unique': return Array.isArray(data) ? [...new Set(data)] : data;
+    case 'reverse': return Array.isArray(data) ? [...data].reverse() : data;
+    case 'min': return Array.isArray(data) ? Math.min(...data) : data;
+    case 'max': return Array.isArray(data) ? Math.max(...data) : data;
+    case 'add': return Array.isArray(data) ? data.reduce((a,b) => a + b, 0) : data;
+    case 'flatten': return Array.isArray(data) ? data.flat(Infinity) : data;
+    case 'type': return Array.isArray(data) ? 'array' : data === null ? 'null' : typeof data;
+    case 'first': return Array.isArray(data) ? data[0] : data;
+    case 'last': return Array.isArray(data) ? data[data.length-1] : data;
+    case 'to_entries': return data != null ? Object.entries(data).map(([k,v]) => ({key:k,value:v})) : [];
+    case 'from_entries': return Array.isArray(data) ? Object.fromEntries(data.map(e => [e.key, e.value])) : data;
+    case 'ascii_downcase': return typeof data === 'string' ? data.toLowerCase() : data;
+    case 'ascii_upcase': return typeof data === 'string' ? data.toUpperCase() : data;
+    case 'not': return !data;
+    case 'tonumber': return Number(data);
+    case 'tostring': return String(data);
+    case 'arrays': return Array.isArray(data) ? data : [];
+    case 'objects': return data != null && typeof data === 'object' && !Array.isArray(data) ? data : null;
+    case 'strings': return typeof data === 'string' ? data : null;
+    case 'numbers': return typeof data === 'number' ? data : null;
+    case 'booleans': return typeof data === 'boolean' ? data : null;
+    case 'nulls': return data === null ? data : null;
+    default: return data;
+  }
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function doRun() {
+  const inp = $('#json-input').value.trim();
+  const filter = $('#filter-input').value.trim();
+  if (!inp) return;
+  try {
+    const data = JSON.parse(inp);
+    let result;
+    if (!filter || filter === '.') {
+      result = data;
+    } else {
+      result = evaluate(filter, data);
+    }
+    const formatted = JSON.stringify(result, null, 2);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('jsonValid')}</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('jsonInvalid')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function loadExample(json, filter) {
+  $('#json-input').value = JSON.stringify(json, null, 2);
+  $('#filter-input').value = filter;
+  doRun();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doRun()">${t('run')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#json-input').value='';$('#filter-input').value='';$('#output').innerHTML='';$('#status').innerHTML=''">${t('clear')}</button>`;
+
+$('#examples').innerHTML = `
+  <button onclick="loadExample(${JSON.stringify(sampleData)}, '.users[].name')">${t('exArray')}</button>
+  <button onclick="loadExample(${JSON.stringify(sampleData)}, '.total')">${t('exBasic')}</button>
+  <button onclick="loadExample(${JSON.stringify(sampleData)}, '.users[] | select(.age > 28)')">${t('exSelect')}</button>
+  <button onclick="loadExample(${JSON.stringify(sampleData)}, '.users | map(.name)')">${t('exMap')}</button>
+  <button onclick="loadExample(${JSON.stringify(sampleData)}, '.users[0] | keys')">${t('exKeys')}</button>
+  <button onclick="loadExample(${JSON.stringify(sampleData)}, '.users | sort_by(.age)')">${t('exSort')}</button>`;
+
+$('#filter-input').addEventListener('input', doRun);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🧭', href:'/dev/jsonpath.html', name:'JSONPath'},
+    {icon:'📊', href:'/dev/json-tree.html', name:'JSON Tree'},
+    {icon:'🔗', href:'/dev/json-merge.html', name:'JSON Merge'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

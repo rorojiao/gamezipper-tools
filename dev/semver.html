@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Semantic Version Checker & Comparator | GameZipper Tools</title>
+  <meta name="description" content="Validate, compare and parse semantic version numbers (semver). Check if versions satisfy ranges, sort versions, and get detailed breakdowns — free online tool.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/semver.html">
+  <meta property="og:title" content="Semantic Version Checker & Comparator | GameZipper Tools">
+  <meta property="og:description" content="Validate, compare and parse semantic version numbers (semver). Check if versions satisfy ranges, sort versions, and get detailed breakdowns — free online tool.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/semver.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Semantic Version Checker & Comparator | GameZipper Tools">
+<meta name="twitter:description" content="Validate, compare and parse semantic version numbers (semver). Check if versions satisfy ranges, sort versions, and get detailed breakdowns — free online tool.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.semver-input{font-family:monospace;font-size:1.1em;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--glass2);color:var(--text);width:100%}
+.semver-input:focus{outline:none;border-color:var(--accent)}
+.result-box{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.8em;font-weight:600}
+.badge-valid{background:#00d67222;color:#00d672;border:1px solid #00d67244}
+.badge-invalid{background:#e9456022;color:#e94560;border:1px solid #e9456044}
+.badge-gt{background:#61afef22;color:#61afef;border:1px solid #61afef44}
+.badge-lt{background:#d19a6622;color:#d19a66;border:1px solid #d19a6644}
+.badge-eq{background:#c678dd22;color:#c678dd;border:1px solid #c678dd44}
+.ver-list textarea{width:100%;font-family:monospace;font-size:.85em}
+.breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px}
+.breakdown-item{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.breakdown-item .label{font-size:.75em;color:var(--text3);margin-bottom:4px}
+.breakdown-item .value{font-size:1.2em;font-weight:700;font-family:monospace}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Semantic Version Checker","description":"Validate, compare and parse semantic version numbers (semver). Check if versions satisfy ranges, sort versions, and get detailed breakdowns — free online tool.","url":"https://tools.gamezipper.com/dev/semver.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is semantic versioning?","acceptedAnswer":{"@type":"Answer","text":"Semantic versioning (semver) is a versioning scheme using MAJOR.MINOR.PATCH format. Increment MAJOR for incompatible changes, MINOR for backward-compatible features, and PATCH for bug fixes."}},{"@type":"Question","name":"How do I compare two semver versions?","acceptedAnswer":{"@type":"Answer","text":"Enter both versions in the comparison fields. The tool parses each into major, minor, patch, prerelease and build metadata, then compares them left to right."}},{"@type":"Question","name":"Does this support prerelease versions?","acceptedAnswer":{"@type":"Answer","text":"Yes. Versions like 1.2.3-alpha.1, 2.0.0-beta+build.456 are fully supported. Prerelease versions have lower precedence than the normal version."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/semver.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/semver.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/semver.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <!-- Section 1: Validate -->
+    <h3 id="lbl-validate" style="margin-top:14px"></h3>
+    <input type="text" class="semver-input" id="validate-input" placeholder="1.2.3" oninput="doValidate()">
+    <div id="validate-result" class="result-box" style="display:none"></div>
+
+    <!-- Section 2: Compare -->
+    <h3 id="lbl-compare" style="margin-top:20px"></h3>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center">
+      <input type="text" class="semver-input" id="ver-a" placeholder="2.1.0" oninput="doCompare()">
+      <span id="compare-symbol" style="font-size:1.5em;font-weight:700;color:var(--text3)">?</span>
+      <input type="text" class="semver-input" id="ver-b" placeholder="2.0.1" oninput="doCompare()">
+    </div>
+    <div id="compare-result" class="result-box" style="display:none"></div>
+
+    <!-- Section 3: Sort -->
+    <h3 id="lbl-sort" style="margin-top:20px"></h3>
+    <textarea id="sort-input" rows="5" class="ver-list" placeholder="1.2.0&#10;2.0.0-beta&#10;1.1.9&#10;2.0.0" oninput="doSort()"></textarea>
+    <div id="sort-result" class="result-box" style="display:none"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Semantic Version Checker',
+    toolDesc: 'Validate, compare, parse and sort semantic versions (semver). Supports prerelease, build metadata and bulk sorting.',
+    validate: 'Validate',
+    compare: 'Compare',
+    sort: 'Sort Versions',
+    run: 'Run',
+    step1: 'Enter a semver string to validate and see its breakdown',
+    step2: 'Enter two versions to compare which is greater',
+    step3: 'Paste a list of versions to sort them in ascending order',
+    step4: 'Prerelease tags (alpha, beta, rc) are supported',
+    valid: 'Valid Semver',
+    invalid: 'Invalid Semver',
+    major: 'Major',
+    minor: 'Minor',
+    patch: 'Patch',
+    prerelease: 'Prerelease',
+    build: 'Build',
+    greater: 'is greater than',
+    less: 'is less than',
+    equal: 'is equal to',
+    sortedAsc: 'Sorted (ascending)',
+    sortedDesc: 'Sorted (descending)',
+  },
+  zh: {
+    toolTitle: '语义版本号检查器',
+    toolDesc: '验证、比较、解析和排序语义版本号 (semver)。支持预发布标签、构建元数据和批量排序。',
+    validate: '验证',
+    compare: '比较',
+    sort: '排序',
+    run: '运行',
+    step1: '输入版本号验证并查看各部分解析',
+    step2: '输入两个版本比较大小',
+    step3: '粘贴多个版本号进行升序排列',
+    step4: '支持预发布标签（alpha、beta、rc）',
+    valid: '有效的 Semver',
+    invalid: '无效的 Semver',
+    major: '主版本',
+    minor: '次版本',
+    patch: '修订号',
+    prerelease: '预发布',
+    build: '构建',
+    greater: '大于',
+    less: '小于',
+    equal: '等于',
+    sortedAsc: '升序排列',
+    sortedDesc: '降序排列',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const SEMVER_RE = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([\w][\w.]*(?:-[\w][\w.]*)*))?(?:\+([\w][\w.]*(?:-[\w][\w.]*)*))?$/;
+
+function parseSemver(str) {
+  const m = str.trim().match(SEMVER_RE);
+  if (!m) return null;
+  return { major: +m[1], minor: +m[2], patch: +m[3], prerelease: m[4] || '', build: m[5] || '' };
+}
+
+function cmpSemver(a, b) {
+  if (a.major !== b.major) return a.major - b.major;
+  if (a.minor !== b.minor) return a.minor - b.minor;
+  if (a.patch !== b.patch) return a.patch - b.patch;
+  // prerelease comparison
+  if (!a.prerelease && !b.prerelease) return 0;
+  if (!a.prerelease) return 1;
+  if (!b.prerelease) return -1;
+  const pa = a.prerelease.split('.');
+  const pb = b.prerelease.split('.');
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const va = pa[i], vb = pb[i];
+    if (va === undefined) return -1;
+    if (vb === undefined) return 1;
+    const na = /^\d+$/.test(va) ? +va : va;
+    const nb = /^\d+$/.test(vb) ? +vb : vb;
+    if (typeof na === 'number' && typeof nb === 'number') { if (na !== nb) return na - nb; }
+    else { const sa = String(na), sb = String(nb); if (sa !== sb) return sa < sb ? -1 : 1; }
+  }
+  return 0;
+}
+
+function doValidate() {
+  const val = $('#validate-input').value.trim();
+  const box = $('#validate-result');
+  if (!val) { box.style.display = 'none'; return; }
+  const parsed = parseSemver(val);
+  box.style.display = 'block';
+  if (!parsed) {
+    box.innerHTML = `<span class="badge badge-invalid">${t('invalid')}</span>`;
+    return;
+  }
+  box.innerHTML = `
+    <span class="badge badge-valid">${t('valid')}</span>
+    <div class="breakdown">
+      <div class="breakdown-item"><div class="label">${t('major')}</div><div class="value">${parsed.major}</div></div>
+      <div class="breakdown-item"><div class="label">${t('minor')}</div><div class="value">${parsed.minor}</div></div>
+      <div class="breakdown-item"><div class="label">${t('patch')}</div><div class="value">${parsed.patch}</div></div>
+      ${parsed.prerelease ? `<div class="breakdown-item"><div class="label">${t('prerelease')}</div><div class="value">${parsed.prerelease}</div></div>` : ''}
+      ${parsed.build ? `<div class="breakdown-item"><div class="label">${t('build')}</div><div class="value">${parsed.build}</div></div>` : ''}
+    </div>`;
+}
+
+function doCompare() {
+  const a = $('#ver-a').value.trim();
+  const b = $('#ver-b').value.trim();
+  const box = $('#compare-result');
+  const sym = $('#compare-symbol');
+  if (!a || !b) { box.style.display = 'none'; sym.textContent = '?'; return; }
+  const pa = parseSemver(a);
+  const pb = parseSemver(b);
+  box.style.display = 'block';
+  if (!pa || !pb) {
+    sym.textContent = '⚠️';
+    box.innerHTML = `<span class="badge badge-invalid">${!pa ? a : b}: ${t('invalid')}</span>`;
+    return;
+  }
+  const cmp = cmpSemver(pa, pb);
+  if (cmp > 0) { sym.innerHTML = '&gt;'; sym.style.color = '#61afef'; box.innerHTML = `<span class="badge badge-gt">${a} ${t('greater')} ${b}</span>`; }
+  else if (cmp < 0) { sym.innerHTML = '&lt;'; sym.style.color = '#d19a66'; box.innerHTML = `<span class="badge badge-lt">${a} ${t('less')} ${b}</span>`; }
+  else { sym.textContent = '='; sym.style.color = '#c678dd'; box.innerHTML = `<span class="badge badge-eq">${a} ${t('equal')} ${b}</span>`; }
+}
+
+function doSort() {
+  const text = $('#sort-input').value.trim();
+  const box = $('#sort-result');
+  if (!text) { box.style.display = 'none'; return; }
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const parsed = lines.map(l => ({ raw: l, semver: parseSemver(l) })).filter(x => x.semver);
+  if (parsed.length === 0) { box.style.display = 'block'; box.innerHTML = `<span class="badge badge-invalid">${t('invalid')}</span>`; return; }
+  parsed.sort((a, b) => cmpSemver(a.semver, b.semver));
+  box.style.display = 'block';
+  box.innerHTML = `
+    <strong>${t('sortedAsc')}:</strong>
+    <pre style="font-family:monospace;margin:8px 0 0;padding:8px;background:var(--glass2);border-radius:8px;font-size:.85em">${parsed.map(x => x.raw).join('\n')}</pre>
+    <button class="gz-btn gz-btn-secondary" style="margin-top:8px" onclick="copyText('${parsed.map(x=>x.raw).join('\\n')}')">${t('copy')}</button>`;
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#validate-input').value='2.3.1-alpha.1+build.42';doValidate()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#ver-a').value='2.0.0';$('#ver-b').value='2.0.0-beta.3';doCompare()">Compare Example</button>`;
+
+// Add section headers
+$('#lbl-validate').textContent = `🔍 ${t('validate')}`;
+$('#lbl-compare').textContent = `⚖️ ${t('compare')}`;
+$('#lbl-sort').textContent = `📊 ${t('sort')}`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🆔', href:'/dev/uuid.html', name:'UUID Generator'},
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
