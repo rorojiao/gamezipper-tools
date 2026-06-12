@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Online Alarm Clock - Free Browser Alarm | GameZipper Tools</title>
+  <meta name="description" content="Set multiple alarms online right in your browser. Choose custom sounds, labels, and repeat schedules. No app needed — free online alarm clock with notifications.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/alarm-clock.html">
+  <meta property="og:title" content="Online Alarm Clock - Free Browser Alarm | GameZipper Tools">
+  <meta property="og:description" content="Set multiple alarms online right in your browser. Choose custom sounds, labels, and repeat schedules. No app needed — free online alarm clock.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/alarm-clock.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Online Alarm Clock - Free Browser Alarm | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.clock-display{text-align:center;padding:20px 0}
+.clock-display .time{font-size:4em;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.clock-display .date{font-size:1em;opacity:.6;margin-top:4px}
+.clock-display .seconds{font-size:.4em;opacity:.5;vertical-align:super}
+.alarm-form{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:16px 0;padding:16px;background:var(--glass);border:1px solid var(--border);border-radius:12px}
+.alarm-form label{font-size:.85em;display:flex;flex-direction:column;gap:4px}
+.alarm-form input,.alarm-form select{padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:inherit;font-size:.9em}
+.alarm-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.alarm-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--glass);border:1px solid var(--border);border-radius:10px}
+.alarm-item .alarm-time{font-size:1.4em;font-weight:600;font-variant-numeric:tabular-nums}
+.alarm-item .alarm-label{font-size:.85em;opacity:.7;flex:1}
+.alarm-item.ringing{animation:pulse-ring 1s infinite;border-color:#ef4444}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.3)}50%{box-shadow:0 0 0 12px rgba(239,68,68,0)}}
+.alarm-item button{padding:4px 12px;font-size:.8em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Alarm Clock","description":"Set multiple alarms online right in your browser. Choose custom sounds, labels, and repeat schedules. No app needed — free online alarm clock.","url":"https://tools.gamezipper.com/calc/alarm-clock.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I set an online alarm?", "acceptedAnswer": {"@type": "Answer", "text": "Simply set the time, optionally add a label, choose a sound, and click Set Alarm. The alarm will ring at the specified time in your browser."}}, {"@type": "Question", "name": "Does the alarm work if I close the browser?", "acceptedAnswer": {"@type": "Answer", "text": "No, the alarm only works while the browser tab is open. Keep the tab open for the alarm to trigger. You can use other tabs."}}, {"@type": "Question", "name": "Can I set multiple alarms at once?", "acceptedAnswer": {"@type": "Answer", "text": "Yes! You can set as many alarms as you need. Each alarm can have its own time, label and sound."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/alarm-clock.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/alarm-clock.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/alarm-clock.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="clock-display">
+      <div class="time" id="clockTime">00:00<span class="seconds">:00</span></div>
+      <div class="date" id="clockDate"></div>
+    </div>
+    <div class="alarm-form">
+      <label><span id="lbl-time"></span><input type="time" id="alarmTime" value="07:00"></label>
+      <label><span id="lbl-label"></span><input type="text" id="alarmLabel" maxlength="50" placeholder=""></label>
+      <label><span id="lbl-sound"></span>
+        <select id="alarmSound">
+          <option value="beep">Beep</option>
+          <option value="bell">Bell</option>
+          <option value="chime">Chime</option>
+          <option value="digital">Digital</option>
+          <option value="ring">Ring</option>
+        </select>
+      </label>
+      <button class="gz-btn" id="addAlarmBtn"></button>
+    </div>
+    <div class="alarm-list" id="alarmList"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Alarm Clock',
+    toolDesc: 'Set multiple alarms right in your browser. Choose custom sounds, add labels, and get notified at the right time. Free, no app needed.',
+    lblTime: 'Time:',
+    lblLabel: 'Label:',
+    lblSound: 'Sound:',
+    addAlarm: 'Set Alarm',
+    dismiss: 'Dismiss',
+    delete: 'Delete',
+    snooze: 'Snooze 5min',
+    alarmLabelPlaceholder: 'e.g. Wake up, Meeting...',
+    step1: 'Set the alarm time using the time picker',
+    step2: 'Optionally add a label and choose a sound',
+    step3: 'Click Set Alarm to activate',
+    step4: 'Keep this tab open — the alarm will ring at the set time',
+    alarmFired: '⏰ Alarm!',
+  },
+  zh: {
+    toolTitle: '在线闹钟',
+    toolDesc: '在浏览器中设置多个闹钟。自定义铃声、添加标签，到点自动提醒。免费，无需安装应用。',
+    lblTime: '时间:',
+    lblLabel: '标签:',
+    lblSound: '铃声:',
+    addAlarm: '设置闹钟',
+    dismiss: '关闭',
+    delete: '删除',
+    snooze: '贪睡 5分钟',
+    alarmLabelPlaceholder: '例如：起床、开会...',
+    step1: '使用时间选择器设置闹钟时间',
+    step2: '可选：添加标签和选择铃声',
+    step3: '点击设置闹钟激活',
+    step4: '保持此标签页打开，闹钟将在设定时间响起',
+    alarmFired: '⏰ 闹钟响了！',
+  }
+});
+
+const { $, t } = GZ;
+let alarms = [];
+let audioCtx = null;
+
+$('#lbl-time').textContent = t('lblTime');
+$('#lbl-label').textContent = t('lblLabel');
+$('#lbl-sound').textContent = t('lblSound');
+$('#alarmLabel').placeholder = t('alarmLabelPlaceholder');
+$('#addAlarmBtn').textContent = t('addAlarm');
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playSound(type) {
+  const ctx = getAudioCtx();
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.value = 0.3;
+
+  const now = ctx.currentTime;
+  const notes = {
+    beep: [800, 800, 800],
+    bell: [523, 659, 784],
+    chime: [880, 1100, 1320],
+    digital: [1000, 600, 1000],
+    ring: [440, 550, 440],
+  };
+  const freqs = notes[type] || notes.beep;
+
+  freqs.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = type === 'digital' ? 'square' : 'sine';
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    osc.start(now + i * 0.3);
+    osc.stop(now + i * 0.3 + 0.2);
+  });
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  $('#clockTime').innerHTML = `${h}:${m}<span class="seconds">:${s}</span>`;
+
+  const dateOpts = {weekday:'long',year:'numeric',month:'long',day:'numeric'};
+  $('#clockDate').textContent = now.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', dateOpts);
+
+  // Check alarms
+  const timeStr = `${h}:${m}`;
+  alarms.forEach(a => {
+    if (a.active && !a.fired && a.time === timeStr && now.getSeconds() < 2) {
+      a.fired = true;
+      a.ringing = true;
+      playSound(a.sound);
+      // Repeat sound
+      a.soundInterval = setInterval(() => playSound(a.sound), 1500);
+      if (Notification.permission === 'granted') {
+        new Notification(t('alarmFired'), {body: a.label || a.time, icon: '/favicon.svg'});
+      }
+      document.title = '⏰ ' + (a.label || a.time);
+      renderAlarms();
+    }
+  });
+}
+
+function renderAlarms() {
+  const list = $('#alarmList');
+  if (alarms.length === 0) {
+    list.innerHTML = `<p style="text-align:center;opacity:.5;padding:20px">${lang === 'zh' ? '暂无闹钟，点击上方设置闹钟' : 'No alarms set. Click "Set Alarm" above to add one.'}</p>`;
+    return;
+  }
+  list.innerHTML = alarms.map((a, i) => `
+    <div class="alarm-item ${a.ringing ? 'ringing' : ''}">
+      <div class="alarm-time">${a.time}</div>
+      <div class="alarm-label">${a.label || ''}</div>
+      ${a.ringing ? `<button class="gz-btn" onclick="dismissAlarm(${i})">${t('dismiss')}</button><button class="gz-btn gz-btn-secondary" onclick="snoozeAlarm(${i})">${t('snooze')}</button>` : ''}
+      <button class="gz-btn gz-btn-secondary" onclick="deleteAlarm(${i})">${t('delete')}</button>
+    </div>
+  `).join('');
+}
+
+window.deleteAlarm = function(i) {
+  if (alarms[i].soundInterval) clearInterval(alarms[i].soundInterval);
+  alarms.splice(i, 1);
+  if (alarms.length === 0) document.title = 'Online Alarm Clock - GameZipper Tools';
+  renderAlarms();
+};
+
+window.dismissAlarm = function(i) {
+  if (alarms[i].soundInterval) clearInterval(alarms[i].soundInterval);
+  alarms[i].ringing = false;
+  alarms[i].active = false;
+  document.title = 'Online Alarm Clock - GameZipper Tools';
+  renderAlarms();
+};
+
+window.snoozeAlarm = function(i) {
+  if (alarms[i].soundInterval) clearInterval(alarms[i].soundInterval);
+  alarms[i].ringing = false;
+  // Add 5 minutes
+  const [h, m] = alarms[i].time.split(':').map(Number);
+  const d = new Date(); d.setHours(h, m + 5);
+  alarms[i].time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  alarms[i].fired = false;
+  document.title = 'Online Alarm Clock - GameZipper Tools';
+  renderAlarms();
+};
+
+$('#addAlarmBtn').onclick = () => {
+  const time = $('#alarmTime').value;
+  if (!time) return;
+  alarms.push({
+    time,
+    label: $('#alarmLabel').value,
+    sound: $('#alarmSound').value,
+    active: true,
+    fired: false,
+    ringing: false,
+    soundInterval: null,
+  });
+  $('#alarmLabel').value = '';
+  renderAlarms();
+};
+
+// Request notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+const lang = document.documentElement.lang === 'zh' ? 'zh' : 'en';
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏱️', href:'/calc/stopwatch.html', name:'Stopwatch'},
+    {icon:'⏰', href:'/calc/timer.html', name:'Countdown Timer'},
+    {icon:'🌍', href:'/calc/timezone.html', name:'Time Zone Converter'},
+    {icon:'📅', href:'/calc/date-calculator.html', name:'Date Calculator'},
+  ]
+});
+
+updateClock();
+setInterval(updateClock, 1000);
+renderAlarms();
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
