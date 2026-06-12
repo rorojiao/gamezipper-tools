@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Code Screenshot Generator — Beautiful Code Images | GameZipper Tools</title>
+  <meta name="description" content="Turn code snippets into beautiful screenshots with syntax highlighting, gradients, and custom themes. Copy or download as PNG — free, private, runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/code-screenshot.html">
+  <meta property="og:title" content="Code Screenshot Generator — Beautiful Code Images | GameZipper Tools">
+  <meta property="og:description" content="Turn code snippets into beautiful screenshots with syntax highlighting, gradients, and custom themes. Copy or download as PNG — free, private, runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/code-screenshot.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Code Screenshot Generator — Beautiful Code Images | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#preview-wrap{padding:20px;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border-radius:12px;overflow:auto}
+#code-preview{font-family:'Courier New',monospace;font-size:14px;line-height:1.6;tab-size:2;white-space:pre;padding:20px;border-radius:8px;min-height:120px}
+.tok-kw{color:#c678dd}.tok-str{color:#98c379}.tok-num{color:#d19a66}.tok-cm{color:#5c6370;font-style:italic}.tok-fn{color:#61afef}.tok-op{color:#56b6c2}.tok-tag{color:#e06c75}.tok-attr{color:#d19a66}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.controls label{font-size:.85em;font-weight:600;margin-right:4px}
+.controls select,.controls input[type=color]{padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--glass2);color:inherit}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Code Screenshot Generator","description":"Turn code snippets into beautiful screenshots with syntax highlighting, gradients, and custom themes. Free, private, runs in your browser.","url":"https://tools.gamezipper.com/dev/code-screenshot.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I create a code screenshot?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your code in the input area, choose a language and theme, then click Download to save as PNG."}}, {"@type": "Question", "name": "Is my code sent to any server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens locally in your browser. Your code never leaves your device."}}, {"@type": "Question", "name": "What languages are supported?", "acceptedAnswer": {"@type": "Answer", "text": "JavaScript, Python, HTML, CSS, TypeScript, Go, Rust, Java, PHP, Ruby, SQL, JSON, YAML, Bash, and plain text."}}, {"@type": "Question", "name": "Can I customize the background?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Choose from 6 gradient presets or set custom colors for the background."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/code-screenshot.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/code-screenshot.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/code-screenshot.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" style="font-family:monospace"></textarea></div>
+      <div>
+        <div class="controls" id="controls"></div>
+        <div id="preview-wrap"><div id="code-preview"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Code Screenshot Generator',
+    toolDesc: 'Turn code snippets into beautiful shareable images with syntax highlighting and custom themes.',
+    language: 'Language',
+    theme: 'Theme',
+    padding: 'Padding',
+    download: 'Download PNG',
+    copy: 'Copy',
+    clear: 'Clear',
+    example: 'Example',
+    step1: 'Paste or type your code in the input area',
+    step2: 'Choose language and visual theme',
+    step3: 'Adjust padding and background',
+    step4: 'Click Download to save as PNG image',
+  },
+  zh: {
+    toolTitle: '代码截图生成器',
+    toolDesc: '将代码片段转换为精美的可分享图片，支持语法高亮和自定义主题。',
+    language: '语言',
+    theme: '主题',
+    padding: '内边距',
+    download: '下载 PNG',
+    copy: '复制',
+    clear: '清空',
+    example: '示例',
+    step1: '在输入区粘贴或输入代码',
+    step2: '选择编程语言和视觉主题',
+    step3: '调整内边距和背景',
+    step4: '点击下载保存为 PNG 图片',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const langs = ['JavaScript','Python','HTML','CSS','TypeScript','Go','Rust','Java','PHP','Ruby','SQL','JSON','YAML','Bash','Text'];
+const themes = {
+  'Dracula':{bg:'#282a36',fg:'#f8f8f2',kw:'#bd93f9',str:'#f1fa8c',num:'#bd93f9',cm:'#6272a4',fn:'#50fa7b',grad:'linear-gradient(135deg,#282a36,#44475a)'},
+  'One Dark':{bg:'#282c34',fg:'#abb2bf',kw:'#c678dd',str:'#98c379',num:'#d19a66',cm:'#5c6370',fn:'#61afef',grad:'linear-gradient(135deg,#282c34,#1e2127)'},
+  'Nord':{bg:'#2e3440',fg:'#d8dee9',kw:'#b48ead',str:'#a3be8c',num:'#b48ead',cm:'#616e88',fn:'#88c0d0',grad:'linear-gradient(135deg,#2e3440,#3b4252)'},
+  'Solarized':{bg:'#002b36',fg:'#839496',kw:'#859900',str:'#2aa198',num:'#d33682',cm:'#586e75',fn:'#268bd2',grad:'linear-gradient(135deg,#002b36,#073642)'},
+  'Monokai':{bg:'#272822',fg:'#f8f8f2',kw:'#f92672',str:'#e6db74',num:'#ae81ff',cm:'#75715e',fn:'#a6e22e',grad:'linear-gradient(135deg,#272822,#3e3d32)'},
+  'GitHub Dark':{bg:'#0d1117',fg:'#c9d1d9',kw:'#ff7b72',str:'#a5d6ff',num:'#79c0ff',cm:'#8b949e',fn:'#d2a8ff',grad:'linear-gradient(135deg,#0d1117,#161b22)'},
+};
+
+let curLang = 'JavaScript';
+let curTheme = 'One Dark';
+let curPad = 32;
+
+const controlsEl = $('#controls');
+// Language select
+let html = `<label>${t('language')}</label><select id="lang-sel" onchange="curLang=this.value;highlight()">`;
+langs.forEach(l => html += `<option${l===curLang?' selected':''}>${l}</option>`);
+html += `</select>`;
+// Theme select
+html += `<label>${t('theme')}</label><select id="theme-sel" onchange="curTheme=this.value;applyTheme()">`;
+Object.keys(themes).forEach(k => html += `<option${k===curTheme?' selected':''}>${k}</option>`);
+html += `</select>`;
+// Padding
+html += `<label>${t('padding')}</label><input type="range" id="pad-slider" min="12" max="64" value="${curPad}" oninput="curPad=+this.value;applyTheme()" style="width:100px">`;
+controlsEl.innerHTML = html;
+
+function applyTheme() {
+  const th = themes[curTheme];
+  const wrap = $('#preview-wrap');
+  wrap.style.background = th.grad;
+  wrap.style.padding = curPad + 'px';
+  const code = $('#code-preview');
+  code.style.background = th.bg;
+  code.style.color = th.fg;
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function highlight() {
+  const code = $('#input').value;
+  if (!code) { $('#code-preview').innerHTML = ''; return; }
+  let escaped = escapeHtml(code);
+  // Simple regex-based highlighting
+  const th = themes[curTheme];
+  const rules = {
+    JavaScript: [
+      [/(\/\/.*$)/gm, 'cm'], [/\/\*[\s\S]*?\*\//g, 'cm'],
+      [/(&quot;.*?&quot;|&#39;.*?&#39;|`[^`]*`)/g, 'str'],
+      [/\b(const|let|var|function|return|if|else|for|while|class|import|export|from|async|await|new|this|try|catch|throw|typeof|instanceof|switch|case|break|default|yield)\b/g, 'kw'],
+      [/\b(true|false|null|undefined|NaN|Infinity)\b/g, 'kw'],
+      [/\b(\d+\.?\d*)\b/g, 'num'],
+      [/\b([a-zA-Z_$][\w$]*)\s*\(/g, 'fn'],
+    ],
+    Python: [
+      [/(#.*$)/gm, 'cm'], [/(&quot;&quot;&quot;[\s\S]*?&quot;&quot;&quot;|&#39;&#39;&#39;[\s\S]*?&#39;&#39;&#39;)/g, 'cm'],
+      [/(&quot;.*?&quot;|&#39;.*?&#39;)/g, 'str'],
+      [/\b(def|class|return|if|elif|else|for|while|import|from|as|try|except|finally|with|yield|lambda|pass|break|continue|raise|and|or|not|in|is|True|False|None)\b/g, 'kw'],
+      [/\b(\d+\.?\d*)\b/g, 'num'],
+      [/\b([a-zA-Z_]\w*)\s*\(/g, 'fn'],
+    ],
+    HTML: [
+      [/(&lt;!--[\s\S]*?--&gt;)/g, 'cm'],
+      [/(&quot;.*?&quot;|&#39;.*?&#39;)/g, 'str'],
+      [/(&lt;\/?[\w-]+)/g, 'tag'],
+      [/\b([\w-]+)=/g, 'attr'],
+    ],
+    CSS: [
+      [/(\/\*[\s\S]*?\*\/)/g, 'cm'],
+      [/(&quot;.*?&quot;|&#39;.*?&#39;)/g, 'str'],
+      [/([\w-]+)\s*:/g, 'fn'],
+      [/\b(\d+\.?\d*)(px|em|rem|%|vh|vw|s|ms)?\b/g, 'num'],
+    ],
+  };
+  // Generic rules for other languages
+  const generic = [
+    [/(\/\/.*$|(#.*$))/gm, 'cm'],
+    [/(&quot;.*?&quot;|&#39;.*?&#39;)/g, 'str'],
+    [/\b(function|return|if|else|for|while|class|import|export|def|fn|pub|let|var|const|struct|impl|match|loop|type|interface|package|module)\b/g, 'kw'],
+    [/\b(\d+\.?\d*)\b/g, 'num'],
+    [/\b([a-zA-Z_]\w*)\s*\(/g, 'fn'],
+  ];
+  const langRules = rules[curLang] || generic;
+  // Apply rules in order, using placeholders
+  let tokens = [];
+  let result = escaped;
+  langRules.forEach(([regex, cls]) => {
+    result = result.replace(regex, match => {
+      const idx = tokens.length;
+      tokens.push(`<span class="tok-${cls}">${match}</span>`);
+      return `\x00${idx}\x00`;
+    });
+  });
+  tokens.forEach((tok, i) => {
+    result = result.replace(`\x00${i}\x00`, tok);
+  });
+  // Line numbers
+  const lines = result.split('\n');
+  const numbered = lines.map((line, i) => {
+    const num = String(i + 1).padStart(String(lines.length).length, ' ');
+    return `<span style="opacity:.35;user-select:none">${num} </span>${line}`;
+  }).join('\n');
+  $('#code-preview').innerHTML = numbered;
+  applyTheme();
+}
+
+function downloadPNG() {
+  const wrap = $('#preview-wrap');
+  const canvas = document.createElement('canvas');
+  const scale = 2;
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width * scale;
+  canvas.height = rect.height * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  // Render background
+  const th = themes[curTheme];
+  ctx.fillStyle = th.bg;
+  ctx.fillRect(0, 0, rect.width, rect.height);
+  // Use html2canvas-like approach: just use native rendering
+  // Simpler: create an image via SVG foreignObject
+  const data = `<svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}">
+    <foreignObject width="100%" height="100%">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:monospace;font-size:14px;line-height:1.6;background:${th.bg};color:${th.fg};padding:${curPad}px;width:${rect.width - curPad*2}px">
+        ${$('#code-preview').innerHTML}
+      </div>
+    </foreignObject>
+  </svg>`;
+  const blob = new Blob([data], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const link = document.createElement('a');
+    link.download = 'code-screenshot.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  img.src = url;
+}
+
+function loadExample() {
+  const examples = {
+    JavaScript: `function fibonacci(n) {\n  if (n <= 1) return n;\n  let a = 0, b = 1;\n  for (let i = 2; i <= n; i++) {\n    [a, b] = [b, a + b];\n  }\n  return b;\n}\n\n// Print first 10 Fibonacci numbers\nfor (let i = 0; i < 10; i++) {\n  console.log(fibonacci(i));\n}`,
+    Python: `def quicksort(arr):\n    """Sort array using quicksort."""\n    if len(arr) <= 1:\n        return arr\n    pivot = arr[len(arr) // 2]\n    left = [x for x in arr if x < pivot]\n    mid = [x for x in arr if x == pivot]\n    right = [x for x in arr if x > pivot]\n    return quicksort(left) + mid + quicksort(right)\n\nprint(quicksort([3, 6, 8, 10, 1, 2, 1]))`,
+    HTML: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Hello World</title>\n</head>\n<body>\n  <h1>Welcome to my page</h1>\n  <p>This is a paragraph.</p>\n</body>\n</html>`,
+  };
+  $('#input').value = examples[curLang] || examples.JavaScript;
+  highlight();
+}
+
+$('#input').addEventListener('input', highlight);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="downloadPNG()">📥 ${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#input').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';highlight()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💻', href:'/image/code-to-image.html', name:'Code to Image'},
+    {icon:'📄', href:'/dev/js-formatter.html', name:'JS Formatter'},
+    {icon:'🎨', href:'/css-tools/gradient.html', name:'CSS Gradient'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

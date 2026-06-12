@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Early Mortgage Payoff Calculator — Save Thousands | GameZipper Tools</title>
+  <meta name="description" content="Calculate how extra mortgage payments save you thousands in interest and years off your loan. Free amortization schedule with chart — runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/early-mortgage-payoff.html">
+  <meta property="og:title" content="Early Mortgage Payoff Calculator — Save Thousands | GameZipper Tools">
+  <meta property="og:description" content="Calculate how extra mortgage payments save you thousands in interest and years off your loan. Free amortization schedule with chart — runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/early-mortgage-payoff.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Early Mortgage Payoff Calculator — Save Thousands | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.result-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:16px 0}
+.rcard{padding:16px;border-radius:12px;background:var(--glass2);border:1px solid var(--border);text-align:center}
+.rcard .val{font-size:1.5em;font-weight:700;margin:4px 0}
+.rcard .lbl{font-size:.8em;opacity:.7}
+.rcard.save{border-color:#22c55e;background:rgba(34,197,94,.08)}
+.rcard.save .val{color:#22c55e}
+.form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.form-row .field{flex:1;min-width:150px}
+.form-row .field label{display:block;font-size:.85em;font-weight:600;margin-bottom:4px}
+.form-row .field input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:inherit;box-sizing:border-box}
+#chart{max-width:100%;margin:16px 0}
+table{width:100%;border-collapse:collapse;font-size:.85em;margin-top:12px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--border)}
+th{background:var(--glass2);font-weight:600;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.toggle-table{margin:12px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Early Mortgage Payoff Calculator","description":"Calculate how extra mortgage payments save you thousands in interest and years off your loan. Free amortization schedule with chart.","url":"https://tools.gamezipper.com/calc/early-mortgage-payoff.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How much can I save with extra mortgage payments?", "acceptedAnswer": {"@type": "Answer", "text": "Even an extra $200/month on a $300,000 mortgage can save over $40,000 in interest and cut 5+ years off your loan."}}, {"@type": "Question", "name": "Are there penalties for early mortgage payoff?", "acceptedAnswer": {"@type": "Answer", "text": "Some mortgages have prepayment penalties. Check your loan agreement before making extra payments."}}, {"@type": "Question", "name": "Should I make extra mortgage payments?", "acceptedAnswer": {"@type": "Answer", "text": "It depends on your interest rate vs investment returns. If your mortgage rate is higher than safe investment yields, extra payments make sense."}}, {"@type": "Question", "name": "Is my financial data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All calculations happen in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/early-mortgage-payoff.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/early-mortgage-payoff.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/early-mortgage-payoff.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="form-area"></div>
+    <div id="results" class="hidden"></div>
+    <canvas id="chart" width="700" height="300" class="hidden"></canvas>
+    <button class="gz-btn gz-btn-secondary toggle-table hidden" id="toggle-table" onclick="toggleTable()"></button>
+    <div id="schedule-wrap" class="hidden" style="overflow-x:auto"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Early Mortgage Payoff Calculator',
+    toolDesc: 'See how extra payments save thousands in interest and years off your mortgage. Free amortization schedule with chart.',
+    balance: 'Loan Balance ($)', rate: 'Annual Interest Rate (%)', term: 'Loan Term (years)', extra: 'Extra Monthly Payment ($)',
+    calculate: 'Calculate Savings',
+    clear: 'Clear',
+    origTotal: 'Original Total Paid', newTotal: 'New Total Paid',
+    interestSaved: 'Interest Saved', yearsSaved: 'Years Saved',
+    origInterest: 'Original Interest', newInterest: 'New Interest',
+    origPayoff: 'Original Payoff', newPayoff: 'New Payoff',
+    monthlyPayment: 'Monthly Payment', newMonthly: 'New Monthly',
+    showSchedule: 'Show Amortization Schedule',
+    hideSchedule: 'Hide Schedule',
+    month: 'Month', payment: 'Payment', principal: 'Principal', interestCol: 'Interest', extraCol: 'Extra', balanceCol: 'Balance',
+    step1: 'Enter your mortgage balance, rate and term',
+    step2: 'Add your planned extra monthly payment',
+    step3: 'Click Calculate to see your savings',
+    step4: 'Review the amortization schedule for details',
+  },
+  zh: {
+    toolTitle: '提前还贷计算器',
+    toolDesc: '查看额外还款能节省多少利息、缩短多少年限。免费摊销表和图表。',
+    balance: '贷款余额 ($)', rate: '年利率 (%)', term: '贷款年限', extra: '每月额外还款 ($)',
+    calculate: '计算节省',
+    clear: '清空',
+    origTotal: '原总还款', newTotal: '新总还款',
+    interestSaved: '节省利息', yearsSaved: '缩短年限',
+    origInterest: '原总利息', newInterest: '新总利息',
+    origPayoff: '原还清时间', newPayoff: '新还清时间',
+    monthlyPayment: '月供', newMonthly: '新月供',
+    showSchedule: '显示摊销表',
+    hideSchedule: '隐藏摊销表',
+    month: '月份', payment: '还款', principal: '本金', interestCol: '利息', extraCol: '额外', balanceCol: '余额',
+    step1: '输入贷款余额、利率和年限',
+    step2: '输入计划每月额外还款金额',
+    step3: '点击计算查看节省情况',
+    step4: '查看摊销表了解详情',
+  }
+});
+
+const { $, t } = GZ;
+const fmt = n => '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtN = n => n.toLocaleString('en-US');
+
+// Form
+const fields = [
+  {id:'balance',placeholder:'300000',type:'number'},
+  {id:'rate',placeholder:'6.5',type:'number',step:'0.01'},
+  {id:'term',placeholder:'30',type:'number'},
+  {id:'extra',placeholder:'200',type:'number'},
+];
+let html = '<div class="form-row">';
+fields.forEach(f => {
+  html += `<div class="field"><label for="f-${f.id}">${t(f.id)}</label><input type="${f.type}" id="f-${f.id}" placeholder="${f.placeholder}"${f.step?` step="${f.step}"`:''}></div>`;
+});
+html += '</div>';
+$('#form-area').innerHTML = html;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="calculate()">${t('calculate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.querySelectorAll('.form-row input').forEach(i=>i.value='');$('#results').classList.add('hidden');$('#chart').classList.add('hidden')">${t('clear')}</button>`;
+
+function amortize(balance, annualRate, years, extraMonthly) {
+  const monthlyRate = annualRate / 100 / 12;
+  const n = years * 12;
+  const basePayment = monthlyRate > 0 ? balance * (monthlyRate * Math.pow(1+monthlyRate, n)) / (Math.pow(1+monthlyRate, n) - 1) : balance / n;
+  const rows = [];
+  let b = balance;
+  let totalInterest = 0;
+  let totalPaid = 0;
+  let month = 0;
+  while (b > 0.01 && month < n + 600) {
+    month++;
+    const interest = b * monthlyRate;
+    let principal = basePayment - interest;
+    let extra = Math.min(extraMonthly, b - principal);
+    if (extra < 0) extra = 0;
+    const payment = principal + interest + extra;
+    b = Math.max(0, b - principal - extra);
+    totalInterest += interest;
+    totalPaid += payment;
+    rows.push({month, payment, principal, interest, extra, balance: b});
+    if (b <= 0.01) break;
+  }
+  return {rows, totalInterest, totalPaid, months: month, basePayment};
+}
+
+function calculate() {
+  const balance = parseFloat($('#f-balance').value);
+  const rate = parseFloat($('#f-rate').value);
+  const term = parseInt($('#f-term').value);
+  const extra = parseFloat($('#f-extra').value) || 0;
+  if (!balance || !rate || !term) return;
+
+  const orig = amortize(balance, rate, term, 0);
+  const new_ = amortize(balance, rate, term, extra);
+
+  const savedInterest = orig.totalInterest - new_.totalInterest;
+  const savedYears = (orig.months - new_.months) / 12;
+
+  const resEl = $('#results');
+  resEl.classList.remove('hidden');
+  resEl.innerHTML = `
+    <div class="result-cards">
+      <div class="rcard"><div class="lbl">${t('origInterest')}</div><div class="val">${fmt(orig.totalInterest)}</div></div>
+      <div class="rcard"><div class="lbl">${t('newInterest')}</div><div class="val">${fmt(new_.totalInterest)}</div></div>
+      <div class="rcard save"><div class="lbl">${t('interestSaved')}</div><div class="val">${fmt(savedInterest)}</div></div>
+      <div class="rcard save"><div class="lbl">${t('yearsSaved')}</div><div class="val">${fmtN(savedYears)} yrs</div></div>
+      <div class="rcard"><div class="lbl">${t('origPayoff')}</div><div class="val">${orig.months} mo</div></div>
+      <div class="rcard"><div class="lbl">${t('newPayoff')}</div><div class="val">${new_.months} mo</div></div>
+      <div class="rcard"><div class="lbl">${t('monthlyPayment')}</div><div class="val">${fmt(orig.basePayment)}</div></div>
+      <div class="rcard"><div class="lbl">${t('newMonthly')}</div><div class="val">${fmt(orig.basePayment + extra)}</div></div>
+    </div>`;
+
+  // Chart
+  const canvas = $('#chart');
+  canvas.classList.remove('hidden');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 700 * dpr;
+  canvas.height = 300 * dpr;
+  canvas.style.width = '700px';
+  canvas.style.height = '300px';
+  ctx.scale(dpr, dpr);
+
+  const maxMonths = Math.max(orig.months, new_.months);
+  const maxBal = balance;
+
+  // Background
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--gz-bg').trim() || '#0a0a0f';
+  ctx.fillRect(0, 0, 700, 300);
+
+  const pad = {l:60, r:20, t:20, b:40};
+  const w = 700 - pad.l - pad.r;
+  const h = 300 - pad.t - pad.b;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (h / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + w, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmt(maxBal - (maxBal / 4) * i), pad.l - 8, y + 4);
+  }
+
+  // Draw balance curves
+  function drawCurve(rows, color) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    rows.forEach((r, i) => {
+      const x = pad.l + (r.month / maxMonths) * w;
+      const y = pad.t + (r.balance / maxBal) * h;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  drawCurve(orig.rows, '#ef4444');
+  drawCurve(new_.rows, '#22c55e');
+
+  // Legend
+  ctx.font = '12px sans-serif';
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(pad.l, 280, 12, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.textAlign = 'left';
+  ctx.fillText('Original', pad.l + 16, 291);
+  ctx.fillStyle = '#22c55e';
+  ctx.fillRect(pad.l + 90, 280, 12, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fillText('With Extra Payments', pad.l + 106, 291);
+
+  // Store for table
+  window._origRows = orig.rows;
+  window._newRows = new_.rows;
+  $('#toggle-table').classList.remove('hidden');
+  $('#toggle-table').textContent = t('showSchedule');
+  $('#schedule-wrap').classList.add('hidden');
+}
+
+function toggleTable() {
+  const wrap = $('#schedule-wrap');
+  if (!wrap.classList.contains('hidden')) {
+    wrap.classList.add('hidden');
+    $('#toggle-table').textContent = t('showSchedule');
+    return;
+  }
+  const rows = window._newRows;
+  let html = `<table><tr><th>${t('month')}</th><th>${t('payment')}</th><th>${t('principal')}</th><th>${t('interestCol')}</th><th>${t('extraCol')}</th><th>${t('balanceCol')}</th></tr>`;
+  // Show every 12th month + last
+  rows.forEach((r, i) => {
+    if (i % 12 === 0 || i === rows.length - 1) {
+      html += `<tr><td>${r.month}</td><td>${fmt(r.payment)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.extra)}</td><td>${fmt(r.balance)}</td></tr>`;
+    }
+  });
+  html += '</table>';
+  wrap.innerHTML = html;
+  wrap.classList.remove('hidden');
+  $('#toggle-table').textContent = t('hideSchedule');
+}
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🏠', href:'/calc/mortgage.html', name:'Mortgage Calculator'},
+    {icon:'📋', href:'/calc/loan-amortization.html', name:'Loan Amortization'},
+    {icon:'💸', href:'/calc/loan-prepayment.html', name:'Loan Prepayment'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

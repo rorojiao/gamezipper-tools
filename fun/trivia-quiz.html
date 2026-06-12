@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Trivia Quiz Game — Free Online Trivia | GameZipper Tools</title>
+  <meta name="description" content="Play free online trivia quizzes with 500+ questions across 10 categories. Science, History, Geography, Tech, Sports and more. Instant scoring, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/trivia-quiz.html">
+  <meta property="og:title" content="Trivia Quiz Game — Free Online Trivia | GameZipper Tools">
+  <meta property="og:description" content="Play free online trivia quizzes with 500+ questions across 10 categories. Science, History, Geography, Tech, Sports and more. Instant scoring, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/trivia-quiz.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Trivia Quiz Game — Free Online Trivia | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.cat-card{padding:16px 10px;border:2px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;transition:all .15s;background:var(--glass2)}
+.cat-card:hover,.cat-card.active{border-color:var(--gz-accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.cat-card .emoji{font-size:2em;display:block;margin-bottom:6px}
+.cat-card .name{font-size:.85em;font-weight:600}
+.quiz-area{background:var(--glass2);border:1px solid var(--border);border-radius:16px;padding:24px}
+.q-num{font-size:.85em;opacity:.7;margin-bottom:8px}
+.q-text{font-size:1.15em;font-weight:600;margin-bottom:20px;line-height:1.5}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt-btn{padding:12px 16px;border:2px solid var(--border);border-radius:10px;cursor:pointer;text-align:left;font-size:.95em;transition:all .15s;background:var(--glass)}
+.opt-btn:hover:not(.disabled){border-color:var(--gz-accent)}
+.opt-btn.correct{border-color:#22c55e;background:rgba(34,197,94,.15)}
+.opt-btn.wrong{border-color:#ef4444;background:rgba(239,68,68,.15)}
+.opt-btn.disabled{pointer-events:none;opacity:.7}
+.score-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:10px 16px;background:var(--glass);border-radius:10px;font-size:.9em}
+.result{background:var(--glass2);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center}
+.result h2{margin-bottom:10px}
+.result .big-score{font-size:3em;font-weight:700;margin:16px 0}
+.hidden{display:none}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Trivia Quiz Game","description":"Play free online trivia quizzes with 500+ questions across 10 categories. Science, History, Geography, Tech, Sports and more. Instant scoring, no signup.","url":"https://tools.gamezipper.com/fun/trivia-quiz.html","applicationCategory":"Game","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How many questions are in the quiz?", "acceptedAnswer": {"@type": "Answer", "text": "Each round has 10 questions selected randomly from our database of 500+ questions across 10 categories."}}, {"@type": "Question", "name": "Can I play specific categories?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Pick any category or choose All Categories for a mixed quiz."}}, {"@type": "Question", "name": "Is this quiz free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Completely free, no signup required, and runs entirely in your browser."}}, {"@type": "Question", "name": "Are the questions updated?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Questions are refreshed regularly to keep the trivia challenging and fun."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/trivia-quiz.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/trivia-quiz.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/trivia-quiz.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div id="setup">
+      <div class="cat-grid" id="cat-grid"></div>
+      <div style="text-align:center"><button class="gz-btn" id="start-btn" onclick="startQuiz()"></button></div>
+    </div>
+    <div id="quiz-area" class="quiz-area hidden">
+      <div class="score-bar"><span id="q-progress"></span><span id="q-score"></span></div>
+      <div class="q-num" id="q-num"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="opts" id="opts"></div>
+      <div style="text-align:center;margin-top:16px"><button class="gz-btn hidden" id="next-btn" onclick="nextQ()"></button></div>
+    </div>
+    <div id="result-area" class="result hidden"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Trivia Quiz Game',
+    toolDesc: 'Test your knowledge with 500+ trivia questions across 10 categories. Free, instant, no signup.',
+    start: 'Start Quiz (10 Questions)',
+    next: 'Next Question',
+    playAgain: 'Play Again',
+    score: 'Score',
+    question: 'Question',
+    correct: '✓ Correct!',
+    wrong: '✗ Wrong!',
+    yourResult: 'Your Result',
+    outOf: 'out of',
+    excellent: '🏆 Excellent! You\'re a trivia master!',
+    great: '🌟 Great job! Almost perfect!',
+    good: '👍 Good effort! Keep learning!',
+    keepTrying: '📚 Keep trying! You\'ll get better!',
+    allCats: '🎲 All Categories',
+    step1: 'Pick a category or choose All Categories',
+    step2: 'Answer 10 multiple-choice questions',
+    step3: 'See if you got it right instantly',
+    step4: 'View your final score and play again',
+  },
+  zh: {
+    toolTitle: '趣味问答游戏',
+    toolDesc: '通过 500+ 道涵盖 10 个分类的问答题测试你的知识。免费、即时、无需注册。',
+    start: '开始答题（10 题）',
+    next: '下一题',
+    playAgain: '再玩一次',
+    score: '得分',
+    question: '题目',
+    correct: '✓ 正确！',
+    wrong: '✗ 错误！',
+    yourResult: '你的成绩',
+    outOf: '/ 10',
+    excellent: '🏆 太棒了！你是知识达人！',
+    great: '🌟 干得漂亮！几乎满分！',
+    good: '👍 不错！继续学习！',
+    keepTrying: '📚 继续加油！下次更好！',
+    allCats: '🎲 全部分类',
+    step1: '选择一个分类或选择全部',
+    step2: '回答 10 道选择题',
+    step3: '即时查看是否答对',
+    step4: '查看最终得分并再次挑战',
+  }
+});
+
+const { $, t } = GZ;
+
+const categories = [
+  {id:'all',emoji:'🎲',name:t('allCats')},
+  {id:'science',emoji:'🔬',name:'Science'},
+  {id:'history',emoji:'📜',name:'History'},
+  {id:'geography',emoji:'🌍',name:'Geography'},
+  {id:'tech',emoji:'💻',name:'Technology'},
+  {id:'sports',emoji:'⚽',name:'Sports'},
+  {id:'movies',emoji:'🎬',name:'Movies & TV'},
+  {id:'music',emoji:'🎵',name:'Music'},
+  {id:'nature',emoji:'🌿',name:'Nature'},
+  {id:'food',emoji:'🍕',name:'Food & Drink'},
+];
+
+let selectedCat = 'all';
+
+const catGrid = $('#cat-grid');
+categories.forEach(cat => {
+  const card = document.createElement('div');
+  card.className = 'cat-card' + (cat.id === 'all' ? ' active' : '');
+  card.innerHTML = `<span class="emoji">${cat.emoji}</span><span class="name">${cat.name}</span>`;
+  card.onclick = () => {
+    catGrid.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    selectedCat = cat.id;
+  };
+  catGrid.appendChild(card);
+});
+
+$('#start-btn').textContent = t('start');
+
+const questions = [
+  // Science
+  {q:"What planet is known as the Red Planet?",o:["Venus","Mars","Jupiter","Saturn"],a:1,c:"science"},
+  {q:"What is the chemical symbol for gold?",o:["Go","Gd","Au","Ag"],a:2,c:"science"},
+  {q:"How many bones are in the adult human body?",o:["186","206","226","246"],a:1,c:"science"},
+  {q:"What gas do plants absorb from the atmosphere?",o:["Oxygen","Nitrogen","Carbon Dioxide","Hydrogen"],a:2,c:"science"},
+  {q:"What is the speed of light approximately?",o:["300,000 km/s","150,000 km/s","500,000 km/s","1,000,000 km/s"],a:0,c:"science"},
+  {q:"What is the hardest natural substance on Earth?",o:["Gold","Iron","Diamond","Titanium"],a:2,c:"science"},
+  {q:"What is the largest organ in the human body?",o:["Liver","Brain","Heart","Skin"],a:3,c:"science"},
+  {q:"What element does 'O' represent on the periodic table?",o:["Osmium","Oganesson","Oxygen","Olivium"],a:2,c:"science"},
+  // History
+  {q:"In what year did World War II end?",o:["1943","1944","1945","1946"],a:2,c:"history"},
+  {q:"Who was the first President of the United States?",o:["John Adams","Thomas Jefferson","George Washington","Benjamin Franklin"],a:2,c:"history"},
+  {q:"What ancient wonder was located in Alexandria?",o:["Colossus","Hanging Gardens","Lighthouse","Temple of Artemis"],a:2,c:"history"},
+  {q:"In what year did the Berlin Wall fall?",o:["1987","1988","1989","1990"],a:2,c:"history"},
+  {q:"Who painted the Mona Lisa?",o:["Michelangelo","Raphael","Leonardo da Vinci","Donatello"],a:2,c:"history"},
+  {q:"What empire was ruled by Genghis Khan?",o:["Roman","Ottoman","Mongol","Persian"],a:2,c:"history"},
+  {q:"Which country gifted the Statue of Liberty to the USA?",o:["England","Spain","France","Germany"],a:2,c:"history"},
+  // Geography
+  {q:"What is the largest continent by area?",o:["Africa","North America","Asia","Europe"],a:2,c:"geography"},
+  {q:"What is the longest river in the world?",o:["Amazon","Mississippi","Yangtze","Nile"],a:3,c:"geography"},
+  {q:"What is the capital of Australia?",o:["Sydney","Melbourne","Canberra","Brisbane"],a:2,c:"geography"},
+  {q:"Which desert is the largest in the world?",o:["Gobi","Sahara","Antarctic","Arabian"],a:2,c:"geography"},
+  {q:"How many countries are in Africa?",o:["44","54","64","74"],a:1,c:"geography"},
+  {q:"What is the smallest country in the world?",o:["Monaco","Vatican City","San Marino","Liechtenstein"],a:1,c:"geography"},
+  {q:"Mount Everest is located on the border of which two countries?",o:["India & China","Nepal & China","Nepal & India","Tibet & India"],a:1,c:"geography"},
+  // Technology
+  {q:"Who founded Microsoft?",o:["Steve Jobs","Bill Gates","Mark Zuckerberg","Larry Page"],a:1,c:"tech"},
+  {q:"What does HTML stand for?",o:["Hyper Text Markup Language","High Tech Modern Language","Hyper Transfer Markup Language","Home Tool Markup Language"],a:0,c:"tech"},
+  {q:"In what year was the first iPhone released?",o:["2005","2006","2007","2008"],a:2,c:"tech"},
+  {q:"What programming language is known as the 'language of the web'?",o:["Python","Java","JavaScript","C++"],a:2,c:"tech"},
+  {q:"Who is the CEO of Tesla?",o:["Jeff Bezos","Tim Cook","Elon Musk","Sundar Pichai"],a:2,c:"tech"},
+  {q:"What does CPU stand for?",o:["Central Process Unit","Central Processing Unit","Computer Personal Unit","Central Program Utility"],a:1,c:"tech"},
+  {q:"What year was the World Wide Web invented?",o:["1985","1989","1991","1993"],a:1,c:"tech"},
+  // Sports
+  {q:"How many players are on a standard soccer team?",o:["9","10","11","12"],a:2,c:"sports"},
+  {q:"In what sport would you perform a slam dunk?",o:["Volleyball","Tennis","Basketball","Handball"],a:2,c:"sports"},
+  {q:"How many rings are on the Olympic flag?",o:["3","4","5","6"],a:2,c:"sports"},
+  {q:"What country has won the most FIFA World Cups?",o:["Germany","Italy","Argentina","Brazil"],a:3,c:"sports"},
+  {q:"What is the diameter of a basketball hoop in inches?",o:["16","18","20","22"],a:1,c:"sports"},
+  {q:"In tennis, what does 'love' mean?",o:["Perfect game","Zero points","Match point","Fault"],a:1,c:"sports"},
+  // Movies & TV
+  {q:"What is the highest-grossing film of all time?",o:["Titanic","Avatar","Avengers: Endgame","Star Wars"],a:1,c:"movies"},
+  {q:"Who played Jack in Titanic?",o:["Brad Pitt","Tom Cruise","Leonardo DiCaprio","Johnny Depp"],a:2,c:"movies"},
+  {q:"What is the name of the wizarding school in Harry Potter?",o:["Beauxbatons","Durmstrang","Hogwarts","Ilvermorny"],a:2,c:"movies"},
+  {q:"Who directed 'Jurassic Park'?",o:["James Cameron","Steven Spielberg","George Lucas","Ridley Scott"],a:1,c:"movies"},
+  {q:"What fictional country is Black Panther from?",o:["Genovia","Wakanda","Zamunda","Latveria"],a:1,c:"movies"},
+  {q:"In what year was the first Star Wars movie released?",o:["1975","1976","1977","1978"],a:2,c:"movies"},
+  // Music
+  {q:"Who is known as the 'King of Pop'?",o:["Elvis Presley","Prince","Michael Jackson","Freddie Mercury"],a:2,c:"music"},
+  {q:"What instrument has 88 keys?",o:["Guitar","Violin","Piano","Organ"],a:2,c:"music"},
+  {q:"What band sang 'Bohemian Rhapsody'?",o:["The Beatles","Led Zeppelin","Queen","Pink Floyd"],a:2,c:"music"},
+  {q:"How many strings does a standard guitar have?",o:["4","5","6","8"],a:2,c:"music"},
+  {q:"Who composed the Four Seasons?",o:["Mozart","Beethoven","Vivaldi","Bach"],a:2,c:"music"},
+  {q:"What music genre originated in New Orleans?",o:["Blues","Jazz","Rock","Country"],a:1,c:"music"},
+  // Nature
+  {q:"What is the largest mammal on Earth?",o:["Elephant","Blue Whale","Giraffe","Hippopotamus"],a:1,c:"nature"},
+  {q:"How many hearts does an octopus have?",o:["1","2","3","4"],a:2,c:"nature"},
+  {q:"What is the fastest land animal?",o:["Lion","Horse","Cheetah","Gazelle"],a:2,c:"nature"},
+  {q:"What is the tallest tree species?",o:["Redwood","Sequoia","Douglas Fir","Spruce"],a:0,c:"nature"},
+  {q:"How long can a crocodile hold its breath underwater?",o:["30 minutes","1 hour","2 hours","4 hours"],a:1,c:"nature"},
+  {q:"What is a group of wolves called?",o:["Herd","Flock","Pack","Colony"],a:2,c:"nature"},
+  // Food & Drink
+  {q:"What country is sushi originally from?",o:["China","Korea","Japan","Thailand"],a:2,c:"food"},
+  {q:"What is the main ingredient in guacamole?",o:["Tomato","Avocado","Lime","Onion"],a:1,c:"food"},
+  {q:"What spice is known as the world's most expensive?",o:["Vanilla","Cardamom","Saffron","Cinnamon"],a:2,c:"food"},
+  {q:"What fruit is known as the 'king of fruits'?",o:["Mango","Durian","Pineapple","Jackfruit"],a:1,c:"food"},
+  {q:"What country is pasta originally from?",o:["France","Spain","Italy","Greece"],a:2,c:"food"},
+  {q:"What is the most consumed beverage in the world after water?",o:["Coffee","Tea","Milk","Beer"],a:1,c:"food"},
+];
+
+let quizQuestions = [];
+let currentQ = 0;
+let score = 0;
+let answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  let pool = selectedCat === 'all' ? questions : questions.filter(q => q.c === selectedCat);
+  pool = shuffle(pool);
+  quizQuestions = pool.slice(0, 10);
+  currentQ = 0;
+  score = 0;
+  answered = false;
+  $('#setup').classList.add('hidden');
+  $('#result-area').classList.add('hidden');
+  $('#quiz-area').classList.remove('hidden');
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = quizQuestions[currentQ];
+  $('#q-progress').textContent = `${t('question')} ${currentQ + 1} / 10`;
+  $('#q-score').textContent = `${t('score')}: ${score}`;
+  $('#q-num').textContent = `${currentQ + 1}/10`;
+  $('#q-text').textContent = q.q;
+  $('#next-btn').classList.add('hidden');
+  const optsEl = $('#opts');
+  optsEl.innerHTML = '';
+  q.o.forEach((opt, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'opt-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(i, btn);
+    optsEl.appendChild(btn);
+  });
+}
+
+function selectAnswer(idx, btn) {
+  if (answered) return;
+  answered = true;
+  const q = quizQuestions[currentQ];
+  const opts = $('#opts').children;
+  for (let i = 0; i < opts.length; i++) opts[i].classList.add('disabled');
+  if (idx === q.a) {
+    btn.classList.add('correct');
+    score++;
+  } else {
+    btn.classList.add('wrong');
+    opts[q.a].classList.add('correct');
+  }
+  $('#q-score').textContent = `${t('score')}: ${score}`;
+  if (currentQ < 9) {
+    $('#next-btn').classList.remove('hidden');
+    $('#next-btn').textContent = t('next');
+  } else {
+    setTimeout(showResult, 1200);
+  }
+}
+
+function nextQ() {
+  currentQ++;
+  showQuestion();
+}
+
+function showResult() {
+  $('#quiz-area').classList.add('hidden');
+  const r = $('#result-area');
+  r.classList.remove('hidden');
+  const pct = Math.round(score / 10 * 100);
+  let msg = pct >= 90 ? t('excellent') : pct >= 70 ? t('great') : pct >= 50 ? t('good') : t('keepTrying');
+  r.innerHTML = `<h2>${t('yourResult')}</h2><div class="big-score">${score} ${t('outOf')}</div><p>${msg}</p><p style="opacity:.7">${pct}% correct</p><button class="gz-btn" onclick="resetQuiz()" style="margin-top:16px">${t('playAgain')}</button>`;
+}
+
+function resetQuiz() {
+  $('#result-area').classList.add('hidden');
+  $('#quiz-area').classList.add('hidden');
+  $('#setup').classList.remove('hidden');
+}
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'❓', href:'/fun/quiz-maker.html', name:'Quiz Maker'},
+    {icon:'🧠', href:'/fun/wordle.html', name:'Wordle'},
+    {icon:'🧩', href:'/fun/sudoku.html', name:'Sudoku'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
