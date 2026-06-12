@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>TOML to JSON Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert TOML configuration files to JSON format instantly. Proper type handling, nested tables, arrays and inline tables. Free, instant, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/toml-to-json.html">
+  <meta property="og:title" content="TOML to JSON Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert TOML configuration files to JSON format instantly. Proper type handling, nested tables, arrays and inline tables. Free, instant, browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/toml-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="TOML to JSON Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+.toml-key{color:#e94560}.toml-str{color:#00d672}.toml-num{color:#61afef}.toml-bool{color:#d19a66}.toml-date{color:#c678dd}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"TOML to JSON Converter","description":"Convert TOML configuration files to JSON format instantly. Proper type handling, nested tables, arrays and inline tables. Free, instant, browser-based.","url":"https://tools.gamezipper.com/convert/toml-to-json.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is TOML?", "acceptedAnswer": {"@type": "Answer", "text": "TOML (Tom's Obvious Minimal Language) is a configuration file format designed to be easy to read and write. It's used by Rust's Cargo, Python's pyproject.toml, and many other tools."}}, {"@type": "Question", "name": "Why convert TOML to JSON?", "acceptedAnswer": {"@type": "Answer", "text": "JSON is more widely supported by programming languages and APIs. Converting TOML to JSON makes it easier to process configuration data in JavaScript and other environments."}}, {"@type": "Question", "name": "Is my data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All conversion happens entirely in your browser. No data is ever sent to any server."}}, {"@type": "Question", "name": "What TOML features are supported?", "acceptedAnswer": {"@type": "Answer", "text": "This tool supports tables, nested tables, arrays, inline tables, strings (basic and literal), integers, floats, booleans, datetime, and dotted keys."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/toml-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/toml-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/toml-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="[database]
+server = "192.168.1.1"
+ports = [8001, 8002, 8003]
+
+[database.credentials]
+username = "admin"
+password = "secret"
+
+[owner]
+name = "Tom"
+dob = 1979-05-27T07:32:00Z
+enabled = true"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'TOML to JSON Converter',
+    toolDesc: 'Convert TOML configuration files to clean JSON with proper type handling, nested tables and inline arrays.',
+    valid: '✓ Valid TOML',
+    invalid: '✗ Invalid TOML',
+    step1: 'Paste your TOML configuration in the input area',
+    step2: 'The tool converts TOML to JSON automatically',
+    step3: 'Review the formatted JSON output with syntax highlighting',
+    step4: 'Click Copy to copy the JSON to your clipboard',
+  },
+  zh: {
+    toolTitle: 'TOML 转 JSON 转换器',
+    toolDesc: '将 TOML 配置文件转换为干净的 JSON，支持正确的类型处理、嵌套表格和内联数组。',
+    valid: '✓ TOML 有效',
+    invalid: '✗ TOML 无效',
+    step1: '在输入区粘贴 TOML 配置',
+    step2: '工具自动将 TOML 转换为 JSON',
+    step3: '查看带语法高亮的格式化 JSON 输出',
+    step4: '点击「复制」将 JSON 复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Minimal TOML parser
+function parseToml(str) {
+  const result = {};
+  let current = result;
+  let currentPath = [];
+  const lines = str.split('\n');
+
+  function setNested(obj, path, value) {
+    let target = obj;
+    for (let i = 0; i < path.length - 1; i++) {
+      if (!(path[i] in target)) target[path[i]] = {};
+      target = target[path[i]];
+    }
+    target[path[path.length - 1]] = value;
+  }
+
+  function getOrCreate(obj, path) {
+    let target = obj;
+    for (const key of path) {
+      if (!(key in target)) target[key] = {};
+      target = target[key];
+    }
+    return target;
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    // Table header [xxx.yyy]
+    const tableMatch = trimmed.match(/^\[([^\]]+)\]$/);
+    if (tableMatch) {
+      currentPath = tableMatch[1].split('.').map(k => k.trim());
+      current = getOrCreate(result, currentPath);
+      continue;
+    }
+
+    // Array of tables [[xxx]]
+    const arrTableMatch = trimmed.match(/^\[\[([^\]]+)\]\]$/);
+    if (arrTableMatch) {
+      const path = arrTableMatch[1].split('.').map(k => k.trim());
+      let target = result;
+      for (let i = 0; i < path.length - 1; i++) {
+        if (!(path[i] in target)) target[path[i]] = {};
+        target = target[path[i]];
+      }
+      const lastKey = path[path.length - 1];
+      if (!Array.isArray(target[lastKey])) target[lastKey] = [];
+      const newObj = {};
+      target[lastKey].push(newObj);
+      current = newObj;
+      currentPath = path;
+      continue;
+    }
+
+    // Key = value
+    const kvMatch = trimmed.match(/^([a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)\s*=\s*(.+)$/);
+    if (kvMatch) {
+      const keyPath = kvMatch[1].split('.');
+      const rawVal = kvMatch[2].trim();
+      let value;
+
+      // Parse value
+      if (rawVal === 'true') value = true;
+      else if (rawVal === 'false') value = false;
+      else if (/^-?\d+$/.test(rawVal)) value = parseInt(rawVal, 10);
+      else if (/^-?\d+\.\d+(?:[eE][+-]?\d+)?$/.test(rawVal)) value = parseFloat(rawVal);
+      else if (/^".*"$/.test(rawVal)) value = rawVal.slice(1, -1).replace(/\\"/g, '"');
+      else if (/^'.*'$/.test(rawVal)) value = rawVal.slice(1, -1); // literal string
+      else if (/^\[/.test(rawVal)) {
+        // Array
+        try {
+          const arrStr = rawVal.replace(/(\w+)\s*=/g, '"$1":')
+            .replace(/'/g, '"');
+          value = JSON.parse(arrStr);
+        } catch(e) {
+          // Manual array parse
+          const inner = rawVal.slice(1, -1).trim();
+          if (!inner) { value = []; }
+          else {
+            value = inner.split(',').map(v => {
+              v = v.trim();
+              if (v === 'true') return true;
+              if (v === 'false') return false;
+              if (/^-?\d+$/.test(v)) return parseInt(v);
+              if (/^-?\d+\.\d+/.test(v)) return parseFloat(v);
+              if (/^".*"$/.test(v)) return v.slice(1,-1);
+              if (/^'.*'$/.test(v)) return v.slice(1,-1);
+              return v;
+            });
+          }
+        }
+      }
+      else if (/^\{/.test(rawVal)) {
+        // Inline table
+        try { value = JSON.parse(rawVal.replace(/(\w+)\s*=/g, '"$1":').replace(/'/g, '"')); }
+        catch(e) { value = rawVal; }
+      }
+      else { value = rawVal; }
+
+      if (keyPath.length === 1) {
+        current[keyPath[0]] = value;
+      } else {
+        setNested(current, keyPath, value);
+      }
+    }
+  }
+  return result;
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'toml-num';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'toml-key' : 'toml-str';
+      else if (/true|false/.test(m)) c = 'toml-bool';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const obj = parseToml(inp);
+    const json = JSON.stringify(obj, null, 2);
+    $('#output').innerHTML = syntaxHighlight(json);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; $('#status').innerHTML = ''; }
+
+function loadExample() {
+  $('#input').value = `[database]
+server = "192.168.1.1"
+ports = [8001, 8002, 8003]
+connection_max = 5000
+enabled = true
+
+[database.credentials]
+username = "admin"
+password = "secret123"
+
+[owner]
+name = "Tom Preston-Werner"
+dob = 1979-05-27T07:32:00Z
+
+[server]
+host = "localhost"
+port = 8080
+
+[logging]
+level = "info"
+file = "/var/log/app.log"`;
+  doConvert();
+}
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/dev/json-to-toml.html', name:'JSON to TOML'},
+    {icon:'🔄', href:'/dev/yaml-to-toml.html', name:'YAML to TOML'},
+    {icon:'📋', href:'/convert/toml-editor.html', name:'TOML Editor'},
+    {icon:'🔄', href:'/convert/yaml-json.html', name:'YAML ↔ JSON'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

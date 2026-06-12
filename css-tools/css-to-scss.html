@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSS to SCSS Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert plain CSS to SCSS with nested rules, variables, and mixins. Automatically detects repeated values and nesting opportunities. Free, instant, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/css-tools/css-to-scss.html">
+  <meta property="og:title" content="CSS to SCSS Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert plain CSS to SCSS with nested rules, variables, and mixins. Automatically detects repeated values and nesting opportunities. Free, instant, browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/css-tools/css-to-scss.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS to SCSS Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+.scss-var{color:#e94560}.scss-sel{color:#61afef}.scss-prop{color:#00d672}.scss-val{color:#d19a66}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS to SCSS Converter","description":"Convert plain CSS to SCSS with nested rules, variables, and mixins. Automatically detects repeated values and nesting opportunities. Free, instant, browser-based.","url":"https://tools.gamezipper.com/css-tools/css-to-scss.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is SCSS?", "acceptedAnswer": {"@type": "Answer", "text": "SCSS (Sassy CSS) is a preprocessor scripting language that extends CSS with features like variables, nesting, mixins, and functions. It compiles back to standard CSS."}}, {"@type": "Question", "name": "Why convert CSS to SCSS?", "acceptedAnswer": {"@type": "Answer", "text": "SCSS provides better code organization with nesting, reusable variables for consistent theming, and mixins for common patterns. It makes large stylesheets more maintainable."}}, {"@type": "Question", "name": "Is my CSS sent to any server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All conversion happens entirely in your browser. No data is ever sent to any server."}}, {"@type": "Question", "name": "Does it extract variables automatically?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The converter detects repeated values (colors, sizes, font-families) and extracts them into SCSS variables at the top of the output."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/css-tools/css-to-scss.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/css-tools/css-to-scss.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/css-tools/css-to-scss.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder=".container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.container .header {
+  color: #333;
+  font-size: 24px;
+}
+.container .header .title {
+  font-weight: bold;
+  color: #333;
+}
+.container .body {
+  padding: 20px;
+  color: #666;
+}"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSS to SCSS Converter',
+    toolDesc: 'Convert plain CSS to SCSS with nested rules, auto-extracted variables, and cleaner structure. Instant, browser-based.',
+    step1: 'Paste your CSS code in the input area',
+    step2: 'Click Convert to generate SCSS with nesting and variables',
+    step3: 'Review the nested SCSS structure with extracted variables',
+    step4: 'Click Copy to copy the SCSS to your clipboard',
+  },
+  zh: {
+    toolTitle: 'CSS 转 SCSS 转换器',
+    toolDesc: '将普通 CSS 转换为 SCSS，自动嵌套规则、提取变量、优化结构。即时转换，浏览器本地运行。',
+    step1: '在输入区粘贴 CSS 代码',
+    step2: '点击「转换」生成带嵌套和变量的 SCSS',
+    step3: '查看嵌套的 SCSS 结构和提取的变量',
+    step4: '点击「复制」将 SCSS 复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function convertCssToScss(css) {
+  // Step 1: Parse CSS rules
+  const rules = [];
+  let cleaned = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+
+  // Extract rules: selector { props }
+  const ruleRegex = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = ruleRegex.exec(cleaned)) !== null) {
+    const selectors = m[1].trim().split(',').map(s => s.trim()).filter(Boolean);
+    const props = m[2].trim();
+    if (selectors.length && props) {
+      rules.push({ selectors, props });
+    }
+  }
+
+  if (!rules.length) return css;
+
+  // Step 2: Find repeated values → extract as variables
+  const valueCounts = {};
+  rules.forEach(r => {
+    r.props.split(';').forEach(p => {
+      const colonIdx = p.indexOf(':');
+      if (colonIdx < 0) return;
+      const val = p.slice(colonIdx + 1).trim();
+      if (val && val.length > 2 && /^#|^rgba|^hsl|^rgb|^\d+px$|^\d+rem$|^\d+em$/.test(val)) {
+        valueCounts[val] = (valueCounts[val] || 0) + 1;
+      }
+    });
+  });
+
+  const variables = {};
+  let varCounter = 0;
+  Object.entries(valueCounts).forEach(([val, count]) => {
+    if (count >= 2) {
+      varCounter++;
+      let name = '';
+      // Try to infer name from first property using this value
+      for (const r of rules) {
+        for (const p of r.props.split(';')) {
+          const ci = p.indexOf(':');
+          if (ci < 0) continue;
+          if (p.slice(ci + 1).trim() === val) {
+            const prop = p.slice(0, ci).trim();
+            if (prop === 'color') name = 'text-color';
+            else if (prop === 'background-color' || prop === 'background') name = 'bg-color';
+            else if (prop === 'font-size') name = 'font-size';
+            else if (prop === 'font-family') name = 'font-family';
+            else if (prop === 'border-color') name = 'border-color';
+            else if (prop === 'border-radius') name = 'border-radius';
+            else if (prop === 'margin') name = 'margin';
+            else if (prop === 'padding') name = 'padding';
+            else name = prop.replace(/[^a-z0-9]/g, '-');
+            break;
+          }
+        }
+        if (name) break;
+      }
+      if (!name) name = `value-${varCounter}`;
+      const uniqueName = name + (variables[name] ? '-' + varCounter : '');
+      variables[val] = `$${uniqueName}`;
+    }
+  });
+
+  // Step 3: Build nesting tree
+  const tree = {};
+  rules.forEach(r => {
+    const selector = r.selectors[0]; // handle first selector for nesting
+    const parts = selector.split(/\s+/);
+
+    // Replace variable values in props
+    let processedProps = r.props;
+    Object.entries(variables).forEach(([val, varName]) => {
+      processedProps = processedProps.split(val).join(varName);
+    });
+
+    let node = tree;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (!node[part]) node[part] = { __props: '', __children: {} };
+      if (i === parts.length - 1) {
+        node[part].__props = processedProps;
+      }
+      node = node[part].__children;
+    }
+  });
+
+  // Step 4: Generate SCSS output
+  let output = '';
+
+  // Variables
+  if (Object.keys(variables).length) {
+    output += '// Variables\n';
+    Object.entries(variables).forEach(([val, name]) => {
+      output += `${name}: ${val};\n`;
+    });
+    output += '\n';
+  }
+
+  function renderNode(node, indent) {
+    let result = '';
+    const pad = '  '.repeat(indent);
+    Object.entries(node).forEach(([sel, data]) => {
+      if (!data.__props && Object.keys(data.__children).length === 0) return;
+      result += `${pad}${sel} {\n`;
+      if (data.__props) {
+        data.__props.split(';').filter(p => p.trim()).forEach(p => {
+          result += `${pad}  ${p.trim()};\n`;
+        });
+      }
+      if (Object.keys(data.__children).length) {
+        if (data.__props) result += '\n';
+        result += renderNode(data.__children, indent + 1);
+      }
+      result += `${pad}}\n`;
+    });
+    return result;
+  }
+
+  output += renderNode(tree, 0);
+  return output;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  const scss = convertCssToScss(inp);
+  $('#output').textContent = scss;
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; }
+
+function loadExample() {
+  $('#input').value = `.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.container .header {
+  color: #333;
+  font-size: 24px;
+  padding: 20px;
+}
+.container .header .title {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+.container .header .subtitle {
+  color: #666;
+  font-size: 16px;
+}
+.container .body {
+  padding: 20px;
+  color: #666;
+}
+.container .body .card {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.container .footer {
+  color: #333;
+  padding: 20px;
+  text-align: center;
+}`;
+  doConvert();
+}
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'css-tools',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/convert/scss-to-css.html', name:'SCSS to CSS'},
+    {icon:'📐', href:'/css-tools/css-grid-generator.html', name:'CSS Grid'},
+    {icon:'🎨', href:'/css-tools/css-variables.html', name:'CSS Variables'},
+    {icon:'📄', href:'/css-tools/css-formatter.html', name:'CSS Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
