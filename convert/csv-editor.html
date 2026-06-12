@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>CSV Editor - Edit CSV Data Online as Spreadsheet | GameZipper Tools</title>
+  <meta name="description" content="Edit CSV data in a full spreadsheet editor. Add, delete, insert rows and columns, sort, search, find and replace, undo/redo, and export — all in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/csv-editor.html">
+  <meta property="og:title" content="CSV Editor - Edit CSV Data Online as Spreadsheet | GameZipper Tools">
+  <meta property="og:description" content="Edit CSV data in a full spreadsheet editor. Add, delete, insert rows and columns, sort, search, find and replace, undo/redo, and export — all in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/csv-editor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV Editor - Edit CSV Data Online as Spreadsheet | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+textarea{height:120px;font-family:monospace;font-size:.85em}
+#editor-wrap{margin-top:12px;overflow:auto;border-radius:12px;border:1px solid var(--border);max-height:500px;position:relative}
+#csv-table{width:100%;border-collapse:collapse;font-size:.85em;table-layout:fixed}
+#csv-table th{background:var(--accent);color:#fff;padding:6px 8px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;min-width:80px}
+#csv-table th:first-child{width:40px;min-width:40px;background:var(--accent)}
+#csv-table td{padding:2px 4px;border:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#csv-table td:first-child{background:var(--glass);text-align:center;color:var(--text2);font-size:.8em;width:40px;min-width:40px}
+#csv-table td.editing{padding:0}
+#csv-table td.editing input{width:100%;border:none;padding:4px 6px;font-size:.85em;background:var(--glass2);color:inherit;outline:2px solid var(--accent)}
+#csv-table tr:hover td:not(:first-child){background:var(--glass2)}
+#csv-table th .col-menu{cursor:pointer;margin-left:4px;font-size:.7em}
+#table-info{font-size:.85em;opacity:.7;margin-top:6px}
+#search-bar{display:none;margin-bottom:8px;gap:8px;align-items:center}
+#search-bar.active{display:flex}
+#search-bar input{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:inherit;font-size:.85em;flex:1;max-width:300px}
+#find-replace-bar{display:none;margin-bottom:8px;gap:8px;align-items:center;flex-wrap:wrap}
+#find-replace-bar.active{display:flex}
+#find-replace-bar input{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:inherit;font-size:.85em;flex:1;min-width:120px}
+#delimiter-select{width:auto;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:inherit;font-size:.85em}
+#context-menu{display:none;position:fixed;z-index:100;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 0;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:160px}
+#context-menu div{padding:8px 16px;cursor:pointer;font-size:.85em}
+#context-menu div:hover{background:var(--glass2)}
+.gz-btn-sm{padding:4px 12px;font-size:.8em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV Editor","description":"Edit CSV data in a full spreadsheet editor. Add, delete, insert rows and columns, sort, search, find and replace, undo/redo, and export — all in your browser.","url":"https://tools.gamezipper.com/convert/csv-editor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I edit CSV files online?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSV data into the text area and click Load. The data will render as an editable spreadsheet. Click any cell to edit it directly."}}, {"@type": "Question", "name": "Can I add or delete rows and columns?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Right-click on any cell to open the context menu, where you can insert or delete rows and columns, add rows at the bottom, or clear cell content."}}, {"@type": "Question", "name": "Is my CSV data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All CSV editing happens entirely in your browser. No data is ever sent to any server."}}, {"@type": "Question", "name": "What CSV delimiters are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The editor auto-detects comma, semicolon, and tab delimiters. You can also manually select the delimiter from the dropdown."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-editor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-editor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-editor.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder="Paste CSV data here..."></textarea>
+    <div id="delimiter-row" style="margin-top:8px;display:none;gap:8px;align-items:center">
+      <label style="font-size:.85em" id="lbl-delimiter"></label>
+      <select id="delimiter-select"><option value=",">,</option><option value=";">;</option><option value="\t">Tab</option><option value="|">|</option></select>
+    </div>
+    <div id="search-bar">
+      <input type="text" id="search-input" placeholder="Search...">
+      <span id="search-count" style="font-size:.85em;opacity:.7"></span>
+      <button class="gz-btn gz-btn-sm" id="search-prev">▲</button>
+      <button class="gz-btn gz-btn-sm" id="search-next">▼</button>
+      <button class="gz-btn gz-btn-sm" id="search-close">✕</button>
+    </div>
+    <div id="find-replace-bar">
+      <input type="text" id="find-input" placeholder="Find...">
+      <input type="text" id="replace-input" placeholder="Replace with...">
+      <button class="gz-btn gz-btn-sm" id="replace-one"></button>
+      <button class="gz-btn gz-btn-sm" id="replace-all"></button>
+      <button class="gz-btn gz-btn-sm" id="fr-close">✕</button>
+    </div>
+    <div id="editor-wrap"><table id="csv-table"></table></div>
+    <div id="table-info"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<div id="context-menu">
+  <div data-action="insert-row-above" id="ctx-ira"></div>
+  <div data-action="insert-row-below" id="ctx-irb"></div>
+  <div data-action="insert-col-left" id="ctx-icl"></div>
+  <div data-action="insert-col-right" id="ctx-icr"></div>
+  <div data-action="delete-row" id="ctx-dr"></div>
+  <div data-action="delete-col" id="ctx-dc"></div>
+  <div data-action="clear-cell" id="ctx-cc"></div>
+  <div data-action="add-row" id="ctx-ar"></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV Editor & Spreadsheet',
+    toolDesc: 'Edit CSV data in a full spreadsheet — add/delete rows and columns, sort, find & replace, undo/redo, and export. All in your browser.',
+    load: 'Load CSV',
+    export: 'Export CSV',
+    download: 'Download',
+    addRow: 'Add Row',
+    addCol: 'Add Column',
+    search: 'Search',
+    findReplace: 'Find & Replace',
+    undo: 'Undo',
+    redo: 'Redo',
+    clear: 'Clear',
+    example: 'Example',
+    replace: 'Replace',
+    replaceAll: 'Replace All',
+    delimiter: 'Delimiter:',
+    rows: 'rows',
+    cols: 'columns',
+    insertRowAbove: 'Insert Row Above',
+    insertRowBelow: 'Insert Row Below',
+    insertColLeft: 'Insert Column Left',
+    insertColRight: 'Insert Column Right',
+    deleteRow: 'Delete Row',
+    deleteCol: 'Delete Column',
+    clearCell: 'Clear Cell',
+    addRowBottom: 'Add Row at Bottom',
+    step1: 'Paste your CSV data into the text area above',
+    step2: 'Click "Load CSV" to render it as an editable spreadsheet',
+    step3: 'Click any cell to edit it, or right-click for row/column operations',
+    step4: 'Use Search, Find & Replace, Sort, and Undo/Redo as needed',
+    step5: 'Click "Export CSV" to download your edited data',
+  },
+  zh: {
+    toolTitle: 'CSV 编辑器 / 电子表格',
+    toolDesc: '在电子表格中编辑 CSV 数据 — 添加/删除行列、排序、查找替换、撤销重做、导出。完全浏览器本地运行。',
+    load: '加载 CSV',
+    export: '导出 CSV',
+    download: '下载',
+    addRow: '添加行',
+    addCol: '添加列',
+    search: '搜索',
+    findReplace: '查找替换',
+    undo: '撤销',
+    redo: '重做',
+    clear: '清空',
+    example: '示例',
+    replace: '替换',
+    replaceAll: '全部替换',
+    delimiter: '分隔符：',
+    rows: '行',
+    cols: '列',
+    insertRowAbove: '在上方插入行',
+    insertRowBelow: '在下方插入行',
+    insertColLeft: '在左侧插入列',
+    insertColRight: '在右侧插入列',
+    deleteRow: '删除行',
+    deleteCol: '删除列',
+    clearCell: '清空单元格',
+    addRowBottom: '在底部添加行',
+    step1: '在上方文本框中粘贴 CSV 数据',
+    step2: '点击「加载 CSV」渲染为可编辑电子表格',
+    step3: '点击单元格直接编辑，或右键操作行列',
+    step4: '使用搜索、查找替换、排序和撤销/重做功能',
+    step5: '点击「导出 CSV」下载编辑后的数据',
+  }
+});
+
+const { $, t, copyText } = GZ;
+let grid = [], history = [], historyIdx = -1, selRow = -1, selCol = -1, hasHeaders = true;
+
+function parseCSV(text, delim) {
+  const rows = [], lines = text.split('\n');
+  let current = [], field = '', inQuotes = false;
+  const d = delim === '\\t' ? '\t' : delim;
+  for (const line of lines) {
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQuotes) {
+        if (c === '"' && line[i+1] === '"') { field += '"'; i++; }
+        else if (c === '"') inQuotes = false;
+        else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === d) { current.push(field); field = ''; }
+        else field += c;
+      }
+    }
+    current.push(field); field = '';
+    if (inQuotes) { field = current.pop() + '\n'; }
+    else { rows.push(current); current = []; }
+  }
+  if (current.length) rows.push(current);
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+
+function toCSV(rows, delim) {
+  const d = delim === '\\t' ? '\t' : delim;
+  return rows.map(r => r.map(c => {
+    if (c.includes(d) || c.includes('"') || c.includes('\n')) return '"' + c.replace(/"/g,'""') + '"';
+    return c;
+  }).join(d)).join('\n');
+}
+
+function saveHistory() {
+  history = history.slice(0, historyIdx + 1);
+  history.push(JSON.parse(JSON.stringify(grid)));
+  historyIdx = history.length - 1;
+  if (history.length > 50) { history.shift(); historyIdx--; }
+}
+
+function undo() {
+  if (historyIdx > 0) { historyIdx--; grid = JSON.parse(JSON.stringify(history[historyIdx])); renderTable(); }
+}
+
+function redo() {
+  if (historyIdx < history.length - 1) { historyIdx++; grid = JSON.parse(JSON.stringify(history[historyIdx])); renderTable(); }
+}
+
+function renderTable() {
+  const table = $('#csv-table');
+  if (!grid.length) { table.innerHTML = ''; updateInfo(); return; }
+  const cols = Math.max(...grid.map(r => r.length));
+  grid.forEach(r => { while (r.length < cols) r.push(''); });
+  let html = '<tr><th></th>';
+  for (let c = 0; c < cols; c++) html += `<th>${String.fromCharCode(65 + c % 26)}${c >= 26 ? Math.floor(c/26) : ''}</th>`;
+  html += '</tr>';
+  for (let r = 0; r < grid.length; r++) {
+    html += `<tr><td>${r + 1}</td>`;
+    for (let c = 0; c < cols; c++) {
+      html += `<td data-r="${r}" data-c="${c}">${escHtml(grid[r][c] || '')}</td>`;
+    }
+    html += '</tr>';
+  }
+  table.innerHTML = html;
+  updateInfo();
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updateInfo() {
+  const cols = grid.length ? Math.max(...grid.map(r => r.length)) : 0;
+  $('#table-info').textContent = grid.length ? `${grid.length} ${t('rows')} × ${cols} ${t('cols')}` : '';
+}
+
+function loadCSV() {
+  const text = $('#input').value.trim();
+  if (!text) return;
+  const delim = $('#delimiter-select').value;
+  grid = parseCSV(text, delim);
+  saveHistory();
+  renderTable();
+  $('#delimiter-row').style.display = 'flex';
+}
+
+function exportCSV() {
+  if (!grid.length) return;
+  const delim = $('#delimiter-select').value;
+  const csv = toCSV(grid, delim);
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadExample() {
+  $('#input').value = 'Name,Age,City,Occupation\nAlice,30,New York,Engineer\nBob,25,London,Designer\nCarol,35,Tokyo,Manager\nDavid,28,Paris,Developer\nEve,32,Berlin,Analyst';
+  loadCSV();
+}
+
+// Cell editing
+$('#csv-table').addEventListener('dblclick', e => {
+  const td = e.target.closest('td[data-r]');
+  if (!td) return;
+  const r = +td.dataset.r, c = +td.dataset.c;
+  td.classList.add('editing');
+  const input = document.createElement('input');
+  input.value = grid[r][c] || '';
+  td.textContent = '';
+  td.appendChild(input);
+  input.focus();
+  input.select();
+  const finish = () => {
+    grid[r][c] = input.value;
+    td.classList.remove('editing');
+    td.textContent = grid[r][c];
+    saveHistory();
+  };
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+    if (ev.key === 'Escape') { input.value = grid[r][c]; input.blur(); }
+    if (ev.key === 'Tab') { ev.preventDefault(); input.blur(); const nc = ev.shiftKey ? c - 1 : c + 1; if (nc >= 0 && nc < (grid[0]?.length||0)) { const ntd = $(`td[data-r="${r}"][data-c="${nc}"]`); if (ntd) ntd.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); } }
+  });
+});
+
+// Context menu
+let ctxR = -1, ctxC = -1;
+$('#csv-table').addEventListener('contextmenu', e => {
+  const td = e.target.closest('td[data-r]');
+  if (!td) return;
+  e.preventDefault();
+  ctxR = +td.dataset.r; ctxC = +td.dataset.c;
+  const menu = $('#context-menu');
+  menu.style.display = 'block';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+});
+document.addEventListener('click', () => { $('#context-menu').style.display = 'none'; });
+$('#context-menu').addEventListener('click', e => {
+  const item = e.target.closest('[data-action]');
+  if (!item) return;
+  const action = item.dataset.action;
+  const cols = grid[0]?.length || 0;
+  switch(action) {
+    case 'insert-row-above': grid.splice(ctxR, 0, new Array(cols).fill('')); break;
+    case 'insert-row-below': grid.splice(ctxR + 1, 0, new Array(cols).fill('')); break;
+    case 'insert-col-left': grid.forEach(r => r.splice(ctxC, 0, '')); break;
+    case 'insert-col-right': grid.forEach(r => r.splice(ctxC + 1, 0, '')); break;
+    case 'delete-row': if (grid.length > 1) grid.splice(ctxR, 1); break;
+    case 'delete-col': if (cols > 1) grid.forEach(r => r.splice(ctxC, 1)); break;
+    case 'clear-cell': grid[ctxR][ctxC] = ''; break;
+    case 'add-row': grid.push(new Array(cols).fill('')); break;
+  }
+  saveHistory();
+  renderTable();
+});
+
+// Search
+let searchMatches = [], searchIdx = -1;
+function doSearch(dir) {
+  const q = $('#search-input').value.toLowerCase();
+  if (!q || !grid.length) return;
+  searchMatches = [];
+  for (let r = 0; r < grid.length; r++)
+    for (let c = 0; c < grid[r].length; c++)
+      if (grid[r][c].toLowerCase().includes(q)) searchMatches.push([r, c]);
+  $('#search-count').textContent = searchMatches.length ? `${searchMatches.length} found` : '0 found';
+  if (searchMatches.length) {
+    if (dir === 0) searchIdx = 0;
+    else searchIdx = (searchIdx + (dir || 1) + searchMatches.length) % searchMatches.length;
+    const [r, c] = searchMatches[searchIdx];
+    const td = $(`td[data-r="${r}"][data-c="${c}"]`);
+    if (td) { td.scrollIntoView({block:'center'}); td.style.background = 'var(--accent)'; td.style.color = '#fff'; setTimeout(() => { td.style.background = ''; td.style.color = ''; }, 1500); }
+  }
+}
+
+// Find & Replace
+function doReplace(all) {
+  const find = $('#find-input').value, repl = $('#replace-input').value;
+  if (!find || !grid.length) return;
+  let count = 0;
+  for (let r = 0; r < grid.length; r++)
+    for (let c = 0; c < grid[r].length; c++) {
+      if (grid[r][c].includes(find)) { if (all) { grid[r][c] = grid[r][c].replaceAll(find, repl); count++; } else { grid[r][c] = grid[r][c].replace(find, repl); count++; if (!all) break; } }
+      if (!all && count) break;
+    }
+  if (count) { saveHistory(); renderTable(); }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); $('#search-bar').classList.add('active'); $('#search-input').focus(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'h') { e.preventDefault(); $('#find-replace-bar').classList.add('active'); $('#find-input').focus(); }
+});
+
+// Setup UI labels
+$('#ctx-ira').textContent = t('insertRowAbove');
+$('#ctx-irb').textContent = t('insertRowBelow');
+$('#ctx-icl').textContent = t('insertColLeft');
+$('#ctx-icr').textContent = t('insertColRight');
+$('#ctx-dr').textContent = t('deleteRow');
+$('#ctx-dc').textContent = t('deleteCol');
+$('#ctx-cc').textContent = t('clearCell');
+$('#ctx-ar').textContent = t('addRowBottom');
+$('#lbl-delimiter').textContent = t('delimiter');
+$('#replace-one').textContent = t('replace');
+$('#replace-all').textContent = t('replaceAll');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadCSV()">${t('load')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportCSV()">${t('export')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <span style="width:1px;height:20px;background:var(--border);display:inline-block"></span>
+  <button class="gz-btn gz-btn-secondary" onclick="undo()">${t('undo')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="redo()">${t('redo')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#search-bar').classList.add('active');$('#search-input').focus()">${t('search')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#find-replace-bar').classList.add('active');$('#find-input').focus()">${t('findReplace')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="grid.push(new Array(grid[0]?.length||1).fill(''));saveHistory();renderTable()">${t('addRow')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="grid.forEach(r=>r.push(''));saveHistory();renderTable()">${t('addCol')}</button>
+`;
+
+$('#search-input').addEventListener('input', () => doSearch(0));
+$('#search-next').addEventListener('click', () => doSearch(1));
+$('#search-prev').addEventListener('click', () => doSearch(-1));
+$('#search-close').addEventListener('click', () => { $('#search-bar').classList.remove('active'); });
+$('#replace-one').addEventListener('click', () => doReplace(false));
+$('#replace-all').addEventListener('click', () => doReplace(true));
+$('#fr-close').addEventListener('click', () => { $('#find-replace-bar').classList.remove('active'); });
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4','step5'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'🗃️', href:'/convert/csv-to-sql.html', name:'CSV to SQL'},
+    {icon:'📊', href:'/convert/json-to-csv.html', name:'JSON to CSV'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
