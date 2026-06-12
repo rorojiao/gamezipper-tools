@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Stock Average Calculator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Calculate your average stock price across multiple purchases. Enter buy prices and share counts to find your cost basis, total investment, and break-even price.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/stock-average-calculator.html">
+  <meta property="og:title" content="Stock Average Calculator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Calculate your average stock price across multiple purchases. Find your cost basis and break-even price.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/stock-average-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Stock Average Calculator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.row{display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:8px;align-items:center;margin-bottom:6px}
+.row input{width:100%;padding:7px 10px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--gz-fg);font-size:.95em;box-sizing:border-box}
+.row .rm{cursor:pointer;opacity:.5;font-size:1.2em;text-align:center}
+.row .rm:hover{opacity:1;color:var(--gz-accent)}
+.header-row{font-size:.85em;opacity:.7;display:grid;grid-template-columns:1fr 1fr 1fr 40px;gap:8px;margin-bottom:4px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:16px}
+.s-card{background:var(--gz-card);border:1px solid var(--gz-border);border-radius:10px;padding:14px;text-align:center}
+.s-card .val{font-size:1.4em;font-weight:700;color:var(--gz-accent)}
+.s-card .lbl{font-size:.8em;opacity:.7;margin-top:4px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.9em}
+th{text-align:left;padding:8px;border-bottom:2px solid var(--gz-border);opacity:.7;font-weight:600}
+td{padding:8px;border-bottom:1px solid var(--gz-border)}
+.profit{color:#00d672}.loss{color:#ff6b6b}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Stock Average Calculator","description":"Calculate your average stock price across multiple purchases. Enter buy prices and share counts to find your cost basis, total investment, and break-even price.","url":"https://tools.gamezipper.com/calc/stock-average-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I calculate average stock price?","acceptedAnswer":{"@type":"Answer","text":"Multiply each purchase price by the number of shares bought, add all the totals together, then divide by the total number of shares. This gives you the weighted average cost per share."}},{"@type":"Question","name":"What is cost basis?","acceptedAnswer":{"@type":"Answer","text":"Cost basis is the total amount you paid for all shares of a stock, including any commissions. It is used to calculate capital gains or losses when you sell."}},{"@type":"Question","name":"Why average down?","acceptedAnswer":{"@type":"Answer","text":"Averaging down means buying more shares at a lower price, which reduces your average cost per share. This strategy can help you break even faster if the stock recovers."}},{"@type":"Question","name":"Is this tool free and private?","acceptedAnswer":{"@type":"Answer","text":"Yes, this calculator is 100% free and runs entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/stock-average-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/stock-average-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/stock-average-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="header-row"><span id="h-price"></span><span id="h-shares"></span><span id="h-total"></span><span></span></div>
+    <div id="buys"></div>
+    <button class="gz-btn gz-btn-sm" onclick="addRow()" style="margin:8px 0">+ Add Purchase</button>
+    <div style="margin-top:8px">
+      <label id="lbl-current" style="font-size:.9em"></label>
+      <input type="number" id="current-price" style="padding:7px 10px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--gz-fg);font-size:.95em;width:150px;margin-left:8px" step="0.01">
+    </div>
+    <button class="gz-btn" onclick="calc()" style="margin-top:12px"></button>
+    <button class="gz-btn gz-btn-secondary" onclick="resetAll()" style="margin-top:12px"></button>
+    <div id="summary" class="summary"></div>
+    <div id="detail"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Stock Average Calculator',
+    toolDesc: 'Calculate your average stock price across multiple purchases. Find cost basis, total shares, and profit or loss.',
+    hPrice: 'Buy Price ($)',
+    hShares: 'Shares',
+    hTotal: 'Cost ($)',
+    lblCurrent: 'Current Price ($):',
+    btnCalc: 'Calculate Average',
+    btnReset: 'Reset',
+    avgPrice: 'Average Price',
+    totalShares: 'Total Shares',
+    totalCost: 'Total Cost',
+    currentValue: 'Current Value',
+    profitLoss: 'Profit / Loss',
+    returnPct: 'Return %',
+    purchase: 'Purchase',
+    step1: 'Enter each stock purchase price and number of shares',
+    step2: 'Optionally enter the current stock price',
+    step3: 'Click Calculate to see your average cost basis',
+    step4: 'Review the detailed breakdown table below',
+  },
+  zh: {
+    toolTitle: '股票均价计算器',
+    toolDesc: '计算多次买入的股票平均价格，查看成本基础、总股数和盈亏情况。',
+    hPrice: '买入价（美元）',
+    hShares: '股数',
+    hTotal: '成本（美元）',
+    lblCurrent: '当前价格（美元）：',
+    btnCalc: '计算均价',
+    btnReset: '重置',
+    avgPrice: '平均价格',
+    totalShares: '总股数',
+    totalCost: '总成本',
+    currentValue: '当前市值',
+    profitLoss: '盈亏金额',
+    returnPct: '收益率',
+    purchase: '第 N 次买入',
+    step1: '输入每次买入的股票价格和股数',
+    step2: '可选输入当前股票价格',
+    step3: '点击计算查看平均成本',
+    step4: '查看下方详细分解表格',
+  }
+});
+
+const { $, t } = GZ;
+$('#h-price').textContent = t('hPrice');
+$('#h-shares').textContent = t('hShares');
+$('#h-total').textContent = t('hTotal');
+$('#lbl-current').textContent = t('lblCurrent');
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function pct(n) { return (n >= 0 ? '+' : '') + n.toFixed(2) + '%'; }
+
+function addRow(price, shares) {
+  const c = document.getElementById('buys');
+  const i = c.children.length;
+  const p = price !== undefined ? price : '';
+  const s = shares !== undefined ? shares : '';
+  c.insertAdjacentHTML('beforeend', `<div class="row"><input type="number" value="${p}" placeholder="0.00" step="0.01" min="0" data-i="${i}" data-f="price"><input type="number" value="${s}" placeholder="0" step="1" min="0" data-i="${i}" data-f="shares"><span class="total-cell" style="font-size:.9em;text-align:right">—</span><span class="rm" onclick="this.parentElement.remove();calc()">&times;</span></div>`);
+}
+
+function getBuys() {
+  const rows = document.getElementById('buys').querySelectorAll('.row');
+  const items = [];
+  rows.forEach(r => {
+    const inputs = r.querySelectorAll('input');
+    const price = parseFloat(inputs[0].value) || 0;
+    const shares = parseFloat(inputs[1].value) || 0;
+    r.querySelector('.total-cell').textContent = price && shares ? fmt(price * shares) : '—';
+    if (price > 0 && shares > 0) items.push({price, shares, cost: price * shares});
+  });
+  return items;
+}
+
+function calc() {
+  const buys = getBuys();
+  if (buys.length === 0) { $('#summary').innerHTML = ''; $('#detail').innerHTML = ''; return; }
+
+  const totalShares = buys.reduce((s,b) => s + b.shares, 0);
+  const totalCost = buys.reduce((s,b) => s + b.cost, 0);
+  const avg = totalCost / totalShares;
+  const current = parseFloat($('#current-price').value) || 0;
+  const currentVal = current * totalShares;
+  const pl = currentVal - totalCost;
+  const ret = totalCost > 0 ? (pl / totalCost * 100) : 0;
+
+  let html = `
+    <div class="s-card"><div class="val">${fmt(avg)}</div><div class="lbl">${t('avgPrice')}</div></div>
+    <div class="s-card"><div class="val">${totalShares.toLocaleString()}</div><div class="lbl">${t('totalShares')}</div></div>
+    <div class="s-card"><div class="val">${fmt(totalCost)}</div><div class="lbl">${t('totalCost')}</div></div>`;
+  if (current > 0) {
+    html += `
+    <div class="s-card"><div class="val">${fmt(currentVal)}</div><div class="lbl">${t('currentValue')}</div></div>
+    <div class="s-card"><div class="val ${pl>=0?'profit':'loss'}">${pl>=0?'+':''}${fmt(pl)}</div><div class="lbl">${t('profitLoss')}</div></div>
+    <div class="s-card"><div class="val ${ret>=0?'profit':'loss'}">${pct(ret)}</div><div class="lbl">${t('returnPct')}</div></div>`;
+  }
+  $('#summary').innerHTML = html;
+
+  let tbl = '<table><thead><tr><th>#</th><th>' + t('hPrice') + '</th><th>' + t('hShares') + '</th><th>' + t('hTotal') + '</th><th>% of Position</th></tr></thead><tbody>';
+  buys.forEach((b, i) => {
+    const pctOfPos = (b.shares / totalShares * 100).toFixed(1);
+    tbl += `<tr><td>${i+1}</td><td>${fmt(b.price)}</td><td>${b.shares.toLocaleString()}</td><td>${fmt(b.cost)}</td><td>${pctOfPos}%</td></tr>`;
+  });
+  tbl += '</tbody></table>';
+  $('#detail').innerHTML = tbl;
+}
+
+function resetAll() {
+  document.getElementById('buys').innerHTML = '';
+  addRow(150, 10);
+  addRow(120, 15);
+  $('#current-price').value = 140;
+  calc();
+}
+
+addRow(150, 10);
+addRow(120, 15);
+$('#current-price').value = 140;
+calc();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/calc/stock-return.html', name:'Stock Return Calculator'},
+    {icon:'🪙', href:'/calc/crypto-profit-calculator.html', name:'Crypto Profit'},
+    {icon:'📈', href:'/calc/investment-calculator.html', name:'Investment Calculator'},
+    {icon:'💰', href:'/calc/roi.html', name:'ROI Calculator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Net Worth Calculator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Calculate your net worth by adding assets and liabilities. Get a visual breakdown, track progress, and export your financial snapshot. Free and private.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/net-worth-calculator.html">
+  <meta property="og:title" content="Net Worth Calculator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Calculate your net worth by adding assets and liabilities. Get a visual breakdown and export your snapshot.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/net-worth-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Net Worth Calculator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.section{margin-bottom:20px}
+.section h3{margin:0 0 8px;font-size:1em}
+.row{display:grid;grid-template-columns:2fr 1fr 40px;gap:8px;align-items:center;margin-bottom:6px}
+.row input{width:100%;padding:7px 10px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--gz-fg);font-size:.95em;box-sizing:border-box}
+.row .rm{cursor:pointer;opacity:.5;font-size:1.2em;text-align:center}
+.row .rm:hover{opacity:1;color:var(--gz-accent)}
+.gz-btn-sm{padding:6px 12px;font-size:.85em;margin-top:4px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px}
+.s-card{background:var(--gz-card);border:1px solid var(--gz-border);border-radius:10px;padding:14px;text-align:center}
+.s-card .val{font-size:1.5em;font-weight:700}
+.s-card .lbl{font-size:.8em;opacity:.7;margin-top:4px}
+.asset-color{color:#00d672}
+.liability-color{color:#ff6b6b}
+.net-color{color:var(--gz-accent)}
+canvas{max-width:100%;border-radius:8px;margin-top:16px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Net Worth Calculator","description":"Calculate your net worth by adding assets and liabilities. Get a visual breakdown, track progress, and export your financial snapshot.","url":"https://tools.gamezipper.com/calc/net-worth-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is net worth?","acceptedAnswer":{"@type":"Answer","text":"Net worth is the total value of all your assets minus all your liabilities. Assets include cash, investments, real estate, and other valuables. Liabilities include mortgages, loans, credit card debt, and other obligations."}},{"@type":"Question","name":"How do I calculate my net worth?","acceptedAnswer":{"@type":"Answer","text":"Add up the value of everything you own (assets) and subtract everything you owe (liabilities). The formula is: Net Worth = Total Assets - Total Liabilities."}},{"@type":"Question","name":"What is a good net worth?","acceptedAnswer":{"@type":"Answer","text":"A positive net worth means you own more than you owe. What's considered good depends on your age, location, and goals. The median US household net worth is about $192,000."}},{"@type":"Question","name":"Is my data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All calculations happen in your browser. No financial data is sent to any server. You can export your data as a local file."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/net-worth-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/net-worth-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/net-worth-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="section"><h3 class="asset-color" id="h-assets"></h3><div id="assets-list"></div><button class="gz-btn gz-btn-sm" onclick="addAsset()">+</button></div>
+    <div class="section"><h3 class="liability-color" id="h-liab"></h3><div id="liab-list"></div><button class="gz-btn gz-btn-sm" onclick="addLiab()">+</button></div>
+    <button class="gz-btn" onclick="calc()"></button>
+    <button class="gz-btn gz-btn-secondary" onclick="resetAll()"></button>
+    <button class="gz-btn gz-btn-secondary" onclick="exportCSV()"></button>
+    <div id="summary" class="summary"></div>
+    <canvas id="chart" width="500" height="260"></canvas>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Net Worth Calculator',
+    toolDesc: 'Calculate your net worth by adding assets and liabilities. Get a visual breakdown of your financial health.',
+    hAssets: '🟢 Assets (What You Own)',
+    hLiab: '🔴 Liabilities (What You Owe)',
+    btnCalc: 'Calculate Net Worth',
+    btnReset: 'Reset',
+    btnExport: 'Export CSV',
+    totalAssets: 'Total Assets',
+    totalLiab: 'Total Liabilities',
+    netWorth: 'Net Worth',
+    addAsset: 'Add Asset',
+    addLiab: 'Add Liability',
+    assetPlaceholder: 'e.g. Savings Account',
+    liabPlaceholder: 'e.g. Student Loan',
+    step1: 'Add all your assets with their current values',
+    step2: 'Add all your liabilities (debts) you owe',
+    step3: 'Click Calculate to see your net worth breakdown',
+    step4: 'Export the results as CSV for your records',
+  },
+  zh: {
+    toolTitle: '净资产计算器',
+    toolDesc: '通过添加资产和负债来计算你的净资产，可视化展示财务状况。',
+    hAssets: '🟢 资产（你拥有的）',
+    hLiab: '🔴 负债（你欠的）',
+    btnCalc: '计算净资产',
+    btnReset: '重置',
+    btnExport: '导出 CSV',
+    totalAssets: '总资产',
+    totalLiab: '总负债',
+    netWorth: '净资产',
+    addAsset: '添加资产',
+    addLiab: '添加负债',
+    assetPlaceholder: '例如：储蓄账户',
+    liabPlaceholder: '例如：助学贷款',
+    step1: '添加所有资产及其当前价值',
+    step2: '添加所有负债（欠款）',
+    step3: '点击计算查看净资产分解',
+    step4: '导出结果为 CSV 文件保存记录',
+  }
+});
+
+const { $, t } = GZ;
+$('#h-assets').textContent = t('hAssets');
+$('#h-liab').textContent = t('hLiab');
+
+const defaultAssets = [
+  {name:'Savings Account',val:10000},
+  {name:'Investment Portfolio',val:50000},
+  {name:'Home Equity',val:80000},
+  {name:'Retirement Accounts',val:30000},
+  {name:'Vehicles',val:15000},
+];
+const defaultLiab = [
+  {name:'Mortgage',val:120000},
+  {name:'Student Loan',val:25000},
+  {name:'Credit Card Debt',val:5000},
+  {name:'Car Loan',val:10000},
+];
+
+function renderRows(containerId, items, placeholder) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = items.map((item, i) => `<div class="row"><input type="text" value="${item.name}" placeholder="${placeholder}" data-i="${i}" data-f="name"><input type="number" value="${item.val}" min="0" step="100" data-i="${i}" data-f="val"><span class="rm" onclick="this.parentElement.remove();recalc()">&times;</span></div>`).join('');
+}
+
+function addAsset() {
+  const c = document.getElementById('assets-list');
+  const i = c.children.length;
+  c.insertAdjacentHTML('beforeend', `<div class="row"><input type="text" placeholder="${t('assetPlaceholder')}" data-i="${i}" data-f="name"><input type="number" value="0" min="0" step="100" data-i="${i}" data-f="val"><span class="rm" onclick="this.parentElement.remove();recalc()">&times;</span></div>`);
+}
+
+function addLiab() {
+  const c = document.getElementById('liab-list');
+  const i = c.children.length;
+  c.insertAdjacentHTML('beforeend', `<div class="row"><input type="text" placeholder="${t('liabPlaceholder')}" data-i="${i}" data-f="name"><input type="number" value="0" min="0" step="100" data-i="${i}" data-f="val"><span class="rm" onclick="this.parentElement.remove();recalc()">&times;</span></div>`);
+}
+
+function getItems(containerId) {
+  const rows = document.getElementById(containerId).querySelectorAll('.row');
+  const items = [];
+  rows.forEach(r => {
+    const inputs = r.querySelectorAll('input');
+    items.push({name: inputs[0].value || 'Unnamed', val: parseFloat(inputs[1].value) || 0});
+  });
+  return items;
+}
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function recalc() { calc(); }
+
+function calc() {
+  const assets = getItems('assets-list');
+  const liabs = getItems('liab-list');
+  const totalA = assets.reduce((s, a) => s + a.val, 0);
+  const totalL = liabs.reduce((s, l) => s + l.val, 0);
+  const net = totalA - totalL;
+
+  $('#summary').innerHTML = `
+    <div class="s-card"><div class="val asset-color">${fmt(totalA)}</div><div class="lbl">${t('totalAssets')}</div></div>
+    <div class="s-card"><div class="val liability-color">${fmt(totalL)}</div><div class="lbl">${t('totalLiab')}</div></div>
+    <div class="s-card"><div class="val net-color">${fmt(net)}</div><div class="lbl">${t('netWorth')}</div></div>
+  `;
+
+  drawChart(assets, liabs, totalA, totalL);
+}
+
+function drawChart(assets, liabs, totalA, totalL) {
+  const canvas = $('#chart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const style = getComputedStyle(document.body);
+  const fg = style.getPropertyValue('--gz-fg').trim()||'#e0e0e0';
+  const border = style.getPropertyValue('--gz-border').trim()||'#333';
+  const cx = W/2, cy = H/2, r = Math.min(W,H)/2 - 40;
+  const total = totalA + totalL;
+  if (total <= 0) return;
+
+  const all = [...assets.map(a=>({...a,type:'a'})), ...liabs.map(l=>({...l,type:'l'}))];
+  const colors = all.map((_,i) => {
+    const h = all[i].type === 'a' ? 140 + i*30 : 0 + i*30;
+    return `hsl(${h},60%,55%)`;
+  });
+
+  let start = -Math.PI/2;
+  all.forEach((item, i) => {
+    const sweep = (item.val / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+sweep);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    if (item.val / total > 0.03) {
+      const mid = start + sweep/2;
+      const tx = cx + (r*0.65)*Math.cos(mid);
+      const ty = cy + (r*0.65)*Math.sin(mid);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(item.name.substring(0,12), tx, ty - 5);
+      ctx.font = '9px sans-serif';
+      ctx.fillText(fmt(item.val), tx, ty + 8);
+    }
+    start += sweep;
+  });
+
+  ctx.fillStyle = style.getPropertyValue('--gz-bg').trim()||'#0a0a1a';
+  ctx.beginPath(); ctx.arc(cx,cy,r*0.45,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = fg; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(fmt(totalA - totalL), cx, cy);
+  ctx.font = '10px sans-serif'; ctx.globalAlpha = 0.7;
+  ctx.fillText(t('netWorth'), cx, cy + 16);
+  ctx.globalAlpha = 1;
+}
+
+function resetAll() {
+  renderRows('assets-list', defaultAssets, t('assetPlaceholder'));
+  renderRows('liab-list', defaultLiab, t('liabPlaceholder'));
+  calc();
+}
+
+function exportCSV() {
+  const assets = getItems('assets-list');
+  const liabs = getItems('liab-list');
+  let csv = 'Type,Name,Amount\n';
+  assets.forEach(a => csv += `Asset,"${a.name}",${a.val}\n`);
+  liabs.forEach(l => csv += `Liability,"${l.name}",${l.val}\n`);
+  const net = assets.reduce((s,a)=>s+a.val,0) - liabs.reduce((s,l)=>s+l.val,0);
+  csv += `\nNet Worth,,${net}\n`;
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'net-worth.csv';
+  a.click();
+}
+
+renderRows('assets-list', defaultAssets, t('assetPlaceholder'));
+renderRows('liab-list', defaultLiab, t('liabPlaceholder'));
+calc();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💰', href:'/calc/budget-planner.html', name:'Budget Planner'},
+    {icon:'📈', href:'/calc/compound-interest.html', name:'Compound Interest'},
+    {icon:'🏦', href:'/calc/mortgage.html', name:'Mortgage Calculator'},
+    {icon:'💸', href:'/calc/tax-calculator.html', name:'Tax Calculator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
