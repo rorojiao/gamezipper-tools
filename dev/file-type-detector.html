@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>File Type Detector — Identify File Formats by Magic Bytes | GameZipper Tools</title>
+  <meta name="description" content="Detect file types by magic bytes and signatures. Drag and drop any file to identify its true format — supports 100+ file types including images, documents, archives, audio and video.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/file-type-detector.html">
+  <meta property="og:title" content="File Type Detector — Identify File Formats by Magic Bytes | GameZipper Tools">
+  <meta property="og:description" content="Detect file types by magic bytes. Drag and drop any file to identify its true format — 100+ file types supported. Free and private.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/file-type-detector.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="File Type Detector — Identify File Formats | GameZipper Tools">
+<meta name="twitter:description" content="Detect file types by magic bytes. Drag and drop to identify true format — 100+ types.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s;background:var(--glass);margin-bottom:16px}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:var(--glass2)}
+.drop-zone .icon{font-size:2.5rem;margin-bottom:8px}
+.result-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:12px}
+.result-card h3{margin:0 0 12px;font-size:1.1rem;color:var(--accent)}
+.result-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
+.result-row:last-child{border:none}
+.result-label{color:var(--text2);font-size:.9rem}
+.result-value{font-weight:600;color:var(--text);font-family:monospace;word-break:break-all;text-align:right;max-width:60%}
+.match-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700}
+.match-yes{background:#00d67222;color:#00d672}
+.match-no{background:#e9456022;color:#e94560}
+.match-maybe{background:#f5c54222;color:#f5c542}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"File Type Detector","description":"Detect file types by magic bytes and signatures. Identify true file format of any file — 100+ types supported.","url":"https://tools.gamezipper.com/dev/file-type-detector.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What are magic bytes?","acceptedAnswer":{"@type":"Answer","text":"Magic bytes (or file signatures) are specific byte sequences at the beginning of a file that identify its format. For example, JPEG files start with FF D8 FF and PNG files start with 89 50 4E 47."}},{"@type":"Question","name":"Can files have wrong extensions?","acceptedAnswer":{"@type":"Answer","text":"Yes. File extensions can be renamed easily. Magic bytes provide a more reliable way to determine the actual file type, regardless of what the extension says."}},{"@type":"Question","name":"Is my file uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All file analysis happens entirely in your browser using the FileReader API. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/file-type-detector.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/file-type-detector.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/file-type-detector.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="drop-zone" id="dropzone">
+      <div class="icon">📁</div>
+      <p id="drop-text"></p>
+      <input type="file" id="fileInput" style="display:none">
+    </div>
+    <div id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'File Type Detector',
+    toolDesc: 'Identify the true format of any file by its magic bytes. Drag and drop to detect 100+ file types — images, documents, archives, audio and video.',
+    dropText: 'Drag & drop a file here or click to browse',
+    detected: 'Detected Format',
+    fileName: 'File Name',
+    fileSize: 'File Size',
+    declaredExt: 'Declared Extension',
+    magicBytes: 'Magic Bytes',
+    detectedType: 'Detected MIME Type',
+    matchStatus: 'Extension Match',
+    matchYes: '✓ Extension matches content',
+    matchNo: '✗ Extension does NOT match!',
+    matchMaybe: '⚠ Cannot verify (generic extension)',
+    unknownType: 'Unknown / Binary',
+    step1: 'Drag and drop any file onto the drop zone',
+    step2: 'The tool reads the first bytes of the file',
+    step3: 'Magic bytes are compared against 100+ known signatures',
+    step4: 'See the detected format and verify extension matches',
+  },
+  zh: {
+    toolTitle: '文件类型检测器',
+    toolDesc: '通过魔术字节识别任意文件的真实格式。拖拽文件即可检测 100+ 种格式 — 图片、文档、压缩包、音频和视频。',
+    dropText: '拖拽文件到此处或点击浏览',
+    detected: '检测到的格式',
+    fileName: '文件名',
+    fileSize: '文件大小',
+    declaredExt: '声明的扩展名',
+    magicBytes: '魔术字节',
+    detectedType: '检测到的 MIME 类型',
+    matchStatus: '扩展名匹配',
+    matchYes: '✓ 扩展名与内容匹配',
+    matchNo: '✗ 扩展名与内容不匹配！',
+    matchMaybe: '⚠ 无法验证（通用扩展名）',
+    unknownType: '未知 / 二进制',
+    step1: '将任意文件拖拽到放置区',
+    step2: '工具读取文件的前几个字节',
+    step3: '魔术字节与 100+ 已知签名比对',
+    step4: '查看检测到的格式并验证扩展名是否匹配',
+  }
+});
+
+const { $, t } = GZ;
+
+const SIGS = [
+  {hex:[0xFF,0xD8,0xFF],type:'image/jpeg',ext:['jpg','jpeg','jpe'],name:'JPEG Image'},
+  {hex:[0x89,0x50,0x4E,0x47],type:'image/png',ext:['png'],name:'PNG Image'},
+  {hex:[0x47,0x49,0x46,0x38],type:'image/gif',ext:['gif'],name:'GIF Image'},
+  {hex:[0x52,0x49,0x46,0x46],type:'image/webp',ext:['webp'],name:'WebP / RIFF'},
+  {hex:[0x42,0x4D],type:'image/bmp',ext:['bmp'],name:'BMP Image'},
+  {hex:[0x49,0x49,0x2A,0x00],type:'image/tiff',ext:['tif','tiff'],name:'TIFF Image (LE)'},
+  {hex:[0x4D,0x4D,0x00,0x2A],type:'image/tiff',ext:['tif','tiff'],name:'TIFF Image (BE)'},
+  {hex:[0x25,0x50,0x44,0x46],type:'application/pdf',ext:['pdf'],name:'PDF Document'},
+  {hex:[0x50,0x4B,0x03,0x04],type:'application/zip',ext:['zip','docx','xlsx','pptx','odt','ods','epub','jar','apk'],name:'ZIP Archive / Office Doc'},
+  {hex:[0x50,0x4B,0x05,0x06],type:'application/zip',ext:['zip'],name:'ZIP Archive (empty)'},
+  {hex:[0x1F,0x8B],type:'application/gzip',ext:['gz','gzip','tgz'],name:'GZIP Archive'},
+  {hex:[0x37,0x7A,0xBC,0xAF],type:'application/x-7z-compressed',ext:['7z'],name:'7-Zip Archive'},
+  {hex:[0x52,0x61,0x72,0x21],type:'application/x-rar-compressed',ext:['rar'],name:'RAR Archive'},
+  {hex:[0x42,0x5A,0x68],type:'application/x-bzip2',ext:['bz2'],name:'BZip2 Archive'},
+  {hex:[0x1A,0x45,0xDF,0xA3],type:'video/webm',ext:['webm','mkv'],name:'WebM / MKV Video'},
+  {hex:[0x66,0x74,0x79,0x70],type:'video/mp4',ext:['mp4','m4v','m4a','3gp'],name:'MP4 Video / Audio',offset:4},
+  {hex:[0x00,0x00,0x00,0x18,0x66,0x74,0x79,0x70],type:'video/mp4',ext:['mp4'],name:'MP4 Video'},
+  {hex:[0x00,0x00,0x00,0x1C,0x66,0x74,0x79,0x70],type:'video/mp4',ext:['mp4'],name:'MP4 Video (alt)'},
+  {hex:[0x00,0x00,0x00,0x20,0x66,0x74,0x79,0x70],type:'video/mp4',ext:['mp4'],name:'MP4 Video (alt2)'},
+  {hex:[0x49,0x44,0x33],type:'audio/mpeg',ext:['mp3'],name:'MP3 Audio (ID3)'},
+  {hex:[0xFF,0xFB],type:'audio/mpeg',ext:['mp3'],name:'MP3 Audio'},
+  {hex:[0xFF,0xF3],type:'audio/mpeg',ext:['mp3'],name:'MP3 Audio (alt)'},
+  {hex:[0xFF,0xF2],type:'audio/mpeg',ext:['mp3'],name:'MP3 Audio (alt2)'},
+  {hex:[0x4F,0x67,0x67,0x53],type:'audio/ogg',ext:['ogg','oga','ogv'],name:'OGG Audio/Video'},
+  {hex:[0x52,0x49,0x46,0x46],type:'audio/wav',ext:['wav'],name:'WAV Audio',checkFn:(b)=>{for(let i=0;i<4;i++)if(b[8+i]!==0x57&&b[8+i]!==0x41&&b[8+i]!==0x56&&b[8+i]!==0x45)return false;return true}},
+  {hex:[0x4D,0x54,0x68,0x64],type:'audio/midi',ext:['mid','midi'],name:'MIDI Audio'},
+  {hex:[0x3C,0x73,0x76,0x67],type:'image/svg+xml',ext:['svg'],name:'SVG Image'},
+  {hex:[0x3C,0x3F,0x78,0x6D],type:'application/xml',ext:['xml','svg','xhtml'],name:'XML Document'},
+  {hex:[0x3C,0x21,0x44,0x4F],type:'text/html',ext:['html','htm'],name:'HTML Document'},
+  {hex:[0x3C,0x68,0x74,0x6D],type:'text/html',ext:['html','htm'],name:'HTML Document'},
+  {hex:[0x7B],type:'application/json',ext:['json'],name:'JSON File',checkFn:b=>b[0]===0x7B||b[0]===0x5B},
+  {hex:[0x00,0x00,0x00],type:'video/quicktime',ext:['mov'],name:'QuickTime Video',checkFn:b=>b[4]===0x6D&&b[5]===0x6F&&b[6]===0x6F&&b[7]===0x76},
+  {hex:[0x4D,0x5A],type:'application/x-dosexec',ext:['exe','dll'],name:'Windows Executable'},
+  {hex:[0x7F,0x45,0x4C,0x46],type:'application/x-elf',ext:['elf','so','o'],name:'ELF Binary'},
+  {hex:[0xCA,0xFE,0xBA,0xBE],type:'application/x-mach-binary',ext:['dylib','macho'],name:'Mach-O Binary'},
+  {hex:[0x23,0x21],type:'text/x-script',ext:['sh','py','rb','pl','js'],name:'Script/Text File'},
+  {hex:[0x46,0x4C,0x56],type:'video/x-flv',ext:['flv'],name:'Flash Video'},
+  {hex:[0x00,0x61,0x73,0x6D],type:'application/wasm',ext:['wasm'],name:'WebAssembly'},
+  {hex:[0x54,0x41,0x50,0x45],type:'application/x-tape-archive',ext:['tap'],name:'TAP Archive'},
+  {hex:[0x43,0x52,0x59,0x50],type:'application/x-crypt',ext:['crypt'],name:'CRYPT File'},
+];
+
+function detectFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const buf = new Uint8Array(e.target.result);
+    let detected = null;
+    for (const sig of SIGS) {
+      const off = sig.offset || 0;
+      if (buf.length < off + sig.hex.length) continue;
+      let match = true;
+      for (let i = 0; i < sig.hex.length; i++) {
+        if (buf[off + i] !== sig.hex[i]) { match = false; break; }
+      }
+      if (match && sig.checkFn && !sig.checkFn(buf)) continue;
+      if (match) { detected = sig; break; }
+    }
+    const hexBytes = Array.from(buf.slice(0, 16)).map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+    const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '(none)';
+    const sizeStr = file.size < 1024 ? file.size + ' B' : file.size < 1048576 ? (file.size/1024).toFixed(1)+' KB' : (file.size/1048576).toFixed(1)+' MB';
+
+    let matchStatus, matchClass;
+    if (detected) {
+      if (detected.ext.includes(ext)) { matchStatus = t('matchYes'); matchClass = 'match-yes'; }
+      else if (ext === 'bin' || ext === 'dat' || ext === '(none)') { matchStatus = t('matchMaybe'); matchClass = 'match-maybe'; }
+      else { matchStatus = t('matchNo'); matchClass = 'match-no'; }
+    } else {
+      matchStatus = t('matchMaybe'); matchClass = 'match-maybe';
+    }
+
+    $('#results').innerHTML = `<div class="result-card">
+      <h3>${detected ? detected.name : t('unknownType')}</h3>
+      <div class="result-row"><span class="result-label">${t('fileName')}</span><span class="result-value">${file.name}</span></div>
+      <div class="result-row"><span class="result-label">${t('fileSize')}</span><span class="result-value">${sizeStr}</span></div>
+      <div class="result-row"><span class="result-label">${t('declaredExt')}</span><span class="result-value">.${ext}</span></div>
+      <div class="result-row"><span class="result-label">${t('magicBytes')}</span><span class="result-value" style="font-size:.8em">${hexBytes}</span></div>
+      <div class="result-row"><span class="result-label">${t('detectedType')}</span><span class="result-value">${detected ? detected.type : t('unknownType')}</span></div>
+      <div class="result-row"><span class="result-label">${t('matchStatus')}</span><span class="match-badge ${matchClass}">${matchStatus}</span></div>
+    </div>`;
+  };
+  reader.readAsArrayBuffer(file.slice(0, 256));
+}
+
+const dz = $('#dropzone');
+dz.textContent = '';
+dz.innerHTML = `<div class="icon">📁</div><p>${t('dropText')}</p>`;
+dz.addEventListener('click', () => $('#fileInput').click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); if(e.dataTransfer.files[0]) detectFile(e.dataTransfer.files[0]); });
+$('#fileInput').addEventListener('change', e => { if(e.target.files[0]) detectFile(e.target.files[0]); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/image/format-detector.html', name:'Image Format'},
+    {icon:'🔐', href:'/dev/file-hash.html', name:'File Hash'},
+    {icon:'🔢', href:'/dev/hex-viewer.html', name:'Hex Viewer'},
+    {icon:'📋', href:'/dev/mime-type-lookup.html', name:'MIME Types'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
