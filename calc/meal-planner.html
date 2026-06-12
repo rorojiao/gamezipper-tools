@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Meal Planner — Weekly Meal Plan with Calories | GameZipper Tools</title>
+  <meta name="description" content="Free online weekly meal planner. Plan breakfast, lunch, dinner and snacks for each day, track calories and macros, generate a grocery shopping list instantly.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/meal-planner.html">
+  <meta property="og:title" content="Meal Planner — Weekly Meal Plan with Calories | GameZipper Tools">
+  <meta property="og:description" content="Free online weekly meal planner. Plan meals for each day, track calories and macros, generate a shopping list instantly.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/meal-planner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Meal Planner — Weekly Meal Plan with Calories | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#meal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px}
+.day-col{display:flex;flex-direction:column;gap:4px}
+.day-header{text-align:center;font-weight:700;font-size:.8em;padding:8px 4px;background:var(--accent);color:#fff;border-radius:8px}
+.day-header.today{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent)}
+.meal-slot{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:.75em;min-height:48px}
+.meal-slot label{display:block;font-weight:600;color:var(--text2);font-size:.7em;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px}
+.meal-slot input{width:100%;border:none;background:transparent;color:var(--text);font-size:.82em;padding:2px 0;outline:none}
+.meal-slot input::placeholder{color:var(--text2);opacity:.5}
+.cal-input{width:42px!important;text-align:right;font-size:.72em!important;color:var(--accent)}
+#summary-bar{display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;background:var(--glass);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;font-size:.85em}
+.summary-item{display:flex;flex-direction:column;align-items:center}
+.summary-item .val{font-size:1.4em;font-weight:700;color:var(--accent)}
+.summary-item .lbl{color:var(--text2);font-size:.72em;margin-top:2px}
+#shopping-list{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px;max-height:200px;overflow-y:auto}
+#shopping-list h3{margin:0 0 8px;font-size:.9em;color:var(--text)}
+#shopping-list ul{margin:0;padding-left:20px;font-size:.82em;line-height:1.8}
+@media(max-width:768px){#meal-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){#meal-grid{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Meal Planner","description":"Free online weekly meal planner. Plan meals for each day, track calories and macros, generate a grocery shopping list instantly.","url":"https://tools.gamezipper.com/calc/meal-planner.html","applicationCategory":"LifestyleApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this meal planner free?","acceptedAnswer":{"@type":"Answer","text":"Yes. The meal planner is completely free, requires no signup, and all data stays in your browser."}},{"@type":"Question","name":"Does it calculate calories automatically?","acceptedAnswer":{"@type":"Answer","text":"You can enter estimated calories for each meal. The planner automatically totals daily and weekly calories for you."}},{"@type":"Question","name":"Can I generate a shopping list?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click the Generate Shopping List button to collect all unique meal entries into a printable grocery list."}},{"@type":"Question","name":"Is my data saved?","acceptedAnswer":{"@type":"Answer","text":"Your meal plan is saved in your browser's local storage so it persists between sessions. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/meal-planner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/meal-planner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/meal-planner.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="summary-bar">
+      <div class="summary-item"><span class="val" id="total-cal">0</span><span class="lbl" id="lbl-total-cal"></span></div>
+      <div class="summary-item"><span class="val" id="avg-cal">0</span><span class="lbl" id="lbl-avg-cal"></span></div>
+      <div class="summary-item"><span class="val" id="total-meals">0</span><span class="lbl" id="lbl-total-meals"></span></div>
+    </div>
+    <div id="meal-grid"></div>
+    <div id="shopping-list" style="display:none">
+      <h3 id="shopping-title"></h3>
+      <ul id="shopping-items"></ul>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Meal Planner',
+    toolDesc: 'Plan your weekly meals with calorie tracking. Generate a grocery shopping list from your meal plan — all free and private.',
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    snack: 'Snack',
+    cal: 'cal',
+    totalCal: 'Total Calories',
+    avgCal: 'Avg/Day',
+    totalMeals: 'Meals',
+    shoppingList: '🛒 Shopping List',
+    generateList: '🛒 Generate List',
+    copyList: '📋 Copy',
+    clearAll: '🗑 Clear All',
+    print: '🖨 Print',
+    step1: 'Enter meals for each day in the grid (breakfast, lunch, dinner, snack)',
+    step2: 'Optionally add estimated calorie counts for each meal',
+    step3: 'View your weekly totals and daily averages at the top',
+    step4: 'Click Generate Shopping List to create a grocery list',
+    step5: 'Your data is saved automatically in your browser',
+    days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    daysFull: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+  },
+  zh: {
+    toolTitle: '每周饮食计划',
+    toolDesc: '规划每周三餐并追踪卡路里。从饮食计划生成购物清单 — 免费且隐私安全。',
+    breakfast: '早餐',
+    lunch: '午餐',
+    dinner: '晚餐',
+    snack: '加餐',
+    cal: '卡',
+    totalCal: '总卡路里',
+    avgCal: '日均',
+    totalMeals: '餐数',
+    shoppingList: '🛒 购物清单',
+    generateList: '🛒 生成清单',
+    copyList: '📋 复制',
+    clearAll: '🗑 清空',
+    print: '🖨 打印',
+    step1: '在表格中填写每天的三餐和加餐',
+    step2: '可选添加每餐的估计卡路里',
+    step3: '在顶部查看每周总热量和日均热量',
+    step4: '点击「生成清单」创建购物清单',
+    step5: '你的数据自动保存在浏览器中',
+    days: ['周一','周二','周三','周四','周五','周六','周日'],
+    daysFull: ['星期一','星期二','星期三','星期四','星期五','星期六','星期日'],
+  }
+});
+
+const { $, copyText, t } = GZ;
+const LS_KEY = 'gz-meal-plan';
+const meals = ['breakfast','lunch','dinner','snack'];
+const grid = $('#meal-grid');
+const today = (new Date().getDay() + 6) % 7; // 0=Mon
+
+// Build grid
+const days = t('days');
+for (let d = 0; d < 7; d++) {
+  const col = document.createElement('div');
+  col.className = 'day-col';
+  col.innerHTML = `<div class="day-header${d === today ? ' today' : ''}">${days[d]}</div>`;
+  meals.forEach(meal => {
+    const slot = document.createElement('div');
+    slot.className = 'meal-slot';
+    slot.innerHTML = `<label>${t(meal)}</label><input type="text" id="m-${d}-${meal}" placeholder="—" oninput="savePlan();updateSummary()"><input type="number" class="cal-input" id="c-${d}-${meal}" placeholder="${t('cal')}" min="0" oninput="savePlan();updateSummary()">`;
+    col.appendChild(slot);
+  });
+  grid.appendChild(col);
+}
+
+function loadPlan() {
+  try {
+    const data = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    for (let d = 0; d < 7; d++) {
+      meals.forEach(meal => {
+        const key = `${d}-${meal}`;
+        if (data[key]) {
+          $(`#m-${key}`).value = data[key].name || '';
+          $(`#c-${key}`).value = data[key].cal || '';
+        }
+      });
+    }
+  } catch(e) {}
+}
+
+function savePlan() {
+  const data = {};
+  for (let d = 0; d < 7; d++) {
+    meals.forEach(meal => {
+      const key = `${d}-${meal}`;
+      const name = $(`#m-${key}`).value;
+      const cal = $(`#c-${key}`).value;
+      if (name || cal) data[key] = { name, cal };
+    });
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+}
+
+function updateSummary() {
+  let totalCal = 0, mealCount = 0;
+  for (let d = 0; d < 7; d++) {
+    meals.forEach(meal => {
+      const name = $(`#m-${d}-${meal}`).value.trim();
+      const cal = parseInt($(`#c-${d}-${meal}`).value) || 0;
+      if (name) mealCount++;
+      totalCal += cal;
+    });
+  }
+  $('#total-cal').textContent = totalCal.toLocaleString();
+  $('#avg-cal').textContent = Math.round(totalCal / 7).toLocaleString();
+  $('#total-meals').textContent = mealCount;
+}
+
+function generateShoppingList() {
+  const items = new Set();
+  for (let d = 0; d < 7; d++) {
+    meals.forEach(meal => {
+      const name = $(`#m-${d}-${meal}`).value.trim();
+      if (name) {
+        name.split(/[,，、;；]/).forEach(item => {
+          const trimmed = item.trim();
+          if (trimmed) items.add(trimmed);
+        });
+      }
+    });
+  }
+  const list = $('#shopping-list');
+  const ul = $('#shopping-items');
+  ul.innerHTML = '';
+  if (items.size === 0) {
+    list.style.display = 'none';
+    return;
+  }
+  [...items].sort().forEach(item => {
+    const li = document.createElement('li');
+    li.textContent = item;
+    ul.appendChild(li);
+  });
+  list.style.display = '';
+  $('#shopping-title').textContent = t('shoppingList');
+}
+
+function copyShoppingList() {
+  const items = [];
+  $('#shopping-items').querySelectorAll('li').forEach(li => items.push('☐ ' + li.textContent));
+  copyText(items.join('\n'));
+}
+
+function clearAll() {
+  if (!confirm('Clear all meals?')) return;
+  for (let d = 0; d < 7; d++) {
+    meals.forEach(meal => {
+      $(`#m-${d}-${meal}`).value = '';
+      $(`#c-${d}-${meal}`).value = '';
+    });
+  }
+  localStorage.removeItem(LS_KEY);
+  updateSummary();
+  $('#shopping-list').style.display = 'none';
+}
+
+$('#lbl-total-cal').textContent = t('totalCal');
+$('#lbl-avg-cal').textContent = t('avgCal');
+$('#lbl-total-meals').textContent = t('totalMeals');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="generateShoppingList()">${t('generateList')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyShoppingList()">${t('copyList')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clearAll')}</button>`;
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4','step5'],
+  related: [
+    {icon:'🔥', href:'/calc/calorie-calculator.html', name:'Calorie Calculator'},
+    {icon:'⚖️', href:'/calc/bmi-calculator.html', name:'BMI Calculator'},
+    {icon:'💧', href:'/calc/water-intake.html', name:'Water Intake'},
+    {icon:'💪', href:'/calc/tdee-calculator.html', name:'TDEE Calculator'},
+  ]
+});
+
+loadPlan();
+updateSummary();
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
