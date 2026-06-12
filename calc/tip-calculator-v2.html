@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Tip Calculator - Calculate Tip & Split Bill | GameZipper Tools</title>
+  <meta name="description" content="Free online tip calculator. Calculate tip amount, split the bill per person, and see total cost. Supports custom tip percentages and bill splitting.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/tip-calculator-v2.html">
+  <meta property="og:title" content="Tip Calculator - Calculate Tip & Split Bill | GameZipper Tools">
+  <meta property="og:description" content="Free online tip calculator. Calculate tip amount, split the bill per person, and see total cost. Supports custom tip percentages and bill splitting.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/tip-calculator-v2.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Tip Calculator - Calculate Tip & Split Bill | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.result-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px}
+.result-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.result-card .label{font-size:.8em;color:var(--text2);margin-bottom:4px}
+.result-card .value{font-size:1.8em;font-weight:700;color:var(--gz-accent)}
+.result-card.highlight{border-color:var(--gz-accent);background:rgba(255,107,107,.08)}
+.input-group{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:end}
+.input-group>div{flex:1;min-width:140px}
+.input-group label{display:block;margin-bottom:4px;font-weight:600;font-size:.9em}
+.input-group input,.input-group select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:1em;box-sizing:border-box}
+.tip-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tip-btns button{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);cursor:pointer;font-size:.95em;transition:.2s}
+.tip-btns button.active,.tip-btns button:hover{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+.breakdown{margin-top:16px;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.breakdown table{width:100%;border-collapse:collapse}
+.breakdown th,.breakdown td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.breakdown th{font-size:.85em;color:var(--text2);font-weight:600}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Tip Calculator","description":"Free online tip calculator. Calculate tip amount, split the bill per person, and see total cost with preset tip percentages.","url":"https://tools.gamezipper.com/calc/tip-calculator-v2.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How much should I tip?", "acceptedAnswer": {"@type": "Answer", "text": "In the US, 15-20% is standard for restaurants. 15% for adequate service, 18% for good service, and 20%+ for excellent service. Some countries do not expect tipping at all."}}, {"@type": "Question", "name": "How do I split the bill with tip?", "acceptedAnswer": {"@type": "Answer", "text": "Enter the bill amount, select a tip percentage, set the number of people, and the calculator shows each person's share including tip."}}, {"@type": "Question", "name": "Should I tip on the pre-tax or post-tax amount?", "acceptedAnswer": {"@type": "Answer", "text": "Traditionally, tipping is calculated on the pre-tax amount. However, many people tip on the total including tax for simplicity."}}, {"@type": "Question", "name": "Is this calculator free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. This tip calculator is completely free, runs in your browser, and does not collect any personal data."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/tip-calculator-v2.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/tip-calculator-v2.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/tip-calculator-v2.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="input-group">
+      <div><label id="lbl-bill"></label><input type="number" id="billAmount" value="85.00" min="0" step="0.01" placeholder="0.00"></div>
+      <div><label id="lbl-people"></label><input type="number" id="people" value="2" min="1" max="100" step="1"></div>
+      <div><label id="lbl-tax"></label><input type="number" id="taxRate" value="0" min="0" max="50" step="0.5" placeholder="0"></div>
+    </div>
+    <div class="tip-btns" id="tipBtns"></div>
+    <div class="result-cards" id="results"></div>
+    <div class="breakdown" id="breakdown"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Tip Calculator',
+    toolDesc: 'Calculate tip amount, split the bill per person, and see the total cost instantly. Supports custom tip percentages and tax.',
+    billAmount: 'Bill Amount ($)',
+    people: 'Number of People',
+    taxRate: 'Tax Rate (%)',
+    tipPercent: 'Tip',
+    tipAmount: 'Tip Amount',
+    totalWithTip: 'Total with Tip',
+    perPerson: 'Per Person',
+    subtotal: 'Subtotal',
+    tax: 'Tax',
+    step1: 'Enter the bill amount before tip',
+    step2: 'Select a tip percentage (15%, 18%, 20% or custom)',
+    step3: 'Set the number of people to split the bill',
+    step4: 'See the tip, total, and per-person share instantly',
+  },
+  zh: {
+    toolTitle: '小费计算器',
+    toolDesc: '即时计算小费金额、按人数分账和总费用。支持自定义小费比例和税费。',
+    billAmount: '账单金额 ($)',
+    people: '用餐人数',
+    taxRate: '税率 (%)',
+    tipPercent: '小费比例',
+    tipAmount: '小费金额',
+    totalWithTip: '含小费总额',
+    perPerson: '每人应付',
+    subtotal: '小计',
+    tax: '税费',
+    step1: '输入账单金额',
+    step2: '选择小费比例（15%、18%、20% 或自定义）',
+    step3: '设置用餐人数',
+    step4: '即时查看小费、总额和每人应付金额',
+  }
+});
+
+const { $, t } = GZ;
+let selectedTip = 18;
+const tipPresets = [10, 15, 18, 20, 22, 25];
+
+$('#lbl-bill').textContent = t('billAmount');
+$('#lbl-people').textContent = t('people');
+$('#lbl-tax').textContent = t('taxRate');
+
+// Build tip buttons
+const tipBtns = $('#tipBtns');
+tipPresets.forEach(pct => {
+  const btn = document.createElement('button');
+  btn.textContent = pct + '%';
+  btn.className = pct === selectedTip ? 'active' : '';
+  btn.onclick = () => selectTip(pct);
+  tipBtns.appendChild(btn);
+});
+// Custom button
+const customBtn = document.createElement('button');
+customBtn.textContent = 'Custom';
+customBtn.onclick = () => {
+  const val = prompt('Enter custom tip percentage:', selectedTip);
+  if (val && !isNaN(val)) selectTip(parseFloat(val));
+};
+tipBtns.appendChild(customBtn);
+
+function selectTip(pct) {
+  selectedTip = pct;
+  tipBtns.querySelectorAll('button').forEach(b => {
+    b.classList.toggle('active', b.textContent === pct + '%');
+  });
+  calculate();
+}
+
+function calculate() {
+  const bill = parseFloat($('#billAmount').value) || 0;
+  const ppl = Math.max(1, parseInt($('#people').value) || 1);
+  const taxPct = parseFloat($('#taxRate').value) || 0;
+  
+  const taxAmt = bill * taxPct / 100;
+  const subtotal = bill + taxAmt;
+  const tipAmt = subtotal * selectedTip / 100;
+  const total = subtotal + tipAmt;
+  const perPerson = total / ppl;
+  
+  $('#results').innerHTML = `
+    <div class="result-card">
+      <div class="label">${t('tipPercent')}</div>
+      <div class="value">${selectedTip}%</div>
+    </div>
+    <div class="result-card">
+      <div class="label">${t('tipAmount')}</div>
+      <div class="value">$${tipAmt.toFixed(2)}</div>
+    </div>
+    <div class="result-card highlight">
+      <div class="label">${t('totalWithTip')}</div>
+      <div class="value">$${total.toFixed(2)}</div>
+    </div>
+    <div class="result-card highlight">
+      <div class="label">${t('perPerson')}</div>
+      <div class="value">$${perPerson.toFixed(2)}</div>
+    </div>`;
+  
+  $('#breakdown').innerHTML = `
+    <table>
+      <tr><th>Item</th><th>Amount</th></tr>
+      <tr><td>${t('subtotal')}</td><td>$${bill.toFixed(2)}</td></tr>
+      <tr><td>${t('tax')} (${taxPct}%)</td><td>$${taxAmt.toFixed(2)}</td></tr>
+      <tr><td>${t('tipAmount')} (${selectedTip}%)</td><td>$${tipAmt.toFixed(2)}</td></tr>
+      <tr style="font-weight:700"><td>${t('totalWithTip')}</td><td>$${total.toFixed(2)}</td></tr>
+      ${ppl > 1 ? `<tr style="color:var(--gz-accent);font-weight:700"><td>${t('perPerson')} (${ppl} people)</td><td>$${perPerson.toFixed(2)}</td></tr>` : ''}
+    </table>`;
+}
+
+['billAmount','people','taxRate'].forEach(id => {
+  $('#' + id).addEventListener('input', calculate);
+});
+
+calculate();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💰', href:'/calc/bill-splitter.html', name:'Bill Splitter'},
+    {icon:'🏷️', href:'/calc/discount-calculator.html', name:'Discount Calc'},
+    {icon:'🧾', href:'/calc/sales-tax-calculator.html', name:'Sales Tax'},
+    {icon:'💵', href:'/calc/salary-calculator.html', name:'Salary Calc'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
