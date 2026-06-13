@@ -1,7 +1,16 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.4-tools-tuning (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.5-tools-pungent-kill (Poki-style)
  * ────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.5-tools-pungent-kill Changes (2026-06-14):
+ *   - DISABLE Pungent 10689345 (legacyEnabled=false). A/B test (6-12~6-14,
+ *     2.5 days, 109 events) conclusively showed 0% fill: 0 fills, 24
+ *     load_errors, 17 no_fills, 22 zone_backoff. Zone is dead — keeping
+ *     it alive wastes ad-provider.js bandwidth + generates noise errors.
+ *   - Superior 11012010 also at 0% fill (145 events, 0 fills, 25 load_errors)
+ *     but kept as primary zone since Monetag token expired — may recover
+ *     after manual token refresh.
  *
  * v5.4-tools-tuning Changes (2026-06-12):
  *   - Per-zone backoff raised: 30min → 60min → 24h (was 10→30→60min).
@@ -68,7 +77,7 @@
     //   - Revert via legacyEnabled=false if 7-day data shows Pungent 10689345 still at 0% fill.
     inpagePushLegacy: 10689345,
     vignetteLegacy:   10689346,
-    legacyEnabled: true,  // v5.4: re-enabled 2026-06-12 for A/B test (kill switch via false)
+    legacyEnabled: false,  // v5.5: A/B test failed — 0% fill in 2.5 days (109 events), disabled
   };
 
   var CONFIG = {
