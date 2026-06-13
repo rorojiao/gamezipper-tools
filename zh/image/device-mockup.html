@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>设备模型生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将截图放入逼真的设备边框 — iPhone、iPad、MacBook、Android 和桌面显示器。下载为 PNG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/device-mockup.html">
+  <meta property="og:title" content="设备模型生成器">
+  <meta property="og:description" content="将截图放入逼真的设备边框 — iPhone、iPad、MacBook、Android 和桌面显示器。下载为 PNG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/device-mockup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="设备模型生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.ctrl{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:end}
+.ctrl>div{display:flex;flex-direction:column;gap:4px}
+.ctrl label{font-size:.75rem;color:var(--text2)}
+.ctrl input,.ctrl select{padding:6px 8px;background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem}
+.canvas-wrap{display:flex;align-items:center;justify-content:center;min-height:350px;background:var(--glass);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+canvas{max-width:100%;max-height:500px}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;color:var(--text2);cursor:pointer;transition:border .2s}
+.drop-zone:hover{border-color:var(--accent)}
+.drop-zone.dragover{border-color:var(--accent);background:var(--glass2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Device Mockup Generator","description":"Wrap screenshots in realistic device mockups — iPhone, iPad, MacBook, Android and desktop frames. Download as PNG for presentations and portfolios.","url": "https://tools.gamezipper.com/zh/image/device-mockup.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a device mockup?", "acceptedAnswer": {"@type": "Answer", "text": "A device mockup is a realistic frame (phone, tablet, laptop) wrapped around a screenshot to showcase how an app or website looks in context. It is commonly used in presentations, portfolios and marketing materials."}}, {"@type": "Question", "name": "What device frames are available?", "acceptedAnswer": {"@type": "Answer", "text": "This tool offers iPhone, iPad, MacBook, Android phone, desktop monitor and flat frame styles — all rendered as vector graphics with customizable colors."}}, {"@type": "Question", "name": "Is my screenshot uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All image processing happens entirely in your browser using Canvas. Your screenshots never leave your device."}}, {"@type": "Question", "name": "What image formats can I upload?", "acceptedAnswer": {"@type": "Answer", "text": "You can upload PNG, JPG, WebP or any browser-supported image format. The output is always a high-quality PNG."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/device-mockup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/device-mockup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/device-mockup.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="ctrl">
+      <div><label>Device</label>
+        <select id="device" onchange="render()">
+          <option value="iphone">iPhone</option>
+          <option value="android">Android</option>
+          <option value="ipad">iPad</option>
+          <option value="macbook">MacBook</option>
+          <option value="monitor">Desktop Monitor</option>
+          <option value="flat">Flat Frame</option>
+        </select></div>
+      <div><label>Frame Color</label><input type="color" id="frameColor" value="#1a1a2e" onchange="render()"></div>
+      <div><label>Background</label><input type="color" id="bgColor" value="#0f0f23" onchange="render()"></div>
+      <div><label>Padding</label><input type="range" id="padding" min="20" max="100" value="60" onchange="render()"></div>
+    </div>
+    <div class="drop-zone" id="dropZone">
+      <p id="dropLabel">📎 Drop your screenshot here or click to upload</p>
+      <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="loadFile(this)">
+    </div>
+    <div class="canvas-wrap" id="canvasWrap" style="display:none">
+      <canvas id="canvas"></canvas>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px" id="btnRow" style="display:none">
+      <button class="gz-btn" id="downloadBtn" onclick="downloadPNG()">⬇ Download PNG</button>
+      <button class="gz-btn gz-btn-secondary" onclick="resetTool()">🔄 Reset</button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Device Mockup Generator',
+    toolDesc: 'Wrap screenshots in realistic device frames — iPhone, iPad, MacBook, Android and desktop. Download as PNG.',
+    step1: 'Upload or drag and drop your screenshot',
+    step2: 'Pick a device frame style and colors',
+    step3: 'Adjust padding and frame color',
+    step4: 'Download the mockup as a high-quality PNG',
+    dropLabel: '📎 Drop your screenshot here or click to upload',
+  },
+  zh: {
+    toolTitle: '设备模型生成器',
+    toolDesc: '将截图放入逼真的设备边框 — iPhone、iPad、MacBook、Android 和桌面显示器。下载为 PNG。',
+    step1: '上传或拖拽你的截图',
+    step2: '选择设备边框样式和颜色',
+    step3: '调整内边距和边框颜色',
+    step4: '下载为高质量的 PNG 图片',
+    dropLabel: '📎 拖拽截图到此处或点击上传',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let img = null;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+
+const devices = {
+  iphone: { w: 375, h: 812, notch: true, bezel: 12, radius: 40 },
+  android: { w: 360, h: 780, notch: false, bezel: 8, radius: 24 },
+  ipad: { w: 768, h: 1024, notch: false, bezel: 16, radius: 16 },
+  macbook: { w: 1280, h: 800, notch: false, bezel: 4, radius: 4, bar: 24 },
+  monitor: { w: 1280, h: 720, notch: false, bezel: 8, radius: 4, stand: true },
+  flat: { w: 800, h: 600, notch: false, bezel: 4, radius: 8 },
+};
+
+function loadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    img = new Image();
+    img.onload = () => { $('#dropZone').style.display='none'; $('#canvasWrap').style.display='flex'; $('#btnRow').style.display='flex'; render(); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+const dz = $('#dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if(e.dataTransfer.files[0]){loadFile({files:[e.dataTransfer.files[0]]});} });
+dz.addEventListener('click', () => $('#fileInput').click());
+
+function render() {
+  if (!img) return;
+  const dev = devices[$('#device').value];
+  const pad = +$('#padding').value;
+  const fc = $('#frameColor').value;
+  const bg = $('#bgColor').value;
+  const scale = Math.min(img.width / dev.w, img.height / dev.h, 1);
+  const sw = Math.round(dev.w * scale);
+  const sh = Math.round(dev.h * scale);
+  const cw = sw + dev.bezel * 2 + pad * 2;
+  const ch = sh + dev.bezel * 2 + pad * 2 + (dev.bar||0) + (dev.stand?40:0);
+  canvas.width = cw * 2; canvas.height = ch * 2;
+  canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+  ctx.scale(2, 2);
+  // Background
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, cw, ch);
+  // Frame
+  const fx = pad, fy = pad, fw = sw + dev.bezel * 2, fh = sh + dev.bezel * 2;
+  ctx.beginPath();
+  ctx.roundRect(fx, fy, fw, fh, dev.radius);
+  ctx.fillStyle = fc; ctx.fill();
+  // Screen
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(fx + dev.bezel, fy + dev.bezel, sw, sh, Math.max(dev.radius - dev.bezel, 0));
+  ctx.clip();
+  ctx.drawImage(img, fx + dev.bezel, fy + dev.bezel, sw, sh);
+  ctx.restore();
+  // Notch (iPhone)
+  if (dev.notch) {
+    const nw = sw * 0.35, nh = dev.bezel + 8;
+    ctx.fillStyle = fc;
+    ctx.beginPath();
+    ctx.roundRect(fx + dev.bezel + (sw - nw) / 2, fy, nw, nh, [0, 0, 12, 12]);
+    ctx.fill();
+  }
+  // MacBook bar
+  if (dev.bar) {
+    ctx.fillStyle = fc;
+    ctx.fillRect(fx, fy + fh, fw, dev.bar);
+  }
+  // Monitor stand
+  if (dev.stand) {
+    const standW = fw * 0.3, standH = 30;
+    ctx.fillStyle = fc;
+    ctx.beginPath();
+    ctx.roundRect(fx + (fw - standW) / 2, fy + fh + (dev.bar||0), standW, standH, 4);
+    ctx.fill();
+  }
+}
+
+function downloadPNG() {
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'device-mockup.png'; a.click();
+}
+
+function resetTool() {
+  img = null;
+  $('#dropZone').style.display = '';
+  $('#canvasWrap').style.display = 'none';
+  $('#fileInput').value = '';
+}
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/social-media-resizer.html', name:'Social Resizer'},
+    {icon:'📱', href:'/image/app-icon-generator.html', name:'App Icons'},
+    {icon:'🎨', href:'/image/wallpaper-generator.html', name:'Wallpaper'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>CORS 跨域测试工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="测试任意 URL 的 CORS（跨域资源共享）头信息。验证 Access-Control-Allow-Origin、方法、头部和凭证支持。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/cors-tester.html">
+  <meta property="og:title" content="CORS 跨域测试工具">
+  <meta property="og:description" content="测试任意 URL 的 CORS（跨域资源共享）头信息。验证 Access-Control-Allow-Origin、方法、头部和凭证支持。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/cors-tester.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CORS 跨域测试工具">
+<meta name="twitter:description" content="测试任意 URL 的 CORS（跨域资源共享）头信息。验证 Access-Control-Allow-Origin、方法、头部和凭证支持。">
+<meta name="twitter:image:alt" content="GameZipper CORS Tester">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.url-row{display:flex;gap:8px;margin:10px 0}
+.url-row input{flex:1;padding:10px;border:2px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--gz-fg);font-size:.95em}
+.url-row select{padding:10px;border:2px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--gz-fg)}
+.opt-row{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:.88em}
+.opt-row label{display:flex;align-items:center;gap:4px;cursor:pointer}
+.result-box{background:var(--gz-card);border-radius:8px;padding:16px;margin:12px 0}
+.result-box h3{margin:0 0 8px}
+.cors-pass{color:#22c55e}.cors-fail{color:#e94560}.cors-warn{color:#fbbf24}
+.header-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.85em}
+.header-table th,.header-table td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--gz-border)}
+.header-table th{font-weight:600;opacity:.7}
+#spinner{display:none;margin:8px 0}
+.spinner{width:24px;height:24px;border:3px solid var(--gz-border);border-top-color:var(--gz-accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CORS Tester","description":"Test CORS headers on any URL. Check Access-Control-Allow-Origin, methods, headers and credentials. Free online CORS testing tool.","url": "https://tools.gamezipper.com/zh/dev/cors-tester.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is CORS?","acceptedAnswer":{"@type":"Answer","text":"CORS (Cross-Origin Resource Sharing) is a security mechanism that allows web servers to specify which origins are permitted to access their resources from a browser."}},{"@type":"Question","name":"How do I fix CORS errors?","acceptedAnswer":{"@type":"Answer","text":"CORS errors are fixed on the server side by sending proper Access-Control-Allow-Origin headers. You can also use a proxy server to bypass CORS during development."}},{"@type":"Question","name":"Why do I need a CORS tester?","acceptedAnswer":{"@type":"Answer","text":"A CORS tester helps you quickly verify whether a URL returns proper CORS headers, which is essential when building APIs or frontend applications that make cross-origin requests."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/cors-tester.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/cors-tester.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/cors-tester.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="url-row">
+      <select id="method"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option><option>PATCH</option><option>OPTIONS</option><option>HEAD</option></select>
+      <input type="url" id="url" placeholder="https://api.example.com/data">
+    </div>
+    <div class="opt-row">
+      <label><input type="checkbox" id="cred"> Include Credentials</label>
+      <label><input type="checkbox" id="redirect" checked> Follow Redirects</label>
+      <label>Origin: <input type="text" id="origin" style="width:180px;padding:4px 8px;border:1px solid var(--gz-border);border-radius:4px;background:var(--gz-bg);color:var(--gz-fg)" value="https://tools.gamezipper.com"></label>
+    </div>
+    <div id="spinner"><span class="spinner"></span> <span data-i18n="testing"></span></div>
+    <div id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CORS Tester & Checker',
+    toolDesc: 'Test CORS (Cross-Origin Resource Sharing) headers on any URL. Verify Access-Control-Allow-Origin, methods, headers and credentials support.',
+    test: 'Test CORS',
+    testing: 'Testing...',
+    corsEnabled: 'CORS Enabled ✓',
+    corsDisabled: 'CORS Not Enabled ✗',
+    corsPartial: 'CORS Partially Configured ⚠',
+    responseHeaders: 'Response Headers',
+    corsHeaders: 'CORS Headers Detected',
+    corsAnalysis: 'CORS Analysis',
+    statusCode: 'Status Code',
+    error: 'Error',
+    step1: 'Enter the URL you want to test for CORS support',
+    step2: 'Select the HTTP method and configure options',
+    step3: 'Click "Test CORS" to send a request',
+    step4: 'Review the CORS headers and analysis results',
+  },
+  zh: {
+    toolTitle: 'CORS 跨域测试工具',
+    toolDesc: '测试任意 URL 的 CORS（跨域资源共享）头信息。验证 Access-Control-Allow-Origin、方法、头部和凭证支持。',
+    test: '测试 CORS',
+    testing: '测试中...',
+    corsEnabled: 'CORS 已启用 ✓',
+    corsDisabled: 'CORS 未启用 ✗',
+    corsPartial: 'CORS 部分配置 ⚠',
+    responseHeaders: '响应头',
+    corsHeaders: '检测到的 CORS 头',
+    corsAnalysis: 'CORS 分析',
+    statusCode: '状态码',
+    error: '错误',
+    step1: '输入要测试 CORS 支持的 URL',
+    step2: '选择 HTTP 方法并配置选项',
+    step3: '点击「测试 CORS」发送请求',
+    step4: '查看 CORS 头信息和分析结果',
+  }
+});
+
+const { $, t } = GZ;
+
+async function testCORS() {
+  const url = $('#url').value.trim();
+  if (!url) return;
+  const method = $('#method').value;
+  const cred = $('#cred').checked;
+  const followRedirect = $('#redirect').checked;
+  const origin = $('#origin').value.trim() || location.origin;
+
+  $('#spinner').style.display = 'block';
+  $('#results').innerHTML = '';
+
+  try {
+    const start = performance.now();
+    const resp = await fetch(url, {
+      method,
+      mode: 'cors',
+      credentials: cred ? 'include' : 'omit',
+      redirect: followRedirect ? 'follow' : 'manual',
+      headers: { 'Origin': origin }
+    }).catch(e => e);
+
+    const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+
+    if (resp instanceof Error) throw resp;
+
+    const headers = {};
+    resp.headers.forEach((v, k) => { headers[k] = v; });
+
+    const acao = headers['access-control-allow-origin'] || '';
+    const acam = headers['access-control-allow-methods'] || '';
+    const acah = headers['access-control-allow-headers'] || '';
+    const acac = headers['access-control-allow-credentials'] || '';
+    const acae = headers['access-control-expose-headers'] || '';
+    const acma = headers['access-control-max-age'] || '';
+
+    const corsHeaders = [
+      { name: 'Access-Control-Allow-Origin', value: acao },
+      { name: 'Access-Control-Allow-Methods', value: acam },
+      { name: 'Access-Control-Allow-Headers', value: acah },
+      { name: 'Access-Control-Allow-Credentials', value: acac },
+      { name: 'Access-Control-Expose-Headers', value: acae },
+      { name: 'Access-Control-Max-Age', value: acma },
+    ].filter(h => h.value);
+
+    let status, statusClass;
+    if (acao) {
+      if (acao === '*' || acao === origin) { status = t('corsEnabled'); statusClass = 'cors-pass'; }
+      else { status = t('corsPartial'); statusClass = 'cors-warn'; }
+    } else {
+      status = t('corsDisabled'); statusClass = 'cors-fail';
+    }
+
+    let html = `<div class="result-box">
+      <h3 class="${statusClass}" style="font-size:1.2em">${status}</h3>
+      <p style="font-size:.85em;opacity:.7">${t('statusCode')}: ${resp.status} ${resp.statusText} — ${elapsed}s</p>`;
+
+    if (corsHeaders.length) {
+      html += `<h3>${t('corsHeaders')}</h3><table class="header-table"><tr><th>Header</th><th>Value</th></tr>`;
+      corsHeaders.forEach(h => {
+        html += `<tr><td style="font-weight:600;color:var(--gz-accent)">${h.name}</td><td>${h.value}</td></tr>`;
+      });
+      html += '</table>';
+    }
+
+    html += `<details><summary>${t('responseHeaders')} (${Object.keys(headers).length})</summary>
+      <table class="header-table"><tr><th>Header</th><th>Value</th></tr>`;
+    Object.entries(headers).forEach(([k, v]) => {
+      const isCors = k.startsWith('access-control');
+      html += `<tr><td style="${isCors ? 'font-weight:600;color:var(--gz-accent)' : ''}">${k}</td><td>${v}</td></tr>`;
+    });
+    html += '</table></details>';
+
+    // Analysis
+    html += `<h3>${t('corsAnalysis')}</h3><ul style="font-size:.88em;line-height:1.8">`;
+    if (acao === '*') html += `<li class="cors-warn">⚠ Allows any origin (*) — not recommended for production APIs</li>`;
+    else if (acao) html += `<li class="cors-pass">✓ Restricted to: ${acao}</li>`;
+    else html += `<li class="cors-fail">✗ No Access-Control-Allow-Origin header — browsers will block cross-origin requests</li>`;
+    if (acac === 'true') html += `<li class="cors-warn">⚠ Credentials allowed — ensure origin is not wildcard</li>`;
+    if (acam) html += `<li>Allowed methods: ${acam}</li>`;
+    if (acah) html += `<li>Allowed headers: ${acah}</li>`;
+    html += '</ul></div>';
+
+    $('#results').innerHTML = html;
+
+  } catch (e) {
+    let msg = e.message || String(e);
+    let hint = '';
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      hint = '<br><span style="opacity:.7">This usually means the server does not send CORS headers, or blocks the request entirely.</span>';
+    }
+    $('#results').innerHTML = `<div class="result-box"><h3 class="cors-fail">${t('error')}</h3><p style="font-size:.88em">${msg}${hint}</p>
+      <p style="font-size:.82em;opacity:.7;margin-top:8px">Tip: Try using the <a href="/dev/http-headers.html" style="color:var(--gz-accent)">HTTP Headers Checker</a> for a no-CORS alternative.</p></div>`;
+  } finally {
+    $('#spinner').style.display = 'none';
+  }
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="testCORS()">${t('test')}</button>`;
+
+$('#url').addEventListener('keydown', e => { if (e.key === 'Enter') testCORS(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/dev/http-headers.html', name:'HTTP Headers'},
+    {icon:'🌐', href:'/dev/api-tester.html', name:'API Tester'},
+    {icon:'🔒', href:'/dev/security-headers.html', name:'Security Headers'},
+    {icon:'🛡️', href:'/dev/csp-generator.html', name:'CSP Generator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

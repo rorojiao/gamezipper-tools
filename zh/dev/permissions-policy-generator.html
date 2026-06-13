@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>权限策略生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="生成 Permissions-Policy HTTP 头，控制浏览器功能如摄像头、麦克风、地理定位和自动播放。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/permissions-policy-generator.html">
+  <meta property="og:title" content="权限策略生成器">
+  <meta property="og:description" content="生成 Permissions-Policy HTTP 头，控制浏览器功能如摄像头、麦克风、地理定位和自动播放。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/permissions-policy-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="权限策略生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.policy-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem}
+@media(max-width:768px){.policy-grid{grid-template-columns:1fr}}
+.policy-card{background:var(--gz-input-bg,#1a1a2e);border:1px solid var(--gz-border,#333);border-radius:8px;padding:.7rem .9rem;display:flex;flex-direction:column;gap:.4rem}
+.policy-card .pc-head{display:flex;align-items:center;gap:.5rem}
+.policy-card .pc-head code{font-size:.85em;color:#4ecdc4;font-weight:600}
+.policy-card .pc-head span{font-size:.75em;opacity:.6}
+.policy-card select,.policy-card input{background:var(--gz-bg,#0d1117);color:var(--gz-text,#eee);border:1px solid var(--gz-border,#333);border-radius:5px;padding:.3rem .5rem;font-size:.85em}
+.policy-card input{width:100%}
+.policy-card label{font-size:.8em;opacity:.7}
+.output-block{background:var(--gz-input-bg,#1a1a2e);border:1px solid var(--gz-border,#333);border-radius:8px;padding:1rem;font-family:monospace;font-size:.85em;white-space:pre-wrap;word-break:break-all;line-height:1.6;color:#e0e0e0}
+.output-block .kw{color:#e94560}.output-block .fn{color:#61afef}.output-block .val{color:#00d672}
+.tag-chip{display:inline-block;background:var(--gz-input-bg,#1a1a2e);border:1px solid var(--gz-border,#444);border-radius:4px;padding:.2rem .5rem;margin:.15rem;font-size:.8em;cursor:pointer;transition:all .15s}
+.tag-chip:hover{border-color:var(--gz-accent,#4ecdc4)}
+.tag-chip.active{background:var(--gz-accent,#4ecdc4);color:#000;border-color:var(--gz-accent,#4ecdc4)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Permissions Policy Generator","description":"Generate Permissions-Policy HTTP headers to control browser features like camera, microphone, geolocation, and autoplay.","url": "https://tools.gamezipper.com/zh/dev/permissions-policy-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Permissions-Policy header?", "acceptedAnswer": {"@type": "Answer", "text": "Permissions-Policy (formerly Feature-Policy) is an HTTP header that controls which browser features and APIs can be used in the browser, and on which origins. It replaces the older Feature-Policy header."}}, {"@type": "Question", "name": "How is Permissions-Policy different from Feature-Policy?", "acceptedAnswer": {"@type": "Answer", "text": "Permissions-Policy uses a different syntax with structured field values: camera=(self \"https://example.com\") vs Feature-Policy's camera self example.com. Permissions-Policy also supports more features and is the current standard."}}, {"@type": "Question", "name": "What features can I control with Permissions-Policy?", "acceptedAnswer": {"@type": "Answer", "text": "Common features include: camera, microphone, geolocation, fullscreen, autoplay, payment, usb, bluetooth, display-capture, screen-wake-lock, sync-xhr, and more. Each can be allowed for specific origins or blocked entirely."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/permissions-policy-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/permissions-policy-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/permissions-policy-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="margin-bottom:.5rem">
+      <strong id="lbl-presets" style="font-size:.9em"></strong>
+      <div style="margin-top:.3rem;display:flex;flex-wrap:wrap;gap:.3rem" id="presets"></div>
+    </div>
+    <div class="policy-grid" id="policyGrid"></div>
+    <div style="margin-top:1rem">
+      <h3 style="margin-bottom:.5rem;font-size:.95em" id="lbl-output"></h3>
+      <div class="output-block" id="output"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Permissions Policy Generator',
+    toolDesc: 'Generate Permissions-Policy HTTP headers to control browser features like camera, microphone, geolocation, and autoplay.',
+    copy: 'Copy Header',
+    clear: 'Reset',
+    lblPresets: 'Quick Presets',
+    lblOutput: 'Generated Header',
+    presetStrict: 'Strict',
+    presetModerate: 'Moderate',
+    presetLenient: 'Lenient',
+    presetNone: 'Block All',
+    allowSelf: 'self only',
+    allowAll: 'all origins',
+    blockAll: 'blocked',
+    custom: 'custom origins',
+    step1: 'Use a preset or configure each feature individually',
+    step2: 'For each feature, choose allow self, allow all, block, or set custom origins',
+    step3: 'Review the generated Permissions-Policy header',
+    step4: 'Copy the header to your server configuration',
+  },
+  zh: {
+    toolTitle: '权限策略生成器',
+    toolDesc: '生成 Permissions-Policy HTTP 头，控制浏览器功能如摄像头、麦克风、地理定位和自动播放。',
+    copy: '复制头',
+    clear: '重置',
+    lblPresets: '快速预设',
+    lblOutput: '生成的头',
+    presetStrict: '严格',
+    presetModerate: '适中',
+    presetLenient: '宽松',
+    presetNone: '全部阻止',
+    allowSelf: '仅自身',
+    allowAll: '所有源',
+    blockAll: '已阻止',
+    custom: '自定义源',
+    step1: '使用预设或单独配置每个功能',
+    step2: '为每个功能选择允许自身、允许全部、阻止或自定义源',
+    step3: '查看生成的 Permissions-Policy 头',
+    step4: '将头信息复制到服务器配置中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const features = [
+  { id:'camera', desc:'Camera access' },
+  { id:'microphone', desc:'Microphone access' },
+  { id:'geolocation', desc:'Geolocation API' },
+  { id:'fullscreen', desc:'Fullscreen API' },
+  { id:'autoplay', desc:'Autoplay media' },
+  { id:'payment', desc:'Payment Request API' },
+  { id:'usb', desc:'WebUSB API' },
+  { id:'bluetooth', desc:'Web Bluetooth API' },
+  { id:'display-capture', desc:'Screen capture' },
+  { id:'screen-wake-lock', desc:'Screen wake lock' },
+  { id:'sync-xhr', desc:'Synchronous XHR' },
+  { id:'clipboard-read', desc:'Clipboard read' },
+  { id:'clipboard-write', desc:'Clipboard write' },
+  { id:'accelerometer', desc:'Accelerometer' },
+  { id:'gyroscope', desc:'Gyroscope' },
+  { id:'magnetometer', desc:'Magnetometer' },
+  { id:'midi', desc:'Web MIDI API' },
+  { id:'picture-in-picture', desc:'Picture-in-Picture' },
+  { id:'publickey-credentials-get', desc:'WebAuthn' },
+  { id:'web-share', desc:'Web Share API' },
+];
+
+// state: 'self' | 'all' | 'none' | 'custom'
+let policies = {};
+features.forEach(f => policies[f.id] = { mode:'self', origins:'' });
+
+function renderGrid() {
+  const grid = $('#policyGrid');
+  grid.innerHTML = features.map(f => {
+    const p = policies[f.id];
+    return `<div class="policy-card">
+      <div class="pc-head"><code>${f.id}</code><span>${f.desc}</span></div>
+      <select data-f="${f.id}" class="mode-sel" onchange="setMode('${f.id}',this.value)">
+        <option value="self" ${p.mode==='self'?'selected':''}>${t('allowSelf')}</option>
+        <option value="all" ${p.mode==='all'?'selected':''}>${t('allowAll')}</option>
+        <option value="none" ${p.mode==='none'?'selected':''}>${t('blockAll')}</option>
+        <option value="custom" ${p.mode==='custom'?'selected':''}>${t('custom')}</option>
+      </select>
+      <input data-f="${f.id}" class="origin-inp" value="${p.origins}" placeholder="https://example.com https://other.com" style="display:${p.mode==='custom'?'block':'none'}" oninput="setOrigins('${f.id}',this.value)">
+    </div>`;
+  }).join('');
+  generate();
+}
+
+function setMode(id, mode) {
+  policies[id].mode = mode;
+  const inp = document.querySelector(`.origin-inp[data-f="${id}"]`);
+  inp.style.display = mode === 'custom' ? 'block' : 'none';
+  generate();
+}
+
+function setOrigins(id, val) {
+  policies[id].origins = val;
+  generate();
+}
+
+function generate() {
+  const parts = [];
+  for (const f of features) {
+    const p = policies[f.id];
+    if (p.mode === 'all') continue; // all = omit from policy (default allow)
+    let val;
+    if (p.mode === 'self') val = '(self)';
+    else if (p.mode === 'none') val = '()';
+    else if (p.mode === 'custom') {
+      const origins = p.origins.trim().split(/\s+/).filter(Boolean);
+      val = '(self' + origins.map(o => ` "${o}"`).join('') + ')';
+    }
+    if (val) parts.push(`${f.id}=${val}`);
+  }
+
+  const header = parts.length ? `Permissions-Policy: ${parts.join(', ')}` : 'Permissions-Policy: (all features allowed by default)';
+
+  const highlighted = header
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^(Permissions-Policy:)/, '<span class="kw">$1</span>')
+    .replace(/(\w[\w-]*)=/g, '<span class="fn">$1</span>=')
+    .replace(/(\(self\))/g, '<span class="val">$1</span>')
+    .replace(/(())/g, '<span class="val">$1</span>')
+    .replace(/"(https?:\/\/[^"]+)"/g, '"<span class="val">$1</span>"');
+
+  $('#output').innerHTML = highlighted;
+  $('#output').dataset.raw = header;
+}
+
+const presets = {
+  strict: { camera:'none', microphone:'none', geolocation:'self', fullscreen:'self', autoplay:'none', payment:'self', usb:'none', bluetooth:'none', 'display-capture':'none', 'screen-wake-lock':'none', 'sync-xhr':'none', 'clipboard-read':'none', 'clipboard-write':'self', accelerometer:'none', gyroscope:'none', magnetometer:'none', midi:'none', 'picture-in-picture':'self', 'publickey-credentials-get':'self', 'web-share':'self' },
+  moderate: { camera:'self', microphone:'self', geolocation:'self', fullscreen:'self', autoplay:'self', payment:'self', usb:'none', bluetooth:'none', 'display-capture':'self', 'screen-wake-lock':'self', 'sync-xhr':'none', 'clipboard-read':'self', 'clipboard-write':'self', accelerometer:'self', gyroscope:'self', magnetometer:'self', midi:'self', 'picture-in-picture':'self', 'publickey-credentials-get':'self', 'web-share':'self' },
+  lenient: { camera:'self', microphone:'self', geolocation:'self', fullscreen:'self', autoplay:'self', payment:'self', usb:'self', bluetooth:'self', 'display-capture':'self', 'screen-wake-lock':'self', 'sync-xhr':'self', 'clipboard-read':'self', 'clipboard-write':'self', accelerometer:'self', gyroscope:'self', magnetometer:'self', midi:'self', 'picture-in-picture':'self', 'publickey-credentials-get':'self', 'web-share':'self' },
+  none: Object.fromEntries(features.map(f => [f.id, 'none'])),
+};
+
+function loadPreset(name) {
+  const p = presets[name];
+  for (const f of features) {
+    policies[f.id].mode = p[f.id] || 'self';
+    policies[f.id].origins = '';
+  }
+  renderGrid();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').dataset.raw||'')">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="features.forEach(f=>policies[f.id]={mode:'self',origins:''});renderGrid()">${t('clear')}</button>`;
+
+$('#presets').innerHTML = ['strict','moderate','lenient','none'].map(n =>
+  `<button class="gz-btn gz-btn-secondary" style="font-size:.8em" onclick="loadPreset('${n}')">${t('preset'+n.charAt(0).toUpperCase()+n.slice(1))}</button>`
+).join('');
+
+renderGrid();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔒', href:'/dev/csp-generator.html', name:'CSP Generator'},
+    {icon:'⚡', href:'/dev/resource-hints-generator.html', name:'Resource Hints'},
+    {icon:'📋', href:'/dev/http-headers-checker.html', name:'HTTP Headers'},
+    {icon:'🛡️', href:'/dev/cors-header-generator.html', name:'CORS Headers'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

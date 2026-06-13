@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>XSS 过滤器 & HTML 转义 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="转义 HTML 实体、过滤不受信任的 HTML、检测潜在的 XSS 攻击向量。所有处理完全在浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/xss-sanitizer.html">
+  <meta property="og:title" content="XSS 过滤器 & HTML 转义">
+  <meta property="og:description" content="转义 HTML 实体、过滤不受信任的 HTML、检测潜在的 XSS 攻击向量。所有处理完全在浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/xss-sanitizer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="XSS 过滤器 & HTML 转义">
+<meta name="twitter:description" content="转义 HTML 实体、过滤不受信任的 HTML、检测潜在的 XSS 攻击向量。所有处理完全在浏览器本地运行。">
+<meta name="twitter:image:alt" content="GameZipper XSS Sanitizer">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.mode-toggle{display:flex;gap:4px;margin:8px 0}
+.mode-toggle button{padding:8px 16px;border-radius:8px;border:2px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-fg);cursor:pointer;font-size:.85em;transition:all .2s}
+.mode-toggle button.active{border-color:var(--gz-accent);background:var(--gz-accent);color:#fff}
+#preview{background:var(--gz-card);border-radius:8px;padding:16px;margin:8px 0;min-height:40px;font-size:.88em}
+#output{font-family:monospace;font-size:.85em;line-height:1.6;white-space:pre-wrap;word-break:break-all;background:var(--gz-card);padding:16px;border-radius:8px;min-height:60px}
+.threat-list{margin:8px 0;font-size:.85em}
+.threat-item{padding:4px 8px;margin:3px 0;border-radius:6px;display:flex;align-items:center;gap:8px}
+.threat-high{background:#e9456020;color:#e94560}.threat-med{background:#fbbf2420;color:#d19a66}.threat-low{background:#22c55e20;color:#22c55e}
+.safe-badge{display:inline-block;background:#22c55e20;color:#22c55e;padding:4px 14px;border-radius:8px;font-weight:600;font-size:.9em}
+.warn-badge{display:inline-block;background:#fbbf2420;color:#d19a66;padding:4px 14px;border-radius:8px;font-weight:600;font-size:.9em}
+.danger-badge{display:inline-block;background:#e9456020;color:#e94560;padding:4px 14px;border-radius:8px;font-weight:600;font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"XSS Sanitizer","description":"Sanitize and escape HTML to prevent XSS attacks. Encode special characters, strip dangerous tags and attributes.","url": "https://tools.gamezipper.com/zh/dev/xss-sanitizer.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is XSS?","acceptedAnswer":{"@type":"Answer","text":"XSS (Cross-Site Scripting) is a security vulnerability that allows attackers to inject malicious scripts into web pages viewed by other users."}},{"@type":"Question","name":"How do I prevent XSS?","acceptedAnswer":{"@type":"Answer","text":"Always escape user input before rendering in HTML. Use textContent instead of innerHTML, implement Content Security Policy headers, and use a sanitization library."}},{"@type":"Question","name":"What does HTML escaping do?","acceptedAnswer":{"@type":"Answer","text":"HTML escaping converts special characters like <, >, &, ' and \" to their HTML entity equivalents (&lt;, &gt;, &amp;, &#39;, &quot;) so they are displayed as text instead of being interpreted as HTML."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/xss-sanitizer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/xss-sanitizer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/xss-sanitizer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-toggle">
+      <button class="active" id="mode-escape" onclick="setMode('escape')">HTML Escape</button>
+      <button id="mode-sanitize" onclick="setMode('sanitize')">Sanitize HTML</button>
+      <button id="mode-detect" onclick="setMode('detect')">XSS Detect</button>
+    </div>
+    <textarea id="input" rows="5" placeholder="Paste HTML or text to escape/sanitize..." style="width:100%;padding:12px;border:2px solid var(--gz-border);border-radius:8px;font-size:.9em;font-family:monospace;background:var(--gz-bg);color:var(--gz-fg);box-sizing:border-box;resize:vertical"></textarea>
+    <div id="status"></div>
+    <div id="threats"></div>
+    <label style="font-size:.88em;font-weight:600;margin:8px 0;display:block" id="lbl-out"></label>
+    <div id="output"></div>
+    <details style="margin:8px 0"><summary style="font-size:.88em;cursor:pointer;font-weight:600">Live Preview</summary><div id="preview" style="margin-top:4px"></div></details>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'XSS Sanitizer & HTML Escape',
+    toolDesc: 'Escape HTML entities, sanitize untrusted HTML, and detect potential XSS attack vectors. All processing runs locally in your browser.',
+    escape: 'Escape',
+    sanitize: 'Sanitize',
+    detect: 'Detect XSS',
+    copy: 'Copy Result',
+    output: 'Output',
+    safe: 'No XSS threats detected',
+    threats: 'Potential XSS vectors detected',
+    step1: 'Paste the HTML or text you want to sanitize',
+    step2: 'Choose a mode: Escape, Sanitize, or Detect',
+    step3: 'Review the sanitized output and detected threats',
+    step4: 'Copy the safe output for use in your application',
+  },
+  zh: {
+    toolTitle: 'XSS 过滤器 & HTML 转义',
+    toolDesc: '转义 HTML 实体、过滤不受信任的 HTML、检测潜在的 XSS 攻击向量。所有处理完全在浏览器本地运行。',
+    escape: '转义',
+    sanitize: '过滤',
+    detect: '检测 XSS',
+    copy: '复制结果',
+    output: '输出',
+    safe: '未检测到 XSS 威胁',
+    threats: '检测到潜在的 XSS 向量',
+    step1: '粘贴需要过滤的 HTML 或文本',
+    step2: '选择模式：转义、过滤或检测',
+    step3: '查看过滤输出和检测到的威胁',
+    step4: '复制安全输出用于您的应用',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let mode = 'escape';
+
+function setMode(m) {
+  mode = m;
+  ['escape','sanitize','detect'].forEach(id => {
+    $('#mode-'+id).classList.toggle('active', id === m);
+  });
+  process();
+}
+
+// Dangerous XSS patterns
+const XSS_PATTERNS = [
+  { regex: /<script[\s>]/gi, name: '<script> tag', severity: 'high' },
+  { regex: /javascript\s*:/gi, name: 'javascript: protocol', severity: 'high' },
+  { regex: /on\w+\s*=\s*["']/gi, name: 'Event handler attribute', severity: 'high' },
+  { regex: /on\w+\s*=\s*[^\s"'>]+/gi, name: 'Event handler (unquoted)', severity: 'high' },
+  { regex: /<iframe[\s>]/gi, name: '<iframe> tag', severity: 'high' },
+  { regex: /<object[\s>]/gi, name: '<object> tag', severity: 'high' },
+  { regex: /<embed[\s>]/gi, name: '<embed> tag', severity: 'high' },
+  { regex: /<form[\s>]/gi, name: '<form> tag', severity: 'med' },
+  { regex: /<input[\s>]/gi, name: '<input> tag', severity: 'med' },
+  { regex: /<svg[\s>]/gi, name: '<svg> tag', severity: 'med' },
+  { regex: /<math[\s>]/gi, name: '<math> tag', severity: 'med' },
+  { regex: /data\s*:\s*text\/html/gi, name: 'data: HTML URL', severity: 'high' },
+  { regex: /vbscript\s*:/gi, name: 'vbscript: protocol', severity: 'high' },
+  { regex: /expression\s*\(/gi, name: 'CSS expression()', severity: 'med' },
+  { regex: /url\s*\(/gi, name: 'CSS url()', severity: 'low' },
+  { regex: /@import/gi, name: 'CSS @import', severity: 'med' },
+  { regex: /document\.(cookie|domain|write)/gi, name: 'DOM access', severity: 'high' },
+  { regex: /eval\s*\(/gi, name: 'eval()', severity: 'high' },
+  { regex: /setTimeout\s*\(\s*["']/gi, name: 'setTimeout string', severity: 'high' },
+  { regex: /setInterval\s*\(\s*["']/gi, name: 'setInterval string', severity: 'high' },
+  { regex: /new\s+Function\s*\(/gi, name: 'new Function()', severity: 'high' },
+  { regex: /<link[\s>]/gi, name: '<link> tag', severity: 'med' },
+  { regex: /<base[\s>]/gi, name: '<base> tag', severity: 'med' },
+  { regex: /<meta[\s>]/gi, name: '<meta> tag', severity: 'med' },
+];
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Allowed tags and attributes for sanitization
+const ALLOWED_TAGS = new Set(['p','br','b','strong','i','em','u','s','a','ul','ol','li','h1','h2','h3','h4','h5','h6','blockquote','code','pre','span','div','table','thead','tbody','tr','th','td','img','hr','dl','dt','dd','sup','sub','mark','del','ins','abbr']);
+const ALLOWED_ATTRS = new Set(['href','src','alt','title','class','id','target','rel','width','height','colspan','rowspan','lang','dir']);
+
+function sanitizeHtml(html) {
+  // Create a temporary element
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  
+  function cleanNode(node) {
+    if (node.nodeType === 3) return; // Text node, keep
+    if (node.nodeType === 1) { // Element
+      const tag = node.tagName.toLowerCase();
+      if (!ALLOWED_TAGS.has(tag)) {
+        // Replace with text content
+        const text = document.createTextNode(node.textContent);
+        node.parentNode.replaceChild(text, node);
+        return;
+      }
+      // Remove dangerous attributes
+      const attrs = Array.from(node.attributes);
+      attrs.forEach(attr => {
+        const name = attr.name.toLowerCase();
+        if (!ALLOWED_ATTRS.has(name) || /^on/i.test(name)) {
+          node.removeAttribute(attr.name);
+        }
+        // Sanitize URLs
+        if (name === 'href' || name === 'src') {
+          const val = attr.value.trim().toLowerCase();
+          if (val.startsWith('javascript:') || val.startsWith('data:text/html') || val.startsWith('vbscript:')) {
+            node.setAttribute(attr.name, '#');
+          }
+        }
+      });
+      // Recurse children
+      Array.from(node.childNodes).forEach(cleanNode);
+    } else {
+      node.remove();
+    }
+  }
+
+  Array.from(doc.body.childNodes).forEach(cleanNode);
+  return doc.body.innerHTML;
+}
+
+function detectXSS(html) {
+  const threats = [];
+  XSS_PATTERNS.forEach(p => {
+    const matches = html.match(p.regex);
+    if (matches) {
+      threats.push({ name: p.name, severity: p.severity, count: matches.length, examples: matches.slice(0, 3) });
+    }
+  });
+  return threats;
+}
+
+function process() {
+  const input = $('#input').value;
+  if (!input.trim()) {
+    $('#output').textContent = '';
+    $('#preview').innerHTML = '';
+    $('#threats').innerHTML = '';
+    $('#status').innerHTML = '';
+    return;
+  }
+
+  let output = '';
+  let threatsHtml = '';
+  const threats = detectXSS(input);
+
+  if (mode === 'escape') {
+    output = escapeHtml(input);
+    $('#lbl-out').textContent = t('output') + ' (HTML Escaped)';
+  } else if (mode === 'sanitize') {
+    output = sanitizeHtml(input);
+    $('#lbl-out').textContent = t('output') + ' (Sanitized HTML)';
+  } else {
+    output = escapeHtml(input);
+    $('#lbl-out').textContent = t('output') + ' (Escaped for review)';
+  }
+
+  $('#output').textContent = output;
+
+  // Live preview (safe - using textContent for escaped, sanitized for sanitize mode)
+  if (mode === 'sanitize') {
+    $('#preview').innerHTML = sanitizeHtml(input);
+  } else {
+    $('#preview').textContent = input;
+  }
+
+  // Threats
+  if (threats.length > 0) {
+    $('#status').innerHTML = `<span class="danger-badge">⚠ ${threats.length} ${t('threats')}</span>`;
+    threatsHtml = '<div class="threat-list">';
+    threats.forEach(t => {
+      const cls = t.severity === 'high' ? 'threat-high' : t.severity === 'med' ? 'threat-med' : 'threat-low';
+      const icon = t.severity === 'high' ? '🔴' : t.severity === 'med' ? '🟡' : '🟢';
+      threatsHtml += `<div class="threat-item ${cls}">${icon} <b>${t.name}</b> (${t.count}x) — <code style="font-size:.82em">${escapeHtml(t.examples[0])}</code></div>`;
+    });
+    threatsHtml += '</div>';
+    $('#threats').innerHTML = threatsHtml;
+  } else {
+    $('#status').innerHTML = `<span class="safe-badge">✓ ${t('safe')}</span>`;
+    $('#threats').innerHTML = '';
+  }
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='<script>alert(\\'XSS\\')<\\/script><p>Hello <b onmouseover=alert(1)>world</b></p>';process()">XSS Example</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔒', href:'/dev/csp-generator.html', name:'CSP Generator'},
+    {icon:'🛡️', href:'/dev/security-headers.html', name:'Security Headers'},
+    {icon:'📝', href:'/text/remove-html-tags.html', name:'Remove HTML Tags'},
+    {icon:'🔐', href:'/dev/html-encoder.html', name:'HTML Encoder'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

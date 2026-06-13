@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片叠加与混合工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将两张图片叠加混合，可调整透明度、位置、大小和 16 种混合模式 — 免费浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/image-overlay.html">
+  <meta property="og:title" content="图片叠加与混合工具">
+  <meta property="og:description" content="将两张图片叠加混合，可调整透明度、位置、大小和 16 种混合模式 — 免费浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/image-overlay.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片叠加与混合工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-upload-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.gz-upload-box{border:2px dashed var(--border);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:all .2s}
+.gz-upload-box:hover{border-color:var(--accent);background:var(--glass)}
+.gz-upload-box.has-image{border-style:solid;border-color:var(--accent)}
+.gz-upload-box img{max-width:100%;max-height:120px;border-radius:8px;margin-top:8px}
+.gz-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+.gz-controls label{font-size:.85em;color:var(--text2)}
+.gz-controls input[type=range]{width:100px}
+.gz-controls select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text)}
+#preview-canvas{max-width:100%;border-radius:10px;background:repeating-conic-gradient(#333 0% 25%,#444 0% 50%) 50%/16px 16px;margin-top:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Overlay & Blend Tool","description":"Overlay and blend two images together with adjustable opacity, position and 20+ blend modes. Free, browser-based, no upload needed.","url": "https://tools.gamezipper.com/zh/image/image-overlay.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I overlay two images?", "acceptedAnswer": {"@type": "Answer", "text": "Upload a base image and an overlay image, set the opacity and blend mode, then click Download to save the combined result."}}, {"@type": "Question", "name": "What blend modes are available?", "acceptedAnswer": {"@type": "Answer", "text": "Normal, Multiply, Screen, Overlay, Darken, Lighten, Color Dodge, Color Burn, Hard Light, Soft Light, Difference, Exclusion and more."}}, {"@type": "Question", "name": "Are my images uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens in your browser using the Canvas API. Your images never leave your device."}}, {"@type": "Question", "name": "Can I position the overlay image?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can resize the overlay and use the X/Y position sliders to place it precisely where you want on the base image."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/image-overlay.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/image-overlay.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/image-overlay.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-upload-row">
+      <div class="gz-upload-box" id="base-drop">
+        <p style="margin:0;font-size:1.1em">🖼️</p>
+        <p id="lbl-base" style="margin:6px 0 0;font-size:.85em;color:var(--text2)"></p>
+        <input type="file" id="base-input" accept="image/*" style="display:none">
+      </div>
+      <div class="gz-upload-box" id="overlay-drop">
+        <p style="margin:0;font-size:1.1em">🎭</p>
+        <p id="lbl-overlay" style="margin:6px 0 0;font-size:.85em;color:var(--text2)"></p>
+        <input type="file" id="overlay-input" accept="image/*" style="display:none">
+      </div>
+    </div>
+    <div class="gz-controls" id="controls">
+      <label id="lbl-opacity"></label><input type="range" id="opacity" min="0" max="100" value="80">
+      <label id="lbl-scale"></label><input type="range" id="scale" min="10" max="200" value="100">
+      <label id="lbl-x"></label><input type="range" id="posX" min="0" max="100" value="50">
+      <label id="lbl-y"></label><input type="range" id="posY" min="0" max="100" value="50">
+      <label id="lbl-blend"></label>
+      <select id="blend">
+        <option value="source-over">Normal</option>
+        <option value="multiply">Multiply</option>
+        <option value="screen">Screen</option>
+        <option value="overlay">Overlay</option>
+        <option value="darken">Darken</option>
+        <option value="lighten">Lighten</option>
+        <option value="color-dodge">Color Dodge</option>
+        <option value="color-burn">Color Burn</option>
+        <option value="hard-light">Hard Light</option>
+        <option value="soft-light">Soft Light</option>
+        <option value="difference">Difference</option>
+        <option value="exclusion">Exclusion</option>
+        <option value="hue">Hue</option>
+        <option value="saturation">Saturation</option>
+        <option value="color">Color</option>
+        <option value="luminosity">Luminosity</option>
+      </select>
+      <button class="gz-btn" id="btn-download"></button>
+    </div>
+    <canvas id="preview-canvas"></canvas>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Overlay & Blend Tool',
+    toolDesc: 'Overlay and blend two images with adjustable opacity, position, size and 16 blend modes — free and browser-based.',
+    baseImage: 'Click to upload base image',
+    overlayImage: 'Click to upload overlay image',
+    opacity: 'Opacity',
+    scale: 'Overlay Size',
+    posX: 'X Position',
+    posY: 'Y Position',
+    blendMode: 'Blend Mode',
+    download: '⬇ Download PNG',
+    step1: 'Upload a base (background) image',
+    step2: 'Upload an overlay image to blend on top',
+    step3: 'Adjust opacity, size, position and blend mode',
+    step4: 'Download the combined image as PNG',
+  },
+  zh: {
+    toolTitle: '图片叠加与混合工具',
+    toolDesc: '将两张图片叠加混合，可调整透明度、位置、大小和 16 种混合模式 — 免费浏览器本地处理。',
+    baseImage: '点击上传底图',
+    overlayImage: '点击上传叠加图',
+    opacity: '透明度',
+    scale: '叠加图大小',
+    posX: 'X 位置',
+    posY: 'Y 位置',
+    blendMode: '混合模式',
+    download: '⬇ 下载 PNG',
+    step1: '上传底图（背景图片）',
+    step2: '上传叠加图片',
+    step3: '调整透明度、大小、位置和混合模式',
+    step4: '下载合成图片为 PNG',
+  }
+});
+
+const { $, t } = GZ;
+
+$('#lbl-base').textContent = t('baseImage');
+$('#lbl-overlay').textContent = t('overlayImage');
+$('#lbl-opacity').textContent = t('opacity');
+$('#lbl-scale').textContent = t('scale');
+$('#lbl-x').textContent = t('posX');
+$('#lbl-y').textContent = t('posY');
+$('#lbl-blend').textContent = t('blendMode');
+$('#btn-download').textContent = t('download');
+
+let baseImg = null, overlayImg = null;
+const canvas = $('#preview-canvas');
+const ctx = canvas.getContext('2d');
+
+function setupUpload(boxId, inputId, callback) {
+  const box = $(boxId);
+  const input = $(inputId);
+  box.addEventListener('click', () => input.click());
+  box.addEventListener('dragover', e => { e.preventDefault(); box.style.borderColor = 'var(--accent)'; });
+  box.addEventListener('dragleave', () => { box.style.borderColor = ''; });
+  box.addEventListener('drop', e => {
+    e.preventDefault(); box.style.borderColor = '';
+    if (e.dataTransfer.files.length) callback(e.dataTransfer.files[0], box);
+  });
+  input.addEventListener('change', e => {
+    if (e.target.files.length) callback(e.target.files[0], box);
+  });
+}
+
+function loadImg(file, box) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      if (box.id === 'base-drop') baseImg = img;
+      else overlayImg = img;
+      box.classList.add('has-image');
+      const existing = box.querySelector('img');
+      if (existing) existing.remove();
+      const preview = document.createElement('img');
+      preview.src = e.target.result;
+      box.appendChild(preview);
+      render();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+setupUpload('#base-drop', '#base-input', loadImg);
+setupUpload('#overlay-drop', '#overlay-input', loadImg);
+
+function render() {
+  if (!baseImg) return;
+  canvas.width = baseImg.width;
+  canvas.height = baseImg.height;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(baseImg, 0, 0);
+
+  if (!overlayImg) return;
+
+  const opacity = parseInt($('#opacity').value) / 100;
+  const scale = parseInt($('#scale').value) / 100;
+  const px = parseInt($('#posX').value) / 100;
+  const py = parseInt($('#posY').value) / 100;
+  const blend = $('#blend').value;
+
+  const ow = overlayImg.width * scale;
+  const oh = overlayImg.height * scale;
+  const ox = (canvas.width - ow) * px;
+  const oy = (canvas.height - oh) * py;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.globalCompositeOperation = blend;
+  ctx.drawImage(overlayImg, ox, oy, ow, oh);
+  ctx.restore();
+}
+
+$('#opacity').addEventListener('input', render);
+$('#scale').addEventListener('input', render);
+$('#posX').addEventListener('input', render);
+$('#posY').addEventListener('input', render);
+$('#blend').addEventListener('change', render);
+
+$('#btn-download').addEventListener('click', () => {
+  if (!baseImg) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'overlay.png'; a.click();
+});
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/image-blender.html', name:'Image Blender'},
+    {icon:'💦', href:'/image/watermark.html', name:'Watermark'},
+    {icon:'🖼️', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'🔀', href:'/image/image-comparison.html', name:'Image Compare'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

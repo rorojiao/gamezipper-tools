@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>GraphQL 探索与测试工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线测试 GraphQL API。编写查询和变更，支持变量、请求头和实时响应 — 完全浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/graphql-explorer.html">
+  <meta property="og:title" content="GraphQL 探索与测试工具">
+  <meta property="og:description" content="在线测试 GraphQL API。编写查询和变更，支持变量、请求头和实时响应 — 完全浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/graphql-explorer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="GraphQL 探索与测试工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gql-editor{font-family:'Courier New',monospace;font-size:.9em;line-height:1.5;background:var(--glass);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:200px;resize:vertical;width:100%;tab-size:2}
+.gql-editor:focus{outline:none;border-color:var(--accent)}
+.gql-keyword{color:#e94560}.gql-type{color:#61afef}.gql-field{color:#00d672}.gql-string{color:#ffc832}.gql-comment{color:#888;font-style:italic}
+.response-area{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px;font-family:monospace;font-size:.85em;line-height:1.5;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;min-height:100px}
+.response-area.error{border-color:#ff5050;color:#ff5050}
+.response-area.success{border-color:#00d672}
+.headers-row{display:flex;gap:8px;margin-bottom:6px}
+.headers-row input{flex:1}
+.status-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.8em;font-weight:600}
+.status-badge.ok{background:rgba(0,214,114,.15);color:#00d672}
+.status-badge.err{background:rgba(255,80,80,.15);color:#ff5050}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"GraphQL Explorer & Tester","description":"Test GraphQL APIs online for free. Write queries, mutations and subscriptions with syntax highlighting, variables and headers — all in your browser.","url": "https://tools.gamezipper.com/zh/dev/graphql-explorer.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is GraphQL?", "acceptedAnswer": {"@type": "Answer", "text": "GraphQL is a query language for APIs that lets you request exactly the data you need. It's an alternative to REST that gives clients more control over the response shape."}}, {"@type": "Question", "name": "How do I test a GraphQL API?", "acceptedAnswer": {"@type": "Answer", "text": "Enter the GraphQL endpoint URL, write your query in the editor, optionally add variables and headers, then click Run Query to see the response."}}, {"@type": "Question", "name": "Can I send mutations?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can write any valid GraphQL operation including queries, mutations and subscriptions in the editor."}}, {"@type": "Question", "name": "Is my data sent through a proxy?", "acceptedAnswer": {"@type": "Answer", "text": "No. Requests are made directly from your browser to the GraphQL endpoint. No intermediary server is involved."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/graphql-explorer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/graphql-explorer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/graphql-explorer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="margin-bottom:12px">
+      <label id="lbl-endpoint" style="font-weight:600;display:block;margin-bottom:4px"></label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="endpoint" class="gz-input" placeholder="https://api.example.com/graphql" style="flex:1">
+        <select id="http-method" class="gz-select" style="width:100px">
+          <option value="POST">POST</option>
+          <option value="GET">GET</option>
+        </select>
+        <button class="gz-btn" id="run-btn">▶ Run</button>
+      </div>
+    </div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-query" style="font-weight:600;display:block;margin-bottom:4px"></label>
+        <textarea class="gql-editor" id="query-editor" spellcheck="false">query {
+  # Write your GraphQL query here
+  __schema {
+    queryType {
+      name
+    }
+  }
+}</textarea>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <label id="lbl-response" style="font-weight:600"></label>
+          <span id="status-badge"></span>
+          <span id="response-time" style="font-size:.8em;color:var(--text3);margin-left:auto"></span>
+        </div>
+        <div class="response-area" id="response-area">Response will appear here...</div>
+      </div>
+    </div>
+    <details style="margin-top:12px">
+      <summary id="lbl-variables" style="cursor:pointer;font-weight:600;margin-bottom:4px"></summary>
+      <textarea class="gql-editor" id="variables-editor" rows="4" spellcheck="false" style="min-height:60px">{
+  "limit": 10
+}</textarea>
+    </details>
+    <details style="margin-top:8px">
+      <summary id="lbl-headers" style="cursor:pointer;font-weight:600;margin-bottom:4px"></summary>
+      <div id="headers-area">
+        <div class="headers-row">
+          <input type="text" class="gz-input" placeholder="Authorization" value="Content-Type">
+          <input type="text" class="gz-input" placeholder="Bearer token..." value="application/json">
+          <button class="gz-btn gz-btn-secondary" onclick="this.parentElement.remove()" style="padding:4px 8px">✕</button>
+        </div>
+      </div>
+      <button class="gz-btn gz-btn-secondary" id="add-header-btn" style="margin-top:8px;font-size:.85em">+ Add Header</button>
+    </details>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'GraphQL Explorer & Tester',
+    toolDesc: 'Test GraphQL APIs online. Write queries and mutations with variables, headers and live responses — all in your browser.',
+    lblEndpoint: 'Endpoint URL',
+    lblQuery: 'Query',
+    lblResponse: 'Response',
+    lblVariables: 'Variables (JSON)',
+    lblHeaders: 'Request Headers',
+    step1: 'Enter your GraphQL API endpoint URL',
+    step2: 'Write your GraphQL query or mutation in the editor',
+    step3: 'Optionally add variables and custom headers',
+    step4: 'Click Run Query to see the response',
+  },
+  zh: {
+    toolTitle: 'GraphQL 探索与测试工具',
+    toolDesc: '在线测试 GraphQL API。编写查询和变更，支持变量、请求头和实时响应 — 完全浏览器本地运行。',
+    lblEndpoint: '接口地址',
+    lblQuery: '查询',
+    lblResponse: '响应',
+    lblVariables: '变量 (JSON)',
+    lblHeaders: '请求头',
+    step1: '输入你的 GraphQL API 端点地址',
+    step2: '在编辑器中编写 GraphQL 查询或变更',
+    step3: '可选添加变量和自定义请求头',
+    step4: '点击运行查看响应结果',
+  }
+});
+
+const { $, t, copyText } = GZ;
+
+$('#lbl-endpoint').textContent = t('lblEndpoint');
+$('#lbl-query').textContent = t('lblQuery');
+$('#lbl-response').textContent = t('lblResponse');
+$('#lbl-variables').textContent = t('lblVariables');
+$('#lbl-headers').textContent = t('lblHeaders');
+
+// Tab support for query editor
+$('#query-editor').addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const ta = e.target;
+    const start = ta.selectionStart;
+    ta.value = ta.value.substring(0, start) + '  ' + ta.value.substring(ta.selectionEnd);
+    ta.selectionStart = ta.selectionEnd = start + 2;
+  }
+});
+
+$('#run-btn').onclick = async () => {
+  const endpoint = $('#endpoint').value.trim();
+  if (!endpoint) { alert('Please enter an endpoint URL'); return; }
+  const query = $('#query-editor').value;
+  let variables = null;
+  const varsText = $('#variables-editor').value.trim();
+  if (varsText) {
+    try { variables = JSON.parse(varsText); } catch (e) { showResponse({ error: 'Invalid variables JSON: ' + e.message }, true); return; }
+  }
+  const headers = { 'Content-Type': 'application/json' };
+  document.querySelectorAll('#headers-area .headers-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const key = inputs[0]?.value.trim();
+    const val = inputs[1]?.value.trim();
+    if (key && val) headers[key] = val;
+  });
+
+  const method = $('#http-method').value;
+  const area = $('#response-area');
+  area.textContent = 'Loading...';
+  area.className = 'response-area';
+  $('#status-badge').innerHTML = '';
+  $('#response-time').textContent = '';
+
+  const start = performance.now();
+  try {
+    const opts = {
+      method,
+      headers,
+    };
+    if (method === 'POST') {
+      opts.body = JSON.stringify({ query, variables });
+    }
+    const resp = await fetch(endpoint + (method === 'GET' ? '?query=' + encodeURIComponent(query) : ''), opts);
+    const elapsed = Math.round(performance.now() - start);
+    const data = await resp.json();
+    showResponse(data, !resp.ok, resp.status, elapsed);
+  } catch (e) {
+    showResponse({ error: e.message }, true, 0, Math.round(performance.now() - start));
+  }
+};
+
+function showResponse(data, isError, status, time) {
+  const area = $('#response-area');
+  area.textContent = JSON.stringify(data, null, 2);
+  area.className = 'response-area ' + (isError ? 'error' : 'success');
+  if (status) {
+    $('#status-badge').innerHTML = `<span class="status-badge ${isError ? 'err' : 'ok'}">${status}</span>`;
+  }
+  if (time !== undefined) {
+    $('#response-time').textContent = `${time}ms`;
+  }
+}
+
+$('#add-header-btn').onclick = () => {
+  const row = document.createElement('div');
+  row.className = 'headers-row';
+  row.innerHTML = `<input type="text" class="gz-input" placeholder="Header name"><input type="text" class="gz-input" placeholder="Header value"><button class="gz-btn gz-btn-secondary" onclick="this.parentElement.remove()" style="padding:4px 8px">✕</button>`;
+  $('#headers-area').appendChild(row);
+};
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="$('#run-btn').click()">▶ Run</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#response-area').textContent)">${t('copy') || 'Copy'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#query-editor').value='query {\\n  __schema {\\n    queryType { name }\\n  }\\n}'">Example</button>
+`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔌', href:'/dev/api-tester.html', name:'API Tester'},
+    {icon:'🔌', href:'/dev/websocket-tester.html', name:'WebSocket Tester'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🎫', href:'/dev/jwt-debugger.html', name:'JWT Debugger'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

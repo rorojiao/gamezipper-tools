@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>字幕编辑器（SRT & VTT） - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="编辑 SRT 和 WebVTT 字幕文件 — 调整时间轴、偏移、添加、删除和导出。免费私密，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/subtitle-editor.html">
+  <meta property="og:title" content="字幕编辑器（SRT & VTT）">
+  <meta property="og:description" content="编辑 SRT 和 WebVTT 字幕文件 — 调整时间轴、偏移、添加、删除和导出。免费私密，浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/subtitle-editor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="字幕编辑器（SRT & VTT）">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.sub-table{width:100%;border-collapse:collapse;font-size:.85em;margin-top:10px}
+.sub-table th{text-align:left;padding:8px;background:var(--gz-surface);border-bottom:2px solid var(--gz-border);font-weight:700;position:sticky;top:0}
+.sub-table td{padding:6px 8px;border-bottom:1px solid var(--gz-border);vertical-align:top}
+.sub-table tr:hover td{background:rgba(78,205,196,.08)}
+.sub-table input,.sub-table textarea{width:100%;border:1px solid var(--gz-border);border-radius:4px;padding:4px 6px;background:var(--gz-surface);color:var(--gz-text);font-size:.9em;font-family:inherit}
+.sub-table textarea{min-height:40px;resize:vertical}
+.shift-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.shift-row input{width:80px;padding:6px;border-radius:6px;border:1px solid var(--gz-border);background:var(--gz-surface);color:var(--gz-text);text-align:center}
+#subList{max-height:500px;overflow-y:auto;border:1px solid var(--gz-border);border-radius:10px;margin-top:8px}
+.empty-msg{text-align:center;padding:40px;opacity:.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Subtitle Editor","description":"Edit SRT and WebVTT subtitle files online. Adjust timing, merge, split, shift timestamps and export.","url": "https://tools.gamezipper.com/zh/convert/subtitle-editor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What subtitle formats are supported?","acceptedAnswer":{"@type":"Answer","text":"This editor supports SRT (SubRip) and WebVTT formats. You can import either format and export to either format."}},{"@type":"Question","name":"How do I shift subtitle timing?","acceptedAnswer":{"@type":"Answer","text":"Enter the number of seconds to shift (positive to delay, negative to advance) and click the Shift button. All subtitle timestamps will be adjusted."}},{"@type":"Question","name":"Is my subtitle data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All processing happens in your browser. Your subtitle files are never sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/subtitle-editor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/subtitle-editor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/subtitle-editor.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="shift-row" id="shiftRow">
+      <span id="lbl-shift"></span>
+      <input type="number" id="shiftMs" value="0" step="100">
+      <span id="lbl-sec"></span>
+    </div>
+    <div id="subList"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Subtitle Editor (SRT & VTT)',
+    toolDesc: 'Edit SRT and WebVTT subtitle files — adjust timing, shift, add, delete and export. Free, private, runs in your browser.',
+    import: 'Import File',
+    exportSrt: 'Export SRT',
+    exportVtt: 'Export VTT',
+    addLine: 'Add Subtitle',
+    shift: 'Shift',
+    lblShift: 'Shift all timestamps:',
+    lblSec: 'seconds (+ = delay, − = advance)',
+    delete: '✕',
+    step1: 'Import an SRT or VTT file, or start from scratch',
+    step2: 'Edit text, adjust timestamps, add or remove lines',
+    step3: 'Shift all timing if needed, then export to SRT or VTT',
+  },
+  zh: {
+    toolTitle: '字幕编辑器（SRT & VTT）',
+    toolDesc: '编辑 SRT 和 WebVTT 字幕文件 — 调整时间轴、偏移、添加、删除和导出。免费私密，浏览器本地运行。',
+    import: '导入文件',
+    exportSrt: '导出 SRT',
+    exportVtt: '导出 VTT',
+    addLine: '添加字幕',
+    shift: '偏移',
+    lblShift: '整体偏移时间轴：',
+    lblSec: '秒（+ 延迟，− 提前）',
+    delete: '✕',
+    step1: '导入 SRT 或 VTT 文件，或从头开始',
+    step2: '编辑文本、调整时间戳、添加或删除行',
+    step3: '如需调整整体时间轴后，导出为 SRT 或 VTT',
+  }
+});
+
+const { $, t } = GZ;
+let subs = [];
+
+function parseSrt(text) {
+  const blocks = text.trim().split(/\n\s*\n/);
+  const result = [];
+  blocks.forEach(block => {
+    const lines = block.trim().split('\n');
+    if (lines.length < 2) return;
+    const timeIdx = lines.findIndex(l => l.includes('-->'));
+    if (timeIdx < 0) return;
+    const start = parseTime(lines[timeIdx].split('-->')[0].trim());
+    const end = parseTime(lines[timeIdx].split('-->')[1].trim());
+    const text2 = lines.slice(timeIdx + 1).join('\n');
+    if (!isNaN(start) && !isNaN(end)) result.push({start, end, text: text2});
+  });
+  return result;
+}
+
+function parseVtt(text) {
+  const cleaned = text.replace(/^WEBVTT.*\n/i, '');
+  return parseSrt(cleaned);
+}
+
+function parseTime(s) {
+  const m = s.match(/(\d+):(\d+):?(\d+)?[,.]?(\d+)?/);
+  if (!m) return NaN;
+  const h = parseInt(m[1]) || 0;
+  const min = parseInt(m[2]) || 0;
+  const sec = parseInt(m[3]) || 0;
+  const ms = parseInt((m[4] || '0').padEnd(3,'0').slice(0,3)) || 0;
+  return h * 3600 + min * 60 + sec + ms / 1000;
+}
+
+function fmtTime(s) {
+  const ms = Math.round((s % 1) * 1000);
+  const totalSec = Math.floor(s);
+  const h = Math.floor(totalSec / 3600);
+  const min = Math.floor((totalSec % 3600) / 60);
+  const sec = totalSec % 60;
+  return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+
+function fmtTimeVtt(s) {
+  return fmtTime(s).replace(',', '.');
+}
+
+function renderTable() {
+  if (!subs.length) {
+    $('#subList').innerHTML = `<p class="empty-msg">No subtitles. Import a file or click "Add Subtitle".</p>`;
+    return;
+  }
+  let html = '<table class="sub-table"><thead><tr><th>#</th><th>Start</th><th>End</th><th>Text</th><th></th></tr></thead><tbody>';
+  subs.forEach((s, i) => {
+    html += `<tr>
+      <td>${i + 1}</td>
+      <td><input type="text" value="${fmtTime(s.start)}" onchange="subs[${i}].start=parseTime(this.value)"></td>
+      <td><input type="text" value="${fmtTime(s.end)}" onchange="subs[${i}].end=parseTime(this.value)"></td>
+      <td><textarea onchange="subs[${i}].text=this.value">${s.text.replace(/</g,'&lt;')}</textarea></td>
+      <td><button class="gz-btn gz-btn-secondary" style="padding:4px 8px;font-size:.8em" onclick="subs.splice(${i},1);renderTable()">${t('delete')}</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  $('#subList').innerHTML = html;
+}
+
+function addLine() {
+  const last = subs.length ? subs[subs.length - 1] : null;
+  const start = last ? last.end + 0.5 : 0;
+  subs.push({start, end: start + 3, text: ''});
+  renderTable();
+}
+
+function doShift() {
+  const ms = parseFloat($('#shiftMs').value) || 0;
+  subs.forEach(s => { s.start += ms; s.end += ms; });
+  renderTable();
+}
+
+function importFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.srt,.vtt';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const text = ev.target.result;
+      if (file.name.endsWith('.vtt')) subs = parseVtt(text);
+      else subs = parseSrt(text);
+      renderTable();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function exportSrt() {
+  let srt = '';
+  subs.forEach((s, i) => {
+    srt += `${i+1}\n${fmtTime(s.start)} --> ${fmtTime(s.end)}\n${s.text}\n\n`;
+  });
+  downloadFile(srt.trim() + '\n', 'subtitles.srt', 'text/plain');
+}
+
+function exportVtt() {
+  let vtt = 'WEBVTT\n\n';
+  subs.forEach((s, i) => {
+    vtt += `${i+1}\n${fmtTimeVtt(s.start)} --> ${fmtTimeVtt(s.end)}\n${s.text}\n\n`;
+  });
+  downloadFile(vtt.trim() + '\n', 'subtitles.vtt', 'text/vtt');
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], {type: mime});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+$('#shiftRow').querySelector('#lbl-shift') || ($('#shiftRow').insertAdjacentHTML('afterbegin', `<span>${t('lblShift')}</span>`));
+$('#shiftRow').querySelector('#lbl-sec') || 0;
+const spans = $('#shiftRow').querySelectorAll('span');
+if(spans[0]) spans[0].textContent = t('lblShift');
+if(spans[1]) spans[1].textContent = t('lblSec');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="importFile()">${t('import')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="addLine()">${t('addLine')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doShift()">${t('shift')}</button>
+  <button class="gz-btn" onclick="exportSrt()">${t('exportSrt')}</button>
+  <button class="gz-btn" onclick="exportVtt()">${t('exportVtt')}</button>`;
+
+renderTable();
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3'],
+  related: [
+    {icon:'🎬', href:'/convert/video-compressor.html', name:'Video Compressor'},
+    {icon:'✂️', href:'/convert/audio-splitter.html', name:'Audio Splitter'},
+    {icon:'📝', href:'/text/markdown.html', name:'Markdown Preview'},
+    {icon:'📄', href:'/text/html-to-text.html', name:'HTML to Text'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

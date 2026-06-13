@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>抽认卡制作工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="创建自定义抽认卡并进行互动学习。翻转、洗牌、追踪进度 — 完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/flashcard-maker.html">
+  <meta property="og:title" content="抽认卡制作工具">
+  <meta property="og:description" content="创建自定义抽认卡并进行互动学习。翻转、洗牌、追踪进度 — 完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/flashcard-maker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="抽认卡制作工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.deck-area{margin:16px 0}
+.deck-area textarea{width:100%;min-height:200px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-family:monospace;font-size:.85rem;resize:vertical;box-sizing:border-box}
+.deck-info{font-size:.85rem;opacity:.7;margin:8px 0}
+.flashcard-container{perspective:1000px;margin:20px auto;max-width:500px}
+.flashcard{width:100%;min-height:250px;position:relative;cursor:pointer;transform-style:preserve-3d;transition:transform .6s}
+.flashcard.flipped{transform:rotateY(180deg)}
+.flashcard-face{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;box-sizing:border-box}
+.flashcard-front{background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid var(--accent)}
+.flashcard-back{background:linear-gradient(135deg,#0f3460,#533483);border:2px solid var(--accent2);transform:rotateY(180deg)}
+.flashcard-label{font-size:.75rem;opacity:.6;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.flashcard-text{font-size:1.2rem;line-height:1.5}
+.card-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:16px}
+.card-nav button{padding:8px 20px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);cursor:pointer;font-size:1rem}
+.card-nav button:hover{background:var(--accent);color:#fff}
+.card-counter{font-size:.9rem;opacity:.7}
+.study-stats{display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.study-stat{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:6px 16px;text-align:center;font-size:.85rem}
+.study-stat .num{font-weight:700;color:var(--accent);font-size:1.1rem}
+.mode-tabs{display:flex;gap:4px;margin-bottom:12px}
+.mode-tabs button{padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);cursor:pointer}
+.mode-tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Flashcard Maker","description":"Create and study flashcards online for free. Build custom flashcard decks, flip cards, and test your knowledge.","url": "https://tools.gamezipper.com/zh/text/flashcard-maker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I create flashcards?","acceptedAnswer":{"@type":"Answer","text":"Enter your flashcards in the text area with one card per line. Use a separator like | or :: between the front and back of each card. Click Study to start flipping through your cards."}},{"@type":"Question","name":"Can I import flashcards?","acceptedAnswer":{"@type":"Answer","text":"Yes. Paste your flashcards in the text area. Each line should have the front and back separated by | or ::. You can also paste from spreadsheets."}},{"@type":"Question","name":"Is my data saved?","acceptedAnswer":{"@type":"Answer","text":"All data stays in your browser. Nothing is sent to any server. Use the Export button to save your deck as a text file."}},{"@type":"Question","name":"How do I study effectively with flashcards?","acceptedAnswer":{"@type":"Answer","text":"Click a card to flip it. Mark cards as Known or Unknown. Focus on the cards you don't know. Shuffle the deck for variety and repeat until you master all cards."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/flashcard-maker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/flashcard-maker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/flashcard-maker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-tabs" id="modeTabs"></div>
+    <div id="editMode">
+      <div class="deck-info" id="deckHint"></div>
+      <div class="deck-area">
+        <textarea id="cardInput" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div id="studyMode" style="display:none">
+      <div class="flashcard-container" id="cardContainer">
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+          <div class="flashcard-face flashcard-front">
+            <div class="flashcard-label" id="frontLabel"></div>
+            <div class="flashcard-text" id="frontText"></div>
+          </div>
+          <div class="flashcard-face flashcard-back">
+            <div class="flashcard-label" id="backLabel"></div>
+            <div class="flashcard-text" id="backText"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-nav">
+        <button onclick="prevCard()">←</button>
+        <span class="card-counter" id="cardCounter">0/0</span>
+        <button onclick="nextCard()">→</button>
+        <button onclick="shuffleDeck()" title="Shuffle">🔀</button>
+      </div>
+      <div class="card-nav" style="margin-top:8px">
+        <button class="gz-btn gz-btn-secondary" onclick="markCard(true)">✅</button>
+        <button class="gz-btn gz-btn-secondary" onclick="markCard(false)">❌</button>
+      </div>
+      <div class="study-stats" id="studyStats"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Flashcard Maker',
+    toolDesc: 'Create custom flashcards and study interactively. Flip, shuffle, track progress — all in your browser.',
+    edit: 'Edit', study: 'Study',
+    frontLabel: 'FRONT', backLabel: 'BACK',
+    hint: 'One card per line. Use | or :: to separate front and back. Example:',
+    example1: 'What is HTML? | HyperText Markup Language',
+    example2: 'Bonjour :: Hello in French',
+    known: 'Known', unknown: 'Unknown', remaining: 'Remaining',
+    noCards: 'Add some cards first, then click Study!',
+    startStudy: 'Start Study',
+    shuffle: 'Shuffle',
+    export: 'Export',
+    loadExample: 'Load Example',
+    clear: 'Clear',
+    step1: 'Enter flashcards — one per line, front | back',
+    step2: 'Switch to Study mode to review your cards',
+    step3: 'Click cards to flip, mark Known or Unknown',
+    step4: 'Shuffle and repeat until you master all cards',
+  },
+  zh: {
+    toolTitle: '抽认卡制作工具',
+    toolDesc: '创建自定义抽认卡并进行互动学习。翻转、洗牌、追踪进度 — 完全在浏览器中运行。',
+    edit: '编辑', study: '学习',
+    frontLabel: '正面', backLabel: '背面',
+    hint: '每行一张卡片，用 | 或 :: 分隔正面和背面。示例：',
+    example1: '什么是 HTML？ | 超文本标记语言',
+    example2: 'Bonjour :: 法语中的你好',
+    known: '已掌握', unknown: '未掌握', remaining: '剩余',
+    noCards: '请先添加卡片，然后点击「学习」！',
+    startStudy: '开始学习',
+    shuffle: '洗牌',
+    export: '导出',
+    loadExample: '加载示例',
+    clear: '清除',
+    step1: '输入抽认卡 — 每行一张，正面 | 背面',
+    step2: '切换到「学习」模式开始复习',
+    step3: '点击卡片翻转，标记「已掌握」或「未掌握」',
+    step4: '洗牌并重复，直到掌握所有卡片',
+  }
+});
+
+const { $, t } = GZ;
+let cards = [], currentIdx = 0, knownSet = new Set(), unknownSet = new Set();
+
+function parseCards(text) {
+  return text.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+    const sep = line.includes('::') ? '::' : '|';
+    const parts = line.split(sep);
+    return { front: (parts[0] || '').trim(), back: (parts[1] || '').trim() };
+  }).filter(c => c.front);
+}
+
+function switchTo(mode) {
+  if (mode === 'study') {
+    cards = parseCards($('#cardInput').value);
+    if (!cards.length) { alert(t('noCards')); return; }
+    currentIdx = 0; knownSet.clear(); unknownSet.clear();
+    showCard();
+  }
+  $$('#modeTabs button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  $('#editMode').style.display = mode === 'edit' ? '' : 'none';
+  $('#studyMode').style.display = mode === 'study' ? '' : 'none';
+}
+
+function showCard() {
+  if (!cards.length) return;
+  const c = cards[currentIdx];
+  $('#frontText').textContent = c.front;
+  $('#backText').textContent = c.back;
+  $('#flashcard').classList.remove('flipped');
+  $('#cardCounter').textContent = `${currentIdx + 1}/${cards.length}`;
+  updateStats();
+}
+
+function flipCard() { $('#flashcard').classList.toggle('flipped'); }
+function nextCard() { currentIdx = (currentIdx + 1) % cards.length; showCard(); }
+function prevCard() { currentIdx = (currentIdx - 1 + cards.length) % cards.length; showCard(); }
+
+function shuffleDeck() {
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  currentIdx = 0; showCard();
+}
+
+function markCard(known) {
+  if (known) { knownSet.add(currentIdx); unknownSet.delete(currentIdx); }
+  else { unknownSet.add(currentIdx); knownSet.delete(currentIdx); }
+  nextCard();
+}
+
+function updateStats() {
+  $('#studyStats').innerHTML = `
+    <div class="study-stat"><div class="num" style="color:var(--gz-success)">${knownSet.size}</div>${t('known')}</div>
+    <div class="study-stat"><div class="num" style="color:var(--gz-accent)">${unknownSet.size}</div>${t('unknown')}</div>
+    <div class="study-stat"><div class="num">${cards.length - knownSet.size - unknownSet.size}</div>${t('remaining')}</div>`;
+}
+
+function loadExample() {
+  $('#cardInput').value = `What is HTML? | HyperText Markup Language\nWhat is CSS? | Cascading Style Sheets\nWhat is JS? | JavaScript\nBonjour :: Hello in French\nDanke :: Thank you in German\nArigato :: Thank you in Japanese`;
+}
+
+function exportDeck() {
+  const text = $('#cardInput').value;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'flashcards.txt';
+  a.click();
+}
+
+$('#deckHint').innerHTML = `${t('hint')}<br><code>${t('example1')}</code><br><code>${t('example2')}</code>`;
+$('#frontLabel').textContent = t('frontLabel');
+$('#backLabel').textContent = t('backLabel');
+
+$('#modeTabs').innerHTML = `<button data-mode="edit" class="active" onclick="switchTo('edit')">${t('edit')}</button><button data-mode="study" onclick="switchTo('study')">${t('study')}</button>`;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('loadExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportDeck()">${t('export')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#cardInput').value=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📝', href:'/text/notepad.html', name:'Notepad'},
+    {icon:'✍️', href:'/text/handwriting.html', name:'Text to Handwriting'},
+    {icon:'📖', href:'/text/bionic.html', name:'Bionic Reading'},
+    {icon:'🔤', href:'/text/word-counter.html', name:'Word Counter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

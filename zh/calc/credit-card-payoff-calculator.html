@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>信用卡还款计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查看还清信用卡需要多长时间，对比最低还款和固定还款策略，节省利息支出。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/credit-card-payoff-calculator.html">
+  <meta property="og:title" content="信用卡还款计算器">
+  <meta property="og:description" content="查看还清信用卡需要多长时间，对比最低还款和固定还款策略，节省利息支出。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/credit-card-payoff-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="信用卡还款计算器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-input-group{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:600px){.gz-input-group{grid-template-columns:1fr}}
+.gz-field label{display:block;font-size:.85em;margin-bottom:4px;opacity:.8}
+.gz-field input,.gz-field select{width:100%;padding:8px 10px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--gz-fg);font-size:1em;box-sizing:border-box}
+#results{margin-top:20px}
+.result-card{background:var(--gz-card);border:1px solid var(--gz-border);border-radius:10px;padding:16px;margin-bottom:12px}
+.result-card h3{margin:0 0 10px;font-size:1em;opacity:.8}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.result-item{text-align:center;padding:10px}
+.result-value{font-size:1.4em;font-weight:700;color:var(--gz-accent)}
+.result-label{font-size:.8em;opacity:.7;margin-top:4px}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+@media(max-width:600px){.comparison{grid-template-columns:1fr}}
+.comp-col{background:var(--gz-card);border:1px solid var(--gz-border);border-radius:10px;padding:16px;text-align:center}
+.comp-col h4{margin:0 0 8px;opacity:.8}
+.highlight{color:var(--gz-accent);font-size:1.2em;font-weight:700}
+#chart-area{margin-top:20px;text-align:center}
+canvas{max-width:100%;border-radius:8px}
+.gz-btn{margin-right:6px;margin-bottom:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Credit Card Payoff Calculator","description":"Calculate how long it takes to pay off your credit card. See monthly payments, total interest, and compare minimum payment vs fixed payment strategies.","url": "https://tools.gamezipper.com/zh/calc/credit-card-payoff-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How is credit card interest calculated?","acceptedAnswer":{"@type":"Answer","text":"Credit card interest is typically calculated using the average daily balance method. Your APR is divided by 365 to get the daily rate, then multiplied by your average daily balance and the number of days in the billing cycle."}},{"@type":"Question","name":"How much should I pay monthly to clear my credit card?","acceptedAnswer":{"@type":"Answer","text":"To pay off your card efficiently, pay more than the minimum. Even adding $50-100 extra per month can save hundreds in interest and cut years off your payoff time."}},{"@type":"Question","name":"What is the minimum payment trap?","acceptedAnswer":{"@type":"Answer","text":"Making only minimum payments means most of your payment goes to interest, not principal. A $5,000 balance at 20% APR with 2% minimum payments would take over 30 years and cost $10,000+ in interest."}},{"@type":"Question","name":"Is this tool free and private?","acceptedAnswer":{"@type":"Answer","text":"Yes, this calculator is 100% free and runs entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/credit-card-payoff-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/credit-card-payoff-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/credit-card-payoff-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-input-group">
+      <div class="gz-field"><label id="lbl-balance"></label><input type="number" id="balance" value="5000" min="0" step="100"></div>
+      <div class="gz-field"><label id="lbl-apr"></label><input type="number" id="apr" value="20.99" min="0" step="0.01"></div>
+      <div class="gz-field"><label id="lbl-minpay"></label><input type="number" id="minpay" value="2" min="0" step="0.1"></div>
+      <div class="gz-field"><label id="lbl-fixedpay"></label><input type="number" id="fixedpay" value="200" min="0" step="10"></div>
+    </div>
+    <button class="gz-btn" id="btn-calc" onclick="calculate()"></button>
+    <button class="gz-btn gz-btn-secondary" onclick="resetForm()"></button>
+    <div id="results"></div>
+    <div id="chart-area"><canvas id="chart" width="600" height="260"></canvas></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Credit Card Payoff Calculator',
+    toolDesc: 'See how long it takes to pay off your credit card. Compare minimum vs fixed monthly payments and save on interest.',
+    lblBalance: 'Credit Card Balance ($)',
+    lblApr: 'Annual Interest Rate (APR %)',
+    lblMinpay: 'Minimum Payment (% of balance)',
+    lblFixedpay: 'Fixed Monthly Payment ($)',
+    btnCalc: 'Calculate Payoff',
+    btnReset: 'Reset',
+    minPayment: 'Minimum Payment Strategy',
+    fixedPayment: 'Fixed Payment Strategy',
+    monthsToPayoff: 'Months to Payoff',
+    totalInterest: 'Total Interest',
+    totalPaid: 'Total Paid',
+    interestSaved: 'Interest Saved',
+    monthsSaved: 'Months Saved',
+    year: 'yr',
+    month: 'mo',
+    step1: 'Enter your credit card balance and APR',
+    step2: 'Set your minimum payment percentage and a target fixed payment',
+    step3: 'Click Calculate to see the payoff comparison',
+    step4: 'Review the chart showing both strategies over time',
+  },
+  zh: {
+    toolTitle: '信用卡还款计算器',
+    toolDesc: '查看还清信用卡需要多长时间，对比最低还款和固定还款策略，节省利息支出。',
+    lblBalance: '信用卡欠款余额（美元）',
+    lblApr: '年利率 APR（%）',
+    lblMinpay: '最低还款比例（占余额%）',
+    lblFixedpay: '固定每月还款额（美元）',
+    btnCalc: '计算还款方案',
+    btnReset: '重置',
+    minPayment: '最低还款策略',
+    fixedPayment: '固定还款策略',
+    monthsToPayoff: '还清月数',
+    totalInterest: '总利息',
+    totalPaid: '总还款额',
+    interestSaved: '节省利息',
+    monthsSaved: '提前还清月数',
+    year: '年',
+    month: '月',
+    step1: '输入信用卡欠款余额和年利率',
+    step2: '设置最低还款比例和目标固定还款额',
+    step3: '点击计算查看还款方案对比',
+    step4: '查看图表了解两种策略的还款曲线',
+  }
+});
+
+const { $, t } = GZ;
+
+$('#lbl-balance').textContent = t('lblBalance');
+$('#lbl-apr').textContent = t('lblApr');
+$('#lbl-minpay').textContent = t('lblMinpay');
+$('#lbl-fixedpay').textContent = t('lblFixedpay');
+$('#btn-calc').textContent = t('btnCalc');
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtMo(m) { const y=Math.floor(m/12), mo=m%12; let s=''; if(y) s+=y+t('year'); if(mo) s+=(s?' ':'')+mo+t('month'); return s||'0 '+t('month'); }
+
+function simulate(balance, apr, paymentFn) {
+  const mr = apr / 100 / 12;
+  let b = balance, totalInt = 0, months = 0;
+  const data = [{month:0, balance:b}];
+  while (b > 0 && months < 600) {
+    const interest = b * mr;
+    totalInt += interest;
+    const pmt = paymentFn(b, interest);
+    if (pmt <= interest) { months = 999; break; }
+    b = b + interest - pmt;
+    if (b < 0.01) b = 0;
+    months++;
+    data.push({month:months, balance:b});
+  }
+  return { months, totalInt, totalPaid: balance + totalInt, data };
+}
+
+function calculate() {
+  const balance = parseFloat($('#balance').value) || 0;
+  const apr = parseFloat($('#apr').value) || 0;
+  const minPct = parseFloat($('#minpay').value) || 2;
+  const fixed = parseFloat($('#fixedpay').value) || 200;
+
+  if (balance <= 0) return;
+
+  const minPmt = Math.max(25, balance * minPct / 100);
+  const minResult = simulate(balance, apr, (b, int) => Math.max(25, b * minPct / 100));
+  const fixedResult = simulate(balance, apr, () => fixed);
+
+  const saved = minResult.totalInt - fixedResult.totalInt;
+  const savedMo = minResult.months - fixedResult.months;
+
+  let html = '<div class="comparison">';
+  html += `<div class="comp-col"><h4>${t('minPayment')}</h4><div class="highlight">${minResult.months >= 600 ? '30+ '+t('year') : fmtMo(minResult.months)}</div><div style="font-size:.85em;opacity:.7;margin-top:4px">${t('monthsToPayoff')}</div><div style="margin-top:8px">${fmt(minResult.totalInt)}<br><span style="font-size:.8em;opacity:.7">${t('totalInterest')}</span></div><div style="margin-top:4px">${fmt(minResult.totalPaid)}<br><span style="font-size:.8em;opacity:.7">${t('totalPaid')}</span></div></div>`;
+  html += `<div class="comp-col"><h4>${t('fixedPayment')}</h4><div class="highlight">${fixedResult.months >= 600 ? '30+ '+t('year') : fmtMo(fixedResult.months)}</div><div style="font-size:.85em;opacity:.7;margin-top:4px">${t('monthsToPayoff')}</div><div style="margin-top:8px">${fmt(fixedResult.totalInt)}<br><span style="font-size:.8em;opacity:.7">${t('totalInterest')}</span></div><div style="margin-top:4px">${fmt(fixedResult.totalPaid)}<br><span style="font-size:.8em;opacity:.7">${t('totalPaid')}</span></div></div>`;
+  html += '</div>';
+
+  if (saved > 0 || savedMo > 0) {
+    html += `<div class="result-card" style="text-align:center;margin-top:12px"><h3>💡</h3><div class="result-grid"><div class="result-item"><div class="result-value">${fmt(saved)}</div><div class="result-label">${t('interestSaved')}</div></div><div class="result-item"><div class="result-value">${savedMo > 0 ? fmtMo(savedMo) : '—'}</div><div class="result-label">${t('monthsSaved')}</div></div></div></div>`;
+  }
+
+  $('#results').innerHTML = html;
+
+  // Draw chart
+  const canvas = $('#chart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = {top:30,right:20,bottom:30,left:70};
+  ctx.clearRect(0,0,W,H);
+
+  const style = getComputedStyle(document.body);
+  const fg = style.getPropertyValue('--gz-fg').trim() || '#e0e0e0';
+  const acc = style.getPropertyValue('--gz-accent').trim() || '#4ecdc4';
+  const bg = style.getPropertyValue('--gz-bg').trim() || '#0a0a1a';
+  const border = style.getPropertyValue('--gz-border').trim() || '#333';
+
+  const maxMo = Math.max(minResult.data.length, fixedResult.data.length, 1);
+  const maxBal = balance;
+
+  function px(m) { return pad.left + (m / maxMo) * (W - pad.left - pad.right); }
+  function py(v) { return pad.top + (1 - v / maxBal) * (H - pad.top - pad.bottom); }
+
+  // Grid
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + i * (H - pad.top - pad.bottom) / 4;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = fg; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fmt(maxBal * (4-i)/4), pad.left - 6, y + 4);
+  }
+
+  function drawLine(data, color) {
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.beginPath();
+    data.forEach((p, i) => { const x = px(p.month), y = py(p.balance); i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y); });
+    ctx.stroke();
+  }
+
+  drawLine(minResult.data.slice(0, maxMo), 'rgba(255,99,132,0.8)');
+  drawLine(fixedResult.data, acc);
+
+  ctx.fillStyle = 'rgba(255,99,132,0.8)'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(t('minPayment'), pad.left + 10, pad.top + 14);
+  ctx.fillStyle = acc;
+  ctx.fillText(t('fixedPayment'), pad.left + 10, pad.top + 28);
+}
+
+function resetForm() {
+  $('#balance').value = 5000;
+  $('#apr').value = 20.99;
+  $('#minpay').value = 2;
+  $('#fixedpay').value = 200;
+  $('#results').innerHTML = '';
+  const c = $('#chart'); c.getContext('2d').clearRect(0,0,c.width,c.height);
+}
+
+calculate();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🏠', href:'/calc/mortgage.html', name:'Mortgage Calculator'},
+    {icon:'💰', href:'/calc/compound-interest.html', name:'Compound Interest'},
+    {icon:'💸', href:'/calc/tax-calculator.html', name:'Tax Calculator'},
+    {icon:'🏦', href:'/calc/loan-amortization.html', name:'Loan Amortization'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

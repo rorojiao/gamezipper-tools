@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片标注与批注工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="为图片添加箭头、矩形、文字、圆形和高亮批注。免费私密 — 下载标注后的 PNG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/annotator.html">
+  <meta property="og:title" content="图片标注与批注工具">
+  <meta property="og:description" content="为图片添加箭头、矩形、文字、圆形和高亮批注。免费私密 — 下载标注后的 PNG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/annotator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片标注与批注工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Annotation & Markup Tool","description":"Annotate and mark up images online for free. Add arrows, rectangles, text, circles and highlights. Download annotated image as PNG.","url": "https://tools.gamezipper.com/zh/image/annotator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I annotate an image?", "acceptedAnswer": {"@type": "Answer", "text": "Upload or paste an image, select a tool (rectangle, arrow, text, circle), draw on the canvas, then download the annotated PNG."}}, {"@type": "Question", "name": "What annotation tools are available?", "acceptedAnswer": {"@type": "Answer", "text": "Rectangle, circle, arrow, freehand draw, text label, and highlight marker with customizable colors and sizes."}}, {"@type": "Question", "name": "Can I undo annotations?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each annotation is tracked separately. Use the undo button or clear all annotations to start over."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All annotation is done locally in your browser using the HTML5 Canvas API. Your images stay private."}}]}</script>
+<style>
+#canvas-wrap{position:relative;display:inline-block;border:2px dashed var(--border);border-radius:8px;min-height:200px;min-width:100%;background:var(--glass2);cursor:crosshair;text-align:center}
+#canvas-wrap img{max-width:100%;display:block;margin:0 auto}
+#canvas-wrap canvas{position:absolute;top:0;left:0}
+.tool-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.tool-bar button{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--glass);color:var(--text);cursor:pointer;font-size:.85em}
+.tool-bar button.active{background:var(--gz-success);color:#fff;border-color:var(--gz-success)}
+.tool-bar input[type=color]{width:32px;height:32px;border:1px solid var(--border);border-radius:4px;cursor:pointer}
+.tool-bar input[type=range]{width:80px}
+.drop-zone{padding:60px 20px;text-align:center;color:var(--text3);font-size:.9em}
+.drop-zone.dragover{background:var(--glass);border-color:var(--gz-success)}
+</style>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/annotator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/annotator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/annotator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tool-bar" id="tool-bar"></div>
+    <div id="canvas-wrap">
+      <div class="drop-zone" id="drop-zone">Drop image here or click to upload<br><small>PNG, JPG, WebP supported</small></div>
+      <input type="file" id="file-input" accept="image/*" style="display:none">
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Annotation & Markup Tool',
+    toolDesc: 'Annotate images with arrows, rectangles, text, circles and highlights. Free, private — download annotated PNG.',
+    rect: 'Rectangle',
+    circle: 'Circle',
+    arrow: 'Arrow',
+    text: 'Text',
+    draw: 'Draw',
+    highlight: 'Highlight',
+    undo: 'Undo',
+    clear: 'Clear',
+    download: 'Download PNG',
+    upload: 'Upload',
+    color: 'Color',
+    size: 'Size',
+    step1: 'Upload or drag-drop an image',
+    step2: 'Select an annotation tool from the toolbar',
+    step3: 'Draw on the image to annotate',
+    step4: 'Download the annotated image as PNG',
+  },
+  zh: {
+    toolTitle: '图片标注与批注工具',
+    toolDesc: '为图片添加箭头、矩形、文字、圆形和高亮批注。免费私密 — 下载标注后的 PNG。',
+    rect: '矩形',
+    circle: '圆形',
+    arrow: '箭头',
+    text: '文字',
+    draw: '画笔',
+    highlight: '高亮',
+    undo: '撤销',
+    clear: '清除',
+    download: '下载 PNG',
+    upload: '上传',
+    color: '颜色',
+    size: '粗细',
+    step1: '上传或拖拽图片',
+    step2: '从工具栏选择标注工具',
+    step3: '在图片上绘制标注',
+    step4: '下载标注后的图片为 PNG',
+  }
+});
+
+const { $, t } = GZ;
+let currentTool = 'rect', color = '#ff0000', lineWidth = 3;
+let annotations = [];
+let img = null, canvas, ctx;
+let isDrawing = false, startX, startY, currentPath = [];
+
+function initCanvas() {
+  const wrap = $('#canvas-wrap');
+  canvas = document.createElement('canvas');
+  canvas.id = 'annot-canvas';
+  ctx = canvas.getContext('2d');
+  canvas.style.position = 'absolute';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  wrap.appendChild(canvas);
+  
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); onMouseDown(touchToMouse(e)); }, {passive:false});
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); onMouseMove(touchToMouse(e)); }, {passive:false});
+  canvas.addEventListener('touchend', e => { e.preventDefault(); onMouseUp(touchToMouse(e)); }, {passive:false});
+}
+
+function touchToMouse(e) {
+  const t = e.touches[0] || e.changedTouches[0];
+  const rect = canvas.getBoundingClientRect();
+  return { offsetX: t.clientX - rect.left, offsetY: t.clientY - rect.top };
+}
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    img = new Image();
+    img.onload = () => {
+      $('#drop-zone').style.display = 'none';
+      const wrap = $('#canvas-wrap');
+      // Remove old image if any
+      const oldImg = wrap.querySelector('img');
+      if (oldImg) oldImg.remove();
+      img.style.maxWidth = '100%';
+      img.style.display = 'block';
+      wrap.insertBefore(img, canvas);
+      
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      // Scale canvas display to match image display size
+      const dispW = img.clientWidth || img.naturalWidth;
+      const dispH = img.clientHeight || img.naturalHeight;
+      canvas.style.width = dispW + 'px';
+      canvas.style.height = dispH + 'px';
+      
+      redraw();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function redraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  annotations.forEach(a => drawAnnotation(a));
+}
+
+function drawAnnotation(a) {
+  ctx.save();
+  ctx.strokeStyle = a.color;
+  ctx.fillStyle = a.color;
+  ctx.lineWidth = a.width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  
+  const sx = canvas.width / (canvas.style.width ? parseInt(canvas.style.width) : canvas.width);
+  const sy = canvas.height / (canvas.style.height ? parseInt(canvas.style.height) : canvas.height);
+  
+  switch(a.type) {
+    case 'rect':
+      ctx.strokeRect(a.x1 * sx, a.y1 * sy, (a.x2 - a.x1) * sx, (a.y2 - a.y1) * sy);
+      break;
+    case 'circle':
+      const rx = Math.abs(a.x2 - a.x1) * sx / 2;
+      const ry = Math.abs(a.y2 - a.y1) * sy / 2;
+      const cx = ((a.x1 + a.x2) / 2) * sx;
+      const cy = ((a.y1 + a.y2) / 2) * sy;
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+      break;
+    case 'arrow':
+      const ax1 = a.x1 * sx, ay1 = a.y1 * sy, ax2 = a.x2 * sx, ay2 = a.y2 * sy;
+      ctx.beginPath(); ctx.moveTo(ax1, ay1); ctx.lineTo(ax2, ay2); ctx.stroke();
+      const angle = Math.atan2(ay2 - ay1, ax2 - ax1);
+      const headLen = 15 * a.width / 3;
+      ctx.beginPath();
+      ctx.moveTo(ax2, ay2);
+      ctx.lineTo(ax2 - headLen * Math.cos(angle - Math.PI/6), ay2 - headLen * Math.sin(angle - Math.PI/6));
+      ctx.moveTo(ax2, ay2);
+      ctx.lineTo(ax2 - headLen * Math.cos(angle + Math.PI/6), ay2 - headLen * Math.sin(angle + Math.PI/6));
+      ctx.stroke();
+      break;
+    case 'text':
+      ctx.font = `bold ${Math.max(16, a.width * 5)}px sans-serif`;
+      ctx.fillText(a.text || 'Text', a.x1 * sx, a.y1 * sy);
+      break;
+    case 'draw':
+      if (a.path && a.path.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(a.path[0].x * sx, a.path[0].y * sy);
+        for (let i = 1; i < a.path.length; i++) ctx.lineTo(a.path[i].x * sx, a.path[i].y * sy);
+        ctx.stroke();
+      }
+      break;
+    case 'highlight':
+      ctx.globalAlpha = 0.3;
+      ctx.fillRect(a.x1 * sx, a.y1 * sy, (a.x2 - a.x1) * sx, (a.y2 - a.y1) * sy);
+      break;
+  }
+  ctx.restore();
+}
+
+function onMouseDown(e) {
+  if (!img) return;
+  isDrawing = true;
+  startX = e.offsetX;
+  startY = e.offsetY;
+  currentPath = [{x: startX, y: startY}];
+}
+
+function onMouseMove(e) {
+  if (!isDrawing || !img) return;
+  currentPath.push({x: e.offsetX, y: e.offsetY});
+  redraw();
+  // Preview
+  const preview = { type: currentTool, x1: startX, y1: startY, x2: e.offsetX, y2: e.offsetY, color, width: lineWidth, path: currentPath };
+  drawAnnotation(preview);
+}
+
+function onMouseUp(e) {
+  if (!isDrawing || !img) return;
+  isDrawing = false;
+  const annotation = {
+    type: currentTool,
+    x1: startX, y1: startY,
+    x2: e.offsetX || startX, y2: e.offsetY || startY,
+    color, width: lineWidth,
+    path: currentTool === 'draw' ? [...currentPath] : null,
+    text: currentTool === 'text' ? prompt('Enter text:') || 'Text' : null
+  };
+  if (currentTool !== 'text' || annotation.text) {
+    annotations.push(annotation);
+  }
+  redraw();
+}
+
+function undo() { annotations.pop(); redraw(); }
+function clearAll() { annotations = []; redraw(); }
+
+function download() {
+  if (!img) return;
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width;
+  tmp.height = canvas.height;
+  const tctx = tmp.getContext('2d');
+  tctx.drawImage(img, 0, 0);
+  annotations.forEach(a => {
+    const old = ctx;
+    ctx = tctx;
+    drawAnnotation(a);
+    ctx = old;
+  });
+  const link = document.createElement('a');
+  link.download = 'annotated.png';
+  link.href = tmp.toDataURL('image/png');
+  link.click();
+}
+
+function setTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+}
+
+// Setup toolbar
+const tools = ['rect','circle','arrow','text','draw','highlight'];
+$('#tool-bar').innerHTML = tools.map(t => `<button class="tool-btn ${t==='rect'?'active':''}" data-tool="${t}" onclick="setTool('${t}')">${window.t ? window.t(t) : t}</button>`).join('') +
+  `<span style="margin-left:8px">${window.t ? window.t('color') : 'Color'}</span><input type="color" value="#ff0000" onchange="color=this.value">` +
+  `<span>${window.t ? window.t('size') : 'Size'}</span><input type="range" min="1" max="20" value="3" onchange="lineWidth=+this.value">` +
+  `<button onclick="undo()" style="margin-left:auto">↩ ${window.t ? window.t('undo') : 'Undo'}</button>` +
+  `<button onclick="clearAll()">🗑 ${window.t ? window.t('clear') : 'Clear'}</button>` +
+  `<button class="gz-btn" onclick="download()">📥 ${window.t ? window.t('download') : 'Download'}</button>`;
+
+// File upload
+const dz = $('#drop-zone');
+const fi = $('#file-input');
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]); });
+fi.addEventListener('change', () => { if (fi.files[0]) loadImage(fi.files[0]); });
+
+initCanvas();
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'💦', href:'/image/watermark.html', name:'Watermark'},
+    {icon:'🖌️', href:'/image/drawing-pad.html', name:'Drawing Pad'},
+    {icon:'✏️', href:'/image/pencil-sketch.html', name:'Pencil Sketch'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>DKIM 记录生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="为邮件认证生成 DKIM DNS TXT 记录。配置选择器、密钥类型和公钥。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/dkim-generator.html">
+  <meta property="og:title" content="DKIM 记录生成器">
+  <meta property="og:description" content="为邮件认证生成 DKIM DNS TXT 记录。配置选择器、密钥类型和公钥。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/dkim-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DKIM 记录生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-field{margin-bottom:14px}
+.gz-field label{display:block;font-weight:600;margin-bottom:4px;font-size:.9rem}
+.gz-field input,.gz-field select,.gz-field textarea{width:100%;padding:8px 10px;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--text1);font-size:.9rem;box-sizing:border-box;font-family:inherit}
+.gz-field textarea{font-family:monospace;font-size:.8rem;min-height:80px;resize:vertical}
+#output-area{background:var(--gz-bg-alt);border:2px solid var(--gz-accent);border-radius:8px;padding:14px;font-family:monospace;font-size:.82rem;word-break:break-all;white-space:pre-wrap;line-height:1.5}
+.output-section{margin-bottom:16px}
+.output-section h3{font-size:.9rem;margin:0 0 6px;color:var(--gz-accent)}
+.output-val{background:var(--gz-bg);border:1px solid var(--gz-border);border-radius:6px;padding:8px;word-break:break-all}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600;margin:2px}
+.tag-required{background:#ffd93d;color:#1a1a2e}
+.tag-optional{background:#e2e8f0;color:#4a5568}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"DKIM Record Generator","description":"Generate DKIM (DomainKeys Identified Mail) DNS TXT records. Create DKIM selector and public key records for email authentication.","url": "https://tools.gamezipper.com/zh/dev/dkim-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is DKIM?","acceptedAnswer":{"@type":"Answer","text":"DKIM (DomainKeys Identified Mail) is an email authentication method that adds a digital signature to outgoing emails. Recipients can verify the signature using the public key published in your DNS records."}},{"@type":"Question","name":"What is a DKIM selector?","acceptedAnswer":{"@type":"Answer","text":"A DKIM selector is a string used to identify the specific DKIM key. It forms part of the DNS record name: selector._domainkey.yourdomain.com. Common selectors include default, google, s1, s2."}},{"@type":"Question","name":"How do I get my DKIM public key?","acceptedAnswer":{"@type":"Answer","text":"Your email service provider (like Google Workspace, SendGrid, Mailgun) generates the DKIM key pair. They provide the public key to add to DNS. Alternatively, you can generate your own key pair using OpenSSL."}},{"@type":"Question","name":"What key size should I use for DKIM?","acceptedAnswer":{"@type":"Answer","text":"RSA 2048-bit is recommended for new deployments. RSA 1024-bit is still supported but considered less secure. Some DNS providers have record length limits that may require 1024-bit keys."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/dkim-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/dkim-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/dkim-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="gz-field">
+          <label id="lbl-selector"></label>
+          <input type="text" id="selector" value="default" placeholder="default">
+        </div>
+        <div class="gz-field">
+          <label id="lbl-domain"></label>
+          <input type="text" id="domain" placeholder="example.com">
+        </div>
+        <div class="gz-field">
+          <label id="lbl-keytype"></label>
+          <select id="keyType">
+            <option value="rsa">RSA</option>
+            <option value="ed25519">Ed25519</option>
+          </select>
+        </div>
+        <div class="gz-field">
+          <label id="lbl-keysize"></label>
+          <select id="keySize">
+            <option value="2048" selected>2048 bit (recommended)</option>
+            <option value="1024">1024 bit</option>
+          </select>
+        </div>
+        <div class="gz-field">
+          <label id="lbl-pubkey"></label>
+          <textarea id="pubkey" placeholder="Paste your base64-encoded public key here..."></textarea>
+        </div>
+        <div class="gz-field">
+          <label id="lbl-flags"></label>
+          <select id="flags">
+            <option value="">None (normal mode)</option>
+            <option value="y">y — Test mode (s=smtp)</option>
+            <option value="s">s — Strict selector matching</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label id="lbl-out" style="font-weight:600;display:block;margin-bottom:8px"></label>
+        <div class="gz-output" id="output-area"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'DKIM Record Generator',
+    toolDesc: 'Generate DKIM DNS TXT records for email authentication. Configure selector, key type, and public key for your domain.',
+    selector: 'DKIM Selector',
+    domain: 'Domain Name',
+    keyType: 'Key Type',
+    keySize: 'Key Size',
+    pubkey: 'Public Key (base64)',
+    flags: 'Flags',
+    generate: 'Generate DKIM Record',
+    copy: 'Copy Record',
+    clear: 'Clear',
+    lblOut: 'Generated DKIM Record',
+    recordName: 'Record Name (Host)',
+    recordValue: 'Record Value (TXT)',
+    step1: 'Enter your DKIM selector (e.g., default, google, s1)',
+    step2: 'Enter your domain name',
+    step3: 'Paste your base64-encoded public key from your email provider',
+    step4: 'Click "Generate" and add the record to your DNS settings',
+  },
+  zh: {
+    toolTitle: 'DKIM 记录生成器',
+    toolDesc: '为邮件认证生成 DKIM DNS TXT 记录。配置选择器、密钥类型和公钥。',
+    selector: 'DKIM 选择器',
+    domain: '域名',
+    keyType: '密钥类型',
+    keySize: '密钥长度',
+    pubkey: '公钥（base64 编码）',
+    flags: '标志',
+    generate: '生成 DKIM 记录',
+    copy: '复制记录',
+    clear: '清空',
+    lblOut: '生成的 DKIM 记录',
+    recordName: '记录名称（主机）',
+    recordValue: '记录值（TXT）',
+    step1: '输入 DKIM 选择器（如 default、google、s1）',
+    step2: '输入您的域名',
+    step3: '粘贴邮件服务商提供的 base64 编码公钥',
+    step4: '点击「生成」并将记录添加到 DNS 设置中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function doGenerate() {
+  const selector = $('#selector').value.trim() || 'default';
+  const domain = $('#domain').value.trim();
+  const keyType = $('#keyType').value;
+  const keySize = $('#keySize').value;
+  const pubkey = $('#pubkey').value.trim().replace(/\s/g, '');
+  const flags = $('#flags').value;
+
+  if (!domain) { alert('Please enter a domain name'); return; }
+
+  const recordName = `${selector}._domainkey.${domain}`;
+
+  // Build DKIM record tags
+  const tags = [];
+  tags.push(['v', 'DKIM1']);
+  tags.push(['k', keyType === 'ed25519' ? 'ed25519' : 'rsa']);
+
+  if (pubkey) {
+    tags.push(['p', pubkey]);
+  } else {
+    tags.push(['p', 'YOUR_PUBLIC_KEY_HERE']);
+  }
+
+  if (flags === 'y') tags.push(['t', 'y']);
+  if (flags === 's') tags.push(['s', 'smtp']);
+
+  const recordValue = tags.map(([k,v]) => `${k}=${v}`).join('; ');
+
+  const out = $('#output-area');
+  out.innerHTML = `
+    <div class="output-section">
+      <h3>${t('recordName')}</h3>
+      <div class="output-val">${recordName}</div>
+    </div>
+    <div class="output-section">
+      <h3>${t('recordValue')}</h3>
+      <div class="output-val" id="dkim-value">${recordValue}</div>
+    </div>
+    <div class="output-section">
+      <h3>Record Type</h3>
+      <div class="output-val">TXT</div>
+    </div>
+    ${!pubkey ? '<div class="warnings warn" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;padding:8px 12px;border-radius:6px;font-size:.85rem">⚠️ Replace YOUR_PUBLIC_KEY_HERE with your actual public key from your email provider.</div>' : ''}
+    <div style="margin-top:12px;font-size:.82rem;color:var(--text2)">
+      <span class="tag tag-required">Required</span> v, k, p &nbsp;
+      <span class="tag tag-optional">Optional</span> t, s
+    </div>`;
+}
+
+function doCopy() {
+  const val = document.getElementById('dkim-value');
+  if (val) copyText(val.textContent);
+}
+
+function doClear() {
+  $('#selector').value = 'default';
+  $('#domain').value = '';
+  $('#pubkey').value = '';
+  $('#output-area').innerHTML = '';
+}
+
+$('#keyType').addEventListener('change', function() {
+  $('#keySize').disabled = this.value === 'ed25519';
+});
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doCopy()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-selector').textContent = t('selector');
+$('#lbl-domain').textContent = t('domain');
+$('#lbl-keytype').textContent = t('keyType');
+$('#lbl-keysize').textContent = t('keySize');
+$('#lbl-pubkey').textContent = t('pubkey');
+$('#lbl-flags').textContent = t('flags');
+$('#lbl-out').textContent = t('lblOut');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📧', href:'/dev/spf-generator.html', name:'SPF Generator'},
+    {icon:'📋', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+    {icon:'🌐', href:'/dev/dns-propagation.html', name:'DNS Propagation'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

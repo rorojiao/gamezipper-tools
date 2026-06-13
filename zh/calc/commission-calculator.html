@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>佣金计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="计算销售佣金 — 支持阶梯费率、固定佣金、底薪+提成和分成。免费在线工具。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/commission-calculator.html">
+  <meta property="og:title" content="佣金计算器">
+  <meta property="og:description" content="计算销售佣金 — 支持阶梯费率、固定佣金、底薪+提成和分成。免费在线工具。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/commission-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="佣金计算器">
+<meta name="twitter:description" content="计算销售佣金 — 支持阶梯费率、固定佣金、底薪+提成和分成。免费在线工具。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-tool-area{max-width:650px;margin:0 auto}
+.calc-group{margin-bottom:1rem}
+.calc-group label{font-weight:600;font-size:.85rem;display:block;margin-bottom:.3rem}
+.calc-group input,.calc-group select{width:100%;padding:.6rem;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-size:1rem;box-sizing:border-box}
+.calc-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.result-box{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin-top:1rem}
+.result-row{display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border)}
+.result-row:last-child{border-bottom:none}
+.result-label{opacity:.8;font-size:.9rem}
+.result-value{font-weight:700;font-size:1rem}
+.result-big{text-align:center;padding:.8rem 0}
+.result-big .amount{font-size:2rem;font-weight:800;color:var(--accent)}
+.result-big .label{font-size:.85rem;opacity:.7}
+.tier-row{display:grid;grid-template-columns:80px 80px 1fr 40px;gap:.4rem;align-items:center;margin-bottom:.4rem}
+.tier-row input{padding:.4rem;border:1px solid var(--border);border-radius:6px;background:var(--glass);color:var(--text);font-size:.9rem}
+.tier-row button{background:var(--glass);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;padding:.4rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Commission Calculator","description":"Calculate sales commissions with tiered rates, flat fees, and split commissions. Free online tool.","url": "https://tools.gamezipper.com/zh/calc/commission-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does a tiered commission work?","acceptedAnswer":{"@type":"Answer","text":"A tiered commission applies different rates to different portions of the sale amount. For example, the first $10,000 might earn 5%, the next $10,000 earns 7%, and anything above earns 10%."}},{"@type":"Question","name":"What is a split commission?","acceptedAnswer":{"@type":"Answer","text":"A split commission divides the total commission between two or more salespeople. For example, if two people collaborate on a sale, each might receive 50% of the commission."}},{"@type":"Question","name":"Can I use this for real estate commissions?","acceptedAnswer":{"@type":"Answer","text":"Yes. Enter the sale price and commission rate (typically 5-6% split between buyer and seller agents). You can use the split feature to divide the commission."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/commission-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/commission-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/commission-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="calc-group">
+      <label id="lbl-amount"></label>
+      <input type="number" id="saleAmount" value="50000" min="0" step="100">
+    </div>
+    <div class="calc-row">
+      <div class="calc-group">
+        <label id="lbl-type"></label>
+        <select id="commType">
+          <option value="flat" id="opt-flat"></option>
+          <option value="percentage" id="opt-pct"></option>
+          <option value="tiered" id="opt-tiered"></option>
+          <option value="base-plus" id="opt-base"></option>
+        </select>
+      </div>
+      <div class="calc-group" id="rateGroup">
+        <label id="lbl-rate"></label>
+        <input type="number" id="commRate" value="10" min="0" step="0.1">
+      </div>
+    </div>
+    <div id="tieredSection" style="display:none;margin-bottom:1rem">
+      <label style="font-weight:600;font-size:.85rem" id="lbl-tiers"></label>
+      <div id="tierRows">
+        <div class="tier-row">
+          <input type="number" placeholder="$0" value="0" class="tier-min" disabled>
+          <input type="number" placeholder="$10000" value="10000" class="tier-max">
+          <input type="number" placeholder="5%" value="5" class="tier-rate" step="0.1">
+          <button onclick="this.parentElement.remove()" title="Remove">✕</button>
+        </div>
+        <div class="tier-row">
+          <input type="number" placeholder="$10000" value="10000" class="tier-min">
+          <input type="number" placeholder="$25000" value="25000" class="tier-max">
+          <input type="number" placeholder="7%" value="7" class="tier-rate" step="0.1">
+          <button onclick="this.parentElement.remove()" title="Remove">✕</button>
+        </div>
+        <div class="tier-row">
+          <input type="number" placeholder="$25000" value="25000" class="tier-min">
+          <input type="number" placeholder="∞" value="" class="tier-max" placeholder="∞">
+          <input type="number" placeholder="10%" value="10" class="tier-rate" step="0.1">
+          <button onclick="this.parentElement.remove()" title="Remove">✕</button>
+        </div>
+      </div>
+      <button class="gz-btn gz-btn-secondary" onclick="addTier()" id="btn-add-tier" style="margin-top:.4rem;font-size:.85rem"></button>
+    </div>
+    <div id="baseSection" style="display:none;margin-bottom:1rem">
+      <div class="calc-row">
+        <div class="calc-group">
+          <label id="lbl-base-salary"></label>
+          <input type="number" id="baseSalary" value="3000" min="0" step="100">
+        </div>
+        <div class="calc-group">
+          <label id="lbl-bonus-rate"></label>
+          <input type="number" id="bonusRate" value="5" min="0" step="0.1">
+        </div>
+      </div>
+    </div>
+    <div class="calc-group">
+      <label id="lbl-split"></label>
+      <input type="number" id="splitPct" value="100" min="1" max="100" step="1">
+    </div>
+    <button class="gz-btn" id="btnCalc" style="width:100%"></button>
+    <div class="result-box" id="results" style="display:none">
+      <div class="result-big">
+        <div class="label" id="lbl-your-comm"></div>
+        <div class="amount" id="yourComm">$0</div>
+      </div>
+      <div class="result-row"><span class="result-label" id="r-total-comm"></span><span class="result-value" id="totalComm">$0</span></div>
+      <div class="result-row"><span class="result-label" id="r-rate"></span><span class="result-value" id="effRate">0%</span></div>
+      <div class="result-row"><span class="result-label" id="r-split"></span><span class="result-value" id="splitInfo">100%</span></div>
+      <div class="result-row" id="baseRow" style="display:none"><span class="result-label" id="r-total-comp"></span><span class="result-value" id="totalComp">$0</span></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Commission Calculator',
+    toolDesc: 'Calculate sales commissions with tiered rates, flat fees, base salary + bonus, and split commissions. Free online tool.',
+    saleAmount: '💰 Sale Amount ($)',
+    commType: 'Commission Type',
+    flatRate: 'Flat Fee',
+    percentage: 'Percentage',
+    tiered: 'Tiered (Progressive)',
+    basePlus: 'Base Salary + Commission',
+    rate: 'Rate (%)',
+    tiers: 'Tiered Rates (Min – Max – %)',
+    addTier: '+ Add Tier',
+    baseSalary: 'Base Salary ($)',
+    bonusRate: 'Commission Rate (%)',
+    split: 'Your Share (% of total commission)',
+    calculate: 'Calculate Commission',
+    yourCommission: 'Your Commission',
+    totalCommission: 'Total Commission',
+    effectiveRate: 'Effective Rate',
+    splitShare: 'Your Share',
+    totalCompensation: 'Total Compensation',
+    step1: 'Enter the sale amount',
+    step2: 'Choose a commission type (flat, %, tiered, or base+)',
+    step3: 'Set the rate or tier structure',
+    step4: 'Adjust split percentage if sharing commission',
+  },
+  zh: {
+    toolTitle: '佣金计算器',
+    toolDesc: '计算销售佣金 — 支持阶梯费率、固定佣金、底薪+提成和分成。免费在线工具。',
+    saleAmount: '💰 销售金额（$）',
+    commType: '佣金类型',
+    flatRate: '固定佣金',
+    percentage: '百分比提成',
+    tiered: '阶梯式（累进）',
+    basePlus: '底薪 + 提成',
+    rate: '费率（%）',
+    tiers: '阶梯费率（最低 – 最高 – %）',
+    addTier: '+ 添加阶梯',
+    baseSalary: '底薪（$）',
+    bonusRate: '提成比例（%）',
+    split: '你的分成比例（占总佣金%）',
+    calculate: '计算佣金',
+    yourCommission: '你的佣金',
+    totalCommission: '总佣金',
+    effectiveRate: '有效费率',
+    splitShare: '你的份额',
+    totalCompensation: '总收入',
+    step1: '输入销售金额',
+    step2: '选择佣金类型（固定、百分比、阶梯或底薪+提成）',
+    step3: '设置费率或阶梯结构',
+    step4: '如需分成，调整分成比例',
+  }
+});
+
+const { $, t } = GZ;
+
+// Set labels
+$('#lbl-amount').textContent = t('saleAmount');
+$('#lbl-type').textContent = t('commType');
+$('#opt-flat').textContent = t('flatRate');
+$('#opt-pct').textContent = t('percentage');
+$('#opt-tiered').textContent = t('tiered');
+$('#opt-base').textContent = t('basePlus');
+$('#lbl-rate').textContent = t('rate');
+$('#lbl-tiers').textContent = t('tiers');
+$('#btn-add-tier').textContent = t('addTier');
+$('#lbl-base-salary').textContent = t('baseSalary');
+$('#lbl-bonus-rate').textContent = t('bonusRate');
+$('#lbl-split').textContent = t('split');
+$('#btnCalc').textContent = t('calculate');
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+
+$('#commType').addEventListener('change', function() {
+  const v = this.value;
+  $('#rateGroup').style.display = (v === 'flat' || v === 'percentage') ? '' : 'none';
+  $('#tieredSection').style.display = v === 'tiered' ? '' : 'none';
+  $('#baseSection').style.display = v === 'base-plus' ? '' : 'none';
+});
+
+function addTier() {
+  const row = document.createElement('div');
+  row.className = 'tier-row';
+  row.innerHTML = '<input type="number" placeholder="$" class="tier-min"><input type="number" placeholder="∞" class="tier-max"><input type="number" placeholder="%" class="tier-rate" step="0.1"><button onclick="this.parentElement.remove()" title="Remove">✕</button>';
+  $('#tierRows').appendChild(row);
+}
+
+$('#btnCalc').addEventListener('click', () => {
+  const sale = parseFloat($('#saleAmount').value) || 0;
+  const split = parseFloat($('#splitPct').value) || 100;
+  const type = $('#commType').value;
+  let totalComm = 0;
+
+  if (type === 'flat') {
+    totalComm = parseFloat($('#commRate').value) || 0;
+  } else if (type === 'percentage') {
+    totalComm = sale * (parseFloat($('#commRate').value) || 0) / 100;
+  } else if (type === 'tiered') {
+    const rows = document.querySelectorAll('.tier-row');
+    const tiers = [];
+    rows.forEach(r => {
+      const min = parseFloat(r.querySelector('.tier-min').value) || 0;
+      const max = parseFloat(r.querySelector('.tier-max').value) || Infinity;
+      const rate = parseFloat(r.querySelector('.tier-rate').value) || 0;
+      tiers.push({min, max, rate});
+    });
+    tiers.sort((a, b) => a.min - b.min);
+    for (const tier of tiers) {
+      if (sale <= tier.min) break;
+      const taxable = Math.min(sale, tier.max === Infinity ? sale : tier.max) - tier.min;
+      if (taxable > 0) totalComm += taxable * tier.rate / 100;
+    }
+  } else if (type === 'base-plus') {
+    const base = parseFloat($('#baseSalary').value) || 0;
+    const rate = parseFloat($('#bonusRate').value) || 0;
+    totalComm = sale * rate / 100;
+    const yourComm = base + totalComm * split / 100;
+    $('#results').style.display = '';
+    $('#yourComm').textContent = fmt(yourComm);
+    $('#totalComm').textContent = fmt(totalComm);
+    $('#effRate').textContent = sale > 0 ? (totalComm / sale * 100).toFixed(2) + '%' : '0%';
+    $('#splitInfo').textContent = split + '%';
+    $('#baseRow').style.display = '';
+    $('#r-total-comp').textContent = t('totalCompensation');
+    $('#totalComp').textContent = fmt(base + totalComm);
+    return;
+  }
+
+  const yourComm = totalComm * split / 100;
+  $('#results').style.display = '';
+  $('#yourComm').textContent = fmt(yourComm);
+  $('#totalComm').textContent = fmt(totalComm);
+  $('#effRate').textContent = sale > 0 ? (totalComm / sale * 100).toFixed(2) + '%' : '0%';
+  $('#splitInfo').textContent = split + '%';
+  $('#baseRow').style.display = 'none';
+});
+
+// Labels
+$('#r-total-comm').textContent = t('totalCommission');
+$('#r-rate').textContent = t('effectiveRate');
+$('#r-split').textContent = t('splitShare');
+$('#lbl-your-comm').textContent = t('yourCommission');
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💰', href:'/calc/salary-calculator.html', name:'Salary Calculator'},
+    {icon:'📈', href:'/calc/profit-margin-calculator.html', name:'Profit Margin Calculator'},
+    {icon:'💵', href:'/calc/roi.html', name:'ROI Calculator'},
+    {icon:'🏷️', href:'/calc/discount-calculator.html', name:'Discount Calculator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

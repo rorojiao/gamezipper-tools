@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>SPF 记录生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="为您的域名生成 SPF（发件人策略框架）DNS 记录，防止邮件伪造并提高投递率。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/spf-generator.html">
+  <meta property="og:title" content="SPF 记录生成器">
+  <meta property="og:description" content="为您的域名生成 SPF（发件人策略框架）DNS 记录，防止邮件伪造并提高投递率。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/spf-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SPF 记录生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.mech-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:8px;background:var(--gz-bg-alt);border-radius:8px;border:1px solid var(--gz-border)}
+.mech-row select,.mech-row input{padding:6px 8px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--text1);font-size:.85rem}
+.mech-row select{min-width:100px}
+.mech-row input{flex:1}
+.mech-remove{cursor:pointer;padding:4px 10px;border-radius:6px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-accent);font-size:.85rem}
+.mech-remove:hover{background:var(--gz-accent);color:#fff}
+#spf-output{font-family:monospace;font-size:.85rem;word-break:break-all;white-space:pre-wrap;background:var(--gz-bg-alt);border:2px solid var(--gz-accent);border-radius:8px;padding:14px;min-height:60px;line-height:1.6}
+.gz-field{margin-bottom:14px}
+.gz-field label{display:block;font-weight:600;margin-bottom:4px;font-size:.9rem}
+.gz-field select{width:100%;padding:8px 10px;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--text1);font-size:.95rem;box-sizing:border-box}
+.warnings{margin-top:8px;padding:8px 12px;border-radius:6px;font-size:.85rem}
+.warn{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.ok{background:#d4edda;color:#155724;border:1px solid #28a745}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SPF Record Generator","description":"Generate SPF (Sender Policy Framework) DNS records for your domain. Configure authorized mail servers and prevent email spoofing.","url": "https://tools.gamezipper.com/zh/dev/spf-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an SPF record?","acceptedAnswer":{"@type":"Answer","text":"An SPF (Sender Policy Framework) record is a DNS TXT record that specifies which mail servers are authorized to send emails on behalf of your domain. It helps prevent email spoofing and improves deliverability."}},{"@type":"Question","name":"What is the 10 DNS lookup limit?","acceptedAnswer":{"@type":"Answer","text":"SPF has a maximum of 10 DNS lookups. If your SPF record requires more than 10 lookups (due to include mechanisms or redirects), it will fail. Use IP addresses instead of includes when possible."}},{"@type":"Question","name":"What is the difference between ~all and -all?","acceptedAnswer":{"@type":"Answer","text":"~all means softfail — unauthorized senders will be marked but not rejected. -all means hard fail — unauthorized emails will be rejected. +all allows all senders (not recommended). ?all is neutral."}},{"@type":"Question","name":"Where do I add the SPF record?","acceptedAnswer":{"@type":"Answer","text":"Add the generated SPF record as a TXT record in your domain's DNS settings. The host/name field should be @ or left blank for the root domain."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/spf-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/spf-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/spf-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="gz-field">
+          <label id="lbl-policy"></label>
+          <select id="policy">
+            <option value="~all">~all (Softfail — recommended)</option>
+            <option value="-all">-all (Hard fail)</option>
+            <option value="+all">+all (Allow all — not recommended)</option>
+            <option value="?all">?all (Neutral)</option>
+          </select>
+        </div>
+        <label id="lbl-mechanisms" style="font-weight:600;display:block;margin-bottom:8px"></label>
+        <div id="mechanisms"></div>
+        <div style="margin-top:10px">
+          <button class="gz-btn gz-btn-secondary" id="add-mech-btn" style="font-size:.85rem;padding:6px 12px"></button>
+        </div>
+      </div>
+      <div>
+        <label id="lbl-out" style="font-weight:600;display:block;margin-bottom:6px"></label>
+        <div class="gz-output" id="spf-output"></div>
+        <div id="warnings"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SPF Record Generator',
+    toolDesc: 'Generate SPF (Sender Policy Framework) DNS records for your domain to prevent email spoofing and improve deliverability.',
+    policy: 'SPF Policy (all qualifier)',
+    mechanisms: 'Mechanisms (authorized senders)',
+    addMech: '+ Add Mechanism',
+    generate: 'Generate SPF Record',
+    copy: 'Copy',
+    clear: 'Clear',
+    lblOut: 'Generated SPF Record',
+    warningDns: '⚠️ Warning: More than 10 DNS lookups may cause SPF to fail.',
+    warningAll: '⚠️ Warning: +all allows anyone to send emails from your domain!',
+    step1: 'Select your SPF policy (softfail ~all is recommended for most domains)',
+    step2: 'Add mechanisms: IP addresses, include domains, or common providers',
+    step3: 'Click "Generate" to build your SPF TXT record',
+    step4: 'Copy the record and add it to your DNS settings as a TXT record',
+  },
+  zh: {
+    toolTitle: 'SPF 记录生成器',
+    toolDesc: '为您的域名生成 SPF（发件人策略框架）DNS 记录，防止邮件伪造并提高投递率。',
+    policy: 'SPF 策略（all 限定符）',
+    mechanisms: '机制（授权发件服务器）',
+    addMech: '+ 添加机制',
+    generate: '生成 SPF 记录',
+    copy: '复制',
+    clear: '清空',
+    lblOut: '生成的 SPF 记录',
+    warningDns: '⚠️ 警告：超过 10 次 DNS 查询可能导致 SPF 验证失败。',
+    warningAll: '⚠️ 警告：+all 允许任何人从您的域名发送邮件！',
+    step1: '选择 SPF 策略（推荐大多数域名使用软失败 ~all）',
+    step2: '添加机制：IP 地址、包含域名或常见服务商',
+    step3: '点击「生成」构建 SPF TXT 记录',
+    step4: '复制记录并添加到 DNS 设置中作为 TXT 记录',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mechId = 0;
+
+const providerPresets = {
+  'google': '_spf.google.com',
+  'outlook': 'spf.protection.outlook.com',
+  'mailgun': 'smtp.mailgun.org',
+  'sendgrid': 'sendgrid.net',
+  'mailchimp': 'servers.mcsv.net',
+  'amazonses': 'amazonses.com',
+  'zoho': 'zoho.com',
+  'postmark': 'pm.mtasv.net',
+};
+
+function addMechanism(type='ip4', value='') {
+  const id = mechId++;
+  const container = $('#mechanisms');
+  const row = document.createElement('div');
+  row.className = 'mech-row';
+  row.id = `mech-${id}`;
+  row.innerHTML = `
+    <select class="mech-type" onchange="updateMechValue(this)">
+      <option value="ip4" ${type==='ip4'?'selected':''}>ip4</option>
+      <option value="ip6" ${type==='ip6'?'selected':''}>ip6</option>
+      <option value="include" ${type==='include'?'selected':''}>include</option>
+      <option value="a" ${type==='a'?'selected':''}>a</option>
+      <option value="mx" ${type==='mx'?'selected':''}>mx</option>
+      <option value="provider" ${type==='provider'?'selected':''}>${t('addMech').replace('+ ','')}</option>
+    </select>
+    <input class="mech-value" type="text" placeholder="e.g. 192.168.1.0/24" value="${value}">
+    <select class="mech-provider" style="display:${type==='provider'?'':'none'}" onchange="this.previousElementSibling.value=providerPresets[this.value]||''">
+      <option value="">-- Select --</option>
+      ${Object.entries(providerPresets).map(([k,v]) => `<option value="${k}">${k} (${v})</option>`).join('')}
+    </select>
+    <button class="mech-remove" onclick="this.parentElement.remove();generateSPF()">✕</button>`;
+  container.appendChild(row);
+}
+
+function updateMechValue(sel) {
+  const row = sel.parentElement;
+  const valInput = row.querySelector('.mech-value');
+  const provSel = row.querySelector('.mech-provider');
+  if (sel.value === 'provider') {
+    provSel.style.display = '';
+    valInput.placeholder = 'Select a provider above';
+  } else {
+    provSel.style.display = 'none';
+    valInput.placeholder = sel.value === 'include' ? 'e.g. _spf.google.com' : sel.value === 'ip4' ? 'e.g. 192.168.1.0/24' : sel.value === 'ip6' ? 'e.g. 2001:db8::/32' : sel.value === 'a' ? 'domain.com (optional)' : '';
+  }
+}
+
+function generateSPF() {
+  const policy = $('#policy').value;
+  const mechs = document.querySelectorAll('.mech-row');
+  const parts = ['v=spf1'];
+  let dnsLookups = 0;
+  let warnings = '';
+
+  mechs.forEach(row => {
+    const type = row.querySelector('.mech-type').value;
+    const value = row.querySelector('.mech-value').value.trim();
+    if (!value && type !== 'mx' && type !== 'a') return;
+    switch (type) {
+      case 'ip4': parts.push(`ip4:${value}`); break;
+      case 'ip6': parts.push(`ip6:${value}`); break;
+      case 'include': parts.push(`include:${value}`); dnsLookups++; break;
+      case 'provider': if(value) { parts.push(`include:${value}`); dnsLookups++; } break;
+      case 'a': parts.push(value ? `a:${value}` : 'a'); dnsLookups++; break;
+      case 'mx': parts.push('mx'); dnsLookups++; break;
+    }
+  });
+  parts.push(policy);
+
+  if (dnsLookups > 10) warnings += `<div class="warnings warn">${t('warningDns')}</div>`;
+  if (policy === '+all') warnings += `<div class="warnings warn">${t('warningAll')}</div>`;
+  if (!warnings) warnings = '<div class="warnings ok">✓ SPF record looks good!</div>';
+
+  $('#spf-output').textContent = parts.join(' ');
+  $('#warnings').innerHTML = warnings;
+}
+
+function doCopy() {
+  const text = $('#spf-output').textContent;
+  if (text) copyText(text);
+}
+
+function doClear() {
+  $('#mechanisms').innerHTML = '';
+  $('#spf-output').textContent = '';
+  $('#warnings').innerHTML = '';
+  mechId = 0;
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="generateSPF()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doCopy()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-policy').textContent = t('policy');
+$('#lbl-mechanisms').textContent = t('mechanisms');
+$('#add-mech-btn').textContent = t('addMech');
+$('#lbl-out').textContent = t('lblOut');
+$('#add-mech-btn').onclick = () => addMechanism('include');
+
+// Add some default mechanisms
+addMechanism('provider', '');
+addMechanism('ip4', '');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📧', href:'/dev/dkim-generator.html', name:'DKIM Generator'},
+    {icon:'📋', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+    {icon:'🌐', href:'/dev/whois-lookup.html', name:'WHOIS Lookup'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

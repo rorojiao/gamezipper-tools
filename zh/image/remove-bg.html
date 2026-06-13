@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片背景移除工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在线移除图片背景。选择背景颜色、调整容差，下载透明 PNG。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/remove-bg.html">
+  <meta property="og:title" content="图片背景移除工具">
+  <meta property="og:description" content="免费在线移除图片背景。选择背景颜色、调整容差，下载透明 PNG。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/remove-bg.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片背景移除工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--gz-accent);background:rgba(255,107,107,.05)}
+.drop-zone svg{width:48px;height:48px;fill:var(--text2);margin-bottom:8px}
+#preview{max-width:100%;max-height:400px;display:none;border-radius:8px}
+.canvas-wrap{position:relative;display:inline-block;max-width:100%;margin-top:12px}
+.canvas-wrap canvas{max-width:100%;border-radius:8px;cursor:crosshair}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.controls label{font-size:.9em;font-weight:600}
+.controls input[type=range]{width:120px}
+.controls input[type=color]{width:40px;height:32px;border:1px solid var(--border);border-radius:6px;cursor:pointer}
+.checker-bg{background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Background Remover","description":"Remove image backgrounds online for free. Upload any image, erase the background, and download a transparent PNG. No signup, runs in your browser.","url": "https://tools.gamezipper.com/zh/image/remove-bg.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the background remover work?", "acceptedAnswer": {"@type": "Answer", "text": "Upload an image, pick the background color to remove, adjust the tolerance, and download the transparent PNG. All processing happens in your browser."}}, {"@type": "Question", "name": "What image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports PNG, JPG, JPEG, WebP, GIF and BMP. The output is always a transparent PNG file."}}, {"@type": "Question", "name": "Is my image data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All image processing happens entirely in your browser using the Canvas API. Your images are never uploaded to any server."}}, {"@type": "Question", "name": "Can I remove complex backgrounds?", "acceptedAnswer": {"@type": "Answer", "text": "The tool works best with solid or near-solid color backgrounds. For complex backgrounds, use the tolerance slider to fine-tune the removal range."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/remove-bg.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/remove-bg.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/remove-bg.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="controls" id="controls" style="display:none">
+      <label id="lbl-color"></label>
+      <input type="color" id="bgColor" value="#ffffff">
+      <label id="lbl-tolerance"></label>
+      <input type="range" id="tolerance" min="0" max="100" value="30">
+      <span id="tolVal">30</span>
+      <button class="gz-btn gz-btn-secondary" id="btnApply" onclick="applyRemoval()"></button>
+      <button class="gz-btn gz-btn-secondary" id="btnReset" onclick="resetImage()"></button>
+    </div>
+    <div class="drop-zone" id="dropZone">
+      <svg viewBox="0 0 24 24"><path d="M19 7v3h-2V7h-3V5h3V2h2v3h3v2h-3zm-4 8l-3-3-4 4V3H6v17h13v-5z"/></svg>
+      <p id="dropText"></p>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap" style="display:none;text-align:center">
+      <canvas id="canvas" class="checker-bg"></canvas>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Background Remover',
+    toolDesc: 'Remove image backgrounds online for free. Pick the background color, adjust tolerance, and download a transparent PNG.',
+    dropText: 'Drag & drop an image here or click to upload',
+    bgColor: 'BG Color',
+    tolerance: 'Tolerance',
+    apply: 'Remove BG',
+    reset: 'Reset',
+    step1: 'Upload an image by dragging or clicking the drop zone',
+    step2: 'Pick the background color to remove using the color picker',
+    step3: 'Adjust the tolerance slider to control removal range',
+    step4: 'Click "Remove BG" and download the transparent PNG',
+  },
+  zh: {
+    toolTitle: '图片背景移除工具',
+    toolDesc: '免费在线移除图片背景。选择背景颜色、调整容差，下载透明 PNG。',
+    dropText: '拖拽图片到此处或点击上传',
+    bgColor: '背景色',
+    tolerance: '容差',
+    apply: '移除背景',
+    reset: '重置',
+    step1: '拖拽或点击上传区域上传图片',
+    step2: '使用取色器选择要移除的背景颜色',
+    step3: '调整容差滑块控制移除范围',
+    step4: '点击「移除背景」并下载透明 PNG',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let originalData = null;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+const dropZone = $('#dropZone');
+const fileInput = $('#fileInput');
+
+$('#dropText').textContent = t('dropText');
+$('#lbl-color').textContent = t('bgColor');
+$('#lbl-tolerance').textContent = t('tolerance');
+$('#btnApply').textContent = t('apply');
+$('#btnReset').textContent = t('reset');
+$('#tolerance').addEventListener('input', e => { $('#tolVal').textContent = e.target.value; });
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if(e.dataTransfer.files.length) loadImage(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if(e.target.files.length) loadImage(e.target.files[0]); });
+
+function loadImage(file) {
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    dropZone.style.display = 'none';
+    $('#controls').style.display = 'flex';
+    $('#canvasWrap').style.display = 'block';
+    // Auto-detect most common edge color as bg
+    const edge = ctx.getImageData(0, 0, 1, 1).data;
+    $('#bgColor').value = '#' + [edge[0],edge[1],edge[2]].map(v=>v.toString(16).padStart(2,'0')).join('');
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function applyRemoval() {
+  if (!originalData) return;
+  const data = new ImageData(new Uint8ClampedArray(originalData.data), originalData.width, originalData.height);
+  const bg = hexToRgb($('#bgColor').value);
+  const tol = parseInt($('#tolerance').value);
+  for (let i = 0; i < data.data.length; i += 4) {
+    const dr = data.data[i] - bg.r, dg = data.data[i+1] - bg.g, db = data.data[i+2] - bg.b;
+    const dist = Math.sqrt(dr*dr + dg*dg + db*db);
+    if (dist <= tol * 4.42) { // scale 0-100 to 0-442 (max color distance)
+      data.data[i+3] = 0; // transparent
+    }
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.putImageData(data, 0, 0);
+}
+
+function resetImage() {
+  if (!originalData) return;
+  ctx.putImageData(originalData, 0, 0);
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+
+function download() {
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'removed-bg.png';
+  a.click();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download()">⬇️ ${t('copy') ? 'Download PNG' : 'Download PNG'}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'🔒', href:'/image/censor.html', name:'Image Censor'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

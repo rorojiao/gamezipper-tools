@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>图片转 GIF 动画 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将多张图片合成为 GIF 动画，自定义帧延迟、循环次数和尺寸。拖拽排序，免费且隐私。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/image-to-gif.html">
+  <meta property="og:title" content="图片转 GIF 动画">
+  <meta property="og:description" content="将多张图片合成为 GIF 动画，自定义帧延迟、循环次数和尺寸。拖拽排序，免费且隐私。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/image-to-gif.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片转 GIF 动画">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.drop-zone{border:2px dashed var(--border);border-radius:16px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;background:var(--glass)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass2)}
+.drop-zone p{margin:8px 0;opacity:.7}
+.frames{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.frame-card{position:relative;width:120px;background:var(--glass);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:grab;transition:all .2s}
+.frame-card:hover{border-color:var(--accent)}
+.frame-card.dragging{opacity:.5}
+.frame-card img{width:100%;height:80px;object-fit:cover;display:block}
+.frame-card .info{padding:6px 8px;font-size:.75em;display:flex;justify-content:space-between;align-items:center}
+.frame-card .remove{background:none;border:none;color:var(--gz-accent);cursor:pointer;font-size:1.2em;padding:0 2px;line-height:1}
+.frame-card .remove:hover{color:red}
+.frame-card .idx{opacity:.6;font-size:.8em}
+#preview{margin-top:16px;text-align:center}
+#preview img{max-width:100%;max-height:400px;border-radius:12px;border:1px solid var(--border)}
+#settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:16px}
+#settings label{display:block;font-size:.85em;margin-bottom:4px;opacity:.8}
+#settings input,#settings select{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:inherit;font-size:.9em}
+.progress-bar{width:100%;height:6px;background:var(--glass);border-radius:3px;overflow:hidden;margin-top:8px;display:none}
+.progress-bar .fill{height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:3px}
+.gz-output{text-align:center;margin-top:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image to GIF Maker","description":"Convert multiple images to an animated GIF online for free. Set frame delay, loop count, resize, reorder with drag-and-drop. No upload, runs in your browser.","url": "https://tools.gamezipper.com/zh/image/image-to-gif.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I create an animated GIF from images?", "acceptedAnswer": {"@type": "Answer", "text": "Drag and drop or select multiple images (PNG, JPG, WebP), adjust the frame delay and settings, then click Generate GIF. The tool combines them into an animated GIF that you can download instantly."}}, {"@type": "Question", "name": "What image formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool supports PNG, JPEG/JPG, WebP, BMP and GIF images as input. You can mix different formats in the same animation."}}, {"@type": "Question", "name": "Is my data uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All image processing and GIF generation happens entirely in your browser. Your images never leave your device."}}, {"@type": "Question", "name": "Can I reorder the frames?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Drag and drop the frame cards to reorder them. You can also click the X button on any frame to remove it."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/image-to-gif.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/image-to-gif.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/image-to-gif.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="drop-zone" id="drop-zone">
+      <p style="font-size:2em">🖼️</p>
+      <p id="drop-text" style="font-size:1.1em"></p>
+      <p style="font-size:.85em" id="drop-sub"></p>
+      <input type="file" id="file-input" multiple accept="image/*" style="display:none">
+    </div>
+    <div id="settings">
+      <div><label id="lbl-delay"></label><input type="number" id="delay" value="200" min="20" max="5000" step="10"></div>
+      <div><label id="lbl-width"></label><input type="number" id="gif-width" value="0" min="0" max="2000" placeholder="auto"></div>
+      <div><label id="lbl-loop"></label><select id="loop-count"><option value="0" id="opt-infinite"></option><option value="1">1</option><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option></select></div>
+      <div><label id="lbl-quality"></label><input type="range" id="quality" min="1" max="20" value="10" style="padding:0"></div>
+    </div>
+    <div class="frames" id="frames"></div>
+    <div class="progress-bar" id="progress"><div class="fill" id="progress-fill"></div></div>
+    <div id="preview"></div>
+    <div class="gz-output" id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image to GIF Maker',
+    toolDesc: 'Convert multiple images to an animated GIF with custom frame delay, loop count, and resize. Drag-and-drop reorder. Free and private.',
+    generate: 'Generate GIF',
+    clear: 'Clear All',
+    download: 'Download GIF',
+    dropText: 'Drop images here or click to select',
+    dropSub: 'Supports PNG, JPG, WebP, BMP — up to 100 frames',
+    delay: 'Frame Delay (ms)',
+    width: 'Width (px, 0 = auto)',
+    loop: 'Loop Count',
+    infinite: 'Infinite',
+    quality: 'Quality (higher = larger)',
+    frames: 'frames',
+    size: 'Size',
+    generating: 'Generating...',
+    step1: 'Drag and drop or select multiple images',
+    step2: 'Reorder frames by dragging, remove unwanted ones',
+    step3: 'Set frame delay, loop count, and width',
+    step4: 'Click "Generate GIF" to create the animation',
+    step5: 'Preview and download your animated GIF',
+  },
+  zh: {
+    toolTitle: '图片转 GIF 动画',
+    toolDesc: '将多张图片合成为 GIF 动画，自定义帧延迟、循环次数和尺寸。拖拽排序，免费且隐私。',
+    generate: '生成 GIF',
+    clear: '清除全部',
+    download: '下载 GIF',
+    dropText: '拖拽图片到此处或点击选择',
+    dropSub: '支持 PNG、JPG、WebP、BMP — 最多 100 帧',
+    delay: '帧延迟（毫秒）',
+    width: '宽度（像素，0 = 自动）',
+    loop: '循环次数',
+    infinite: '无限循环',
+    quality: '质量（越高文件越大）',
+    frames: '帧',
+    size: '大小',
+    generating: '正在生成...',
+    step1: '拖拽或选择多张图片',
+    step2: '拖动帧卡片重新排序，删除不需要的帧',
+    step3: '设置帧延迟、循环次数和宽度',
+    step4: '点击「生成 GIF」创建动画',
+    step5: '预览并下载你的 GIF 动画',
+  }
+});
+
+const { $, t } = GZ;
+let frameList = []; // { img: Image, name: string }
+const { copyText } = GZ;
+
+// Labels
+$('#drop-text').textContent = t('dropText');
+$('#drop-sub').textContent = t('dropSub');
+$('#lbl-delay').textContent = t('delay');
+$('#lbl-width').textContent = t('width');
+$('#lbl-loop').textContent = t('loop');
+$('#lbl-quality').textContent = t('quality');
+$('#opt-infinite').textContent = t('infinite');
+
+// Drop zone
+const dropZone = $('#drop-zone');
+const fileInput = $('#file-input');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => { addFiles(e.target.files); fileInput.value = ''; });
+
+function addFiles(files) {
+  for (const f of files) {
+    if (!f.type.startsWith('image/')) continue;
+    if (frameList.length >= 100) break;
+    const img = new Image();
+    img.onload = () => {
+      frameList.push({ img, name: f.name });
+      renderFrames();
+    };
+    img.src = URL.createObjectURL(f);
+  }
+}
+
+function renderFrames() {
+  const container = $('#frames');
+  container.innerHTML = '';
+  frameList.forEach((frame, i) => {
+    const card = document.createElement('div');
+    card.className = 'frame-card';
+    card.draggable = true;
+    card.innerHTML = `<img src="${frame.img.src}" alt="Frame ${i+1}"><div class="info"><span class="idx">#${i+1}</span><button class="remove" title="Remove">×</button></div>`;
+    card.querySelector('.remove').addEventListener('click', e => { e.stopPropagation(); frameList.splice(i, 1); renderFrames(); });
+    // Drag reorder
+    card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', i); card.classList.add('dragging'); });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    card.addEventListener('dragover', e => e.preventDefault());
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      const from = +e.dataTransfer.getData('text/plain');
+      const to = i;
+      if (from !== to) { const [item] = frameList.splice(from, 1); frameList.splice(to, 0, item); renderFrames(); }
+    });
+    container.appendChild(card);
+  });
+}
+
+// GIF Encoder (simple LZW-based)
+function generateGIF() {
+  if (frameList.length < 2) return alert('Please add at least 2 images.');
+  const progress = $('#progress');
+  const fill = $('#progress-fill');
+  progress.style.display = 'block';
+  fill.style.width = '0%';
+
+  const delay = Math.max(20, +$('#delay').value);
+  const targetW = +$('#gif-width').value;
+  const loopCount = +$('#loop-count').value;
+  const quality = +$('#quality').value;
+
+  // Calculate dimensions
+  let w, h;
+  if (targetW > 0) {
+    w = targetW;
+    const firstImg = frameList[0].img;
+    h = Math.round(firstImg.naturalHeight / firstImg.naturalWidth * w);
+  } else {
+    w = frameList[0].img.naturalWidth;
+    h = frameList[0].img.naturalHeight;
+  }
+  // Cap at 1200px
+  if (w > 1200) { const ratio = 1200 / w; w = 1200; h = Math.round(h * ratio); }
+  w = Math.max(1, w); h = Math.max(1, h);
+
+  // Use canvas to get pixel data for each frame
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // Build palette and frames
+  const allFrames = [];
+  let globalPalette = null;
+
+  // Simple quantize: collect all pixels, use median cut
+  const allPixels = [];
+  for (const frame of frameList) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(frame.img, 0, 0, w, h);
+    const data = ctx.getImageData(0, 0, w, h).data;
+    const pixels = [];
+    for (let i = 0; i < data.length; i += 4) {
+      pixels.push([data[i], data[i+1], data[i+2]]);
+    }
+    allFrames.push(pixels);
+  }
+
+  // Simple palette: sample pixels and build 256-color palette
+  const palette = buildPalette(allFrames, 256);
+  globalPalette = palette;
+
+  // Map each frame to indexed
+  const indexed = allFrames.map((pixels, fi) => {
+    fill.style.width = ((fi + 1) / allFrames.length * 50) + '%';
+    return pixels.map(p => findClosest(p, palette));
+  });
+
+  // Build GIF binary
+  const bytes = [];
+  const push = (...b) => bytes.push(...b);
+  const pushLE = (v, n) => { for (let i = 0; i < n; i++) push(v & 0xff, v >> 8); };
+
+  // Header
+  push(0x47, 0x49, 0x46, 0x38, 0x39, 0x61); // GIF89a
+  pushLE(w, 2); pushLE(h, 2);
+  push(0xF7, 0, 0); // GCT flag, 256 colors, bg=0, aspect=0
+
+  // Global Color Table
+  for (let i = 0; i < 256; i++) {
+    if (i < palette.length) push(...palette[i]);
+    else push(0, 0, 0);
+  }
+
+  // Netscape extension for looping
+  push(0x21, 0xFF, 0x0B);
+  push(...[0x4E, 0x45, 0x54, 0x53, 0x43, 0x41, 0x50, 0x45, 0x32, 0x2E, 0x30]); // NETSCAPE2.0
+  push(0x03, 0x01);
+  push(loopCount & 0xff, loopCount >> 8);
+  push(0x00);
+
+  // Frames
+  indexed.forEach((frameData, fi) => {
+    fill.style.width = (50 + (fi + 1) / indexed.length * 50) + '%';
+    // Graphic Control Extension
+    push(0x21, 0xF9, 0x04, 0x00);
+    push(delay / 10 & 0xff, (delay / 10) >> 8);
+    push(0x00, 0x00); // transparent none
+
+    // Image Descriptor
+    push(0x2C);
+    pushLE(0, 2); pushLE(0, 2); pushLE(w, 2); pushLE(h, 2);
+    push(0x00); // no local color table
+
+    // LZW Minimum Code Size
+    const minCode = Math.max(2, Math.ceil(Math.log2(palette.length)));
+    push(minCode);
+
+    // LZW compress
+    const lzwData = lzwEncode(frameData, minCode);
+    // Write sub-blocks
+    let pos = 0;
+    while (pos < lzwData.length) {
+      const chunk = lzwData.slice(pos, pos + 255);
+      push(chunk.length, ...chunk);
+      pos += 255;
+    }
+    push(0x00); // block terminator
+  });
+
+  push(0x3B); // Trailer
+
+  const blob = new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
+  const url = URL.createObjectURL(blob);
+
+  const sizeKB = (blob.size / 1024).toFixed(1);
+  const sizeMB = (blob.size / 1048576).toFixed(2);
+  const sizeStr = blob.size > 1048576 ? `${sizeMB} MB` : `${sizeKB} KB`;
+
+  $('#preview').innerHTML = `<img src="${url}" alt="Generated GIF"><p style="margin-top:8px;font-size:.85em;opacity:.7">${frameList.length} ${t('frames')} · ${sizeStr}</p>`;
+  $('#output').innerHTML = `<a href="${url}" download="animation.gif" class="gz-btn">${t('download')}</a>`;
+  progress.style.display = 'none';
+}
+
+function buildPalette(allFrames, maxColors) {
+  // Sample pixels uniformly
+  const samples = [];
+  const totalPixels = allFrames.reduce((s, f) => s + f.length, 0);
+  const step = Math.max(1, Math.floor(totalPixels / 10000));
+  let idx = 0;
+  for (const frame of allFrames) {
+    for (const p of frame) {
+      if (idx % step === 0) samples.push(p);
+      idx++;
+    }
+  }
+  // Median cut
+  return medianCut(samples, maxColors);
+}
+
+function medianCut(colors, target) {
+  if (colors.length === 0) return [[0,0,0]];
+  let boxes = [colors];
+  while (boxes.length < target) {
+    let bestIdx = -1, bestRange = -1;
+    for (let i = 0; i < boxes.length; i++) {
+      if (boxes[i].length < 2) continue;
+      const ranges = [0,1,2].map(c => {
+        const vals = boxes[i].map(p => p[c]);
+        return Math.max(...vals) - Math.min(...vals);
+      });
+      const maxR = Math.max(...ranges);
+      if (maxR > bestRange) { bestRange = maxR; bestIdx = i; }
+    }
+    if (bestIdx === -1) break;
+    const box = boxes[bestIdx];
+    const ranges = [0,1,2].map(c => { const vals = box.map(p => p[c]); return Math.max(...vals) - Math.min(...vals); });
+    const ch = ranges.indexOf(Math.max(...ranges));
+    box.sort((a, b) => a[ch] - b[ch]);
+    const mid = Math.floor(box.length / 2);
+    boxes.splice(bestIdx, 1, box.slice(0, mid), box.slice(mid));
+  }
+  return boxes.map(box => {
+    const n = box.length;
+    if (n === 0) return [0, 0, 0];
+    const r = Math.round(box.reduce((s, p) => s + p[0], 0) / n);
+    const g = Math.round(box.reduce((s, p) => s + p[1], 0) / n);
+    const b = Math.round(box.reduce((s, p) => s + p[2], 0) / n);
+    return [r, g, b];
+  });
+}
+
+function findClosest(pixel, palette) {
+  let best = 0, bestDist = Infinity;
+  for (let i = 0; i < palette.length; i++) {
+    const dr = pixel[0] - palette[i][0], dg = pixel[1] - palette[i][1], db = pixel[2] - palette[i][2];
+    const d = dr*dr + dg*dg + db*db;
+    if (d < bestDist) { bestDist = d; best = i; }
+  }
+  return best;
+}
+
+function lzwEncode(indexStream, minCodeSize) {
+  const clearCode = 1 << minCodeSize;
+  const eoiCode = clearCode + 1;
+  let codeSize = minCodeSize + 1;
+  let nextCode = eoiCode + 1;
+  const codeLimit = 4096;
+
+  // Initialize dictionary
+  let dict = new Map();
+  for (let i = 0; i < clearCode; i++) dict.set(String(i), i);
+
+  const output = [];
+  let buffer = 0, bitsInBuffer = 0;
+
+  function writeBits(code, size) {
+    buffer |= code << bitsInBuffer;
+    bitsInBuffer += size;
+    while (bitsInBuffer >= 8) {
+      output.push(buffer & 0xFF);
+      buffer >>= 8;
+      bitsInBuffer -= 8;
+    }
+  }
+
+  writeBits(clearCode, codeSize);
+
+  let current = String(indexStream[0]);
+  for (let i = 1; i < indexStream.length; i++) {
+    const next = String(indexStream[i]);
+    const combined = current + ',' + next;
+    if (dict.has(combined)) {
+      current = combined;
+    } else {
+      writeBits(dict.get(current), codeSize);
+      if (nextCode < codeLimit) {
+        dict.set(combined, nextCode++);
+        if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
+      } else {
+        writeBits(clearCode, codeSize);
+        dict = new Map();
+        for (let j = 0; j < clearCode; j++) dict.set(String(j), j);
+        nextCode = eoiCode + 1;
+        codeSize = minCodeSize + 1;
+      }
+      current = next;
+    }
+  }
+  writeBits(dict.get(current), codeSize);
+  writeBits(eoiCode, codeSize);
+  if (bitsInBuffer > 0) output.push(buffer & 0xFF);
+
+  return output;
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="generateGIF()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="frameList=[];renderFrames();$('#preview').innerHTML='';$('#output').innerHTML='';$('#progress').style.display='none'">${t('clear')}</button>
+`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4','step5'],
+  related: [
+    {icon:'🖼️', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'🔄', href:'/image/converter.html', name:'Image Converter'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'🖼️', href:'/image/resizer.html', name:'Image Resizer'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

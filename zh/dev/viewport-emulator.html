@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>视口与设备模拟器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在不同屏幕尺寸下预览网站。使用 iPhone、iPad、Android 和桌面视口测试响应式设计。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/viewport-emulator.html">
+  <meta property="og:title" content="视口与设备模拟器">
+  <meta property="og:description" content="在不同屏幕尺寸下预览网站。使用 iPhone、iPad、Android 和桌面视口测试响应式设计。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/viewport-emulator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="视口与设备模拟器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.device-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.device-tab{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.8em;transition:.2s}
+.device-tab:hover{border-color:var(--accent)}
+.device-tab.active{border-color:var(--accent);background:var(--accent);color:#fff}
+.preview-area{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;justify-content:center;align-items:center;min-height:500px;overflow:auto}
+.preview-frame{border:1px solid var(--border);border-radius:8px;background:#fff;overflow:hidden;transition:all .3s;position:relative}
+.preview-frame .notch{width:40%;height:20px;background:#333;border-radius:0 0 12px 12px;margin:0 auto}
+.preview-frame iframe{border:none;width:100%;height:calc(100% - 0px);display:block}
+.url-bar{display:flex;gap:8px;margin-bottom:12px}
+.url-bar input{flex:1;padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9em}
+.size-info{text-align:center;margin-top:8px;font-size:.8em;color:var(--text2)}
+.custom-size{display:flex;gap:8px;align-items:center;margin:8px 0}
+.custom-size input{width:80px;padding:6px;background:var(--glass);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.85em;text-align:center}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Viewport & Device Emulator","description":"Preview your website on different screen sizes and devices. Test responsive design with iPhone, iPad, Android and desktop viewports.","url": "https://tools.gamezipper.com/zh/dev/viewport-emulator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I test my website on mobile?", "acceptedAnswer": {"@type": "Answer", "text": "Enter your website URL and select a device preset like iPhone 15 or Galaxy S24. The tool will display your site in an iframe sized to match that device viewport. You can also enter custom dimensions."}}, {"@type": "Question", "name": "Is this the same as Chrome DevTools device mode?", "acceptedAnswer": {"@type": "Answer", "text": "This tool provides a quick way to preview your site at specific viewport sizes without opening DevTools. It is useful for quick checks but for full debugging, Chrome DevTools offers more features like network throttling and touch simulation."}}, {"@type": "Question", "name": "Why does some websites not load in the preview?", "acceptedAnswer": {"@type": "Answer", "text": "Some websites block being embedded in iframes using X-Frame-Options or Content-Security-Policy headers. This is a security feature set by the website owner. Try a different site or use Chrome DevTools for those cases."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/viewport-emulator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/viewport-emulator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/viewport-emulator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="url-bar">
+      <input type="url" id="url-input" placeholder="https://example.com">
+      <button class="gz-btn" onclick="loadUrl()">Go</button>
+    </div>
+    <div class="device-tabs" id="device-tabs"></div>
+    <div class="custom-size">
+      <label style="font-size:.85em;font-weight:600">Custom:</label>
+      <input type="number" id="custom-w" placeholder="Width" value="375">
+      <span>×</span>
+      <input type="number" id="custom-h" placeholder="Height" value="812">
+      <button class="gz-btn gz-btn-secondary" onclick="setCustomSize()" style="padding:4px 10px">Apply</button>
+    </div>
+    <div class="size-info" id="size-info">375 × 812</div>
+    <div class="preview-area">
+      <div class="preview-frame" id="preview-frame">
+        <iframe id="preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Viewport & Device Emulator',
+    toolDesc: 'Preview websites on different screen sizes. Test responsive design with iPhone, iPad, Android and desktop viewports.',
+    step1: 'Enter a website URL and click Go',
+    step2: 'Select a device preset or enter custom dimensions',
+    step3: 'The page loads in the preview frame at the selected viewport size',
+    step4: 'Switch between devices to test responsive breakpoints',
+  },
+  zh: {
+    toolTitle: '视口与设备模拟器',
+    toolDesc: '在不同屏幕尺寸下预览网站。使用 iPhone、iPad、Android 和桌面视口测试响应式设计。',
+    step1: '输入网站 URL 并点击「前往」',
+    step2: '选择设备预设或输入自定义尺寸',
+    step3: '页面以所选视口尺寸加载到预览框架中',
+    step4: '在不同设备之间切换以测试响应式断点',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const devices = [
+  {name:'iPhone SE', w:375, h:667, icon:'📱'},
+  {name:'iPhone 15', w:375, h:812, icon:'📱'},
+  {name:'iPhone 15 Pro Max', w:430, h:932, icon:'📱'},
+  {name:'Galaxy S24', w:360, h:780, icon:'📱'},
+  {name:'Pixel 8', w:412, h:915, icon:'📱'},
+  {name:'iPad Mini', w:768, h:1024, icon:'📟'},
+  {name:'iPad Air', w:820, h:1180, icon:'📟'},
+  {name:'iPad Pro 12.9"', w:1024, h:1366, icon:'📟'},
+  {name:'Laptop', w:1366, h:768, icon:'💻'},
+  {name:'Desktop HD', w:1920, h:1080, icon:'🖥️'},
+  {name:'Desktop 2K', w:2560, h:1440, icon:'🖥️'},
+];
+
+let activeDevice = 1; // iPhone 15
+
+function buildTabs() {
+  const tabs = $('#device-tabs');
+  tabs.innerHTML = devices.map((d, i) => 
+    `<div class="device-tab${i === activeDevice ? ' active' : ''}" onclick="setDevice(${i})">${d.icon} ${d.name}</div>`
+  ).join('');
+}
+
+function setDevice(idx) {
+  activeDevice = idx;
+  const d = devices[idx];
+  applySize(d.w, d.h);
+  buildTabs();
+}
+
+function setCustomSize() {
+  const w = parseInt($('#custom-w').value) || 375;
+  const h = parseInt($('#custom-h').value) || 812;
+  activeDevice = -1;
+  applySize(w, h);
+  buildTabs();
+}
+
+function applySize(w, h) {
+  const frame = $('#preview-frame');
+  const maxW = Math.min(w, window.innerWidth - 80);
+  const scale = Math.min(1, maxW / w);
+  const displayH = Math.min(h * scale, 600);
+  frame.style.width = w + 'px';
+  frame.style.height = h + 'px';
+  frame.style.transform = `scale(${scale})`;
+  frame.style.transformOrigin = 'top center';
+  $('#size-info').textContent = `${w} × ${h}${scale < 1 ? ` (scaled ${Math.round(scale*100)}%)` : ''}`;
+}
+
+function loadUrl() {
+  let url = $('#url-input').value.trim();
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  $('#url-input').value = url;
+  $('#preview-iframe').src = url;
+}
+
+$('#url-input').addEventListener('keydown', e => { if (e.key === 'Enter') loadUrl(); });
+
+buildTabs();
+setDevice(1);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="$('#preview-iframe').src='';$('#preview-iframe').srcdoc='<div style=display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#999>Enter a URL above to preview</div>'">${t('clear')}</button>`;
+
+// Set default placeholder
+$('#preview-iframe').srcdoc = '<div style="display:flex;justify-content:center;align-items:center;height:100%;font-family:sans-serif;color:#999;font-size:1.2em;text-align:center;padding:20px">Enter a URL above<br>to preview your website</div>';
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖥️', href:'/dev/screen-resolution.html', name:'Screen Resolution'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'📐', href:'/css-tools/flexbox.html', name:'Flexbox Generator'},
+    {icon:'📋', href:'/dev/css-validator.html', name:'CSS Validator'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

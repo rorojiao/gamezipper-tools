@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>HTML 转 JSX 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 HTML 转换为 React JSX — 自动将 class→className、style 字符串→对象、for→htmlFor 等。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/html-to-jsx.html">
+  <meta property="og:title" content="HTML 转 JSX 转换器">
+  <meta property="og:description" content="将 HTML 转换为 React JSX — 自动将 class→className、style 字符串→对象、for→htmlFor 等。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/html-to-jsx.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HTML 转 JSX 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+.jsx-tag{color:#e94560}.jsx-attr{color:#61afef}.jsx-str{color:#00d672}.jsx-comment{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HTML to JSX Converter","description":"Convert HTML to React JSX instantly. Transform class to className, style strings to objects, for to htmlFor and more. Free, instant, browser-based.","url": "https://tools.gamezipper.com/zh/dev/html-to-jsx.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is JSX?", "acceptedAnswer": {"@type": "Answer", "text": "JSX is a syntax extension for JavaScript used with React. It looks like HTML but follows JavaScript rules — for example, class becomes className and for becomes htmlFor."}}, {"@type": "Question", "name": "What HTML attributes does this converter handle?", "acceptedAnswer": {"@type": "Answer", "text": "It converts class → className, for → htmlFor, tabindex → tabIndex, readonly → readOnly, maxlength → maxLength, colspan → colSpan, rowspan → rowSpan, and all data-* and aria-* attributes remain unchanged."}}, {"@type": "Question", "name": "Is my HTML code sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All conversion happens entirely in your browser. No data is ever sent to any server."}}, {"@type": "Question", "name": "Does it convert inline styles to JSX objects?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Style strings like style=\"color:red;font-size:16px\" are automatically converted to JSX object syntax: style={{color: 'red', fontSize: '16px'}}."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/html-to-jsx.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/html-to-jsx.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/html-to-jsx.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder='<div class="container" style="color: red; font-size: 16px">
+  <label for="email">Email</label>
+  <input type="text" tabindex="1" readonly maxlength="100">
+  <img src="photo.jpg" alt="Photo">
+  <!-- comment -->
+</div>'></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HTML to JSX Converter',
+    toolDesc: 'Convert HTML to React JSX — transforms class→className, style strings→objects, for→htmlFor and more automatically.',
+    step1: 'Paste your HTML code in the input area',
+    step2: 'Click Convert to transform HTML to JSX',
+    step3: 'Review the converted JSX output with syntax highlighting',
+    step4: 'Click Copy to copy the JSX to your clipboard',
+  },
+  zh: {
+    toolTitle: 'HTML 转 JSX 转换器',
+    toolDesc: '将 HTML 转换为 React JSX — 自动将 class→className、style 字符串→对象、for→htmlFor 等。',
+    step1: '在输入区粘贴 HTML 代码',
+    step2: '点击「转换」将 HTML 转为 JSX',
+    step3: '查看带语法高亮的 JSX 输出',
+    step4: '点击「复制」将 JSX 复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const ATTR_MAP = {
+  'class':'className','for':'htmlFor','tabindex':'tabIndex','readonly':'readOnly',
+  'maxlength':'maxLength','colspan':'colSpan','rowspan':'rowSpan','cellpadding':'cellPadding',
+  'cellspacing':'cellSpacing','crossorigin':'crossOrigin','accesskey':'accessKey',
+  'contenteditable':'contentEditable','autocomplete':'autoComplete','autofocus':'autoFocus',
+  'autoplay':'autoPlay','novalidate':'noValidate','formnovalidate':'formNoValidate',
+  'ismap':'isMap','usemap':'useMap','framespacing':'frameSpacing','nowrap':'noWrap',
+  'bgcolor':'bgColor','charset':'charSet','classid':'classID',
+};
+
+function styleStringToObject(s) {
+  if (!s) return null;
+  const obj = {};
+  s.split(';').forEach(part => {
+    const [k,...v] = part.split(':');
+    if (k && v.length) {
+      const key = k.trim().replace(/-([a-z])/g, (_,c) => c.toUpperCase());
+      obj[key] = v.join(':').trim();
+    }
+  });
+  if (!Object.keys(obj).length) return null;
+  let pairs = Object.entries(obj).map(([k,v]) => {
+    const val = /^[\d.]+$/.test(v) ? v : `'${v.replace(/'/g,"\\'")}'`;
+    return `${k}: ${val}`;
+  });
+  return `{{${pairs.join(', ')}}}`;
+}
+
+function convertHtmlToJsx(html) {
+  let result = html;
+  // Handle self-closing tags
+  result = result.replace(/<(\w+)((?:\s+[^>]*?)?)(\s*\/)>/gi, (match, tag, attrs) => {
+    return `<${tag}${convertAttrs(attrs)} />`;
+  });
+  // Handle opening tags
+  result = result.replace(/<(\w+)((?:\s+[^>]*?)?)(\/?>)/gi, (match, tag, attrs, close) => {
+    return `<${tag}${convertAttrs(attrs)}${close}`;
+  });
+  // Handle HTML comments
+  result = result.replace(/<!--([\s\S]*?)-->/g, '{/*$1*/}');
+  return result;
+}
+
+function convertAttrs(attrStr) {
+  if (!attrStr) return '';
+  // Process each attribute
+  return attrStr.replace(/\s([a-zA-Z][\w-]*)\s*=\s*"([^"]*)"/g, (match, name, value) => {
+    const lower = name.toLowerCase();
+    if (lower === 'style') {
+      const obj = styleStringToObject(value);
+      return obj ? ` style={${obj}}` : ` style="${value}"`;
+    }
+    if (lower === 'class') {
+      return ` className="${value}"`;
+    }
+    if (lower === 'for') {
+      return ` htmlFor="${value}"`;
+    }
+    if (ATTR_MAP[lower]) {
+      return ` ${ATTR_MAP[lower]}="${value}"`;
+    }
+    // Boolean attributes
+    if (['disabled','checked','selected','multiple','hidden','required','autofocus','autoplay','controls','loop','muted','default','open','reversed'].includes(lower)) {
+      return ` ${lower}`;
+    }
+    return ` ${name}="${value}"`;
+  });
+  // Handle single-quoted attributes too
+  // Note: simplified for core conversion
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  const jsx = convertHtmlToJsx(inp);
+  $('#output').textContent = jsx;
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; }
+
+function loadExample() {
+  $('#input').value = `<div class="card" style="color: red; font-size: 16px; background-color: #fff">
+  <label for="email-input">Email Address</label>
+  <input type="email" id="email-input" tabindex="1" readonly maxlength="100" placeholder="Enter email">
+  <button class="btn btn-primary" disabled>Submit</button>
+  <img src="photo.jpg" alt="Profile photo" />
+  <!-- This is a comment -->
+  <textarea colspan="30" rowspan="10"></textarea>
+</div>`;
+  doConvert();
+}
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📑', href:'/text/html-to-markdown.html', name:'HTML to Markdown'},
+    {icon:'📄', href:'/dev/html-formatter.html', name:'HTML Formatter'},
+    {icon:'🖼️', href:'/dev/html-to-image.html', name:'HTML to Image'},
+    {icon:'🔄', href:'/dev/html-entities.html', name:'HTML Entities'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

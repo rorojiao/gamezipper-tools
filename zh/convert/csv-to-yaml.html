@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>CSV 转 YAML 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时将 CSV 数据转换为干净的 YAML 格式。支持自定义分隔符、表头和引号字段。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/csv-to-yaml.html">
+  <meta property="og:title" content="CSV 转 YAML 转换器">
+  <meta property="og:description" content="即时将 CSV 数据转换为干净的 YAML 格式。支持自定义分隔符、表头和引号字段。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/csv-to-yaml.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV 转 YAML 转换器">
+<meta name="twitter:description" content="即时将 CSV 数据转换为干净的 YAML 格式。支持自定义分隔符、表头和引号字段。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV to YAML Converter","description":"Convert CSV data to YAML format online for free. Paste CSV and get clean YAML output instantly. Supports headers, nested objects, and various delimiters.","url": "https://tools.gamezipper.com/zh/convert/csv-to-yaml.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert CSV to YAML?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSV data into the input area and click Convert. The tool automatically detects headers and converts each row into a YAML object with proper indentation."}}, {"@type": "Question", "name": "Does this tool support custom delimiters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can choose from comma, semicolon, tab, or pipe delimiters. The tool also supports auto-detection of the delimiter."}}, {"@type": "Question", "name": "Is my data sent to any server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All conversion happens entirely in your browser. Your CSV data is never uploaded or sent to any server."}}, {"@type": "Question", "name": "Can I convert large CSV files?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Since the conversion runs locally in your browser, you can convert CSV files of any size limited only by your device's memory."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-to-yaml.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-to-yaml.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-to-yaml.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV to YAML Converter',
+    toolDesc: 'Convert CSV data to clean YAML format instantly. Supports custom delimiters, headers, and quoted fields.',
+    step1: 'Paste your CSV data into the input area',
+    step2: 'Select your delimiter (comma, semicolon, tab, or pipe)',
+    step3: 'Click Convert to generate YAML output',
+    step4: 'Copy the YAML result to your clipboard',
+  },
+  zh: {
+    toolTitle: 'CSV 转 YAML 转换器',
+    toolDesc: '即时将 CSV 数据转换为干净的 YAML 格式。支持自定义分隔符、表头和引号字段。',
+    step1: '在输入区粘贴 CSV 数据',
+    step2: '选择分隔符（逗号、分号、制表符或竖线）',
+    step3: '点击「转换」生成 YAML 输出',
+    step4: '将 YAML 结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let delimiter = ',';
+
+function parseCSV(text, delim) {
+  const lines = text.trim().split('\n');
+  if (lines.length === 0) return [];
+  const rows = [];
+  for (const line of lines) {
+    const row = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else { current += ch; }
+      } else {
+        if (ch === '"') { inQuotes = true; }
+        else if (ch === delim) { row.push(current.trim()); current = ''; }
+        else { current += ch; }
+      }
+    }
+    row.push(current.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+function toYAML(obj, indent) {
+  indent = indent || 0;
+  const pad = '  '.repeat(indent);
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]';
+    let s = '';
+    for (const item of obj) {
+      if (typeof item === 'object' && item !== null) {
+        const inner = toYAML(item, indent + 1);
+        const lines = inner.split('\n');
+        s += pad + '- ' + lines[0].trim() + '\n';
+        for (let i = 1; i < lines.length; i++) {
+          if (lines[i].trim()) s += pad + '  ' + lines[i].trim() + '\n';
+        }
+      } else {
+        s += pad + '- ' + yamlVal(item) + '\n';
+      }
+    }
+    return s.trimEnd();
+  }
+  if (typeof obj === 'object' && obj !== null) {
+    let s = '';
+    for (const [k, v] of Object.entries(obj)) {
+      if (typeof v === 'object' && v !== null) {
+        s += pad + k + ':\n' + toYAML(v, indent + 1) + '\n';
+      } else {
+        s += pad + k + ': ' + yamlVal(v) + '\n';
+      }
+    }
+    return s.trimEnd();
+  }
+  return yamlVal(obj);
+}
+
+function yamlVal(v) {
+  if (v === null || v === undefined) return 'null';
+  if (v === 'true' || v === 'false') return v;
+  if (v === '') return '""';
+  if (!isNaN(v) && v !== '') return v;
+  if (/[:{}\[\],&*?|>!%#`@\\]/.test(v) || v.includes('\n')) return JSON.stringify(v);
+  return v;
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').value = ''; return; }
+  try {
+    const rows = parseCSV(inp, delimiter);
+    if (rows.length < 2) { $('#output').value = ''; $('#status').textContent = 'Need at least a header row and one data row.'; return; }
+    const headers = rows[0];
+    const result = [];
+    for (let i = 1; i < rows.length; i++) {
+      const obj = {};
+      headers.forEach((h, j) => { obj[h || ('col' + j)] = rows[i][j] || ''; });
+      result.push(obj);
+    }
+    $('#output').value = toYAML(result);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${result.length} rows converted</span>`;
+  } catch (e) {
+    $('#output').value = '';
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = 'name,age,city,role\nAlice,30,New York,Engineer\nBob,25,London,Designer\nCarol,35,Tokyo,Manager';
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <select class="gz-select" onchange="delimiter=this.value;convert()">
+    <option value=",">Comma (,)</option>
+    <option value=";">Semicolon (;)</option>
+    <option value="\t">Tab</option>
+    <option value="|">Pipe (|)</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📋', href:'/convert/yaml-json.html', name:'YAML to JSON'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'📝', href:'/convert/csv-to-markdown.html', name:'CSV to Markdown'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

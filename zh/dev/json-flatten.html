@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JSON 扁平化与还原 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将嵌套 JSON 对象扁平化为点号分隔的键值对，并支持反向还原 — 适用于表单数据、CSV 导出和配置处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-flatten.html">
+  <meta property="og:title" content="JSON 扁平化与还原">
+  <meta property="og:description" content="将嵌套 JSON 对象扁平化为点号分隔的键值对，并支持反向还原 — 适用于表单数据、CSV 导出和配置处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-flatten.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 扁平化与还原">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#input,#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Flatten & Unflatten","description":"Flatten nested JSON objects into dot-notation key-value pairs and unflatten them back. Perfect for form data, CSV export and configuration processing.","url": "https://tools.gamezipper.com/zh/dev/json-flatten.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is JSON flattening?", "acceptedAnswer": {"@type": "Answer", "text": "JSON flattening converts nested objects into a single-level object using dot notation keys. For example, {user:{name:'John'}} becomes {'user.name':'John'}."}}, {"@type": "Question", "name": "When should I flatten JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Flatten JSON when you need to export data to CSV, create form fields from API responses, compare nested objects, or simplify data processing in spreadsheets."}}, {"@type": "Question", "name": "Is my data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All JSON processing happens entirely in your browser. No data is ever uploaded or sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-flatten.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-flatten.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-flatten.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="18" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Flatten & Unflatten',
+    toolDesc: 'Flatten nested JSON objects into dot-notation key-value pairs and unflatten them back — perfect for form data, CSV export and config processing.',
+    flatten: 'Flatten',
+    unflatten: 'Unflatten',
+    separator: 'Separator',
+    example: 'Example',
+    copy: 'Copy',
+    clear: 'Clear',
+    inputLabel: 'Input JSON',
+    outputLabel: 'Output',
+    validJson: '✓ Valid',
+    invalidJson: '✗ Invalid JSON',
+    step1: 'Paste or type your JSON in the input area',
+    step2: 'Click Flatten to convert nested objects to dot-notation',
+    step3: 'Click Unflatten to restore nested structure from flat keys',
+    step4: 'Use Copy to copy the result to clipboard',
+  },
+  zh: {
+    toolTitle: 'JSON 扁平化与还原',
+    toolDesc: '将嵌套 JSON 对象扁平化为点号分隔的键值对，并支持反向还原 — 适用于表单数据、CSV 导出和配置处理。',
+    flatten: '扁平化',
+    unflatten: '还原',
+    separator: '分隔符',
+    example: '示例',
+    copy: '复制',
+    clear: '清除',
+    inputLabel: '输入 JSON',
+    outputLabel: '输出',
+    validJson: '✓ JSON 有效',
+    invalidJson: '✗ JSON 无效',
+    step1: '在输入区粘贴或输入 JSON',
+    step2: '点击「扁平化」将嵌套对象转为点号分隔格式',
+    step3: '点击「还原」将扁平键值恢复为嵌套结构',
+    step4: '点击「复制」将结果复制到剪贴板',
+  }
+});
+
+let sep = '.';
+const { $, copyText, t } = GZ;
+
+function flatten(obj, prefix = '', result = {}) {
+  for (const key in obj) {
+    const val = obj[key];
+    const newKey = prefix ? prefix + sep + key : key;
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      flatten(val, newKey, result);
+    } else {
+      result[newKey] = val;
+    }
+  }
+  return result;
+}
+
+function unflatten(obj) {
+  const result = {};
+  for (const flatKey in obj) {
+    const parts = flatKey.split(sep);
+    let current = result;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!(part in current)) current[part] = {};
+      current = current[part];
+    }
+    current[parts[parts.length - 1]] = obj[flatKey];
+  }
+  return result;
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/(\"(\\\\u[\da-fA-F]{4}|\\\\[^u]|[^\\\\\"])*\"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function doFlatten() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const obj = JSON.parse(inp);
+    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidJson')}: Input must be a JSON object, not an array or primitive</span>`;
+      return;
+    }
+    const flat = flatten(obj);
+    const formatted = JSON.stringify(flat, null, 2);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validJson')} — ${Object.keys(flat).length} keys</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidJson')}: ${e.message}</span>`;
+    $('#output').textContent = e.message;
+  }
+}
+
+function doUnflatten() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const obj = JSON.parse(inp);
+    if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidJson')}: Input must be a flat JSON object</span>`;
+      return;
+    }
+    const nested = unflatten(obj);
+    const formatted = JSON.stringify(nested, null, 2);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validJson')}</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidJson')}: ${e.message}</span>`;
+    $('#output').textContent = e.message;
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "user": {
+      "name": "Alice",
+      "age": 30,
+      "address": {
+        "city": "New York",
+        "zip": "10001"
+      }
+    },
+    "settings": {
+      "theme": "dark",
+      "notifications": {
+        "email": true,
+        "sms": false
+      }
+    },
+    "active": true
+  }, null, 2);
+  doFlatten();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#output').textContent = '';
+  $('#status').innerHTML = '';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFlatten()">${t('flatten')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doUnflatten()">${t('unflatten')}</button>
+  <select class="gz-select" onchange="sep=this.value;doFlatten()">
+    <option value=".">${t('separator')}: .</option>
+    <option value="/">${t('separator')}: /</option>
+    <option value="_">${t('separator')}: _</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌳', href:'/dev/json-tree.html', name:'JSON Tree'},
+    {icon:'⚖️', href:'/dev/json-diff.html', name:'JSON Diff'},
+    {icon:'🔗', href:'/dev/json-merge.html', name:'JSON Merge'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>GPS 坐标查找器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="点击地图查找任意位置的经纬度。搜索地址、拾取坐标，并以多种格式复制。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/coordinates-finder.html">
+  <meta property="og:title" content="GPS 坐标查找器">
+  <meta property="og:description" content="点击地图查找任意位置的经纬度。搜索地址、拾取坐标，并以多种格式复制。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/coordinates-finder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="GPS 坐标查找器">
+<meta name="twitter:description" content="点击地图查找任意位置的经纬度。搜索地址、拾取坐标，并以多种格式复制。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+#map{height:400px;border-radius:12px;border:1px solid var(--border);margin-bottom:1rem;z-index:1}
+.coord-box{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:1.2rem;margin-bottom:1rem}
+.coord-row{display:flex;align-items:center;gap:.8rem;padding:.5rem 0;border-bottom:1px solid var(--border)}
+.coord-row:last-child{border-bottom:none}
+.coord-label{min-width:90px;font-weight:600;font-size:.9em;opacity:.7}
+.coord-value{flex:1;font-family:monospace;font-size:1.05em;color:var(--accent);word-break:break-all}
+.coord-copy{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.8em}
+.coord-copy:hover{background:var(--accent);color:#fff}
+.search-bar{display:flex;gap:.5rem;margin-bottom:1rem}
+.search-bar input{flex:1;padding:.6rem;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-size:1rem}
+.search-bar button{padding:.6rem 1.2rem}
+#myloc{margin-left:.5rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"GPS Coordinates Finder","description":"Find GPS coordinates (latitude and longitude) of any location on an interactive map. Click to pick, search addresses, copy lat/long.","url": "https://tools.gamezipper.com/zh/dev/coordinates-finder.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What formats are supported for coordinates?","acceptedAnswer":{"@type":"Answer","text":"The tool supports Decimal Degrees (DD), Degrees Minutes Seconds (DMS), and Degrees Decimal Minutes (DMM) formats."}},{"@type":"Question","name":"Can I search for an address?","acceptedAnswer":{"@type":"Answer","text":"Yes, type any address or place name in the search bar and press Enter. The map will jump to that location and show its coordinates."}},{"@type":"Question","name":"Is my location data sent to any server?","acceptedAnswer":{"@type":"Answer","text":"No. All map rendering is done via OpenStreetMap tiles. Your clicks and searches stay in your browser. No data is uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/coordinates-finder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/coordinates-finder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/coordinates-finder.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="">
+      <button class="gz-btn" id="searchBtn"></button>
+      <button class="gz-btn gz-btn-secondary" id="myloc" title="My Location">📍</button>
+    </div>
+    <div id="map"></div>
+    <div class="coord-box" id="coordBox" style="display:none">
+      <div class="coord-row"><span class="coord-label" id="lbl-dd">Decimal Degrees</span><span class="coord-value" id="c-dd"></span><button class="coord-copy" onclick="GZ.copyText(document.getElementById('c-dd').textContent)">📋</button></div>
+      <div class="coord-row"><span class="coord-label" id="lbl-dms">DMS</span><span class="coord-value" id="c-dms"></span><button class="coord-copy" onclick="GZ.copyText(document.getElementById('c-dms').textContent)">📋</button></div>
+      <div class="coord-row"><span class="coord-label" id="lbl-dmm">DMM</span><span class="coord-value" id="c-dmm"></span><button class="coord-copy" onclick="GZ.copyText(document.getElementById('c-dmm').textContent)">📋</button></div>
+      <div class="coord-row"><span class="coord-label" id="lbl-lat">Latitude</span><span class="coord-value" id="c-lat"></span><button class="coord-copy" onclick="GZ.copyText(document.getElementById('c-lat').textContent)">📋</button></div>
+      <div class="coord-row"><span class="coord-label" id="lbl-lng">Longitude</span><span class="coord-value" id="c-lng"></span><button class="coord-copy" onclick="GZ.copyText(document.getElementById('c-lng').textContent)">📋</button></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'GPS Coordinates Finder',
+    toolDesc: 'Click the map to find latitude and longitude of any location. Search addresses, pick coordinates, and copy in multiple formats.',
+    search: 'Search',
+    searchPlaceholder: 'Search address or place name...',
+    decimalDegrees: 'Decimal Degrees',
+    dms: 'Degrees Minutes Seconds',
+    dmm: 'Degrees Decimal Minutes',
+    latitude: 'Latitude',
+    longitude: 'Longitude',
+    step1: 'Click anywhere on the map to get coordinates',
+    step2: 'Or search for an address in the search bar',
+    step3: 'Copy coordinates in DD, DMS or DMM format',
+    step4: 'Use 📍 button to go to your current location',
+  },
+  zh: {
+    toolTitle: 'GPS 坐标查找器',
+    toolDesc: '点击地图查找任意位置的经纬度。搜索地址、拾取坐标，并以多种格式复制。',
+    search: '搜索',
+    searchPlaceholder: '搜索地址或地名...',
+    decimalDegrees: '十进制度数',
+    dms: '度分秒',
+    dmm: '度十进制分',
+    latitude: '纬度',
+    longitude: '经度',
+    step1: '点击地图任意位置获取坐标',
+    step2: '或在搜索栏中搜索地址',
+    step3: '以 DD、DMS 或 DMM 格式复制坐标',
+    step4: '使用 📍 按钮前往当前位置',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#searchInput').placeholder = t('searchPlaceholder');
+$('#searchBtn').textContent = t('search');
+$('#lbl-dd').textContent = t('decimalDegrees');
+$('#lbl-dms').textContent = t('dms');
+$('#lbl-dmm').textContent = t('dmm');
+$('#lbl-lat').textContent = t('latitude');
+$('#lbl-lng').textContent = t('longitude');
+
+const map = L.map('map').setView([40.7128, -74.0060], 4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap',
+  maxZoom: 19
+}).addTo(map);
+
+let marker = null;
+
+function toDMS(deg, isLat) {
+  const dir = isLat ? (deg >= 0 ? 'N' : 'S') : (deg >= 0 ? 'E' : 'W');
+  const abs = Math.abs(deg);
+  const d = Math.floor(abs);
+  const mFull = (abs - d) * 60;
+  const m = Math.floor(mFull);
+  const s = ((mFull - m) * 60).toFixed(2);
+  return `${d}° ${m}' ${s}" ${dir}`;
+}
+
+function toDMM(deg, isLat) {
+  const dir = isLat ? (deg >= 0 ? 'N' : 'S') : (deg >= 0 ? 'E' : 'W');
+  const abs = Math.abs(deg);
+  const d = Math.floor(abs);
+  const m = ((abs - d) * 60).toFixed(4);
+  return `${d}° ${m}' ${dir}`;
+}
+
+function showCoords(lat, lng) {
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([lat, lng]).addTo(map);
+  map.setView([lat, lng], Math.max(map.getZoom(), 10));
+  $('#coordBox').style.display = 'block';
+  $('#c-dd').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  $('#c-dms').textContent = `${toDMS(lat, true)}, ${toDMS(lng, false)}`;
+  $('#c-dmm').textContent = `${toDMM(lat, true)}, ${toDMM(lng, false)}`;
+  $('#c-lat').textContent = lat.toFixed(6);
+  $('#c-lng').textContent = lng.toFixed(6);
+}
+
+map.on('click', e => showCoords(e.latlng.lat, e.latlng.lng));
+
+$('#searchBtn').addEventListener('click', doSearch);
+$('#searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+function doSearch() {
+  const q = $('#searchInput').value.trim();
+  if (!q) return;
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.length) showCoords(parseFloat(data[0].lat), parseFloat(data[0].lon));
+      else alert('Location not found');
+    });
+}
+
+$('#myloc').addEventListener('click', () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      showCoords(pos.coords.latitude, pos.coords.longitude);
+    });
+  }
+});
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/ip-geolocation.html', name:'IP Geolocation'},
+    {icon:'📍', href:'/dev/what-is-my-ip.html', name:'What Is My IP'},
+    {icon:'📡', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔍', href:'/dev/whois-lookup.html', name:'WHOIS Lookup'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

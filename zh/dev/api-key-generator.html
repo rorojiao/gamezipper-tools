@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>API 密钥生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="生成安全的随机 API 密钥、密钥和访问令牌，支持十六进制、Base64、UUID 和自定义前缀格式。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/api-key-generator.html">
+  <meta property="og:title" content="API 密钥生成器">
+  <meta property="og:description" content="生成安全的随机 API 密钥、密钥和访问令牌，支持十六进制、Base64、UUID 和自定义前缀格式。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/api-key-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="API 密钥生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-field{margin-bottom:14px}
+.gz-field label{display:block;font-weight:600;margin-bottom:4px;font-size:.9rem}
+.gz-field input,.gz-field select{width:100%;padding:8px 10px;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--text1);font-size:.95rem;box-sizing:border-box}
+#output{font-family:monospace;font-size:.9rem;word-break:break-all;white-space:pre-wrap;background:var(--gz-bg-alt);border:1px solid var(--gz-border);border-radius:8px;padding:12px;min-height:60px;position:relative}
+.key-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 0;border-bottom:1px solid var(--gz-border)}
+.key-row:last-child{border-bottom:none}
+.key-prefix{color:var(--gz-accent);font-weight:600;min-width:80px}
+.key-value{flex:1;user-select:all}
+.key-copy{cursor:pointer;padding:4px 8px;border-radius:4px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--text1);font-size:.8rem}
+.key-copy:hover{background:var(--gz-accent);color:#fff}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"API Key Generator","description":"Generate secure random API keys, secret keys, and access tokens online. Supports hex, base64, UUID, and custom length API keys.","url": "https://tools.gamezipper.com/zh/dev/api-key-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an API key?","acceptedAnswer":{"@type":"Answer","text":"An API key is a unique identifier used to authenticate a user or application calling an API. It acts as a secret token to control access and track usage."}},{"@type":"Question","name":"Are the generated keys secure?","acceptedAnswer":{"@type":"Answer","text":"Yes. Keys are generated using the Web Crypto API (crypto.getRandomValues) which provides cryptographically secure random values, suitable for production use."}},{"@type":"Question","name":"How many keys can I generate at once?","acceptedAnswer":{"@type":"Answer","text":"You can generate up to 50 keys at once. Each key is independently random and unique."}},{"@type":"Question","name":"What formats are supported?","acceptedAnswer":{"@type":"Answer","text":"Supported formats include Hex (0-9a-f), Base64, Alphanumeric, UUID v4, and custom prefix keys like sk_live_xxx or pk_test_xxx."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/api-key-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/api-key-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/api-key-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="gz-field">
+          <label id="lbl-format"></label>
+          <select id="format">
+            <option value="hex">Hex (0-9a-f)</option>
+            <option value="base64">Base64</option>
+            <option value="alphanumeric">Alphanumeric</option>
+            <option value="uuid" selected>UUID v4</option>
+            <option value="custom">Custom Prefix</option>
+          </select>
+        </div>
+        <div class="gz-field">
+          <label id="lbl-length"></label>
+          <input type="number" id="keyLength" value="32" min="8" max="256">
+        </div>
+        <div class="gz-field" id="prefix-field" style="display:none">
+          <label id="lbl-prefix"></label>
+          <input type="text" id="prefix" value="sk_live_" placeholder="sk_live_">
+        </div>
+        <div class="gz-field">
+          <label id="lbl-count"></label>
+          <input type="number" id="count" value="5" min="1" max="50">
+        </div>
+        <div class="gz-field">
+          <label><input type="checkbox" id="uppercase"> <span id="lbl-uppercase"></span></label>
+        </div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'API Key Generator',
+    toolDesc: 'Generate secure random API keys, secret keys, and access tokens in hex, base64, UUID, or custom prefix formats.',
+    format: 'Key Format',
+    keyLength: 'Key Length (bytes)',
+    prefix: 'Key Prefix',
+    count: 'Number of Keys',
+    uppercase: 'Uppercase',
+    lblIn: 'Settings',
+    lblOut: 'Generated Keys',
+    generate: 'Generate Keys',
+    copyAll: 'Copy All',
+    clear: 'Clear',
+    step1: 'Select the key format (Hex, Base64, Alphanumeric, UUID, or Custom)',
+    step2: 'Set the key length and number of keys to generate',
+    step3: 'Click "Generate Keys" to create secure random keys',
+    step4: 'Copy individual keys or all keys at once',
+  },
+  zh: {
+    toolTitle: 'API 密钥生成器',
+    toolDesc: '生成安全的随机 API 密钥、密钥和访问令牌，支持十六进制、Base64、UUID 和自定义前缀格式。',
+    format: '密钥格式',
+    keyLength: '密钥长度（字节）',
+    prefix: '密钥前缀',
+    count: '生成数量',
+    uppercase: '大写',
+    lblIn: '设置',
+    lblOut: '生成的密钥',
+    generate: '生成密钥',
+    copyAll: '复制全部',
+    clear: '清空',
+    step1: '选择密钥格式（十六进制、Base64、字母数字、UUID 或自定义）',
+    step2: '设置密钥长度和生成数量',
+    step3: '点击「生成密钥」创建安全的随机密钥',
+    step4: '复制单个密钥或一次性复制全部',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function secureRandomBytes(len) {
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return arr;
+}
+
+function toHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function toBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function toAlphanumeric(bytes) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < bytes.length; i++) result += chars[bytes[i] % chars.length];
+  return result;
+}
+
+function generateUUID() {
+  const bytes = secureRandomBytes(16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = toHex(bytes);
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+
+function generateKey() {
+  const format = $('#format').value;
+  const len = Math.max(8, Math.min(256, parseInt($('#keyLength').value) || 32));
+  const upper = $('#uppercase').checked;
+  const prefix = $('#prefix').value || '';
+  let key;
+  switch (format) {
+    case 'hex': key = toHex(secureRandomBytes(len)); break;
+    case 'base64': key = toBase64(secureRandomBytes(len)); break;
+    case 'alphanumeric': key = toAlphanumeric(secureRandomBytes(len)); break;
+    case 'uuid': key = generateUUID(); break;
+    case 'custom': key = prefix + toHex(secureRandomBytes(len)); break;
+    default: key = toHex(secureRandomBytes(len));
+  }
+  return upper ? key.toUpperCase() : key;
+}
+
+function doGenerate() {
+  const count = Math.max(1, Math.min(50, parseInt($('#count').value) || 5));
+  const keys = [];
+  for (let i = 0; i < count; i++) keys.push(generateKey());
+  const out = $('#output');
+  out.innerHTML = keys.map((k, i) =>
+    `<div class="key-row"><span class="key-prefix">#${i + 1}</span><span class="key-value">${k}</span><button class="key-copy" onclick="copyText('${k}')">${t('copy')}</button></div>`
+  ).join('');
+}
+
+function doCopyAll() {
+  const rows = document.querySelectorAll('.key-value');
+  if (!rows.length) return;
+  const text = Array.from(rows).map(r => r.textContent).join('\n');
+  copyText(text);
+}
+
+function doClear() { $('#output').innerHTML = ''; }
+
+$('#format').addEventListener('change', function() {
+  const pf = $('#prefix-field');
+  pf.style.display = this.value === 'custom' ? '' : 'none';
+  if (this.value === 'uuid') $('#keyLength').value = 16;
+});
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doCopyAll()">${t('copyAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-format').textContent = t('format');
+$('#lbl-length').textContent = t('keyLength');
+$('#lbl-prefix').textContent = t('prefix');
+$('#lbl-count').textContent = t('count');
+$('#lbl-uppercase').textContent = t('uppercase');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Generator'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🎲', href:'/dev/random-string.html', name:'Random String'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

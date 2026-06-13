@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>文本加密工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用 AES-256-GCM 加密算法加密和解密文本 — 完全在浏览器本地运行，数据不离开你的设备。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/text-encryptor.html">
+  <meta property="og:title" content="文本加密工具">
+  <meta property="og:description" content="使用 AES-256-GCM 加密算法加密和解密文本 — 完全在浏览器本地运行，数据不离开你的设备。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/text-encryptor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="文本加密工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.key-input{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.key-input label{font-weight:600;font-size:.9rem;white-space:nowrap}
+.key-input input{flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-family:monospace}
+.key-input input:focus{outline:none;border-color:var(--accent)}
+.mode-toggle{display:flex;gap:4px;margin-bottom:12px}
+.mode-toggle button{padding:8px 20px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);cursor:pointer;font-size:.9rem}
+.mode-toggle button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.result-box{margin-top:12px;padding:12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-family:monospace;word-break:break-all;white-space:pre-wrap;min-height:60px;font-size:.9rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Text Encryptor","description":"Encrypt and decrypt text with AES-256 encryption right in your browser. Secure, private, no data sent to servers.","url": "https://tools.gamezipper.com/zh/text/text-encryptor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the text encryptor work?","acceptedAnswer":{"@type":"Answer","text":"The tool uses the Web Crypto API to perform AES-256-GCM encryption. You provide a password which is used to derive a 256-bit key via PBKDF2. The encrypted output is base64 encoded for easy sharing."}},{"@type":"Question","name":"Is my encrypted data sent to any server?","acceptedAnswer":{"@type":"Answer","text":"No. All encryption and decryption happens entirely in your browser using the Web Crypto API. No text or passwords are ever transmitted."}},{"@type":"Question","name":"What encryption algorithm is used?","acceptedAnswer":{"@type":"Answer","text":"AES-256-GCM (Advanced Encryption Standard with 256-bit key in Galois/Counter Mode) with PBKDF2 key derivation using 100,000 iterations and a random salt."}},{"@type":"Question","name":"Can I decrypt text encrypted elsewhere?","acceptedAnswer":{"@type":"Answer","text":"This tool uses its own format (base64 encoded JSON with salt, iv, and ciphertext). It can decrypt text that was encrypted with this same tool by providing the correct password."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/text-encryptor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/text-encryptor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/text-encryptor.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-toggle" id="modeToggle"></div>
+    <div class="key-input">
+      <label id="keyLabel"></label>
+      <input type="password" id="keyInput" autocomplete="off">
+    </div>
+    <label id="lbl-in" style="font-weight:600;display:block;margin-bottom:4px"></label>
+    <textarea id="input" rows="6" spellcheck="false" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-family:monospace;font-size:.9rem;resize:vertical;box-sizing:border-box"></textarea>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button class="gz-btn" id="actionBtn" onclick="doAction()"></button>
+      <button class="gz-btn gz-btn-secondary" id="copyBtn" onclick="GZ.copyText(document.getElementById('output').textContent)"></button>
+      <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('input').value='';document.getElementById('output').textContent=''"></button>
+    </div>
+    <label id="lbl-out" style="font-weight:600;display:block;margin-top:12px;margin-bottom:4px"></label>
+    <div class="result-box" id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Text Encryptor',
+    toolDesc: 'Encrypt and decrypt text with AES-256-GCM encryption — entirely in your browser, no data sent anywhere.',
+    encrypt: 'Encrypt', decrypt: 'Decrypt',
+    password: 'Password:', inputLabel: 'Plain Text:', outputLabel: 'Encrypted:',
+    inputLabelDec: 'Encrypted Text:', outputLabelDec: 'Decrypted:',
+    copy: 'Copy', clear: 'Clear',
+    enterPassword: 'Please enter a password', enterText: 'Please enter text to encrypt', enterCipher: 'Please paste encrypted text',
+    invalidCipher: 'Invalid encrypted data format', wrongPassword: 'Decryption failed — wrong password?',
+    step1: 'Enter a password to use as your encryption key',
+    step2: 'Type or paste the text you want to encrypt',
+    step3: 'Click Encrypt to generate the encrypted output',
+    step4: 'Share the encrypted text — recipients need the same password to decrypt',
+  },
+  zh: {
+    toolTitle: '文本加密工具',
+    toolDesc: '使用 AES-256-GCM 加密算法加密和解密文本 — 完全在浏览器本地运行，数据不离开你的设备。',
+    encrypt: '加密', decrypt: '解密',
+    password: '密码：', inputLabel: '明文：', outputLabel: '密文：',
+    inputLabelDec: '密文：', outputLabelDec: '明文：',
+    copy: '复制', clear: '清除',
+    enterPassword: '请输入密码', enterText: '请输入要加密的文本', enterCipher: '请粘贴密文',
+    invalidCipher: '无效的密文格式', wrongPassword: '解密失败 — 密码错误？',
+    step1: '输入一个密码作为加密密钥',
+    step2: '输入或粘贴要加密的文本',
+    step3: '点击「加密」生成加密输出',
+    step4: '分享密文 — 接收者需要相同密码才能解密',
+  }
+});
+
+const { $, t } = GZ;
+let mode = 'encrypt';
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+function arrayToBase64(arr) {
+  return btoa(String.fromCharCode(...new Uint8Array(arr)));
+}
+
+function base64ToArray(b64) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr.buffer;
+}
+
+async function doAction() {
+  const pw = $('#keyInput').value;
+  const text = $('#input').value;
+  if (!pw) { $('#output').textContent = t('enterPassword'); return; }
+  if (!text) { $('#output').textContent = mode === 'encrypt' ? t('enterText') : t('enterCipher'); return; }
+
+  try {
+    if (mode === 'encrypt') {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(pw, salt);
+      const enc = new TextEncoder();
+      const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+      const result = JSON.stringify({
+        s: arrayToBase64(salt),
+        i: arrayToBase64(iv),
+        c: arrayToBase64(cipherBuf)
+      });
+      $('#output').textContent = result;
+    } else {
+      let data;
+      try { data = JSON.parse(text); } catch(e) { $('#output').textContent = t('invalidCipher'); return; }
+      const salt = base64ToArray(data.s);
+      const iv = base64ToArray(data.i);
+      const cipher = base64ToArray(data.c);
+      const key = await deriveKey(pw, salt);
+      const decBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+      $('#output').textContent = new TextDecoder().decode(decBuf);
+    }
+  } catch(e) {
+    $('#output').textContent = t('wrongPassword');
+  }
+}
+
+function switchMode(m) {
+  mode = m;
+  $$('#modeToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  $('#actionBtn').textContent = m === 'encrypt' ? t('encrypt') : t('decrypt');
+  $('#lbl-in').textContent = m === 'encrypt' ? t('inputLabel') : t('inputLabelDec');
+  $('#lbl-out').textContent = m === 'encrypt' ? t('outputLabel') : t('outputLabelDec');
+}
+
+$('#modeToggle').innerHTML = `<button data-mode="encrypt" class="active" onclick="switchMode('encrypt')">${t('encrypt')}</button><button data-mode="decrypt" onclick="switchMode('decrypt')">${t('decrypt')}</button>`;
+
+$('#keyLabel').textContent = t('password');
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-out').textContent = t('outputLabel');
+$('#actionBtn').textContent = t('encrypt');
+$('#copyBtn').textContent = t('copy');
+$('#toolbar').innerHTML = '';
+
+switchMode('encrypt');
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Generator'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔐', href:'/dev/aes.html', name:'AES Encrypt'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

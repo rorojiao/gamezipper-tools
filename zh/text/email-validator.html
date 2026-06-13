@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>邮箱验证工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时验证邮箱地址。检查语法、域名和常见拼写错误 — 完全在浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/email-validator.html">
+  <meta property="og:title" content="邮箱验证工具">
+  <meta property="og:description" content="即时验证邮箱地址。检查语法、域名和常见拼写错误 — 完全在浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/email-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="邮箱验证工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.result-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:12px}
+.result-card.valid{border-color:var(--gz-success)}
+.result-card.invalid{border-color:var(--gz-accent)}
+.check-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:.9rem}
+.check-item .icon{font-size:1.1rem}
+.check-item .label{opacity:.7;flex:1}
+.check-item .value{font-weight:600}
+.email-input-group{display:flex;gap:8px;max-width:600px}
+.email-input-group input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-size:1rem}
+.email-input-group input:focus{outline:none;border-color:var(--accent)}
+.batch-area textarea{width:100%;min-height:120px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-family:monospace;font-size:.85rem;resize:vertical}
+.batch-results{margin-top:12px}
+.batch-results .row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.batch-results .row:last-child{border:none}
+.stats{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.stat{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;text-align:center}
+.stat .num{font-size:1.4rem;font-weight:700;color:var(--accent)}
+.stat .lbl{font-size:.75rem;opacity:.7}
+.tab-bar{display:flex;gap:4px;margin-bottom:12px}
+.tab-bar button{padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);cursor:pointer;font-size:.85rem}
+.tab-bar button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Email Validator","description":"Validate email addresses instantly. Check syntax, domain, MX records and format. Free online email validator.","url": "https://tools.gamezipper.com/zh/text/email-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the email validator work?","acceptedAnswer":{"@type":"Answer","text":"The tool checks email syntax against RFC 5322 standards, validates the domain format, detects common typos in popular email providers, and verifies the overall structure of the address."}},{"@type":"Question","name":"Can I validate multiple emails at once?","acceptedAnswer":{"@type":"Answer","text":"Yes. Switch to Batch mode and paste multiple email addresses (one per line or comma-separated). The tool will validate all of them and show a summary with valid/invalid counts."}},{"@type":"Question","name":"Is my email data sent to any server?","acceptedAnswer":{"@type":"Answer","text":"No. All validation happens entirely in your browser using JavaScript. No email addresses are ever sent to any external server."}},{"@type":"Question","name":"What checks does this tool perform?","acceptedAnswer":{"@type":"Answer","text":"It checks RFC 5322 syntax compliance, domain format validation, common typo detection for popular providers (gmail.com, yahoo.com, etc.), disposable email detection, and role-based email identification."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/email-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/email-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/email-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="tab-bar" id="tabBar"></div>
+    <div id="singleMode">
+      <div class="email-input-group">
+        <input type="text" id="emailInput" placeholder="Enter email address...">
+        <button class="gz-btn" id="validateBtn" onclick="validateSingle()"></button>
+      </div>
+      <div id="singleResult"></div>
+    </div>
+    <div id="batchMode" style="display:none">
+      <div class="batch-area">
+        <textarea id="batchInput" placeholder="Enter emails (one per line or comma-separated)..."></textarea>
+      </div>
+      <button class="gz-btn" style="margin-top:8px" onclick="validateBatch()"></button>
+      <div id="batchStats"></div>
+      <div class="batch-results" id="batchResults"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Email Validator',
+    toolDesc: 'Validate email addresses instantly. Check syntax, domain, and detect common typos — all in your browser.',
+    validate: 'Validate',
+    validateBatch: 'Validate All',
+    single: 'Single',
+    batch: 'Batch',
+    checkSyntax: 'RFC 5322 Syntax',
+    checkDomain: 'Domain Format',
+    checkTypo: 'Typo Detection',
+    checkDisposable: 'Disposable Email',
+    checkRole: 'Role-based Email',
+    passed: 'Passed',
+    failed: 'Failed',
+    warning: 'Warning',
+    na: 'N/A',
+    validEmail: 'Valid Email',
+    invalidEmail: 'Invalid Email',
+    valid: 'Valid',
+    invalid: 'Invalid',
+    total: 'Total',
+    warnings: 'Warnings',
+    step1: 'Enter an email address in the input field',
+    step2: 'Click Validate to check the email',
+    step3: 'Review the detailed validation results',
+    step4: 'Use Batch mode to validate multiple emails at once',
+    clear: 'Clear',
+    example: 'Example',
+  },
+  zh: {
+    toolTitle: '邮箱验证工具',
+    toolDesc: '即时验证邮箱地址。检查语法、域名和常见拼写错误 — 完全在浏览器本地运行。',
+    validate: '验证',
+    validateBatch: '全部验证',
+    single: '单个',
+    batch: '批量',
+    checkSyntax: 'RFC 5322 语法',
+    checkDomain: '域名格式',
+    checkTypo: '拼写检测',
+    checkDisposable: '一次性邮箱',
+    checkRole: '角色邮箱',
+    passed: '通过',
+    failed: '未通过',
+    warning: '警告',
+    na: '不适用',
+    validEmail: '有效邮箱',
+    invalidEmail: '无效邮箱',
+    valid: '有效',
+    invalid: '无效',
+    total: '总计',
+    warnings: '警告',
+    step1: '在输入框中输入邮箱地址',
+    step2: '点击「验证」检查邮箱',
+    step3: '查看详细的验证结果',
+    step4: '使用「批量」模式同时验证多个邮箱',
+    clear: '清除',
+    example: '示例',
+  }
+});
+
+const { $, t } = GZ;
+
+const COMMON_DOMAINS = {
+  'gmail.com':'gmail.com','yahoo.com':'yahoo.com','hotmail.com':'hotmail.com','outlook.com':'outlook.com',
+  'aol.com':'aol.com','icloud.com':'icloud.com','protonmail.com':'protonmail.com','mail.com':'mail.com',
+  'zoho.com':'zoho.com','yandex.com':'yandex.com','qq.com':'qq.com','163.com':'163.com','126.com':'126.com',
+  'sina.com':'sina.com','foxmail.com':'foxmail.com','yeah.net':'yeah.net'
+};
+
+const DISPOSABLE_DOMAINS = ['mailinator.com','guerrillamail.com','tempmail.com','throwaway.email','yopmail.com','sharklasers.com','guerrillamailblock.com','grr.la','dispostable.com','mailnesia.com'];
+const ROLE_PREFIXES = ['admin','info','support','noreply','no-reply','postmaster','webmaster','abuse','root','help','sales','marketing','hr','billing'];
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const d = Array.from({length:m+1}, (_,i) => [i]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));
+  return d[m][n];
+}
+
+function validateEmail(email) {
+  email = email.trim().toLowerCase();
+  const results = { email, checks: [], isValid: false, typo: null };
+
+  // Syntax check
+  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  const syntaxOk = re.test(email);
+  results.checks.push({ name: t('checkSyntax'), status: syntaxOk ? 'pass' : 'fail', detail: syntaxOk ? t('passed') : t('failed') });
+
+  if (!syntaxOk) { results.isValid = false; return results; }
+
+  // Domain check
+  const domain = email.split('@')[1];
+  const domainOk = domain && domain.includes('.') && domain.length >= 3;
+  results.checks.push({ name: t('checkDomain'), status: domainOk ? 'pass' : 'fail', detail: domain || t('na') });
+
+  // Typo check
+  let typoStatus = 'pass', typoDetail = t('passed');
+  if (domain) {
+    let minDist = Infinity, closest = '';
+    for (const [d] of Object.entries(COMMON_DOMAINS)) {
+      const dist = levenshtein(domain, d);
+      if (dist < minDist && dist > 0 && dist <= 2) { minDist = dist; closest = d; }
+    }
+    if (closest && !COMMON_DOMAINS[domain]) {
+      typoStatus = 'warn'; typoDetail = `${domain} → ${closest}?`;
+      results.typo = email.replace(domain, closest);
+    }
+  }
+  results.checks.push({ name: t('checkTypo'), status: typoStatus, detail: typoDetail });
+
+  // Disposable check
+  const isDisp = DISPOSABLE_DOMAINS.some(d => domain && domain.endsWith(d));
+  results.checks.push({ name: t('checkDisposable'), status: isDisp ? 'warn' : 'pass', detail: isDisp ? t('warning') : t('passed') });
+
+  // Role-based check
+  const local = email.split('@')[0];
+  const isRole = ROLE_PREFIXES.some(r => local === r);
+  results.checks.push({ name: t('checkRole'), status: isRole ? 'warn' : 'pass', detail: isRole ? t('warning') : t('passed') });
+
+  results.isValid = syntaxOk && domainOk;
+  return results;
+}
+
+function renderResult(r) {
+  const statusIcon = r.isValid ? '✅' : '❌';
+  const statusClass = r.isValid ? 'valid' : 'invalid';
+  let html = `<div class="result-card ${statusClass}">
+    <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px">${statusIcon} ${r.isValid ? t('validEmail') : t('invalidEmail')}: ${r.email}</div>`;
+  r.checks.forEach(c => {
+    const icon = c.status === 'pass' ? '✅' : c.status === 'warn' ? '⚠️' : '❌';
+    html += `<div class="check-item"><span class="icon">${icon}</span><span class="label">${c.name}</span><span class="value">${c.detail}</span></div>`;
+  });
+  if (r.typo) {
+    html += `<div style="margin-top:8px;padding:8px;background:var(--glass2);border-radius:8px;font-size:.85rem">💡 ${t('checkTypo')}: <strong>${r.typo}</strong></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function validateSingle() {
+  const email = $('#emailInput').value.trim();
+  if (!email) return;
+  const r = validateEmail(email);
+  $('#singleResult').innerHTML = renderResult(r);
+}
+
+function validateBatch() {
+  const raw = $('#batchInput').value.trim();
+  if (!raw) return;
+  const emails = raw.split(/[\n,;]+/).map(e => e.trim()).filter(Boolean);
+  let valid = 0, invalid = 0, warns = 0;
+  let html = '';
+  emails.forEach(email => {
+    const r = validateEmail(email);
+    if (r.isValid) valid++; else invalid++;
+    if (r.checks.some(c => c.status === 'warn')) warns++;
+    const icon = r.isValid ? '✅' : '❌';
+    html += `<div class="row"><span>${icon}</span><span style="flex:1;font-family:monospace">${r.email}</span>${r.typo ? `<span style="font-size:.8rem;opacity:.7">→ ${r.typo}</span>` : ''}</div>`;
+  });
+  $('#batchStats').innerHTML = `<div class="stats">
+    <div class="stat"><div class="num">${emails.length}</div><div class="lbl">${t('total')}</div></div>
+    <div class="stat"><div class="num" style="color:var(--gz-success)">${valid}</div><div class="lbl">${t('valid')}</div></div>
+    <div class="stat"><div class="num" style="color:var(--gz-accent)">${invalid}</div><div class="lbl">${t('invalid')}</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">${warns}</div><div class="lbl">${t('warnings')}</div></div>
+  </div>`;
+  $('#batchResults').innerHTML = html;
+}
+
+$('#emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') validateSingle(); });
+
+// Tab switching
+let currentTab = 'single';
+function switchTab(tab) {
+  currentTab = tab;
+  $('#singleMode').style.display = tab === 'single' ? '' : 'none';
+  $('#batchMode').style.display = tab === 'batch' ? '' : 'none';
+  $$('#tabBar button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+}
+
+$('#tabBar').innerHTML = `<button data-tab="single" class="active" onclick="switchTab('single')">${t('single')}</button><button data-tab="batch" onclick="switchTab('batch')">${t('batch')}</button>`;
+
+$('#validateBtn').textContent = t('validate');
+$('#batchMode .gz-btn').textContent = t('validateBatch');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#emailInput').value='user@example.com';validateSingle()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#emailInput').value='';$('#singleResult').innerHTML='';$('#batchInput').value='';$('#batchResults').innerHTML='';$('#batchStats').innerHTML=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/password-generator.html', name:'Password Generator'},
+    {icon:'📧', href:'/text/email-writer.html', name:'Email Writer'},
+    {icon:'🔗', href:'/text/slug.html', name:'Slug Generator'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

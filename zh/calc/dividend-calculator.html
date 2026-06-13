@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>股息计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="计算股息收益率、年度收入和 DRIP 复利回报，预测你的被动收入。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/dividend-calculator.html">
+  <meta property="og:title" content="股息计算器">
+  <meta property="og:description" content="计算股息收益率、年度收入和 DRIP 复利回报，预测你的被动收入。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/dividend-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="股息计算器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-input-group{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:600px){.gz-input-group{grid-template-columns:1fr}}
+.gz-field label{display:block;font-size:.85em;margin-bottom:4px;opacity:.8}
+.gz-field input,.gz-field select{width:100%;padding:8px 10px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:var(--gz-fg);font-size:1em;box-sizing:border-box}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:16px}
+.s-card{background:var(--gz-card);border:1px solid var(--gz-border);border-radius:10px;padding:14px;text-align:center}
+.s-card .val{font-size:1.4em;font-weight:700;color:var(--gz-accent)}
+.s-card .lbl{font-size:.8em;opacity:.7;margin-top:4px}
+canvas{max-width:100%;border-radius:8px;margin-top:16px}
+.drip-toggle{display:flex;align-items:center;gap:8px;margin:12px 0;font-size:.9em}
+.drip-toggle input[type=checkbox]{width:18px;height:18px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.85em}
+th{text-align:left;padding:8px;border-bottom:2px solid var(--gz-border);opacity:.7;font-weight:600}
+td{padding:8px;border-bottom:1px solid var(--gz-border)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Dividend Calculator","description":"Calculate dividend yield, annual income, and DRIP returns. Enter stock price, dividend per share, and shares owned to see your passive income projection.","url": "https://tools.gamezipper.com/zh/calc/dividend-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is dividend yield?","acceptedAnswer":{"@type":"Answer","text":"Dividend yield is the annual dividend per share divided by the stock price, expressed as a percentage. It shows how much income you earn relative to the stock price."}},{"@type":"Question","name":"What is DRIP?","acceptedAnswer":{"@type":"Answer","text":"DRIP stands for Dividend Reinvestment Plan. Instead of receiving cash dividends, you automatically reinvest them to buy more shares, compounding your returns over time."}},{"@type":"Question","name":"How are dividends taxed?","acceptedAnswer":{"@type":"Answer","text":"Qualified dividends are taxed at the capital gains rate (0-20%), while ordinary dividends are taxed as regular income. Consult a tax advisor for your specific situation."}},{"@type":"Question","name":"Is this tool free?","acceptedAnswer":{"@type":"Answer","text":"Yes, this calculator is 100% free and runs entirely in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/dividend-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/dividend-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/dividend-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-input-group">
+      <div class="gz-field"><label id="lbl-price"></label><input type="number" id="stock-price" value="150" min="0" step="0.01"></div>
+      <div class="gz-field"><label id="lbl-dps"></label><input type="number" id="dps" value="4.50" min="0" step="0.01"></div>
+      <div class="gz-field"><label id="lbl-shares"></label><input type="number" id="shares" value="100" min="0" step="1"></div>
+      <div class="gz-field"><label id="lbl-freq"></label><select id="freq"><option value="4">Quarterly (4x/year)</option><option value="12">Monthly (12x/year)</option><option value="2">Semi-Annual (2x/year)</option><option value="1">Annual (1x/year)</option></select></div>
+      <div class="gz-field"><label id="lbl-years"></label><input type="number" id="years" value="10" min="1" max="50" step="1"></div>
+      <div class="gz-field"><label id="lbl-growth"></label><input type="number" id="growth" value="5" min="0" step="0.1"></div>
+    </div>
+    <div class="drip-toggle"><input type="checkbox" id="drip" checked><label for="drip" id="lbl-drip"></label></div>
+    <button class="gz-btn" onclick="calc()"></button>
+    <button class="gz-btn gz-btn-secondary" onclick="resetForm()"></button>
+    <div id="summary" class="summary"></div>
+    <canvas id="chart" width="600" height="280"></canvas>
+    <div id="table-area"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Dividend Calculator',
+    toolDesc: 'Calculate dividend yield, annual income, and DRIP compounding returns. Project your passive income over time.',
+    lblPrice: 'Stock Price ($)',
+    lblDps: 'Annual Dividend / Share ($)',
+    lblShares: 'Number of Shares',
+    lblFreq: 'Dividend Frequency',
+    lblYears: 'Projection Period (years)',
+    lblGrowth: 'Annual Dividend Growth (%)',
+    lblDrip: 'Enable DRIP (reinvest dividends)',
+    btnCalc: 'Calculate',
+    btnReset: 'Reset',
+    yieldPct: 'Dividend Yield',
+    annualIncome: 'Annual Income',
+    monthlyIncome: 'Monthly Income',
+    totalDividends: 'Total Dividends',
+    endShares: 'End Shares',
+    endValue: 'Portfolio Value',
+    year: 'Year',
+    dividend: 'Dividend',
+    cumDiv: 'Cumulative',
+    sharesHeld: 'Shares',
+    step1: 'Enter the stock price and annual dividend per share',
+    step2: 'Enter how many shares you own',
+    step3: 'Set dividend growth rate and enable DRIP if desired',
+    step4: 'Click Calculate to see your income projection',
+  },
+  zh: {
+    toolTitle: '股息计算器',
+    toolDesc: '计算股息收益率、年度收入和 DRIP 复利回报，预测你的被动收入。',
+    lblPrice: '股票价格（美元）',
+    lblDps: '每股年度股息（美元）',
+    lblShares: '持有股数',
+    lblFreq: '派息频率',
+    lblYears: '预测年数',
+    lblGrowth: '年度股息增长率（%）',
+    lblDrip: '启用 DRIP（股息再投资）',
+    btnCalc: '计算',
+    btnReset: '重置',
+    yieldPct: '股息收益率',
+    annualIncome: '年度收入',
+    monthlyIncome: '月均收入',
+    totalDividends: '总股息收入',
+    endShares: '期末股数',
+    endValue: '投资组合价值',
+    year: '年份',
+    dividend: '股息',
+    cumDiv: '累计',
+    sharesHeld: '持有股数',
+    step1: '输入股票价格和每股年度股息',
+    step2: '输入你持有的股数',
+    step3: '设置股息增长率和是否启用 DRIP',
+    step4: '点击计算查看收入预测',
+  }
+});
+
+const { $, t } = GZ;
+
+$('#lbl-price').textContent = t('lblPrice');
+$('#lbl-dps').textContent = t('lblDps');
+$('#lbl-shares').textContent = t('lblShares');
+$('#lbl-freq').textContent = t('lblFreq');
+$('#lbl-years').textContent = t('lblYears');
+$('#lbl-growth').textContent = t('lblGrowth');
+$('#lbl-drip').textContent = t('lblDrip');
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function pct(n) { return n.toFixed(2) + '%'; }
+
+function calc() {
+  const price = parseFloat($('#stock-price').value) || 0;
+  const dps = parseFloat($('#dps').value) || 0;
+  const shares = parseFloat($('#shares').value) || 0;
+  const years = parseInt($('#years').value) || 10;
+  const growth = parseFloat($('#growth').value) || 0;
+  const useDRIP = $('#drip').checked;
+
+  if (price <= 0 || dps <= 0 || shares <= 0) return;
+
+  const yieldPct = dps / price * 100;
+  const initialAnnual = dps * shares;
+
+  // Simulate year by year
+  const data = [];
+  let s = shares, cumDiv = 0, currentDps = dps;
+
+  for (let y = 1; y <= years; y++) {
+    const annualDiv = s * currentDps;
+    cumDiv += annualDiv;
+    if (useDRIP) {
+      const newShares = annualDiv / price;
+      s += newShares;
+    }
+    data.push({year: y, dividend: annualDiv, cumDiv, shares: s});
+    currentDps *= (1 + growth / 100);
+  }
+
+  const endShares = s;
+  const endValue = endShares * price;
+
+  $('#summary').innerHTML = `
+    <div class="s-card"><div class="val">${pct(yieldPct)}</div><div class="lbl">${t('yieldPct')}</div></div>
+    <div class="s-card"><div class="val">${fmt(initialAnnual)}</div><div class="lbl">${t('annualIncome')}</div></div>
+    <div class="s-card"><div class="val">${fmt(initialAnnual/12)}</div><div class="lbl">${t('monthlyIncome')}</div></div>
+    <div class="s-card"><div class="val">${fmt(cumDiv)}</div><div class="lbl">${t('totalDividends')}</div></div>
+    ${useDRIP ? `<div class="s-card"><div class="val">${Math.floor(endShares).toLocaleString()}</div><div class="lbl">${t('endShares')}</div></div>` : ''}
+    ${useDRIP ? `<div class="s-card"><div class="val">${fmt(endValue)}</div><div class="lbl">${t('endValue')}</div></div>` : ''}
+  `;
+
+  // Draw chart
+  const canvas = $('#chart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = {top:30,right:20,bottom:30,left:70};
+  ctx.clearRect(0,0,W,H);
+
+  const style = getComputedStyle(document.body);
+  const fg = style.getPropertyValue('--gz-fg').trim()||'#e0e0e0';
+  const acc = style.getPropertyValue('--gz-accent').trim()||'#4ecdc4';
+  const bg = style.getPropertyValue('--gz-bg').trim()||'#0a0a1a';
+  const border = style.getPropertyValue('--gz-border').trim()||'#333';
+
+  const maxCum = cumDiv;
+  const maxY = useDRIP ? Math.max(endValue, maxCum) : maxCum;
+
+  function px(v) { return pad.left + (v / years) * (W - pad.left - pad.right); }
+  function py2(v) { return pad.top + (1 - v / maxY) * (H - pad.top - pad.bottom); }
+
+  // Grid
+  ctx.strokeStyle = border; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + i * (H - pad.top - pad.bottom) / 4;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = fg; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fmt(maxY * (4-i)/4), pad.left - 6, y + 4);
+  }
+
+  // Cumulative dividends line
+  ctx.strokeStyle = '#00d672'; ctx.lineWidth = 2.5; ctx.beginPath();
+  ctx.moveTo(px(0), py2(0));
+  data.forEach(d => ctx.lineTo(px(d.year), py2(d.cumDiv)));
+  ctx.stroke();
+
+  // Portfolio value line (if DRIP)
+  if (useDRIP) {
+    ctx.strokeStyle = acc; ctx.lineWidth = 2.5; ctx.beginPath();
+    ctx.moveTo(px(0), py2(shares * price));
+    data.forEach(d => ctx.lineTo(px(d.year), py2(d.shares * price)));
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = '#00d672'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('Cumulative Dividends', pad.left + 10, pad.top + 14);
+  if (useDRIP) {
+    ctx.fillStyle = acc;
+    ctx.fillText('Portfolio Value', pad.left + 10, pad.top + 28);
+  }
+
+  // Table
+  let tbl = '<table><thead><tr><th>' + t('year') + '</th><th>' + t('dividend') + '</th><th>' + t('cumDiv') + '</th><th>' + t('sharesHeld') + '</th></tr></thead><tbody>';
+  data.forEach(d => {
+    tbl += `<tr><td>${d.year}</td><td>${fmt(d.dividend)}</td><td>${fmt(d.cumDiv)}</td><td>${d.shares.toFixed(2)}</td></tr>`;
+  });
+  tbl += '</tbody></table>';
+  $('#table-area').innerHTML = tbl;
+}
+
+function resetForm() {
+  $('#stock-price').value = 150;
+  $('#dps').value = 4.50;
+  $('#shares').value = 100;
+  $('#years').value = 10;
+  $('#growth').value = 5;
+  $('#freq').value = '4';
+  $('#drip').checked = true;
+  calc();
+}
+
+calc();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/calc/stock-return.html', name:'Stock Return Calculator'},
+    {icon:'📊', href:'/calc/stock-average-calculator.html', name:'Stock Average Calculator'},
+    {icon:'📈', href:'/calc/investment-calculator.html', name:'Investment Calculator'},
+    {icon:'💰', href:'/calc/compound-interest.html', name:'Compound Interest'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>IBAN 验证器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="验证国际银行账户号码（IBAN）— 检查格式、mod-97 校验和、国家和 BBAN 结构。完全在浏览器中运行，不上传任何数据。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/iban-validator.html">
+  <meta property="og:title" content="IBAN 验证器">
+  <meta property="og:description" content="验证国际银行账户号码（IBAN）— 检查格式、mod-97 校验和、国家和 BBAN 结构。完全在浏览器中运行，不上传任何数据。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/iban-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="IBAN 验证器">
+  <meta name="twitter:description" content="验证国际银行账户号码（IBAN）— 检查格式、mod-97 校验和、国家和 BBAN 结构。完全在浏览器中运行，不上传任何数据。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+#iban-input{font-family:monospace;letter-spacing:1px;font-size:1em}
+.iban-result{padding:14px 16px;border-radius:10px;margin-top:12px;font-size:.95em;line-height:1.6}
+.iban-ok{background:rgba(0,214,114,.12);border:1px solid rgba(0,214,114,.4)}
+.iban-bad{background:rgba(233,69,96,.12);border:1px solid rgba(233,69,96,.4)}
+.iban-row{display:flex;gap:8px;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.iban-row span:last-child{font-weight:600;font-family:monospace}
+.bulk-row{padding:6px 10px;border-radius:6px;margin:4px 0;font-size:.9em;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.tab-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tab-btn{padding:7px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--gz-border);background:transparent;color:var(--gz-text)}
+.tab-btn.active{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IBAN Validator & Checker","description":"Validate International Bank Account Numbers (IBAN) online for free. Check IBAN format, mod-97 checksum, country code and BBAN breakdown instantly in your browser.","url": "https://tools.gamezipper.com/zh/text/iban-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an IBAN?", "acceptedAnswer": {"@type": "Answer", "text": "An IBAN (International Bank Account Number) is a standardized international bank account format (ISO 13616) used to identify bank accounts across borders. It consists of a 2-letter country code, a 2-digit check number, and a Basic Bank Account Number (BBAN) whose length and structure vary by country."}}, {"@type": "Question", "name": "How is the IBAN check validated?", "acceptedAnswer": {"@type": "Answer", "text": "The validator moves the first four characters (country code and check digits) to the end, converts letters to numbers (A=10, B=11 ... Z=35), and computes the result modulo 97. If the remainder equals 1, the IBAN passes the mod-97 checksum."}}, {"@type": "Question", "name": "Is my IBAN sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All validation runs entirely in your browser. Your IBAN is never uploaded, logged, or sent anywhere — making it safe to validate sensitive banking data."}}, {"@type": "Question", "name": "Does a valid IBAN mean the account exists?", "acceptedAnswer": {"@type": "Answer", "text": "No. A valid checksum only confirms the IBAN is structurally correct and not mistyped. It does not verify that the account actually exists, is open, or belongs to a specific person."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/iban-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/iban-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/iban-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tab-bar" id="tabbar"></div>
+    <div id="single-pane">
+      <div class="gz-toolbar" id="toolbar"></div>
+      <div style="margin-top:10px">
+        <input id="iban-input" class="gz-input" style="width:100%;padding:11px" placeholder="DE89 3704 0044 0532 0130 00" autocomplete="off">
+      </div>
+      <div id="result"></div>
+    </div>
+    <div id="bulk-pane" style="display:none">
+      <label id="lbl-bulk" style="display:block;margin-bottom:6px;font-weight:600"></label>
+      <textarea id="bulk-input" rows="8" spellcheck="false" style="width:100%;font-family:monospace" placeholder="DE89 3704 0044 0532 0130 00&#10;GB29 NWBK 6016 1331 9268 19&#10;FR14 2004 1010 0505 0001 3M02 606"></textarea>
+      <div class="gz-toolbar" id="bulk-toolbar" style="margin-top:8px"></div>
+      <div id="bulk-result" style="margin-top:12px"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'IBAN Validator & Checker',
+    toolDesc: 'Validate International Bank Account Numbers (IBAN) — check format, mod-97 checksum, country and BBAN structure. 100% in-browser, no data uploaded.',
+    validate: 'Validate',
+    clear: 'Clear',
+    example: 'Example',
+    valid: '✓ Valid IBAN',
+    invalid: '✗ Invalid IBAN',
+    country: 'Country',
+    checkDigits: 'Check digits',
+    bban: 'BBAN (Basic Bank Account Number)',
+    length: 'IBAN length',
+    checksumOk: 'Mod-97 checksum passed',
+    enterIban: 'Please enter an IBAN',
+    invalidFormat: 'Invalid format — letters and digits only',
+    tooShort: 'Too short — minimum 15 characters',
+    tooLong: 'Too long — maximum 34 characters',
+    badCountry: 'Unknown or invalid country code',
+    badLength: 'Wrong length for this country',
+    badChecksum: 'Mod-97 checksum failed',
+    single: 'Single',
+    bulk: 'Bulk',
+    bulkLabel: 'Paste one IBAN per line',
+    checkAll: 'Check All',
+    clearAll: 'Clear',
+    valid2: 'valid',
+    step1: 'Type or paste your IBAN into the input field',
+    step2: 'Click Validate to run the format and mod-97 checksum checks',
+    step3: 'Review the country, check digits and BBAN breakdown',
+    step4: 'Switch to Bulk mode to validate many IBANs at once',
+  },
+  zh: {
+    toolTitle: 'IBAN 验证器',
+    toolDesc: '验证国际银行账户号码（IBAN）— 检查格式、mod-97 校验和、国家和 BBAN 结构。完全在浏览器中运行，不上传任何数据。',
+    validate: '验证',
+    clear: '清空',
+    example: '示例',
+    valid: '✓ IBAN 有效',
+    invalid: '✗ IBAN 无效',
+    country: '国家',
+    checkDigits: '校验位',
+    bban: 'BBAN（基本银行账号）',
+    length: 'IBAN 长度',
+    checksumOk: 'Mod-97 校验通过',
+    enterIban: '请输入 IBAN',
+    invalidFormat: '格式无效 — 只能包含字母和数字',
+    tooShort: '太短 — 至少需要 15 个字符',
+    tooLong: '太长 — 最多 34 个字符',
+    badCountry: '未知或无效的国家代码',
+    badLength: '该国家 IBAN 长度不正确',
+    badChecksum: 'Mod-97 校验失败',
+    single: '单个',
+    bulk: '批量',
+    bulkLabel: '每行粘贴一个 IBAN',
+    checkAll: '全部检查',
+    clearAll: '清空',
+    valid2: '有效',
+    step1: '在输入框中输入或粘贴 IBAN',
+    step2: '点击「验证」运行格式和 mod-97 校验检查',
+    step3: '查看国家、校验位和 BBAN 结构详情',
+    step4: '切换到「批量」模式可一次验证多个 IBAN',
+  }
+});
+
+const { $, t } = GZ;
+
+// Country code -> [IBAN length, country name EN, country name ZH]
+const COUNTRIES = {
+  AL:[28,'Albania','阿尔巴尼亚'],AD:[24,'Andorra','安道尔'],AT:[20,'Austria','奥地利'],AZ:[28,'Azerbaijan','阿塞拜疆'],
+  BH:[22,'Bahrain','巴林'],BY:[28,'Belarus','白俄罗斯'],BE:[16,'Belgium','比利时'],BA:[20,'Bosnia and Herzegovina','波黑'],
+  BR:[29,'Brazil','巴西'],BG:[22,'Bulgaria','保加利亚'],CR:[22,'Costa Rica','哥斯达黎加'],HR:[21,'Croatia','克罗地亚'],
+  CY:[28,'Cyprus','塞浦路斯'],CZ:[24,'Czech Republic','捷克'],DK:[18,'Denmark','丹麦'],DO:[28,'Dominican Republic','多米尼加'],
+  EG:[29,'Egypt','埃及'],SV:[28,'El Salvador','萨尔瓦多'],EE:[20,'Estonia','爱沙尼亚'],FI:[18,'Finland','芬兰'],
+  FR:[27,'France','法国'],GE:[22,'Georgia','格鲁吉亚'],DE:[22,'Germany','德国'],GI:[23,'Gibraltar','直布罗陀'],
+  GR:[27,'Greece','希腊'],GL:[18,'Greenland','格陵兰'],GT:[28,'Guatemala','危地马拉'],HU:[28,'Hungary','匈牙利'],
+  IS:[26,'Iceland','冰岛'],IQ:[23,'Iraq','伊拉克'],IE:[22,'Ireland','爱尔兰'],IL:[23,'Israel','以色列'],
+  IT:[27,'Italy','意大利'],JO:[30,'Jordan','约旦'],KZ:[20,'Kazakhstan','哈萨克斯坦'],XK:[20,'Kosovo','科索沃'],
+  KW:[30,'Kuwait','科威特'],LV:[21,'Latvia','拉脱维亚'],LB:[28,'Lebanon','黎巴嫩'],LI:[21,'Liechtenstein','列支敦士登'],
+  LT:[20,'Lithuania','立陶宛'],LU:[20,'Luxembourg','卢森堡'],LY:[25,'Libya','利比亚'],MK:[19,'North Macedonia','北马其顿'],
+  MT:[31,'Malta','马耳他'],MR:[27,'Mauritania','毛里塔尼亚'],MU:[30,'Mauritius','毛里求斯'],MC:[27,'Monaco','摩纳哥'],
+  MD:[24,'Moldova','摩尔多瓦'],ME:[22,'Montenegro','黑山'],MA:[28,'Morocco','摩洛哥'],NL:[18,'Netherlands','荷兰'],
+  NO:[15,'Norway','挪威'],PK:[24,'Pakistan','巴基斯坦'],PS:[29,'Palestine','巴勒斯坦'],PL:[28,'Poland','波兰'],
+  PT:[25,'Portugal','葡萄牙'],QA:[29,'Qatar','卡塔尔'],RO:[24,'Romania','罗马尼亚'],RU:[33,'Russia','俄罗斯'],
+  SA:[24,'Saudi Arabia','沙特阿拉伯'],RS:[22,'Serbia','塞尔维亚'],SK:[24,'Slovakia','斯洛伐克'],SI:[19,'Slovenia','斯洛文尼亚'],
+  ES:[24,'Spain','西班牙'],SE:[24,'Sweden','瑞典'],CH:[21,'Switzerland','瑞士'],TN:[24,'Tunisia','突尼斯'],
+  TR:[26,'Turkey','土耳其'],UA:[29,'Ukraine','乌克兰'],AE:[23,'United Arab Emirates','阿联酋'],GB:[22,'United Kingdom','英国'],
+  VA:[22,'Vatican','梵蒂冈'],VG:[24,'British Virgin Islands','英属维尔京群岛'],
+};
+
+function mod97(numStr){ // big-number mod 97, processed in chunks
+  let rem = 0;
+  for(let i=0;i<numStr.length;i++){
+    rem = (rem*10 + (numStr.charCodeAt(i)-48)) % 97;
+  }
+  return rem;
+}
+
+function validateIban(raw){
+  const iban = raw.replace(/\s+/g,'').toUpperCase();
+  if(!iban) return {ok:false,reason:'enterIban'};
+  if(!/^[A-Z0-9]+$/.test(iban)) return {ok:false,reason:'invalidFormat'};
+  if(iban.length<15) return {ok:false,reason:'tooShort'};
+  if(iban.length>34) return {ok:false,reason:'tooLong'};
+  const cc = iban.substring(0,2);
+  if(!COUNTRIES[cc]) return {ok:false,reason:'badCountry'};
+  if(iban.length!==COUNTRIES[cc][0]) return {ok:false,reason:'badLength'};
+  // rearrange: move first 4 chars to end
+  const rearranged = iban.substring(4) + iban.substring(0,4);
+  // convert letters
+  let numStr='';
+  for(const ch of rearranged){
+    const code = ch.charCodeAt(0);
+    if(code>=48 && code<=57) numStr += ch;
+    else if(code>=65 && code<=90) numStr += (code-55).toString(); // A=10
+    else return {ok:false,reason:'invalidFormat'};
+  }
+  if(mod97(numStr)!==1) return {ok:false,reason:'badChecksum'};
+  return {ok:true, cc, len: iban.length, check: iban.substring(2,4), bban: iban.substring(4)};
+}
+
+function doValidate(){
+  const raw = $('#iban-input').value.trim();
+  const r = validateIban(raw);
+  if(r.ok){
+    const lang = (localStorage.getItem('gz-lang')||'en');
+    const countryName = lang==='zh' ? COUNTRIES[r.cc][2] : COUNTRIES[r.cc][1];
+    $('#result').innerHTML = `<div class="iban-result iban-ok">
+      <div style="font-size:1.1em;font-weight:700;margin-bottom:8px">${t('valid')}</div>
+      <div class="iban-row"><span>${t('country')}</span><span>${r.cc} — ${countryName}</span></div>
+      <div class="iban-row"><span>${t('checkDigits')}</span><span>${r.check}</span></div>
+      <div class="iban-row"><span>${t('bban')}</span><span>${r.bban}</span></div>
+      <div class="iban-row"><span>${t('length')}</span><span>${r.len}</span></div>
+      <div class="iban-row" style="border:none"><span>${t('checksumOk')}</span><span>✓</span></div>
+    </div>`;
+  } else if(r.reason==='enterIban'){
+    $('#result').innerHTML='';
+  } else {
+    $('#result').innerHTML = `<div class="iban-result iban-bad"><div style="font-weight:700">${t('invalid')}</div><div style="opacity:.8;margin-top:4px">${t(r.reason)}</div></div>`;
+  }
+}
+
+function doClear(){ $('#iban-input').value=''; $('#result').innerHTML=''; }
+function loadExample(){ $('#iban-input').value='DE89 3704 0044 0532 0130 00'; doValidate(); }
+
+function doBulk(){
+  const lines = $('#bulk-input').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){ $('#bulk-result').innerHTML=''; return; }
+  let validCount=0;
+  let html = lines.map((line,i)=>{
+    const r = validateIban(line);
+    if(r.ok) validCount++;
+    const cls = r.ok ? 'iban-ok' : 'iban-bad';
+    const label = r.ok ? t('valid') : t('invalid');
+    const note = r.ok ? (r.cc+' · '+r.len) : t(r.reason);
+    return `<div class="bulk-row ${cls}"><span style="word-break:break-all">${i+1}. ${line.replace(/\s+/g,' ').substring(0,42)}</span><span style="white-space:nowrap;font-weight:600">${label} <span style="opacity:.7">(${note})</span></span></div>`;
+  }).join('');
+  html = `<div style="margin-bottom:8px;font-weight:600">${validCount} / ${lines.length} ${t('valid2')}</div>` + html;
+  $('#bulk-result').innerHTML = html;
+}
+function bulkClear(){ $('#bulk-input').value=''; $('#bulk-result').innerHTML=''; }
+
+// Tabs
+let mode='single';
+function setMode(m){
+  mode=m;
+  $('#single-pane').style.display = m==='single'?'block':'none';
+  $('#bulk-pane').style.display = m==='bulk'?'block':'none';
+  renderTabs();
+}
+function renderTabs(){
+  $('#tabbar').innerHTML = `<button class="tab-btn ${mode==='single'?'active':''}" onclick="setMode('single')">${t('single')}</button><button class="tab-btn ${mode==='bulk'?'active':''}" onclick="setMode('bulk')">${t('bulk')}</button>`;
+}
+
+$('#iban-input').addEventListener('input', doValidate);
+$('#iban-input').addEventListener('paste', ()=>setTimeout(doValidate,0));
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doValidate()">${t('validate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#bulk-toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doBulk()">${t('checkAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="bulkClear()">${t('clearAll')}</button>`;
+
+GZ.setText('#lbl-bulk', 'bulkLabel');
+renderTabs();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💳', href:'/dev/luhn-validator.html', name:'Luhn Validator'},
+    {icon:'📧', href:'/text/email-validator.html', name:'Email Validator'},
+    {icon:'🔑', href:'/dev/api-key-generator.html', name:'API Key Generator'},
+    {icon:'🔢', href:'/calc/prime-factorization-calculator.html', name:'Prime Factorization'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

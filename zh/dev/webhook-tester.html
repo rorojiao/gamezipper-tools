@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Webhook 测试与检查工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="发送 HTTP 请求并检查响应 — 测试 Webhook、REST API 和接口，支持自定义请求头、请求体和方法。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/webhook-tester.html">
+  <meta property="og:title" content="Webhook 测试与检查工具">
+  <meta property="og:description" content="发送 HTTP 请求并检查响应 — 测试 Webhook、REST API 和接口，支持自定义请求头、请求体和方法。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/webhook-tester.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Webhook 测试与检查工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.req-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.req-bar select,.req-bar input{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);font-size:.9em}
+.req-bar select{width:110px}
+.req-bar input{flex:1;min-width:200px}
+.headers-grid{display:grid;gap:6px;margin:10px 0}
+.header-row{display:flex;gap:6px;align-items:center}
+.header-row input{flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass2);color:var(--text);font-size:.85em}
+.rm-btn{background:#e94560;color:#fff;border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:1em}
+.add-btn{background:var(--glass2);border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:.8em}
+.tab-bar{display:flex;gap:4px;margin-bottom:8px}
+.tab-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);cursor:pointer;font-size:.85em}
+.tab-btn.active{border-color:var(--accent);color:var(--accent)}
+.response-box{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px;font-family:monospace;font-size:.85em;white-space:pre-wrap;word-break:break-all;line-height:1.5;max-height:400px;overflow:auto}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-weight:700;font-size:.85em;margin-left:8px}
+.status-2xx{background:#00d67233;color:#00d672}
+.status-3xx{background:#61afef33;color:#61afef}
+.status-4xx{background:#f5a62333;color:#f5a623}
+.status-5xx{background:#e9456033;color:#e94560}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Webhook Tester & Inspector","description":"Test webhooks online — send HTTP requests, inspect responses, set custom headers, body and method. Free developer tool, runs in your browser.","url": "https://tools.gamezipper.com/zh/dev/webhook-tester.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a webhook?", "acceptedAnswer": {"@type": "Answer", "text": "A webhook is an HTTP callback that sends real-time data to a URL when an event occurs. Services like Stripe, GitHub, and Slack use webhooks to notify your server of events."}}, {"@type": "Question", "name": "How do I test a webhook?", "acceptedAnswer": {"@type": "Answer", "text": "Enter the webhook URL, select the HTTP method, set headers and body, then click Send. The tool will make the request and show you the full response including status, headers and body."}}, {"@type": "Question", "name": "Does this tool work with any API?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, you can test any public API endpoint or webhook URL. Note that CORS restrictions may block some requests from the browser — use a CORS proxy or test APIs that allow cross-origin requests."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/webhook-tester.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/webhook-tester.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/webhook-tester.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="req-bar">
+      <select id="method"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>OPTIONS</option><option>HEAD</option></select>
+      <input type="url" id="url" placeholder="https://httpbin.org/post">
+      <button class="gz-btn" id="send-btn">🚀</button>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="headers">📋 Headers</button>
+      <button class="tab-btn" data-tab="body">📝 Body</button>
+    </div>
+    <div id="tab-headers">
+      <div class="headers-grid" id="headers"></div>
+      <button class="add-btn" id="add-header">+ Add Header</button>
+    </div>
+    <div id="tab-body" style="display:none">
+      <textarea id="req-body" rows="6" style="width:100%;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);padding:10px;font-family:monospace;font-size:.85em" placeholder='{"key": "value"}'></textarea>
+    </div>
+    <div style="margin-top:16px">
+      <h3 style="margin:0 0 8px;font-size:.95em" id="resp-title"></h3>
+      <div class="response-box" id="response">-</div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Webhook Tester & Inspector',
+    toolDesc: 'Send HTTP requests and inspect responses — test webhooks, REST APIs and endpoints with custom headers, body and method.',
+    headers: '📋 Headers',
+    body: '📝 Body',
+    addHeader: '+ Add Header',
+    send: '🚀 Send',
+    response: 'Response',
+    step1: 'Enter the webhook or API URL',
+    step2: 'Select HTTP method (GET, POST, PUT, etc.)',
+    step3: 'Add custom headers and request body if needed',
+    step4: 'Click Send and inspect the response',
+    noUrl: 'Please enter a URL',
+    sending: 'Sending request...',
+    error: 'Request failed',
+    time: 'Time',
+    ms: 'ms',
+    size: 'Size',
+  },
+  zh: {
+    toolTitle: 'Webhook 测试与检查工具',
+    toolDesc: '发送 HTTP 请求并检查响应 — 测试 Webhook、REST API 和接口，支持自定义请求头、请求体和方法。',
+    headers: '📋 请求头',
+    body: '📝 请求体',
+    addHeader: '+ 添加请求头',
+    send: '🚀 发送',
+    response: '响应',
+    step1: '输入 Webhook 或 API URL',
+    step2: '选择 HTTP 方法（GET、POST、PUT 等）',
+    step3: '按需添加自定义请求头和请求体',
+    step4: '点击发送并检查响应',
+    noUrl: '请输入 URL',
+    sending: '正在发送请求...',
+    error: '请求失败',
+    time: '耗时',
+    ms: '毫秒',
+    size: '大小',
+  }
+});
+
+const { $, t } = GZ;
+let headerCount = 1;
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    $('#tab-headers').style.display = tab === 'headers' ? 'block' : 'none';
+    $('#tab-body').style.display = tab === 'body' ? 'block' : 'none';
+  };
+});
+
+function addHeader(key='', val='') {
+  const id = headerCount++;
+  const row = document.createElement('div');
+  row.className = 'header-row';
+  row.innerHTML = `<input type="text" placeholder="Header name" value="${key}"><input type="text" placeholder="Value" value="${val}"><button class="rm-btn" title="Remove">×</button>`;
+  row.querySelector('.rm-btn').onclick = () => row.remove();
+  $('#headers').appendChild(row);
+}
+
+$('#add-header').onclick = () => addHeader();
+addHeader('Content-Type', 'application/json');
+addHeader('Accept', '*/*');
+
+$('#send-btn').textContent = t('send');
+
+async function sendRequest() {
+  const url = $('#url').value.trim();
+  if (!url) { GZ.showToast(t('noUrl')); return; }
+  const method = $('#method').value;
+  const headers = {};
+  $('#headers').querySelectorAll('.header-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const k = inputs[0].value.trim(), v = inputs[1].value.trim();
+    if (k) headers[k] = v;
+  });
+  const body = ['POST','PUT','PATCH'].includes(method) ? $('#req-body').value : undefined;
+  $('#response').textContent = t('sending');
+  const start = performance.now();
+  try {
+    const resp = await fetch(url, {method, headers, body, mode:'cors'});
+    const elapsed = (performance.now() - start).toFixed(0);
+    const text = await resp.text();
+    const size = new Blob([text]).size;
+    let formatted = text;
+    try { formatted = JSON.stringify(JSON.parse(text), null, 2); } catch(e){}
+    const sc = resp.status < 300 ? '2xx' : resp.status < 400 ? '3xx' : resp.status < 500 ? '4xx' : '5xx';
+    let respHeaders = '';
+    resp.headers.forEach((v,k) => { respHeaders += `${k}: ${v}\n`; });
+    $('#resp-title').innerHTML = `${t('response')} <span class="status-badge status-${sc}">${resp.status} ${resp.statusText}</span> · ${t('time')}: ${elapsed}${t('ms')} · ${t('size')}: ${size > 1024 ? (size/1024).toFixed(1)+'KB' : size+'B'}`;
+    $('#response').textContent = formatted;
+  } catch(e) {
+    const elapsed = (performance.now() - start).toFixed(0);
+    $('#resp-title').textContent = `${t('response')} · ${t('error')}`;
+    $('#response').textContent = `${t('error')}: ${e.message}\n\nHint: CORS may block cross-origin requests from the browser. Try a CORS proxy or test APIs that allow cross-origin requests.`;
+  }
+}
+
+$('#send-btn').onclick = sendRequest;
+
+$('#lbl-in')?.remove();
+$('#lbl-out')?.remove();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {href:'/dev/api-tester.html',icon:'🔌',name:'API Tester'},
+    {href:'/dev/discord-webhook.html',icon:'💬',name:'Discord Webhook Sender'},
+    {href:'/dev/websocket-tester.html',icon:'🔌',name:'WebSocket Tester'},
+    {href:'/dev/graphql-explorer.html',icon:'◈',name:'GraphQL Explorer'},
+  ]
+});
+</script>
+</body>
+</html>
