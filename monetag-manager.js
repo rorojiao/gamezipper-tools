@@ -102,7 +102,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.4-tools-tuning',  // 2026-06-12: tune tools backoff curve + re-enable Pungent legacy
+    VERSION: '5.5.1-tools-vidsid',  // 2026-06-14: vid/sid inline tracker (parity with adsense-auto.js v5.4.2)
     // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
     //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
     //   streak 2 → 60min (was 30): same logic
@@ -114,6 +114,42 @@
       minRecordIntervalMs: 60 * 1000,
     },
   };
+
+  // ==================== SELF-CONTAINED VID/SID TRACKER (v5.5.1) ====================
+  // tools.gamezipper.com previously depended on bi.gamezipper.com/t.js for visitor
+  // tracking, but that endpoint serves Metabase HTML (not JS) so vid/sid was always
+  // empty in monetag ad events. Generate IDs inline so monetag events carry proper
+  // visitor IDs without depending on a working t.js endpoint. Mirrors the pattern
+  // in adsense-auto.js v5.4.2 and the FastAPI /t.js tracker (bi server).
+  // Skip if adsense-auto.js already populated window.gzVid / gzSid (it runs first
+  // when present — common.js loads monetag-manager.js first so we may be the first
+  // ad script; if a prior script set it, reuse it).
+  (function ensureVidSid() {
+    try {
+      if (window.gzVid && window.gzSid) return;
+      var VID_KEY = 'gz_vid';
+      var SID_KEY = 'gz_sid';
+      var VID = localStorage.getItem(VID_KEY);
+      if (!VID) {
+        VID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+        try { localStorage.setItem(VID_KEY, VID); } catch(e) {}
+      }
+      var SID = sessionStorage.getItem(SID_KEY);
+      if (!SID) {
+        SID = Math.random().toString(36).substr(2);
+        try { sessionStorage.setItem(SID_KEY, SID); } catch(e) {}
+      }
+      window.gzVid = VID;
+      window.gzSid = SID;
+    } catch(e) {
+      // localStorage may be disabled — fall back to empty
+      if (!window.gzVid) window.gzVid = '';
+      if (!window.gzSid) window.gzSid = '';
+    }
+  })();
 
   // ==================== AD EVENTS TRACKER (v5.2) ====================
   // Lightweight event log so we can see which network actually fires.
@@ -133,6 +169,10 @@
     } catch(e) {}
     // 2026-06-10: forward to BI server (matches gamezipper.com v5.2.1 fix).
     // tools.site has no gz-analytics.js, so window.gzAnalytics is undefined → use direct sendBeacon.
+    // v5.5.1-tools-vidsid (2026-06-14): tools.gamezipper.com's t.js tracker endpoint
+    // (bi.gamezipper.com/t.js) is broken — that subdomain points to a Metabase
+    // dashboard, not the FastAPI analytics server. Now we generate vid/sid inline
+    // (localStorage gz_vid / sessionStorage gz_sid) and include them in payloads.
     try {
       if (window.gzAnalytics && typeof window.gzAnalytics.sendAd === 'function') {
         window.gzAnalytics.sendAd(type, ev);
@@ -140,7 +180,7 @@
         var payload = JSON.stringify([{
           site: location.hostname, path: location.pathname,
           e: 'gz_ad_event', d: Object.assign({ t: type }, ev), t: Date.now(),
-          vid: '', sid: ''
+          vid: window.gzVid || '', sid: window.gzSid || ''
         }]);
         if (navigator.sendBeacon) { navigator.sendBeacon(window.GZ_COLLECT_ENDPOINT, payload); }
       }
