@@ -14,7 +14,7 @@
   // which returns 501 with no data). Catches all 1780 subpages that load common.js.
   // Cache v=20260614aa is the first tools-side bump; higher lexicographically than
   // gamezipper.com's v=202606147b so we know it's the new one.
-  var s5=document.createElement('script');s5.src='/gz-analytics.js?v=20260614ab';s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  var s5=document.createElement('script');s5.src='/gz-analytics.js?v=20260614ac';s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
