@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSS Nesting Generator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Generate native CSS nesting rules visually. Convert flat CSS to nested syntax with live preview, browser support check and one-click copy.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/css-nesting-generator.html">
+  <meta property="og:title" content="CSS Nesting Generator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Generate native CSS nesting rules visually. Convert flat CSS to nested syntax with live preview and one-click copy.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/css-nesting-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS Nesting Generator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.gz-split{grid-template-columns:1fr 1fr}
+#input,#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+.css-sel{color:#e94560}.css-prop{color:#61afef}.css-val{color:#00d672}.css-cmt{color:#666}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS Nesting Generator","description":"Generate native CSS nesting rules visually with live preview. Convert flat CSS to nested syntax and copy instantly.","url":"https://tools.gamezipper.com/dev/css-nesting-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is CSS nesting?", "acceptedAnswer": {"@type": "Answer", "text": "CSS nesting lets you write nested selectors inside a parent rule, similar to SCSS/LESS. For example: .card { color: red; &:hover { color: blue; } }. The & represents the parent selector."}}, {"@type": "Question", "name": "Is CSS nesting supported in all browsers?", "acceptedAnswer": {"@type": "Answer", "text": "Native CSS nesting is supported in Chrome 120+, Firefox 117+, Safari 17.2+ and Edge 120+. It covers over 90% of global browser usage as of 2026."}}, {"@type": "Question", "name": "How does the & symbol work in CSS nesting?", "acceptedAnswer": {"@type": "Answer", "text": "The & (nesting selector) represents the parent rule's selector. It can be used at the start (&:hover), middle (.wrapper &), or omitted entirely for descendant selectors."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/css-nesting-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/css-nesting-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/css-nesting-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="18" spellcheck="false" placeholder=".card {
+  background: #fff;
+  border-radius: 8px;
+}
+.card:hover {
+  background: #f0f0f0;
+}
+.card .title {
+  font-size: 1.2rem;
+}
+.card .title span {
+  color: #4ecdc4;
+}"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSS Nesting Generator',
+    toolDesc: 'Convert flat CSS to native nested syntax with live preview and one-click copy.',
+    inputLabel: 'Flat CSS Input',
+    outputLabel: 'Nested CSS Output',
+    convert: 'Nest',
+    copy: 'Copy',
+    clear: 'Clear',
+    example: 'Example',
+    step1: 'Paste your flat CSS rules in the input area',
+    step2: 'Click "Nest" to convert to native CSS nesting',
+    step3: 'Review the nested output with syntax highlighting',
+    step4: 'Copy the result to your project',
+  },
+  zh: {
+    toolTitle: 'CSS 嵌套生成器',
+    toolDesc: '将扁平的 CSS 转换为原生嵌套语法，支持实时预览和一键复制。',
+    inputLabel: '扁平 CSS 输入',
+    outputLabel: '嵌套 CSS 输出',
+    convert: '嵌套',
+    copy: '复制',
+    clear: '清除',
+    example: '示例',
+    step1: '在输入区粘贴扁平的 CSS 规则',
+    step2: '点击「嵌套」转换为原生 CSS 嵌套语法',
+    step3: '查看带语法高亮的嵌套输出',
+    step4: '复制结果到你的项目中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function nestCSS(css) {
+  const rules = [];
+  const regex = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = regex.exec(css)) !== null) {
+    const sel = m[1].trim();
+    const body = m[2].trim();
+    if (sel && body !== undefined) rules.push({ sel, body });
+  }
+
+  // Group by common prefix
+  const groups = {};
+  const order = [];
+  for (const r of rules) {
+    const parts = r.sel.split(/\s+/);
+    const parent = parts[0];
+    const rest = parts.slice(1).join(' ');
+    if (!groups[parent]) { groups[parent] = { parent, children: [] }; order.push(parent); }
+    groups[parent].children.push({ rest, body: r.body, full: r.sel });
+  }
+
+  let result = '';
+  for (const parent of order) {
+    const g = groups[parent];
+    const selfRule = g.children.find(c => !c.rest);
+    const nestedRules = g.children.filter(c => c.rest);
+
+    result += `${g.parent} {\n`;
+    if (selfRule) {
+      const props = selfRule.body.split(';').map(p => p.trim()).filter(Boolean);
+      for (const p of props) result += `  ${p};\n`;
+    }
+    for (const child of nestedRules) {
+      result += `  & ${child.rest} {\n`;
+      const props = child.body.split(';').map(p => p.trim()).filter(Boolean);
+      for (const p of props) result += `    ${p};\n`;
+      result += `  }\n`;
+    }
+    result += `}\n`;
+  }
+  return result.trim();
+}
+
+function highlightCSS(css) {
+  return css.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/(\/\*[\s\S]*?\*\/)/g,'<span class="css-cmt">$1</span>')
+    .replace(/([.#\w\-\[\]=~|^$*:"',>+~\s&()]+)\s*\{/g,'<span class="css-sel">$1</span>{')
+    .replace(/([\w-]+)\s*:/g,'<span class="css-prop">$1</span>:')
+    .replace(/:\s*([^;{}<]+)/g,': <span class="css-val">$1</span>');
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  const nested = nestCSS(inp);
+  $('#output').innerHTML = highlightCSS(nested);
+  $('#output').dataset.raw = nested;
+}
+
+function loadExample() {
+  $('#input').value = `.card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  transform: translateY(-2px);
+}
+.card .title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.card .title span {
+  color: #4ecdc4;
+}
+.card .body {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #666;
+}
+.card .body a {
+  color: #4ecdc4;
+  text-decoration: none;
+}
+.card .body a:hover {
+  text-decoration: underline;
+}`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').dataset.raw||'')">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/css-tools/gradient.html', name:'Gradient'},
+    {icon:'📐', href:'/css-tools/flexbox.html', name:'Flexbox'},
+    {icon:'🔲', href:'/css-tools/grid.html', name:'Grid'},
+    {icon:'🔧', href:'/dev/css-units.html', name:'CSS Units'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

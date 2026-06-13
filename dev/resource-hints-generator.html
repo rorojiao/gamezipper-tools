@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Resource Hints Generator - Preconnect, Prefetch, Preload | GameZipper Tools</title>
+  <meta name="description" content="Generate resource hints (preconnect, prefetch, preload, prerender, modulepreload) HTML tags with best practices. Improve page load speed instantly.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/resource-hints-generator.html">
+  <meta property="og:title" content="Resource Hints Generator - Preconnect, Prefetch, Preload | GameZipper Tools">
+  <meta property="og:description" content="Generate resource hints HTML tags with best practices. Improve page load speed with preconnect, prefetch, preload tags.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/resource-hints-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Resource Hints Generator - Preconnect, Prefetch, Preload | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js"></script>
+<style>
+.hint-row{display:grid;grid-template-columns:140px 1fr auto auto;gap:.5rem;align-items:center;margin-bottom:.5rem}
+.hint-row select,.hint-row input{background:var(--gz-input-bg,#1a1a2e);color:var(--gz-text,#eee);border:1px solid var(--gz-border,#333);border-radius:6px;padding:.4rem .6rem;font-size:.9em}
+.hint-row input{width:100%}
+.hint-row .remove{background:none;border:none;color:#e94560;cursor:pointer;font-size:1.2em;padding:0 .3rem}
+.tag-info{font-size:.75em;opacity:.7;margin-left:.3rem}
+.output-block{background:var(--gz-input-bg,#1a1a2e);border:1px solid var(--gz-border,#333);border-radius:8px;padding:1rem;font-family:monospace;font-size:.85em;white-space:pre-wrap;word-break:break-all;line-height:1.6;color:#e0e0e0}
+.output-block .tag{color:#e94560}.output-block .attr{color:#61afef}.output-block .val{color:#00d672}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Resource Hints Generator","description":"Generate HTML resource hints (preconnect, prefetch, preload, prerender, modulepreload) to improve page performance.","url":"https://tools.gamezipper.com/dev/resource-hints-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are resource hints?", "acceptedAnswer": {"@type": "Answer", "text": "Resource hints are HTML link tags that tell the browser to proactively perform actions (DNS lookup, TCP connection, fetch resources) before they are actually needed, improving page load speed."}}, {"@type": "Question", "name": "What is the difference between preload and prefetch?", "acceptedAnswer": {"@type": "Answer", "text": "preload tells the browser to download a resource needed for the current page immediately (high priority). prefetch hints at a resource that may be needed for the next navigation (low priority)."}}, {"@type": "Question", "name": "When should I use preconnect?", "acceptedAnswer": {"@type": "Answer", "text": "Use preconnect for third-party origins you will definitely connect to (e.g., CDN, analytics, font services). It eliminates DNS lookup + TCP handshake + TLS negotiation latency."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/resource-hints-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/resource-hints-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/resource-hints-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="rows"></div>
+    <div style="margin-top:.5rem">
+      <strong id="lbl-presets" style="font-size:.9em"></strong>
+      <div style="margin-top:.3rem;display:flex;flex-wrap:wrap;gap:.3rem" id="presets"></div>
+    </div>
+    <div style="margin-top:1rem">
+      <h3 style="margin-bottom:.5rem;font-size:.95em" id="lbl-output"></h3>
+      <div class="output-block" id="output"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Resource Hints Generator',
+    toolDesc: 'Generate preconnect, prefetch, preload, prerender HTML tags with best practices for faster page loads.',
+    add: '+ Add Hint',
+    copy: 'Copy HTML',
+    clear: 'Clear All',
+    lblPresets: 'Quick Presets',
+    lblOutput: 'Generated HTML',
+    hintType: 'Type',
+    url: 'URL / Origin',
+    asType: 'as',
+    outputTitle: 'Generated HTML',
+    presetGoogleFonts: 'Google Fonts',
+    presetCDN: 'CDN (jsdelivr)',
+    presetAnalytics: 'Analytics',
+    presetCriticalCSS: 'Critical CSS',
+    presetHeroImage: 'Hero Image',
+    presetMainJS: 'Main JS',
+    step1: 'Add resource hints by clicking "+ Add Hint" or use presets',
+    step2: 'Choose the hint type (preconnect, preload, prefetch, etc.)',
+    step3: 'Enter the URL or origin for each hint',
+    step4: 'Copy the generated HTML link tags to your <head>',
+  },
+  zh: {
+    toolTitle: '资源提示生成器',
+    toolDesc: '生成 preconnect、prefetch、preload、prerender HTML 标签，遵循最佳实践，加速页面加载。',
+    add: '+ 添加提示',
+    copy: '复制 HTML',
+    clear: '清除全部',
+    lblPresets: '快速预设',
+    lblOutput: '生成的 HTML',
+    hintType: '类型',
+    url: 'URL / 源',
+    asType: 'as',
+    outputTitle: '生成的 HTML',
+    presetGoogleFonts: 'Google 字体',
+    presetCDN: 'CDN (jsdelivr)',
+    presetAnalytics: '分析',
+    presetCriticalCSS: '关键 CSS',
+    presetHeroImage: '首屏图片',
+    presetMainJS: '主 JS',
+    step1: '点击「添加提示」或使用预设添加资源提示',
+    step2: '选择提示类型（preconnect、preload、prefetch 等）',
+    step3: '输入每个提示的 URL 或源地址',
+    step4: '复制生成的 HTML link 标签到你的 <head> 中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const hintTypes = ['preconnect','dns-prefetch','preload','prefetch','prerender','modulepreload'];
+const asTypes = ['','script','style','image','font','document','fetch','audio','video','track','worker','embed','object'];
+
+let hints = [];
+
+function addHint(type='preconnect', url='', as_='') {
+  hints.push({ type, url, as: as_ });
+  render();
+}
+
+function removeHint(i) { hints.splice(i,1); render(); }
+
+const presetData = [
+  { label:'presetGoogleFonts', items:[
+    {type:'preconnect',url:'https://fonts.googleapis.com'},
+    {type:'preconnect',url:'https://fonts.gstatic.com',as:''},
+    {type:'preload',url:'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap',as:'style'},
+  ]},
+  { label:'presetCDN', items:[
+    {type:'preconnect',url:'https://cdn.jsdelivr.net'},
+    {type:'preload',url:'https://cdn.jsdelivr.net/npm/app@1.0/main.js',as:'script'},
+  ]},
+  { label:'presetAnalytics', items:[
+    {type:'preconnect',url:'https://www.google-analytics.com'},
+  ]},
+  { label:'presetCriticalCSS', items:[
+    {type:'preload',url:'/css/critical.css',as:'style'},
+  ]},
+  { label:'presetHeroImage', items:[
+    {type:'preload',url:'/images/hero.webp',as:'image'},
+  ]},
+  { label:'presetMainJS', items:[
+    {type:'preload',url:'/js/app.js',as:'script'},
+    {type:'modulepreload',url:'/js/app.mjs'},
+  ]},
+];
+
+function loadPreset(p) {
+  hints = JSON.parse(JSON.stringify(p.items));
+  render();
+}
+
+function renderPresets() {
+  $('#presets').innerHTML = presetData.map((p,i) =>
+    `<button class="gz-btn gz-btn-secondary" style="font-size:.8em" onclick="loadPreset(presetData[${i}])">${t(p.label)}</button>`
+  ).join('');
+}
+
+function render() {
+  let html = '';
+  hints.forEach((h,i) => {
+    html += `<div class="hint-row">
+      <select onchange="hints[${i}].type=this.value;generate()" data-i="${i}">
+        ${hintTypes.map(t_ => `<option value="${t_}" ${h.type===t_?'selected':''}>${t_}</option>`).join('')}
+      </select>
+      <input value="${esc(h.url)}" placeholder="https://example.com/resource" oninput="hints[${i}].url=this.value;generate()">
+      <select onchange="hints[${i}].as=this.value;generate()" style="width:90px">
+        ${asTypes.map(a => `<option value="${a}" ${h.as===a?'selected':''}>${a||'—'}</option>`).join('')}
+      </select>
+      <button class="remove" onclick="removeHint(${i})">✕</button>
+    </div>`;
+  });
+  $('#rows').innerHTML = html;
+  generate();
+}
+
+function generate() {
+  const lines = hints.map(h => {
+    let tag = `<link rel="${h.type}" href="${h.url}"`;
+    if (h.as) tag += ` as="${h.as}"`;
+    if (h.type === 'preconnect' || h.type === 'dns-prefetch') tag += ' crossorigin';
+    tag += '>';
+    return tag;
+  });
+
+  const raw = lines.join('\n');
+  const highlighted = lines.map(l =>
+    l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/rel="([^"]+)"/g,'<span class="attr">rel</span>="<span class="val">$1</span>"')
+      .replace(/href="([^"]+)"/g,'<span class="attr">href</span>="<span class="val">$1</span>"')
+      .replace(/as="([^"]+)"/g,'<span class="attr">as</span>="<span class="val">$1</span>"')
+      .replace(/crossorigin/g,'<span class="attr">crossorigin</span>')
+      .replace(/&lt;link/g,'<span class="tag">&lt;link</span>')
+      .replace(/&gt;/g,'<span class="tag">&gt;</span>')
+  ).join('\n');
+
+  $('#output').innerHTML = highlighted;
+  $('#output').dataset.raw = raw;
+}
+
+function esc(s) { return s.replace(/"/g,'&quot;'); }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="addHint()">${t('add')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').dataset.raw||'')">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="hints=[];render()">${t('clear')}</button>`;
+
+renderPresets();
+// Start with one empty hint
+addHint('preconnect','https://fonts.googleapis.com','');
+addHint('preconnect','https://fonts.gstatic.com','');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⚡', href:'/dev/http-cache-header.html', name:'Cache Headers'},
+    {icon:'🔒', href:'/dev/csp-generator.html', name:'CSP Generator'},
+    {icon:'📱', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'🎨', href:'/dev/css-units.html', name:'CSS Units'},
+  ]
+});
+</script>
+<script>new Image().src="https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p="+encodeURIComponent(location.pathname);</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
