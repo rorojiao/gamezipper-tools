@@ -90,23 +90,26 @@ GZI18n.register({
 const { $, t } = GZ;
 
 function evalExpr(expr, vars) {
-  // Tokenize and convert to JS-evaluable form
-  let e = expr.replace(/\s+/g, '');
-  // Replace multi-char operators first
-  e = e.replace(/<->/g, ' BIC ');
-  e = e.replace(/->/g, ' IMP ');
-  e = e.replace(/\bNAND\b/gi, ' NAND ');
-  e = e.replace(/\bNOR\b/gi, ' NOR ');
-  e = e.replace(/\bXOR\b/gi, ' XOR ');
-  // Word operators
-  e = e.replace(/\bAND\b/gi, ' AND ');
-  e = e.replace(/\bOR\b/gi, ' OR ');
-  e = e.replace(/\bNOT\b/gi, ' NOT ');
+  // Tokenize: recognize variables (A-H), word operators, symbol operators, parens
+  // First normalize symbols to word operators
+  let e = expr.replace(/<->/g, ' bic ');
+  e = e.replace(/->/g, ' imp ');
+  // Now tokenize with a regex that captures words, single letters, parens
+  const rawTokens = e.match(/[A-Za-z]+|[()]/g);
+  if (!rawTokens) throw new Error('tokenize');
 
-  // Tokenize
-  const tokens = e.match(/[A-H]|\(|\)|AND|OR|NOT|XOR|NAND|NOR|IMP|BIC|[&|~!^]/gi);
-  if (!tokens || tokens.some(tk => !/^[A-H]$/i.test(tk) && !['(',')','AND','OR','NOT','XOR','NAND','NOR','IMP','BIC','&','|','~','!','^'].includes(tk.toUpperCase()))) {
-    throw new Error('tokenize');
+  const tokens = [];
+  for (const tk of rawTokens) {
+    const up = tk.toUpperCase();
+    if (['AND','OR','NOT','XOR','NAND','NOR','IMP','BIC'].includes(up)) {
+      tokens.push(up);
+    } else if (tk === '(' || tk === ')') {
+      tokens.push(tk);
+    } else if (/^[A-H]$/.test(up)) {
+      tokens.push(up);
+    } else {
+      throw new Error('tokenize');
+    }
   }
 
   // Convert to postfix using precedence
@@ -166,7 +169,9 @@ function generate() {
 
   try {
     const varSet = new Set();
-    const matches = expr.match(/[A-H]/gi) || [];
+    // Remove operator words before extracting variables to avoid false matches
+    const cleanExpr = expr.replace(/\b(and|or|not|xor|nand|nor|imp|bic)\b/gi, ' ').replace(/->|<->/g, ' ');
+    const matches = cleanExpr.match(/[A-H]/gi) || [];
     matches.forEach(m => varSet.add(m.toUpperCase()));
     const vars = [...varSet].sort();
     if (vars.length === 0) throw new Error('novar');
