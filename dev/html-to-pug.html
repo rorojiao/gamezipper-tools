@@ -119,17 +119,64 @@ function nodeToPug(node, depth, opts, lines) {
     const attrStr = attrs.length ? '(' + attrs.join(', ') + ')' : '';
 
     // Determine inline vs block based on children
-    const children = [...node.childNodes].filter(c => c.nodeType === 1 || (c.nodeType === 3 && c.textContent.trim()));
+    const elementChildren = [...node.childNodes].filter(c => c.nodeType === 1);
     let textContent = '';
     for (const c of node.childNodes) {
       if (c.nodeType === 3) textContent += c.textContent;
     }
     textContent = textContent.trim();
-    const hasBlockChildren = children.some(c => c.nodeType === 1);
+    const hasBlockChildren = elementChildren.length > 0;
 
     if (hasBlockChildren) {
-      lines.push(indent + label + attrStr + (textContent ? ' ' + escText(textContent) : ''));
-      for (const child of node.childNodes) nodeToPug(child, depth + 1, opts, lines);
+      // Mixed content: walk childNodes in order rather than emitting joined textContent
+      // Detect if any element child is block-level (would force nesting on next line)
+      const blockTags = new Set(['div','p','ul','ol','li','section','article','header','footer','nav','main','aside','table','tr','td','th','tbody','thead','form','fieldset','blockquote','pre','figure','figcaption','h1','h2','h3','h4','h5','h6']);
+      const hasBlockEls = elementChildren.some(c => blockTags.has(c.tagName.toLowerCase()));
+      if (hasBlockEls) {
+        // Block children — emit any leading text inline (rare) then nest children
+        lines.push(indent + label + attrStr + (textContent ? ' ' + escText(textContent) : ''));
+        for (const child of node.childNodes) nodeToPug(child, depth + 1, opts, lines);
+      } else {
+        // Inline children — build a single-line representation
+        // Walk children in source order, concatenating text and inline element syntax
+        let inline = label + attrStr;
+        let hasInline = false;
+        for (const c of node.childNodes) {
+          if (c.nodeType === 3) {
+            const t = c.textContent.replace(/\s+/g, ' ').trim();
+            if (t) { inline += (hasInline || inline.endsWith('=') ? ' ' : ' ') + escText(t); hasInline = true; }
+          } else if (c.nodeType === 1) {
+            const subtag = c.tagName.toLowerCase();
+            let subLabel = subtag;
+            if (c.classList && c.classList.length && opts.pretty) subLabel += '.' + [...c.classList].map(s => sanitize(s)).join('.');
+            if (c.id && opts.pretty) subLabel += '#' + sanitize(c.id);
+            const subAttrs = [];
+            for (const attr of c.attributes) {
+              if (opts.pretty && (attr.name === 'id' || (attr.name === 'class' && c.classList.length))) continue;
+              subAttrs.push(attrName(attr.name) + '="' + escAttr(attr.value) + '"');
+            }
+            inline += ' ' + subLabel + (subAttrs.length ? '(' + subAttrs.join(', ') + ')' : '');
+            // Recurse into inline element's own children only if it has block children
+            const subHasBlock = [...c.childNodes].some(cc => cc.nodeType === 1);
+            if (subHasBlock) {
+              // Push current inline line, then nest
+              lines.push(indent + inline.trim());
+              inline = '';
+              for (const cc of c.childNodes) nodeToPug(cc, depth + 1, opts, lines);
+            } else {
+              // Grab inline text of sub-element
+              let subText = '';
+              for (const cc of c.childNodes) if (cc.nodeType === 3) subText += cc.textContent;
+              subText = subText.replace(/\s+/g, ' ').trim();
+              if (subText) inline += ' ' + escText(subText);
+            }
+            hasInline = true;
+          } else if (c.nodeType === 4) {
+            // CDATA — skip
+          }
+        }
+        if (inline.trim()) lines.push(indent + inline.trim());
+      }
     } else if (textContent) {
       lines.push(indent + label + attrStr + ' ' + escText(textContent));
     } else {
