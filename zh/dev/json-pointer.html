@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JSON Pointer 求值器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="对任意 JSON 文档解析 JSON Pointer（RFC 6901）和 URI 片段指针。支持 ~0/~1 转义、数组索引和多指针批量模式。完全浏览器本地运行。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-pointer.html">
+<meta property="og:title" content="JSON Pointer 求值器">
+<meta property="og:description" content="对任意 JSON 文档解析 JSON Pointer（RFC 6901）和 URI 片段指针。支持 ~0/~1 转义、数组索引和多指针批量模式。完全浏览器本地运行。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-pointer.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JSON Pointer 求值器">
+<meta name="twitter:description" content="对任意 JSON 文档解析 JSON Pointer（RFC 6901）和 URI 片段指针。支持 ~0/~1 转义、数组索引和多指针批量模式。完全浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.jp-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.jp-grid{grid-template-columns:1fr}}
+.jp-col{display:flex;flex-direction:column;gap:6px}
+.jp-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.jp-col textarea{min-height:340px;padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.86em;line-height:1.55;resize:vertical;tab-size:2}
+.jp-col textarea:focus{outline:none;border-color:var(--accent)}
+.jp-ptrs{min-height:160px!important}
+.jp-results{display:flex;flex-direction:column;gap:8px}
+.jp-res{padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.85em}
+.jp-res.err{border-color:var(--danger);color:var(--danger)}
+.jp-res .jp-ptr{color:var(--accent);font-weight:600;word-break:break-all;display:block;margin-bottom:4px}
+.jp-res .jp-val{white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto}
+.jp-opts{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85em}
+.jp-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.jp-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.jp-status.ok{color:var(--success)}.jp-status.err{color:var(--danger)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Pointer Evaluator","description":"Free JSON Pointer evaluator (RFC 6901). Resolve JSON Pointers and URI fragment pointers against any JSON document with ~0/~1 escaping, array indexing and multiple-pointer batch mode. Runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/json-pointer.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a JSON Pointer?","acceptedAnswer":{"@type":"Answer","text":"A JSON Pointer (RFC 6901) is a string that identifies a single value inside a JSON document, similar to a file path. It is built from a sequence of reference tokens separated by '/', e.g. '/foo/0/bar' points to doc.foo[0].bar. The empty string '' refers to the whole document, and JSON Patch (RFC 6902) builds on JSON Pointer."}},{"@type":"Question","name":"How does escaping work in JSON Pointers?","acceptedAnswer":{"@type":"Answer","text":"Because '/' separates tokens, a literal '/' inside a key is encoded as '~1', and a literal '~' is encoded as '~0'. When evaluating, the tool first replaces every '~1' with '/', then every '~0' with '~'. For the URI fragment form, the pointer starts with '#' and is percent-decoded first (e.g. '#/a%20b')."}},{"@type":"Question","name":"How are array indices handled?","acceptedAnswer":{"@type":"Answer","text":"When the current value is an array, the reference token must be a non-negative integer (or '-' which refers to the next, non-existent index and produces an error when resolved). Leading zeros like '01' are invalid and rejected per the RFC."}},{"@type":"Question","name":"Is my JSON sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. Pointer resolution happens entirely in your browser using JavaScript. Nothing is uploaded, stored, or transmitted. The tool works offline after the page loads."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-pointer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-pointer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-pointer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="jp-opts">
+      <label><input type="checkbox" id="uriForm"> <span id="lbl-uri"></span></label>
+      <label><input type="checkbox" id="batch" checked> <span id="lbl-batch"></span></label>
+    </div>
+    <div class="jp-grid">
+      <div class="jp-col">
+        <label id="lbl-json"></label>
+        <textarea id="json" spellcheck="false" placeholder='{"users":[{"name":"Alice"},{"name":"Bob"}]}'></textarea>
+      </div>
+      <div class="jp-col">
+        <label id="lbl-ptrs"></label>
+        <textarea id="pointers" class="jp-ptrs" spellcheck="false" placeholder="/users/0/name"></textarea>
+        <label id="lbl-results" style="margin-top:4px"></label>
+        <div class="jp-results" id="results"></div>
+      </div>
+    </div>
+    <div class="jp-status" id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Pointer Evaluator',
+    toolDesc: 'Resolve JSON Pointers (RFC 6901) and URI-fragment pointers against any JSON document. Supports ~0/~1 escaping, array indexing and batch mode for multiple pointers. Runs entirely in your browser.',
+    lblUri: 'URI fragment form (#/...)', lblBatch: 'Multiple pointers (one per line)',
+    lblJson: 'JSON Document', lblPtrs: 'JSON Pointer(s)', lblResults: 'Results',
+    okN: '✓ Resolved N pointer(s)', ok1: '✓ Resolved',
+    err: '✗ Invalid JSON: ', errEmpty: '✗ Enter at least one JSON pointer',
+    resNotFound: 'not found', resRoot: '(root document)',
+    step1: 'Paste your JSON document into the left area',
+    step2: 'Type a JSON Pointer (or one per line) on the right',
+    step3: 'Each pointer is resolved and shown with its value',
+    step4: 'Toggle URI fragment form for #/foo style pointers',
+  },
+  zh: {
+    toolTitle: 'JSON Pointer 求值器',
+    toolDesc: '对任意 JSON 文档解析 JSON Pointer（RFC 6901）和 URI 片段指针。支持 ~0/~1 转义、数组索引和多指针批量模式。完全浏览器本地运行。',
+    lblUri: 'URI 片段形式 (#/...)', lblBatch: '多指针（每行一个）',
+    lblJson: 'JSON 文档', lblPtrs: 'JSON Pointer', lblResults: '结果',
+    okN: '✓ 已解析 N 个指针', ok1: '✓ 已解析',
+    err: '✗ JSON 无效：', errEmpty: '✗ 请至少输入一个 JSON pointer',
+    resNotFound: '未找到', resRoot: '（根文档）',
+    step1: '将 JSON 文档粘贴到左侧',
+    step2: '在右侧输入 JSON Pointer（或多行多个）',
+    step3: '每个指针都会被解析并显示对应的值',
+    step4: '可切换 URI 片段形式以使用 #/foo 风格的指针',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function unescapeToken(seg) {
+  return seg.replace(/~1/g, '/').replace(/~0/g, '~');
+}
+
+function evaluate(doc, pointer, uriForm) {
+  if (uriForm) {
+    if (pointer[0] !== '#') throw new Error('URI fragment pointer must start with #');
+    pointer = decodeURIComponent(pointer.slice(1));
+  }
+  if (pointer === '') return { value: doc, root: true };
+  if (pointer[0] !== '/') throw new Error('pointer must start with / (or be empty)');
+  const segs = pointer.split('/').slice(1);
+  let cur = doc;
+  for (const raw of segs) {
+    const seg = unescapeToken(raw);
+    if (Array.isArray(cur)) {
+      if (seg === '-') throw new Error("'-' refers to a non-existent array element");
+      if (!/^(0|[1-9]\d*)$/.test(seg)) throw new Error('invalid array index "' + seg + '"');
+      const idx = Number(seg);
+      if (idx >= cur.length) throw new Error('array index ' + idx + ' out of bounds');
+      cur = cur[idx];
+    } else if (cur !== null && typeof cur === 'object') {
+      if (!Object.prototype.hasOwnProperty.call(cur, seg)) throw new Error('member "' + seg + '" not found');
+      cur = cur[seg];
+    } else {
+      throw new Error('cannot resolve "' + seg + '" on a ' + (cur === null ? 'null' : typeof cur) + ' value');
+    }
+  }
+  return { value: cur, root: false };
+}
+
+function run() {
+  const jRaw = $('#json').value.trim();
+  const status = $('#status');
+  const results = $('#results');
+  results.innerHTML = '';
+  if (!jRaw) { status.textContent = ''; status.className = 'jp-status'; return; }
+  let doc;
+  try { doc = JSON.parse(jRaw); }
+  catch (e) {
+    status.textContent = t('err') + e.message; status.className = 'jp-status err'; return;
+  }
+  const uriForm = $('#uriForm').checked;
+  const batch = $('#batch').checked;
+  const raw = $('#pointers').value;
+  let ptrs;
+  if (batch) {
+    ptrs = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  } else {
+    // single mode: the whole field is one pointer (empty string = root document)
+    ptrs = [raw.trim()];
+  }
+  if (batch && !ptrs.length) {
+    status.textContent = t('errEmpty'); status.className = 'jp-status err'; return;
+  }
+  let ok = 0;
+  for (const p of ptrs) {
+    const box = document.createElement('div');
+    box.className = 'jp-res';
+    try {
+      const { value, root } = evaluate(doc, p, uriForm);
+      box.innerHTML = '<span class="jp-ptr"></span><span class="jp-val"></span>';
+      box.querySelector('.jp-ptr').textContent = p;
+      box.querySelector('.jp-val').textContent = root ? t('resRoot') + '\n' + JSON.stringify(value, null, 2) : JSON.stringify(value, null, 2);
+      ok++;
+    } catch (e) {
+      box.className = 'jp-res err';
+      box.innerHTML = '<span class="jp-ptr"></span><span class="jp-val"></span>';
+      box.querySelector('.jp-ptr').textContent = p;
+      box.querySelector('.jp-val').textContent = '✗ ' + e.message;
+    }
+    results.appendChild(box);
+  }
+  status.textContent = (batch ? t('okN') : t('ok1')).replace('N', ok);
+  status.className = 'jp-status ' + (ok > 0 ? 'ok' : 'err');
+}
+
+function loadExample() {
+  $('#json').value = JSON.stringify({
+    store: { book: [
+      { category: 'reference', author: 'Nigel Rees', title: 'Sayings', price: 8.95 },
+      { category: 'fiction', author: 'Evelyn Waugh', title: 'Sword', price: 12.99, isbn: '0-553-21311-3' }
+    ], bicycle: { color: 'red', price: 19.95 } },
+    'a/b': 'escaped slash key'
+  }, null, 2);
+  $('#pointers').value = [
+    '/store/book/0/author',
+    '/store/book/1/isbn',
+    '/store/bicycle/color',
+    '/a~1b',
+    '/store/book/5/author'
+  ].join('\n');
+  run();
+}
+function doClear() { $('#json').value=''; $('#pointers').value=''; $('#results').innerHTML=''; $('#status').textContent=''; }
+
+$('#lbl-uri').textContent = t('lblUri');
+$('#lbl-batch').textContent = t('lblBatch');
+$('#lbl-json').textContent = t('lblJson');
+$('#lbl-ptrs').textContent = t('lblPtrs');
+$('#lbl-results').textContent = t('lblResults');
+
+$('#json').addEventListener('input', run);
+$('#pointers').addEventListener('input', run);
+$('#uriForm').addEventListener('change', run);
+$('#batch').addEventListener('change', run);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="run()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔍', href:'/dev/jsonpath.html', name:'JSONPath Finder'},
+    {icon:'🌿', href:'/dev/json-tree.html', name:'JSON Tree'},
+    {icon:'🧬', href:'/dev/json-schema-validator.html', name:'JSON Schema Validator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片主色调色板提取 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="上传图片后即时提取主色调色板。获取 HEX、RGB 和 HSL，或导出为 CSS 变量 — 完全浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/color-palette-extractor.html">
+  <meta property="og:title" content="图片主色调色板提取">
+  <meta property="og:description" content="上传图片后即时提取主色调色板。获取 HEX、RGB 和 HSL，或导出为 CSS 变量 — 完全浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/color-palette-extractor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片主色调色板提取">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.pe-drop{border:2px dashed var(--border);border-radius:14px;padding:36px 20px;text-align:center;cursor:pointer;background:var(--glass2);transition:border-color .15s}
+.pe-drop:hover,.pe-drop.over{border-color:var(--accent)}
+.pe-drop input{display:none}
+.pe-stage{display:none;max-width:100%;margin:0 auto;text-align:center}
+.pe-stage img,.pe-stage canvas{max-width:100%;max-height:380px;border-radius:12px;border:1px solid var(--border);display:none}
+.pe-controls{display:flex;gap:14px;margin:16px 0;flex-wrap:wrap;align-items:center}
+.pe-controls label{font-size:.82rem;color:var(--text2);display:flex;align-items:center;gap:6px}
+.pe-controls input[type=number]{width:60px;padding:6px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text);font-size:.85rem}
+.pe-controls button{padding:8px 14px;font-size:.85rem}
+.pe-palette{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:14px}
+.pe-swatch{background:var(--glass);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .12s}
+.pe-swatch:hover{transform:translateY(-3px)}
+.pe-color{height:90px;width:100%}
+.pe-info{padding:8px 10px}
+.pe-hex{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--accent);word-break:break-all}
+.pe-pct{font-size:.72rem;color:var(--text2);margin-top:2px}
+.pe-toolbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.pe-out{margin-top:14px;display:none}
+.pe-out pre{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:.78rem;overflow:auto;max-height:200px;font-family:monospace;color:var(--text)}
+.pe-empty{color:var(--text2);text-align:center;padding:20px;font-size:.85rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Color Palette Extractor From Image","description":"Free online color palette extractor. Upload an image and get its dominant colors as a palette — HEX, RGB, HSL, and CSS variables. Browser-only, no upload.","url": "https://tools.gamezipper.com/zh/image/color-palette-extractor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does color palette extraction work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool reads the image pixels, quantizes them into a fixed number of color buckets using median-cut style grouping, then returns the most frequent buckets as the dominant palette. You can choose how many colors to extract (3-12)."}}, {"@type": "Question", "name": "Is my image uploaded anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. The image is loaded entirely in your browser and analyzed on a local canvas. No pixel data is ever sent to a server."}}, {"@type": "Question", "name": "What output formats do I get?", "acceptedAnswer": {"@type": "Answer", "text": "Each color is shown as HEX, RGB and HSL. You can also export the whole palette as CSS custom properties (variables) or copy individual hex codes with one click."}}, {"@type": "Question", "name": "Can I extract colors from any image?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Any image format the browser can render (PNG, JPG, GIF, WebP, BMP, AVIF, SVG) works. Very large images are automatically downscaled for fast processing."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/color-palette-extractor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/color-palette-extractor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/color-palette-extractor.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="pe-drop" id="drop">
+      <input type="file" id="file" accept="image/*">
+      <div style="font-size:1rem;font-weight:600">🎨</div>
+      <div id="drop-hint" style="font-size:.82rem;color:var(--text2);margin-top:6px"></div>
+    </div>
+    <div class="pe-stage" id="stage">
+      <canvas id="canvas"></canvas>
+    </div>
+    <div class="pe-controls" id="controls" style="display:none">
+      <label id="lbl-count"><span id="count-text"></span>
+        <input type="number" id="count" min="3" max="12" value="6">
+      </label>
+      <button class="gz-btn" id="btn-extract"></button>
+      <button class="gz-btn gz-btn-secondary" id="btn-reupload"></button>
+    </div>
+    <div class="pe-palette" id="palette"></div>
+    <div class="pe-toolbar" id="palette-tools" style="display:none">
+      <button class="gz-btn gz-btn-secondary" id="btn-css"></button>
+      <button class="gz-btn gz-btn-secondary" id="btn-copy-all"></button>
+    </div>
+    <div class="pe-out" id="out-block">
+      <pre id="out"></pre>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Color Palette Extractor',
+    toolDesc: 'Upload an image and instantly extract its dominant colors into a downloadable palette. Get HEX, RGB and HSL, or export as CSS variables — runs entirely in your browser.',
+    dropHint: 'Click to upload or drag and drop an image',
+    countText: 'Colors:',
+    extract: 'Extract palette',
+    reupload: 'Upload new image',
+    exportCss: 'Export CSS variables',
+    copyAll: 'Copy all HEX',
+    emptyHint: 'Upload an image to extract its dominant colors.',
+    step1: 'Click the upload box or drag an image onto it',
+    step2: 'Choose how many colors (3-12) you want',
+    step3: 'Click Extract palette to compute the dominant colors',
+    step4: 'Click a swatch to copy its HEX, or export as CSS variables',
+  },
+  zh: {
+    toolTitle: '图片主色调色板提取',
+    toolDesc: '上传图片后即时提取主色调色板。获取 HEX、RGB 和 HSL，或导出为 CSS 变量 — 完全浏览器本地运行。',
+    dropHint: '点击上传或拖拽图片到此处',
+    countText: '颜色数：',
+    extract: '提取调色板',
+    reupload: '重新上传',
+    exportCss: '导出 CSS 变量',
+    copyAll: '复制全部 HEX',
+    emptyHint: '上传图片以提取主色调色板。',
+    step1: '点击上传框或将图片拖拽到此处',
+    step2: '选择要提取的颜色数量（3-12）',
+    step3: '点击「提取调色板」计算主色调',
+    step4: '点击色块复制 HEX，或导出为 CSS 变量',
+  }
+});
+
+const { $, copyText, showToast, t } = GZ;
+
+let img = null;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+$('#drop-hint').textContent = t('dropHint');
+$('#count-text').textContent = t('countText');
+$('#btn-extract').textContent = t('extract');
+$('#btn-reupload').textContent = t('reupload');
+$('#btn-css').textContent = t('exportCss');
+$('#btn-copy-all').textContent = t('copyAll');
+
+// Initial empty state
+$('#palette').innerHTML = '<div class="pe-empty" style="grid-column:1/-1">'+t('emptyHint')+'</div>';
+
+// File handling
+$('#drop').addEventListener('click', () => $('#file').click());
+$('#btn-reupload').addEventListener('click', () => $('#file').click());
+$('#file').addEventListener('change', e => { if(e.target.files[0]) loadImage(e.target.files[0]); });
+$('#drop').addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('over'); });
+$('#drop').addEventListener('dragleave', () => $('#drop').classList.remove('over'));
+$('#drop').addEventListener('drop', e => {
+  e.preventDefault();
+  $('#drop').classList.remove('over');
+  if(e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+});
+
+function loadImage(file){
+  if(!file.type.startsWith('image/')){ showToast(t('dropHint')); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const tmp = new Image();
+    tmp.onload = () => {
+      img = tmp;
+      // Downscale very large images for fast, accurate sampling
+      const maxDim = 240;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if(w > maxDim || h > maxDim){ const s = maxDim / Math.max(w, h); w = Math.max(1, Math.round(w*s)); h = Math.max(1, Math.round(h*s)); }
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      $('#drop').style.display = 'none';
+      $('#stage').style.display = 'block';
+      $('#controls').style.display = 'flex';
+      canvas.style.display = 'block';
+      extractPalette();
+    };
+    tmp.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+$('#btn-extract').addEventListener('click', extractPalette);
+
+function extractPalette(){
+  if(!img){ return; }
+  const k = Math.min(12, Math.max(3, parseInt($('#count').value) || 6));
+  try {
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const palette = quantize(data, k);
+    renderPalette(palette);
+  } catch(err){
+    showToast('Could not read image (it may be cross-origin).');
+  }
+}
+
+// Median-cut color quantization.
+function quantize(data, k){
+  // Collect non-transparent pixel colors into a list
+  const pixels = [];
+  for(let i = 0; i < data.length; i += 4){
+    if(data[i + 3] < 125) continue; // skip transparent
+    pixels.push([data[i], data[i + 1], data[i + 2]]);
+  }
+  if(pixels.length === 0) return [];
+  // Recursive median cut
+  function cut(buckets){
+    if(buckets.length >= k) return buckets;
+    // Pick bucket with largest channel range
+    let targetIdx = -1, targetRange = -1, targetChannel = 0;
+    for(let bi = 0; bi < buckets.length; bi++){
+      const b = buckets[bi];
+      if(b.length < 2) continue;
+      for(let c = 0; c < 3; c++){
+        let mn = 256, mx = -1;
+        for(const p of b){ if(p[c] < mn) mn = p[c]; if(p[c] > mx) mx = p[c]; }
+        const rng = mx - mn;
+        if(rng > targetRange){ targetRange = rng; targetIdx = bi; targetChannel = c; }
+      }
+    }
+    if(targetIdx === -1) return buckets;
+    const b = buckets[targetIdx];
+    b.sort((a, bb) => a[targetChannel] - bb[targetChannel]);
+    const mid = Math.floor(b.length / 2);
+    const a = b.slice(0, mid);
+    const bb = b.slice(mid);
+    buckets.splice(targetIdx, 1);
+    if(a.length) buckets.push(a);
+    if(bb.length) buckets.push(bb);
+    return cut(buckets);
+  }
+  const buckets = cut([pixels]);
+  // Compute average color + count for each bucket, sort by frequency
+  const total = pixels.length;
+  const result = buckets.map(b => {
+    let r = 0, g = 0, bl = 0;
+    for(const p of b){ r += p[0]; g += p[1]; bl += p[2]; }
+    const n = b.length;
+    return { r: Math.round(r / n), g: Math.round(g / n), b: Math.round(bl / n), count: n, pct: n / total };
+  }).sort((a, b) => b.count - a.count);
+  return result;
+}
+
+function rgbToHex(r, g, b){
+  return '#' + [r, g, b].map(n => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function rgbToHslStr(r, g, b){
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+  if(max === min){ h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch(max){
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return 'hsl(' + Math.round(h * 360) + ', ' + Math.round(s * 100) + '%, ' + Math.round(l * 100) + '%)';
+}
+
+let lastPalette = [];
+
+function renderPalette(palette){
+  lastPalette = palette;
+  if(!palette.length){
+    $('#palette').innerHTML = '<div class="pe-empty" style="grid-column:1/-1">'+t('emptyHint')+'</div>';
+    $('#palette-tools').style.display = 'none';
+    return;
+  }
+  $('#palette').innerHTML = palette.map(c => {
+    const hex = rgbToHex(c.r, c.g, c.b);
+    const rgb = 'rgb('+c.r+', '+c.g+', '+c.b+')';
+    const hsl = rgbToHslStr(c.r, c.g, c.b);
+    return '<div class="pe-swatch" onclick="peCopyHex(\''+hex+'\')" title="'+hex+' | '+rgb+' | '+hsl+'">' +
+      '<div class="pe-color" style="background:'+hex+'"></div>' +
+      '<div class="pe-info"><div class="pe-hex">'+hex+'</div>' +
+      '<div class="pe-pct">'+(c.pct * 100).toFixed(1)+'% · '+rgb+'</div></div>' +
+    '</div>';
+  }).join('');
+  $('#palette-tools').style.display = 'flex';
+}
+
+window.peCopyHex = function(hex){
+  copyText(hex);
+};
+
+$('#btn-copy-all').addEventListener('click', () => {
+  if(!lastPalette.length) return;
+  copyText(lastPalette.map(c => rgbToHex(c.r, c.g, c.b)).join(', '));
+});
+
+$('#btn-css').addEventListener('click', () => {
+  if(!lastPalette.length) return;
+  const css = ':root {\n' + lastPalette.map((c, i) =>
+    '  --color-' + (i + 1) + ': ' + rgbToHex(c.r, c.g, c.b) + '; /* ' + (c.pct * 100).toFixed(1) + '% */'
+  ).join('\n') + '\n}';
+  $('#out').textContent = css;
+  $('#out-block').style.display = 'block';
+  copyText(css);
+});
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/color-picker-from-image.html', name:'Image Color Picker'},
+    {icon:'💧', href:'/image/color-extractor.html', name:'Color Extractor'},
+    {icon:'🌈', href:'/color/palette.html', name:'Palette Generator'},
+    {icon:'🔄', href:'/color/hex-rgb.html', name:'HEX ↔ RGB'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>端口号查询 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="搜索精选的常见 TCP/UDP 服务端口数据库。查找任意端口号对应的应用程序、协议或服务 — 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/port-numbers.html">
+  <meta property="og:title" content="端口号查询">
+  <meta property="og:description" content="搜索精选的常见 TCP/UDP 服务端口数据库。查找任意端口号对应的应用程序、协议或服务 — 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/port-numbers.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="端口号查询">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.port-search{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.port-search input{flex:1;min-width:220px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1rem}
+.port-search input:focus{outline:none;border-color:var(--accent)}
+.port-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.port-filters button{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:16px;font-size:.82rem;cursor:pointer}
+.port-filters button.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.port-table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px}
+.port-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;white-space:nowrap;position:sticky;top:0;background:#0a0a1a}
+.port-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;word-break:break-word}
+.port-table tr:hover td{background:var(--glass2)}
+.port-num{font-family:monospace;font-weight:700;color:var(--accent)}
+.port-proto{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.72rem;font-weight:600;background:var(--glass);border:1px solid var(--border)}
+.port-proto.tcp{color:#4ecdc4;border-color:#4ecdc4}
+.port-proto.udp{color:#ffd93d;border-color:#ffd93d}
+.port-proto.both{color:#ff6b9d;border-color:#ff6b9d}
+.port-wrap{max-height:560px;overflow:auto;border:1px solid var(--border);border-radius:12px}
+.port-count{font-size:.82rem;color:var(--text2);margin-bottom:8px}
+.port-empty{text-align:center;padding:30px;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Port Number Lookup","description":"Free port number lookup and reference. Search a curated registry of common TCP and UDP service ports and find which application or protocol uses any port number.","url": "https://tools.gamezipper.com/zh/dev/port-numbers.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a network port number?", "acceptedAnswer": {"@type": "Answer", "text": "A port number is a 16-bit integer (0-65535) that identifies a specific process or service on a host. Combined with an IP address it forms a network endpoint, allowing multiple services to share the same host."}}, {"@type": "Question", "name": "What is the difference between TCP and UDP ports?", "acceptedAnswer": {"@type": "Answer", "text": "TCP (Transmission Control Protocol) provides reliable, ordered, connection-oriented delivery. UDP (User Datagram Protocol) is connectionless and faster but does not guarantee delivery or ordering. Some services (like DNS or SNMP) register the same port number for both protocols."}}, {"@type": "Question", "name": "What are the three port ranges?", "acceptedAnswer": {"@type": "Answer", "text": "Well-known ports are 0-1023 (assigned by IANA to standard services). Registered ports are 1024-49151 (assigned by IANA to specific applications). Dynamic or private ports are 49152-65535 (ephemeral, used for outgoing connections)."}}, {"@type": "Question", "name": "Is this port lookup tool free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free. The lookup runs entirely in your browser against an embedded curated registry — no data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/port-numbers.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/port-numbers.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/port-numbers.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="port-search">
+      <input type="text" id="q" oninput="render()" autocomplete="off">
+    </div>
+    <div class="port-filters" id="filters"></div>
+    <div class="port-count" id="count"></div>
+    <div class="port-wrap">
+      <table class="port-table" id="table"></table>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Port Number Lookup',
+    toolDesc: 'Search a curated registry of common TCP and UDP service ports. Find which application, protocol or service uses any port number — runs in your browser.',
+    searchPh: 'Search by port number, name or description (e.g. 443, ssh, http, dns)...',
+    all: 'All',
+    tcpOnly: 'TCP',
+    udpOnly: 'UDP',
+    both: 'Both',
+    port: 'Port',
+    protocol: 'Protocol',
+    service: 'Service',
+    description: 'Description',
+    noResults: 'No matching ports. Try a different search term or filter.',
+    showing: 'showing',
+    of: 'of',
+    entries: 'entries',
+    step1: 'Type a port number, service name or keyword in the search box',
+    step2: 'Use the protocol filter to narrow to TCP, UDP or both',
+    step3: 'Browse the table of matching ports and descriptions',
+    step4: 'Use port numbers to configure firewalls, troubleshoot or document services',
+  },
+  zh: {
+    toolTitle: '端口号查询',
+    toolDesc: '搜索精选的常见 TCP/UDP 服务端口数据库。查找任意端口号对应的应用程序、协议或服务 — 浏览器本地运行。',
+    searchPh: '按端口号、名称或描述搜索（如 443、ssh、http、dns）...',
+    all: '全部',
+    tcpOnly: 'TCP',
+    udpOnly: 'UDP',
+    both: '两者',
+    port: '端口',
+    protocol: '协议',
+    service: '服务',
+    description: '说明',
+    noResults: '未找到匹配的端口，请尝试其他搜索词或筛选条件。',
+    showing: '显示',
+    of: '共',
+    entries: '条',
+    step1: '在搜索框中输入端口号、服务名或关键词',
+    step2: '使用协议筛选器缩小到 TCP、UDP 或两者',
+    step3: '浏览匹配的端口表格和说明',
+    step4: '利用端口号配置防火墙、排查故障或编写文档',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Curated IANA port registry — well-known and common registered ports.
+// proto: 'tcp' | 'udp' | 'both'
+const PORTS = [
+  {p:20,proto:'tcp',svc:'FTP-DATA',desc:'File Transfer Protocol (data channel)'},
+  {p:21,proto:'tcp',svc:'FTP',desc:'File Transfer Protocol (control channel)'},
+  {p:22,proto:'tcp',svc:'SSH',desc:'Secure Shell — secure remote login and command execution'},
+  {p:22,proto:'udp',svc:'SSH',desc:'Secure Shell (UDP variant, rarely used)'},
+  {p:23,proto:'tcp',svc:'TELNET',desc:'Telnet — unencrypted remote login (legacy)'},
+  {p:25,proto:'tcp',svc:'SMTP',desc:'Simple Mail Transfer Protocol — email delivery'},
+  {p:25,proto:'udp',svc:'SMTP',desc:'Simple Mail Transfer Protocol (rare UDP variant)'},
+  {p:53,proto:'both',svc:'DNS',desc:'Domain Name System — name resolution'},
+  {p:67,proto:'udp',svc:'BOOTPS',desc:'Bootstrap Protocol Server (DHCP)'},
+  {p:68,proto:'udp',svc:'BOOTPC',desc:'Bootstrap Protocol Client (DHCP)'},
+  {p:69,proto:'udp',svc:'TFTP',desc:'Trivial File Transfer Protocol'},
+  {p:80,proto:'tcp',svc:'HTTP',desc:'Hypertext Transfer Protocol — unencrypted web traffic'},
+  {p:80,proto:'udp',svc:'HTTP',desc:'HTTP (QUIC / HTTP/3 experimental)'},
+  {p:88,proto:'tcp',svc:'KERBEROS',desc:'Kerberos authentication'},
+  {p:88,proto:'udp',svc:'KERBEROS',desc:'Kerberos authentication'},
+  {p:110,proto:'tcp',svc:'POP3',desc:'Post Office Protocol v3 — email retrieval'},
+  {p:111,proto:'both',svc:'SUNRPC',desc:'ONC RPC (Sun RPC / portmapper)'},
+  {p:113,proto:'tcp',svc:'IDENT',desc:'IDENT / auth protocol'},
+  {p:119,proto:'tcp',svc:'NNTP',desc:'Network News Transfer Protocol (Usenet)'},
+  {p:123,proto:'udp',svc:'NTP',desc:'Network Time Protocol — clock synchronization'},
+  {p:135,proto:'both',svc:'MSRPC',desc:'Microsoft RPC / DCOM'},
+  {p:137,proto:'udp',svc:'NETBIOS-NS',desc:'NetBIOS Name Service'},
+  {p:138,proto:'udp',svc:'NETBIOS-DGM',desc:'NetBIOS Datagram Service'},
+  {p:139,proto:'tcp',svc:'NETBIOS-SSN',desc:'NetBIOS Session Service'},
+  {p:143,proto:'tcp',svc:'IMAP',desc:'Internet Message Access Protocol — email access'},
+  {p:161,proto:'udp',svc:'SNMP',desc:'Simple Network Management Protocol'},
+  {p:162,proto:'udp',svc:'SNMP-TRAP',desc:'SNMP Trap'},
+  {p:179,proto:'tcp',svc:'BGP',desc:'Border Gateway Protocol — internet routing'},
+  {p:194,proto:'tcp',svc:'IRC',desc:'Internet Relay Chat'},
+  {p:389,proto:'both',svc:'LDAP',desc:'Lightweight Directory Access Protocol'},
+  {p:443,proto:'both',svc:'HTTPS',desc:'HTTP over TLS/SSL — encrypted web traffic'},
+  {p:445,proto:'both',svc:'MICROSOFT-DS',desc:'Microsoft Directory Services (SMB over IP)'},
+  {p:465,proto:'tcp',svc:'SMTPS',desc:'SMTP over TLS (implicit SSL) — email submission'},
+  {p:500,proto:'udp',svc:'ISAKMP',desc:'Internet Security Association and Key Management (IKE)'},
+  {p:514,proto:'udp',svc:'SYSLOG',desc:'Syslog — system logging'},
+  {p:514,proto:'tcp',svc:'SHELL',desc:'Remote shell (rsh, legacy)'},
+  {p:515,proto:'tcp',svc:'LPD',desc:'Line Printer Daemon — network printing'},
+  {p:520,proto:'udp',svc:'RIP',desc:'Routing Information Protocol (RIPv1)'},
+  {p:554,proto:'tcp',svc:'RTSP',desc:'Real-Time Streaming Protocol'},
+  {p:587,proto:'tcp',svc:'SUBMISSION',desc:'SMTP Message Submission (STARTTLS) — modern email send'},
+  {p:593,proto:'both',svc:'HTTP-RPC-EPMAP',desc:'HTTP RPC Ep Mapper'},
+  {p:631,proto:'tcp',svc:'IPP',desc:'Internet Printing Protocol (CUPS)'},
+  {p:636,proto:'tcp',svc:'LDAPS',desc:'LDAP over TLS/SSL'},
+  {p:646,proto:'tcp',svc:'LDP',desc:'Label Distribution Protocol (MPLS)'},
+  {p:691,proto:'tcp',svc:'MS-EXCHANGE',desc:'MS Exchange Routing'},
+  {p:873,proto:'tcp',svc:'RSYNC',desc:'rsync file synchronization'},
+  {p:902,proto:'tcp',svc:'VMWARE-AUTH',desc:'VMware Authentication Daemon'},
+  {p:990,proto:'tcp',svc:'FTPS',desc:'FTP over TLS/SSL'},
+  {p:993,proto:'tcp',svc:'IMAPS',desc:'IMAP over TLS/SSL'},
+  {p:995,proto:'tcp',svc:'POP3S',desc:'POP3 over TLS/SSL'},
+  {p:1080,proto:'tcp',svc:'SOCKS',desc:'SOCKS Proxy'},
+  {p:1099,proto:'tcp',svc:'RMI',desc:'Java RMI Registry'},
+  {p:1194,proto:'udp',svc:'OPENVPN',desc:'OpenVPN'},
+  {p:1241,proto:'tcp',svc:'NESSUS',desc:'Nessus Vulnerability Scanner'},
+  {p:1352,proto:'tcp',svc:'LOTUS-NOTES',desc:'IBM Lotus Notes / Domino'},
+  {p:1414,proto:'tcp',svc:'IBM-MQ',desc:'IBM MQ'},
+  {p:1433,proto:'tcp',svc:'MSSQL',desc:'Microsoft SQL Server'},
+  {p:1434,proto:'tcp',svc:'MSSQL-BC',desc:'Microsoft SQL Server Browser'},
+  {p:1434,proto:'udp',svc:'MSSQL-BC',desc:'Microsoft SQL Server Browser'},
+  {p:1521,proto:'tcp',svc:'ORACLE',desc:'Oracle Database (TNS listener)'},
+  {p:1524,proto:'tcp',svc:'INGRESLOCK',desc:'Ingress / ingreslock backdoor (historic)'},
+  {p:1645,proto:'udp',svc:'RADIUS-AUTH',desc:'RADIUS Authentication (legacy)'},
+  {p:1646,proto:'udp',svc:'RADIUS-ACCT',desc:'RADIUS Accounting (legacy)'},
+  {p:1701,proto:'udp',svc:'L2TP',desc:'Layer 2 Tunneling Protocol'},
+  {p:1720,proto:'tcp',svc:'H323-HOSTCALL',desc:'H.323 Call Signaling'},
+  {p:1723,proto:'tcp',svc:'PPTP',desc:'Point-to-Point Tunneling Protocol (VPN)'},
+  {p:1755,proto:'tcp',svc:'MMS',desc:'Microsoft Media Server (streaming)'},
+  {p:1812,proto:'udp',svc:'RADIUS-AUTH',desc:'RADIUS Authentication'},
+  {p:1813,proto:'udp',svc:'RADIUS-ACCT',desc:'RADIUS Accounting'},
+  {p:1863,proto:'tcp',svc:'MSNP',desc:'MSN Messenger Protocol'},
+  {p:1900,proto:'udp',svc:'UPNP',desc:'Universal Plug and Play (SSDP)'},
+  {p:1935,proto:'tcp',svc:'RTMP',desc:'Real-Time Messaging Protocol (Flash streaming)'},
+  {p:1985,proto:'udp',svc:'HSRP',desc:'Cisco Hot Standby Router Protocol'},
+  {p:2000,proto:'tcp',svc:'CISCO-SCCP',desc:'Cisco Skinny Client Control Protocol'},
+  {p:2049,proto:'both',svc:'NFS',desc:'Network File System'},
+  {p:2086,proto:'tcp',svc:'WHM',desc:'cPanel WebHost Manager'},
+  {p:2087,proto:'tcp',svc:'WHM-SSL',desc:'cPanel WebHost Manager (SSL)'},
+  {p:2095,proto:'tcp',svc:'CPANEL',desc:'cPanel Webmail'},
+  {p:2096,proto:'tcp',svc:'CPANEL-SSL',desc:'cPanel Webmail (SSL)'},
+  {p:2181,proto:'tcp',svc:'ZOOKEEPER',desc:'Apache ZooKeeper'},
+  {p:2375,proto:'tcp',svc:'DOCKER',desc:'Docker REST API (unencrypted)'},
+  {p:2376,proto:'tcp',svc:'DOCKER-SSL',desc:'Docker REST API (TLS)'},
+  {p:2483,proto:'tcp',svc:'ORACLE-XDB',desc:'Oracle XML DB'},
+  {p:2598,proto:'tcp',svc:'CITRIXIMA',desc:'Citrix IMA / Citrix Management'},
+  {p:2638,proto:'tcp',svc:'SYBASE',desc:'Sybase / SAP SQL Anywhere'},
+  {p:3000,proto:'tcp',svc:'NODE',desc:'Node.js dev server / Rails / various dev servers'},
+  {p:3001,proto:'tcp',svc:'NODE-SSL',desc:'Node.js HTTPS dev server / various'},
+  {p:3128,proto:'tcp',svc:'SQUID',desc:'Squid Web Proxy'},
+  {p:3260,proto:'tcp',svc:'ISCSI-TGT',desc:'iSCSI Target'},
+  {p:3268,proto:'tcp',svc:'AD-GC',desc:'Microsoft Global Catalog (LDAP)'},
+  {p:3269,proto:'tcp',svc:'AD-GC-SSL',desc:'Microsoft Global Catalog (LDAP over SSL)'},
+  {p:3306,proto:'tcp',svc:'MYSQL',desc:'MySQL / MariaDB Database'},
+  {p:3389,proto:'tcp',svc:'RDP',desc:'Microsoft Remote Desktop Protocol'},
+  {p:3389,proto:'udp',svc:'RDP',desc:'Microsoft Remote Desktop (UDP variant)'},
+  {p:3478,proto:'udp',svc:'STUN',desc:'STUN / TURN — NAT traversal for WebRTC'},
+  {p:3690,proto:'tcp',svc:'SVN',desc:'Subversion (SVN) version control'},
+  {p:3702,proto:'udp',svc:'WS-DISC',desc:'WS-Discovery / Device Association'},
+  {p:3784,proto:'udp',svc:'BFD-CTRL',desc:'Bidirectional Forwarding Detection'},
+  {p:3872,proto:'tcp',svc:'OEMAGENT',desc:'Oracle Enterprise Agent'},
+  {p:4000,proto:'tcp',svc:'TERABASE',desc:'Terabase / Diablo II / various games'},
+  {p:4045,proto:'both',svc:'LOCKD',desc:'NFS lock manager'},
+  {p:4321,proto:'tcp',svc:'RWHOIS',desc:'Referral Whois'},
+  {p:4369,proto:'tcp',svc:'EPMD',desc:'Erlang Port Mapper Daemon'},
+  {p:4443,proto:'tcp',svc:'HTTPS-ALT',desc:'HTTPS alternate'},
+  {p:4444,proto:'tcp',svc:'BL4S-PROXY',desc:'KRB524 / Quake / Metasploit default'},
+  {p:4500,proto:'udp',svc:'IPSEC-NAT-T',desc:'IPSec NAT Traversal'},
+  {p:4569,proto:'udp',svc:'IAX',desc:'Inter-Asterisk eXchange (VoIP)'},
+  {p:5000,proto:'tcp',svc:'UPNP-CTRL',desc:'UPnP control / various dev servers / Synology DSM'},
+  {p:5000,proto:'udp',svc:'UPNP-CTRL',desc:'UPnP control'},
+  {p:5001,proto:'tcp',svc:'COMMVAULT',desc:'Synology DSM HTTPS / commvault-message'},
+  {p:5004,proto:'udp',svc:'RTP',desc:'RTP media (Real-Time Transport Protocol)'},
+  {p:5005,proto:'udp',svc:'RTCP',desc:'RTCP control'},
+  {p:5060,proto:'both',svc:'SIP',desc:'Session Initiation Protocol (VoIP)'},
+  {p:5061,proto:'both',svc:'SIP-TLS',desc:'SIP over TLS'},
+  {p:5190,proto:'tcp',svc:'AIM',desc:'AOL Instant Messenger'},
+  {p:5222,proto:'tcp',svc:'XMPP-CLIENT',desc:'XMPP (Jabber) client connection'},
+  {p:5223,proto:'tcp',svc:'XMPP-CLIENT-SSL',desc:'XMPP client over TLS'},
+  {p:5269,proto:'tcp',svc:'XMPP-SERVER',desc:'XMPP server-to-server'},
+  {p:5351,proto:'udp',svc:'NAT-PMP',desc:'NAT Port Mapping Protocol (Apple)'},
+  {p:5353,proto:'udp',svc:'MDNS',desc:'Multicast DNS (Bonjour, Avahi)'},
+  {p:5355,proto:'udp',svc:'LLMNR',desc:'Link-Local Multicast Name Resolution'},
+  {p:5357,proto:'tcp',svc:'WSDAPI',desc:'Web Services for Devices (WSD)'},
+  {p:5432,proto:'tcp',svc:'POSTGRESQL',desc:'PostgreSQL Database'},
+  {p:5666,proto:'tcp',svc:'NRPE',desc:'Nagios Remote Plugin Executor'},
+  {p:5671,proto:'tcp',svc:'AMQP-SSL',desc:'AMQP over TLS (RabbitMQ)'},
+  {p:5672,proto:'tcp',svc:'AMQP',desc:'AMQP — RabbitMQ default'},
+  {p:5683,proto:'udp',svc:'COAP',desc:'Constrained Application Protocol (IoT)'},
+  {p:5800,proto:'tcp',svc:'VNC-HTTP',desc:'VNC over HTTP'},
+  {p:5900,proto:'tcp',svc:'VNC',desc:'Virtual Network Computing (display :0)'},
+  {p:5901,proto:'tcp',svc:'VNC-1',desc:'VNC display :1'},
+  {p:5902,proto:'tcp',svc:'VNC-2',desc:'VNC display :2'},
+  {p:5984,proto:'tcp',svc:'COUCHDB',desc:'Apache CouchDB'},
+  {p:5985,proto:'tcp',svc:'WSMAN',desc:'Windows Remote Management (WinRM) HTTP'},
+  {p:5986,proto:'tcp',svc:'WSMAN-SSL',desc:'Windows Remote Management (WinRM) HTTPS'},
+  {p:6000,proto:'tcp',svc:'X11',desc:'X Window System display :0'},
+  {p:6001,proto:'tcp',svc:'X11-1',desc:'X Window System display :1'},
+  {p:6081,proto:'udp',svc:'GENEVE',desc:'Geneve tunneling (overlay network)'},
+  {p:6379,proto:'tcp',svc:'REDIS',desc:'Redis in-memory data store'},
+  {p:6443,proto:'tcp',svc:'K8S-API',desc:'Kubernetes API server (HTTPS)'},
+  {p:6571,proto:'tcp',svc:'TELNETS',desc:'Telnet over TLS'},
+  {p:6660,proto:'tcp',svc:'IRC-A',desc:'IRC alternate'},
+  {p:6665,proto:'tcp',svc:'IRC-B',desc:'IRC alternate'},
+  {p:6666,proto:'tcp',svc:'IRC-C',desc:'IRC alternate'},
+  {p:6667,proto:'tcp',svc:'IRC-D',desc:'IRC default'},
+  {p:6668,proto:'tcp',svc:'IRC-E',desc:'IRC alternate'},
+  {p:6669,proto:'tcp',svc:'IRC-F',desc:'IRC alternate'},
+  {p:6679,proto:'tcp',svc:'IRC-SSL',desc:'IRC over TLS'},
+  {p:6697,proto:'tcp',svc:'IRC-SSL-2',desc:'IRC over TLS (modern)'},
+  {p:6789,proto:'tcp',svc:'SMC-WEB',desc:'UniFi Controller (Ubiquiti)'},
+  {p:6881,proto:'both',svc:'BITTORRENT',desc:'BitTorrent'},
+  {p:7000,proto:'tcp',svc:'AFS3',desc:'Andrew File System / AirPlay'},
+  {p:7001,proto:'tcp',svc:'AFS3-CBS',desc:'AFS callback / WebLogic admin'},
+  {p:7474,proto:'tcp',svc:'NEO4J',desc:'Neo4j Graph Database'},
+  {p:7547,proto:'tcp',svc:'CWMP',desc:'TR-069 CPE WAN Management Protocol'},
+  {p:7634,proto:'tcp',svc:'HDDTEMP',desc:'hddtemp daemon'},
+  {p:7777,proto:'tcp',svc:'CBT',desc:'Common Trace Viewer / games'},
+  {p:8000,proto:'tcp',svc:'HTTP-ALT',desc:'HTTP alternate — Django / Jenkins / various'},
+  {p:8001,proto:'tcp',svc:'HTTP-ALT-2',desc:'HTTP alternate / various apps'},
+  {p:8005,proto:'tcp',svc:'TOMCAT-SHUTDOWN',desc:'Apache Tomcat shutdown port'},
+  {p:8008,proto:'tcp',svc:'HTTP-ALT-3',desc:'HTTP alternate'},
+  {p:8009,proto:'tcp',svc:'AJP13',desc:'Apache JServ Protocol (Tomcat AJP)'},
+  {p:8020,proto:'tcp',svc:'INTU-SD',desc:'Hadoop NameNode metadata'},
+  {p:8069,proto:'tcp',svc:'OAUTH2-OD',desc:'Odoo / various'},
+  {p:8080,proto:'tcp',svc:'HTTP-PROXY',desc:'HTTP alternate / proxy — Tomcat / various dev servers'},
+  {p:8081,proto:'tcp',svc:'HTTP-PROXY-2',desc:'HTTP alternate / Sonatype Nexus / Consul'},
+  {p:8086,proto:'tcp',svc:'D2-CONFIG',desc:'InfluxDB'},
+  {p:8088,proto:'tcp',svc:'RADAN-HTTP',desc:'Hadoop NameNode UI / Asterisk HTTP'},
+  {p:8089,proto:'tcp',svc:'SPLUNK',desc:'Splunk management'},
+  {p:8091,proto:'tcp',svc:'JACORB',desc:'JacORB / various'},
+  {p:8161,proto:'tcp',svc:'PATROL',desc:'ActiveMQ Web Console'},
+  {p:8200,proto:'tcp',svc:'TRIVNET1',desc:'Vault (HashiCorp) / various'},
+  {p:8222,proto:'tcp',svc:'VMWARE-MGMT',desc:'VMware Server Management (HTTPS)'},
+  {p:8333,proto:'tcp',svc:'BITCOIN',desc:'Bitcoin Core (mainnet)'},
+  {p:8388,proto:'tcp',svc:'SHADOWSOCKS',desc:'Shadowsocks / SOCKS5 proxy'},
+  {p:8443,proto:'tcp',svc:'HTTPS-ALT-2',desc:'HTTPS alternate — Tomcat SSL / various'},
+  {p:8500,proto:'tcp',svc:'FMTP',desc:'ColdFusion / HashiCorp Consul UI'},
+  {p:853,proto:'both',svc:'DOT',desc:'DNS over TLS — encrypted DNS'},
+  {p:8530,proto:'tcp',svc:'WSUS',desc:'Windows Server Update Services (HTTP)'},
+  {p:8531,proto:'tcp',svc:'WSUS-SSL',desc:'Windows Server Update Services (HTTPS)'},
+  {p:8649,proto:'tcp',svc:'GANGLIA',desc:'Ganglia monitoring'},
+  {p:8765,proto:'tcp',svc:'ULTRABAC',desc:'Ultrabac / various'},
+  {p:8787,proto:'tcp',svc:'MSGSRV',desc:'Message server / various'},
+  {p:8804,proto:'tcp',svc:'TRUEGRID',desc:'TrueGrid'},
+  {p:8834,proto:'tcp',svc:'OPEN-NMS',desc:'OpenNMS'},
+  {p:8880,proto:'tcp',svc:'CDDBP',desc:'CDDB / HTTP alt'},
+  {p:8888,proto:'tcp',svc:'HTTP-ALT-4',desc:'HTTP alternate — Jupyter / various dev servers'},
+  {p:8889,proto:'tcp',svc:'DDI-TC',desc:'Data interface / various'},
+  {p:9000,proto:'tcp',svc:'CSLISTENER',desc:'PHP-FPM / SonarQube / various'},
+  {p:9001,proto:'tcp',svc:'TOR-ORPORT',desc:'Tor ORPort / various'},
+  {p:9042,proto:'tcp',svc:'CASSANDRA',desc:'Apache Cassandra CQL native transport'},
+  {p:9080,proto:'tcp',svc:'GLRPC',desc:'HTTP alt — WebSphere / various'},
+  {p:9090,proto:'tcp',svc:'WEBSM',desc:'HTTP alt — Prometheus / Cockpit / various'},
+  {p:9091,proto:'tcp',svc:'XMLROC',desc:'XML-RPC / various'},
+  {p:9092,proto:'tcp',svc:'KAFKA',desc:'Apache Kafka broker'},
+  {p:9100,proto:'tcp',svc:'JETDIRECT',desc:'HP JetDirect (raw network printing)'},
+  {p:9200,proto:'tcp',svc:'WAP-WSP',desc:'Elasticsearch HTTP'},
+  {p:9300,proto:'tcp',svc:'VRACE',desc:'Elasticsearch transport'},
+  {p:9418,proto:'tcp',svc:'GIT',desc:'Git (git:// protocol)'},
+  {p:9418,proto:'udp',svc:'GIT',desc:'Git (UDP variant)'},
+  {p:9443,proto:'tcp',svc:'HTTPS-ALT-3',desc:'HTTPS alt — various admin / VMmark'},
+  {p:9600,proto:'tcp',svc:'OMRON-FINS',desc:'Omron FINS / Mitsubishi Ethernet'},
+  {p:9876,proto:'tcp',svc:'SD',desc:'Session Director / various'},
+  {p:9999,proto:'tcp',svc:'DISTCGI',desc:'Abyss web server / various'},
+  {p:10000,proto:'tcp',svc:'NDMP',desc:'NDMP / Webmin / CiscoVPN'},
+  {p:10050,proto:'tcp',svc:'ZABBIX-AGENT',desc:'Zabbix Agent'},
+  {p:10051,proto:'tcp',svc:'ZABBIX-SRV',desc:'Zabbix Server (trapper)'},
+  {p:10080,proto:'tcp',svc:'AMANDA',desc:'Amanda backup / various'},
+  {p:10250,proto:'tcp',svc:'K8S-KUBELET',desc:'Kubernetes kubelet API (HTTPS)'},
+  {p:11211,proto:'tcp',svc:'MEMCACHED',desc:'Memcached'},
+  {p:11211,proto:'udp',svc:'MEMCACHED',desc:'Memcached (UDP)'},
+  {p:12345,proto:'tcp',svc:'ITALK',desc:'Italk / NetBus (historic)'},
+  {p:13720,proto:'tcp',svc:'BPDB-VERITAS',desc:'Veritas NetBackup'},
+  {p:13724,proto:'tcp',svc:'BPDB-VERITAS-2',desc:'Veritas Networker'},
+  {p:13782,proto:'tcp',svc:'BPDB-VERITAS-3',desc:'Veritas NetBackup BPRD'},
+  {p:15000,proto:'tcp',svc:'HDM-PERM',desc:'Hypack / various'},
+  {p:15672,proto:'tcp',svc:'RABBITMQ',desc:'RabbitMQ Management UI'},
+  {p:16080,proto:'tcp',svc:'SOAP-HTTP-2',desc:'HTTPS alt / various'},
+  {p:16379,proto:'tcp',svc:'REDIS-CLUSTER',desc:'Redis cluster alternate'},
+  {p:17000,proto:'tcp',svc:'ASTERISK',desc:'Asterisk / various'},
+  {p:17500,proto:'tcp',svc:'DBSPCLOUD',desc:'Dropbox LAN sync'},
+  {p:18080,proto:'tcp',svc:'HTTP-ALT-5',desc:'HTTP alt — various'},
+  {p:19000,proto:'tcp',svc:'HPU-PERM',desc:'i-Data / various'},
+  {p:20000,proto:'tcp',svc:'DNP',desc:'DNP / Usermin / various'},
+  {p:20049,proto:'tcp',svc:'NFS-RPC',desc:'NFSv4 RDMA'},
+  {p:21025,proto:'tcp',svc:'STARBOUND',desc:'Starbound game server'},
+  {p:22222,proto:'tcp',svc:'EASYFLIRT',desc:'Easyflirt / various'},
+  {p:23424,proto:'tcp',svc:'XBOX',desc:'Xbox Live / various'},
+  {p:24800,proto:'tcp',svc:'SYNERGY',desc:'Synergy KVM'},
+  {p:25565,proto:'tcp',svc:'MINECRAFT',desc:'Minecraft Java Edition'},
+  {p:25575,proto:'tcp',svc:'MINECRAFT-RCON',desc:'Minecraft RCON'},
+  {p:25826,proto:'udp',svc:'COLLECTD',desc:'collectd'},
+  {p:26000,proto:'udp',svc:'QUAKE',desc:'Quake server'},
+  {p:27000,proto:'udp',svc:'FLEX-LM',desc:'FlexLM license manager'},
+  {p:27015,proto:'udp',svc:'CSS',desc:'Counter-Strike / Steam game server'},
+  {p:27017,proto:'tcp',svc:'MONGODB',desc:'MongoDB default'},
+  {p:27018,proto:'tcp',svc:'MONGODB-SSL',desc:'MongoDB shard'},
+  {p:27036,proto:'udp',svc:'STEAM',desc:'Steam peer-to-peer'},
+  {p:27500,proto:'udp',svc:'QUAKE-2',desc:'Quake II server'},
+  {p:27960,proto:'udp',svc:'QUAKE-3',desc:'Quake III Arena server'},
+  {p:32400,proto:'tcp',svc:'PLEX',desc:'Plex Media Server'},
+  {p:33434,proto:'udp',svc:'TRACEROUTE',desc:'Traceroute (default)'},
+  {p:34567,proto:'udp',svc:'EDI-2',desc:'EDI service / various'},
+  {p:47808,proto:'udp',svc:'BACNET',desc:'BACnet building automation'},
+  {p:49152,proto:'both',svc:'EPHEMERAL',desc:'Dynamic/private port — first of the ephemeral range used by clients for outgoing connections'},
+];
+
+// Active filter: 'all' | 'tcp' | 'udp' | 'both'
+let activeFilter = 'all';
+
+function protoLabel(proto){
+  if(proto==='both') return '<span class="port-proto both">'+t('both')+'</span>';
+  if(proto==='tcp') return '<span class="port-proto tcp">TCP</span>';
+  return '<span class="port-proto udp">UDP</span>';
+}
+
+function render(){
+  const q = $('#q').value.trim().toLowerCase();
+  const filtered = PORTS.filter(p => {
+    if(activeFilter==='tcp' && p.proto==='udp') return false;
+    if(activeFilter==='udp' && p.proto==='tcp') return false;
+    if(activeFilter==='both' && p.proto!=='both') return false;
+    if(!q) return true;
+    return String(p.p)===q ||
+      p.svc.toLowerCase().includes(q) ||
+      p.desc.toLowerCase().includes(q);
+  });
+  filtered.sort((a,b)=> a.p - b.p || (a.proto==='tcp'?-1:b.proto==='tcp'?1:0));
+
+  const tbl = $('#table');
+  if(filtered.length===0){
+    tbl.innerHTML = '<tbody><tr><td colspan="4"><div class="port-empty">'+t('noResults')+'</div></td></tr></tbody>';
+  } else {
+    const rows = filtered.map(p => '<tr><td><span class="port-num">'+p.p+'</span></td><td>'+protoLabel(p.proto)+'</td><td><strong>'+p.svc+'</strong></td><td>'+p.desc+'</td></tr>').join('');
+    tbl.innerHTML = '<thead><tr><th>'+t('port')+'</th><th>'+t('protocol')+'</th><th>'+t('service')+'</th><th>'+t('description')+'</th></tr></thead><tbody>'+rows+'</tbody>';
+  }
+  $('#count').textContent = t('showing')+' '+filtered.length+' '+t('of')+' '+PORTS.length+' '+t('entries');
+}
+
+function setFilter(f){
+  activeFilter = f;
+  document.querySelectorAll('#filters button').forEach(b => b.classList.toggle('active', b.dataset.f===f));
+  render();
+}
+
+$('#filters').innerHTML = [
+  ['all', t('all')],
+  ['tcp', t('tcpOnly')],
+  ['udp', t('udpOnly')],
+  ['both', t('both')],
+].map(([f,label]) => '<button data-f="'+f+'" class="'+(f==='all'?'active':'')+'" onclick="setFilter(\''+f+'\')">'+label+'</button>').join('');
+
+$('#q').placeholder = t('searchPh');
+render();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔌', href:'/dev/mac-address-lookup.html', name:'MAC Lookup'},
+    {icon:'📊', href:'/dev/http-status-codes.html', name:'HTTP Status'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔑', href:'/dev/chmod.html', name:'Chmod Calculator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>填字游戏生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="从你的单词列表生成免费可打印的填字游戏。单词会被排列成相互交叉的网格，并按编号列出横向和纵向提示 — 适合老师、课堂、时事通讯和填字爱好者。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/crossword-maker.html">
+  <meta property="og:title" content="填字游戏生成器">
+  <meta property="og:description" content="从你的单词列表生成免费可打印的填字游戏。单词会被排列成相互交叉的网格，并按编号列出横向和纵向提示 — 适合老师、课堂、时事通讯和填字爱好者。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/crossword-maker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="填字游戏生成器">
+<meta name="twitter:description" content="从你的单词列表生成免费可打印的填字游戏。单词会被排列成相互交叉的网格，并按编号列出横向和纵向提示 — 适合老师、课堂、时事通讯和填字爱好者。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.input-grid{display:grid;grid-template-columns:140px 1fr;gap:8px;margin-top:8px}
+.input-grid label{display:flex;flex-direction:column;gap:4px;font-size:.85em;color:var(--text2)}
+.input-grid input,.input-grid textarea{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:.9em;font-family:inherit}
+#wordList{min-height:160px;resize:vertical;font-family:monospace}
+#cwContainer{margin-top:16px;overflow-x:auto;display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.cw-grid{display:inline-grid;gap:1px;background:var(--border);border:1px solid var(--border);padding:1px}
+.cw-cell{width:28px;height:28px;background:#fff;color:#111;display:flex;align-items:flex-start;justify-content:flex-start;font-size:.55em;font-weight:700;padding:1px 2px;font-family:monospace;position:relative}
+.cw-cell.empty{background:#222;border:0}
+.cw-cell .num{position:absolute;top:0;left:1px;font-size:.45em;line-height:1;color:#333}
+.cw-cell .letter{font-size:1.1em;margin:auto}
+.clues{flex:1;min-width:240px;font-size:.9em}
+.clues h3{margin:0 0 6px;font-size:1em}
+.clues ol{margin:0 0 14px;padding-left:22px}
+.clues li{margin-bottom:3px;line-height:1.4}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.solve-toggle{font-size:.75em;margin-left:8px;color:var(--text2);cursor:pointer;text-decoration:underline}
+@media print{.gz-toolbar,.gz-related,.gz-howto,.btn-row,.input-grid,.solve-toggle,.gz-header{display:none!important}.gz-cell{border:1px solid #000}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Crossword Puzzle Maker","description":"Make a crossword puzzle online for free. Enter a word list with clues and instantly generate a printable crossword grid with across and down clues. No signup, no upload.","url": "https://tools.gamezipper.com/zh/fun/crossword-maker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I create a crossword puzzle?", "acceptedAnswer": {"@type": "Answer", "text": "Type one word and its clue per line in the format WORD | clue text (or WORD: clue). Click Generate and the tool will automatically arrange the words into an interlocking crossword grid with numbered across and down clues."}}, {"@type": "Question", "name": "What format should my word list be in?", "acceptedAnswer": {"@type": "Answer", "text": "Use one entry per line. Separate the word from the clue with a pipe (|), colon (:) or hyphen (-). For example: PYTHON | A popular programming language named after a snake. Words should be 3+ letters and share letters with at least one other word to form intersections."}}, {"@type": "Question", "name": "Can I print the crossword?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click Print to send the puzzle to your printer. You can also toggle between the empty puzzle (with numbers only) and the solved version using the Show answers link."}}, {"@type": "Question", "name": "Why didn't all my words fit?", "acceptedAnswer": {"@type": "Answer", "text": "The generator places words greedily by length. If a word has no matching letter with the existing grid, it is skipped. Try reordering your list (longest first) or adding words that share common letters like E, A, R, S, T."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/crossword-maker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/crossword-maker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/crossword-maker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="input-grid">
+      <label><span id="lbl-title"></span><input type="text" id="cwTitle" value="My Crossword"></label>
+      <label><span id="lbl-words"></span><textarea id="wordList" spellcheck="false">PYTHON | A programming language named after a snake
+JAVASCRIPT | The language of the web
+RUBY | A red gemstone and a programming language
+RUST | Iron oxide or a systems language
+JAVA | Indonesian island and a programming language
+HTML | Markup language for web pages
+CSS | Stylesheet language for the web
+GIT | Version control system created by Linus</textarea></label>
+    </div>
+    <div class="btn-row" id="actionRow"></div>
+    <div id="cwContainer"></div>
+    <div id="status" style="margin-top:12px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Crossword Puzzle Maker',
+    toolDesc: 'Generate a free printable crossword puzzle from your own word list. Words are arranged into an interlocking grid with numbered across and down clues — perfect for teachers, classrooms, newsletters and puzzle fans.',
+    generate: 'Generate Puzzle',
+    print: 'Print',
+    showAnswers: 'Show answers',
+    hideAnswers: 'Hide answers',
+    example: 'Load Example',
+    clear: 'Clear',
+    lblTitle: 'Puzzle Title',
+    lblWords: 'Words & Clues (one per line, WORD | clue)',
+    across: 'Across',
+    down: 'Down',
+    placed: '✓ Placed %1 of %2 words',
+    skipped: 'Skipped (no intersection): %1',
+    step1: 'List your words and clues — one per line, using WORD | clue format',
+    step2: 'Click Generate Puzzle to build the interlocking grid',
+    step3: 'Toggle Show answers to switch between blank and solved views',
+    step4: 'Click Print to print or save as PDF',
+  },
+  zh: {
+    toolTitle: '填字游戏生成器',
+    toolDesc: '从你的单词列表生成免费可打印的填字游戏。单词会被排列成相互交叉的网格，并按编号列出横向和纵向提示 — 适合老师、课堂、时事通讯和填字爱好者。',
+    generate: '生成填字',
+    print: '打印',
+    showAnswers: '显示答案',
+    hideAnswers: '隐藏答案',
+    example: '加载示例',
+    clear: '清除',
+    lblTitle: '标题',
+    lblWords: '单词与提示（每行一条，WORD | 提示）',
+    across: '横向',
+    down: '纵向',
+    placed: '✓ 已放置 %1 / %2 个单词',
+    skipped: '跳过（无交叉）：%1',
+    step1: '列出你的单词与提示 — 每行一条，使用 WORD | 提示 格式',
+    step2: '点击「生成填字」生成交叉网格',
+    step3: '切换「显示答案」在空白与解答视图间切换',
+    step4: '点击「打印」打印或保存为 PDF',
+  }
+});
+
+const { $, t } = GZ;
+
+let cwState = null; // {grid: Map, cells: [...], words: [...], showAnswers: bool}
+
+function parseWordList(text) {
+  const entries = [];
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    // Try splitting on |, :, or - (first occurrence)
+    const m = line.match(/^([A-Za-z0-9]+)\s*[|:\-—]\s*(.+)$/);
+    if (m) {
+      const word = m[1].toUpperCase();
+      const clue = m[2].trim();
+      if (word.length >= 2 && clue) entries.push({ word, clue });
+    }
+  }
+  // Sort by length descending for better packing
+  return entries.sort((a, b) => b.word.length - a.word.length);
+}
+
+function buildCrossword(entries) {
+  if (!entries.length) return null;
+  const placed = [];
+  const grid = new Map(); // key "r,c" -> {letter, num, words: []}
+
+  function setCell(r, c, letter) {
+    const k = r + ',' + c;
+    if (!grid.has(k)) grid.set(k, { letter, num: null, words: [] });
+    else grid.get(k).letter = letter;
+  }
+  function getCell(r, c) { return grid.get(r + ',' + c); }
+  function canPlace(r, c, word, dir) {
+    const dr = dir === 'V' ? 1 : 0;
+    const dc = dir === 'H' ? 1 : 0;
+    // Check cells in front and behind are empty
+    const beforeR = r - dr, beforeC = c - dc;
+    const afterR = r + dr * word.length, afterC = c + dc * word.length;
+    if (getCell(beforeR, beforeC)) return false;
+    if (getCell(afterR, afterC)) return false;
+    for (let i = 0; i < word.length; i++) {
+      const rr = r + dr * i, cc = c + dc * i;
+      const existing = getCell(rr, cc);
+      if (existing) {
+        if (existing.letter !== word[i]) return false;
+        // Check perpendicular neighbors — must be a crossing point, not parallel run
+        const pr = dir === 'H' ? rr - 1 : rr;
+        const pc = dir === 'V' ? cc - 1 : cc;
+        const pr2 = dir === 'H' ? rr + 1 : rr;
+        const pc2 = dir === 'V' ? cc + 1 : cc;
+        // ok, this is the intersection
+      } else {
+        // Empty cell — check perpendicular neighbors are empty (would extend a word)
+        if (dir === 'H') {
+          if (getCell(rr - 1, cc) || getCell(rr + 1, cc)) return false;
+        } else {
+          if (getCell(rr, cc - 1) || getCell(rr, cc + 1)) return false;
+        }
+      }
+    }
+    return true;
+  }
+  function place(r, c, word, dir, entry) {
+    const dr = dir === 'V' ? 1 : 0;
+    const dc = dir === 'H' ? 1 : 0;
+    for (let i = 0; i < word.length; i++) {
+      setCell(r + dr * i, c + dc * i, word[i]);
+    }
+    placed.push({ entry, r, c, dir, word });
+  }
+
+  // Place first word horizontally at (0,0)
+  place(0, 0, entries[0].word, 'H', entries[0]);
+
+  // Try to place remaining words
+  let queue = entries.slice(1);
+  let progress = true;
+  let remaining = [...queue];
+  while (remaining.length && progress) {
+    progress = false;
+    const stillLeft = [];
+    for (const entry of remaining) {
+      let placedNow = false;
+      // Try every letter in this word
+      const wordLetters = entry.word.split('');
+      // For each already-placed cell, try to intersect on a matching letter
+      const candidates = [];
+      for (const [k, cell] of grid.entries()) {
+        const [r, c] = k.split(',').map(Number);
+        for (let i = 0; i < wordLetters.length; i++) {
+          if (wordLetters[i] === cell.letter) {
+            // Try placing word so that letter i sits at (r,c)
+            const dir = 'V'; // try vertical first (perpendicular to most horizontal first word)
+            const dr = 1, dc = 0;
+            const startR = r - dr * i;
+            const startC = c - dc * i;
+            candidates.push({ startR, startC, dir, i });
+            // And horizontal
+            candidates.push({ startR: r, startC: c - i, dir: 'H', i });
+          }
+        }
+      }
+      // Score candidates by number of intersections
+      candidates.sort((a, b) => scorePlacement(b, entry.word) - scorePlacement(a, entry.word));
+      for (const cand of candidates) {
+        if (canPlace(cand.startR, cand.startC, entry.word, cand.dir)) {
+          place(cand.startR, cand.startC, entry.word, cand.dir, entry);
+          placedNow = true;
+          progress = true;
+          break;
+        }
+      }
+      if (!placedNow) stillLeft.push(entry);
+    }
+    remaining = stillLeft;
+  }
+
+  // Normalize coordinates (shift to 0,0 origin)
+  let minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
+  for (const k of grid.keys()) {
+    const [r, c] = k.split(',').map(Number);
+    if (r < minR) minR = r;
+    if (r > maxR) maxR = r;
+    if (c < minC) minC = c;
+    if (c > maxC) maxC = c;
+  }
+  const shiftR = -minR, shiftC = -minC;
+  const newGrid = new Map();
+  for (const [k, v] of grid.entries()) {
+    const [r, c] = k.split(',').map(Number);
+    newGrid.set((r + shiftR) + ',' + (c + shiftC), v);
+  }
+  // Remap placed words
+  for (const p of placed) {
+    p.r += shiftR; p.c += shiftC;
+  }
+  // Assign numbers in reading order
+  const numbered = [...newGrid.keys()].sort((a, b) => {
+    const [ra, ca] = a.split(',').map(Number);
+    const [rb, cb] = b.split(',').map(Number);
+    return ra - rb || ca - cb;
+  });
+  let num = 1;
+  // A cell gets a number if it starts an across word (left empty or grid edge) AND has a letter to its right
+  // OR starts a down word (above empty or grid edge) AND has a letter below
+  const wordNums = [];
+  for (const k of numbered) {
+    const [r, c] = k.split(',').map(Number);
+    const left = newGrid.get((r) + ',' + (c - 1));
+    const right = newGrid.get((r) + ',' + (c + 1));
+    const up = newGrid.get((r - 1) + ',' + (c));
+    const down = newGrid.get((r + 1) + ',' + (c));
+    const startsAcross = !left && right;
+    const startsDown = !up && down;
+    if (startsAcross || startsDown) {
+      newGrid.get(k).num = num;
+      // Find word(s) starting here
+      const acrossWord = placed.find(p => p.dir === 'H' && p.r === r && p.c === c);
+      const downWord = placed.find(p => p.dir === 'V' && p.r === r && p.c === c);
+      if (acrossWord) acrossWord.num = num;
+      if (downWord) downWord.num = num;
+      num++;
+    }
+  }
+  return { grid: newGrid, words: placed, rows: maxR - minR + 1, cols: maxC - minC + 1, skipped: remaining };
+}
+
+function scorePlacement(cand, word) {
+  // Count intersections for this candidate
+  const dr = cand.dir === 'V' ? 1 : 0;
+  const dc = cand.dir === 'H' ? 1 : 0;
+  let score = 0;
+  for (let i = 0; i < word.length; i++) {
+    const r = cand.startR + dr * i;
+    const c = cand.startC + dc * i;
+    const cell = cwState?.grid?.get(r + ',' + c);
+    if (cell) score += 1;
+  }
+  return score;
+}
+
+function renderCrossword(state, showAnswers) {
+  if (!state) { $('#cwContainer').innerHTML = ''; return; }
+  const { grid, words, rows, cols } = state;
+  let html = '<div><div class="cw-grid" style="grid-template-columns:repeat(' + cols + ',28px)">';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = grid.get(r + ',' + c);
+      if (!cell) {
+        html += '<div class="cw-cell empty"></div>';
+      } else {
+        html += '<div class="cw-cell">' + (cell.num ? '<span class="num">' + cell.num + '</span>' : '') + '<span class="letter">' + (showAnswers ? cell.letter : '') + '</span></div>';
+      }
+    }
+  }
+  html += '</div></div>';
+
+  const across = words.filter(w => w.dir === 'H').sort((a, b) => a.num - b.num);
+  const down = words.filter(w => w.dir === 'V').sort((a, b) => a.num - b.num);
+  html += '<div class="clues"><h3>' + t('across') + '</h3><ol>';
+  // need to start numbering correctly
+  let acrossStart = true;
+  for (const w of across) {
+    if (acrossStart || w.num !== across[across.indexOf(w) - 1].num) {
+      html += '<li value="' + w.num + '">' + w.entry.clue + '</li>';
+    }
+  }
+  html += '</ol><h3>' + t('down') + '</h3><ol>';
+  for (const w of down) {
+    html += '<li value="' + w.num + '">' + w.entry.clue + '</li>';
+  }
+  html += '</ol></div>';
+
+  $('#cwContainer').innerHTML = html;
+}
+
+function doGenerate() {
+  const entries = parseWordList($('#wordList').value);
+  if (!entries.length) {
+    $('#status').innerHTML = '<span style="color:var(--gz-error)">Please enter at least one WORD | clue.</span>';
+    $('#cwContainer').innerHTML = '';
+    cwState = null;
+    return;
+  }
+  cwState = buildCrossword(entries);
+  cwState.showAnswers = false;
+  renderCrossword(cwState, false);
+  const placed = cwState.words.length;
+  const skipped = cwState.skipped.map(s => s.word).join(', ');
+  let msg = t('placed').replace('%1', placed).replace('%2', entries.length);
+  if (skipped) msg += ' — ' + t('skipped').replace('%1', skipped);
+  $('#status').innerHTML = '<span style="color:var(--gz-success)">' + msg + '</span>';
+  updateAnswerToggle();
+}
+
+function updateAnswerToggle() {
+  const btn = $('#toggleBtn');
+  if (!cwState) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  btn.textContent = cwState.showAnswers ? t('hideAnswers') : t('showAnswers');
+}
+
+function toggleAnswers() {
+  if (!cwState) return;
+  cwState.showAnswers = !cwState.showAnswers;
+  renderCrossword(cwState, cwState.showAnswers);
+  updateAnswerToggle();
+}
+
+function doPrint() { window.print(); }
+
+function loadExample() {
+  $('#wordList').value = `EIFFEL | Paris landmark made of iron
+PYRAMID | Triangular tomb in Giza
+COLOSSEUM | Roman gladiator arena
+TOWER | The leaning one is in Pisa
+STATUE | Liberty stands in New York harbor
+BRIDGE | Golden Gate is a famous one in San Francisco
+CASTLE | Windsor is the oldest inhabited one
+TEMPLE | Kyoto has many of these
+MUSEUM | Louvre is the world's most visited one
+PALACE | Buckingham is the British one`;
+  doGenerate();
+}
+
+function doClear() { $('#wordList').value = ''; $('#cwContainer').innerHTML = ''; $('#status').textContent = ''; cwState = null; }
+
+$('#lbl-title').textContent = t('lblTitle');
+$('#lbl-words').textContent = t('lblWords');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" id="toggleBtn" onclick="toggleAnswers()">${t('showAnswers')}</button>
+  <button class="gz-btn" onclick="doPrint()">🖨 ${t('print')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+// Generate on load with default list
+doGenerate();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔎', href:'/fun/word-search.html', name:'Word Search Generator'},
+    {icon:'🏁', href:'/fun/maze-generator.html', name:'Maze Generator'},
+    {icon:'🧩', href:'/fun/sudoku.html', name:'Sudoku Online'},
+    {icon:'🃏', href:'/fun/memory-game.html', name:'Memory Game'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

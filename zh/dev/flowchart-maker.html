@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>流程图制作工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用可拖拽形状和自动连接箭头，设计流程图、过程图、决策树和组织架构图。可导出 SVG 或 PNG。免费、浏览器本地运行、无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/flowchart-maker.html">
+  <meta property="og:title" content="流程图制作工具">
+  <meta property="og:description" content="使用可拖拽形状和自动连接箭头，设计流程图、过程图、决策树和组织架构图。可导出 SVG 或 PNG。免费、浏览器本地运行、无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/flowchart-maker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="流程图制作工具">
+<meta name="twitter:description" content="使用可拖拽形状和自动连接箭头，设计流程图、过程图、决策树和组织架构图。可导出 SVG 或 PNG。免费、浏览器本地运行、无需注册。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+#canvas{position:relative;width:100%;height:520px;background:
+  linear-gradient(var(--border) 1px, transparent 1px) 0 0/24px 24px,
+  linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0/24px 24px,
+  var(--glass);
+  border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:10px;touch-action:none}
+.node{position:absolute;min-width:96px;padding:8px 14px;background:var(--glass2);border:2px solid var(--accent);border-radius:10px;color:var(--text);font-size:.85em;text-align:center;cursor:move;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.node.terminal{border-radius:30px}
+.node.decision{border-radius:0;transform:rotate(45deg);min-width:80px;min-height:80px;padding:0;display:flex;align-items:center;justify-content:center}
+.node.decision span{transform:rotate(-45deg);max-width:80px;word-break:break-word}
+.node.io{border-radius:0 0 30px 30px;background:var(--glass2)}
+.node.selected{outline:3px solid var(--accent2);outline-offset:2px}
+.palette{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.palette button{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:.85em;cursor:pointer}
+.palette button:hover{border-color:var(--accent)}
+svg.edges{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.opts{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:.85em;color:var(--text2);align-items:center}
+.opts input[type=text]{background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:.9em;width:160px}
+.opts label{display:flex;align-items:center;gap:6px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Flowchart Maker","description":"Free online flowchart maker. Build process flows, decision trees and org charts with drag-and-drop shapes. Export as SVG or PNG — no signup, runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/flowchart-maker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is this flowchart maker really free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. There is no signup, no trial and no watermark. Add as many shapes as you want, connect them with arrows and export the result as SVG or PNG — all in your browser."}}, {"@type": "Question", "name": "What shapes does the flowchart maker support?", "acceptedAnswer": {"@type": "Answer", "text": "The standard ISO 5807 set: terminator (rounded, for Start/End), process (rectangle), decision (diamond), input/output (parallelogram) and connector (circle). Click a shape in the palette to drop it on the canvas, then drag to position."}}, {"@type": "Question", "name": "How do I connect two shapes with an arrow?", "acceptedAnswer": {"@type": "Answer", "text": "Select the source shape, type the target node ID (or pick from the dropdown) into the Connect To box and press Enter. A connector arrow is drawn from the source center to the target center automatically and follows the shapes as you drag them."}}, {"@type": "Question", "name": "Can I export the diagram?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click Export SVG to download a clean vector file you can open in Illustrator, Figma or any browser, or Export PNG to get a raster image. Both are generated locally — nothing is uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/flowchart-maker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/flowchart-maker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/flowchart-maker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="palette" id="palette"></div>
+    <div class="opts">
+      <label><span data-lbl>Edit label:</span> <input type="text" id="edit-label"></label>
+      <label><span data-conn>Connect to:</span> <input type="text" id="connect-to" placeholder="node id"></label>
+      <label><span data-del>Delete selected:</span> <button class="gz-btn gz-btn-secondary" style="padding:4px 10px" onclick="deleteSelected()">Del</button></label>
+    </div>
+    <div id="canvas">
+      <svg class="edges" id="edges"></svg>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Flowchart Maker',
+    toolDesc: 'Design flowcharts, process diagrams, decision trees and org charts with draggable shapes and automatic connector arrows. Export as SVG or PNG. Free, browser-only, no signup.',
+    lbl: 'Edit label:', conn: 'Connect to:', del: 'Delete selected:',
+    process: 'Add Process', decision: 'Add Decision',
+    terminal: 'Add Start/End', io: 'Add Input/Output',
+    connector: 'Add Connector',
+    example: 'Load Example', clear: 'Clear', exportSvg: 'Export SVG', exportPng: 'Export PNG',
+    selNone: 'No node selected. Click a shape to edit it.',
+    selNode: 'Selected: %1',
+    connOk: '✓ Connected %1 → %2',
+    connFail: '⚠ Target node "%1" not found',
+    step1: 'Click a shape in the palette to add it to the canvas',
+    step2: 'Drag any shape to reposition it; connectors follow automatically',
+    step3: 'Click a shape, then type a label or connect it to another node id',
+    step4: 'Click Export SVG / Export PNG to download the diagram',
+  },
+  zh: {
+    toolTitle: '流程图制作工具',
+    toolDesc: '使用可拖拽形状和自动连接箭头，设计流程图、过程图、决策树和组织架构图。可导出 SVG 或 PNG。免费、浏览器本地运行、无需注册。',
+    lbl: '编辑文字：', conn: '连接到：', del: '删除选中：',
+    process: '添加过程', decision: '添加决策',
+    terminal: '添加开始/结束', io: '添加输入/输出',
+    connector: '添加连接点',
+    example: '加载示例', clear: '清除', exportSvg: '导出 SVG', exportPng: '导出 PNG',
+    selNone: '未选中节点。点击形状以编辑。',
+    selNode: '已选中：%1',
+    connOk: '✓ 已连接 %1 → %2',
+    connFail: '⚠ 找不到目标节点 "%1"',
+    step1: '点击调色板中的形状将其添加到画布',
+    step2: '拖拽形状以重新定位，连接线自动跟随',
+    step3: '点击形状，然后输入文字或连接到另一个节点',
+    step4: '点击「导出 SVG / 导出 PNG」下载图表',
+  }
+});
+
+const { $, t } = GZ;
+document.querySelectorAll('[data-lbl]').forEach(e => e.textContent = t('lbl'));
+document.querySelectorAll('[data-conn]').forEach(e => e.textContent = t('conn'));
+document.querySelectorAll('[data-del]').forEach(e => e.textContent = t('del'));
+
+const canvas = $('#canvas');
+const svg = $('#edges');
+let nodes = [];   // {id, type, x, y, label, el}
+let edges = [];   // {from, to}
+let selectedId = null;
+let seq = 1;
+
+function makeNode(type, x, y, label) {
+  const id = 'N' + (seq++);
+  const el = document.createElement('div');
+  el.className = 'node ' + type;
+  const labelEl = (type === 'decision') ? document.createElement('span') : el;
+  if (type === 'decision') { el.appendChild(labelEl); }
+  labelEl.textContent = label;
+  el.dataset.id = id;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  canvas.appendChild(el);
+  const node = { id, type, x, y, label, el, labelEl };
+  nodes.push(node);
+  attachDrag(node);
+  el.addEventListener('mousedown', () => selectNode(id));
+  el.addEventListener('touchstart', () => selectNode(id), { passive: true });
+  return node;
+}
+
+function attachDrag(node) {
+  let dragging = false, offX = 0, offY = 0;
+  const start = (cx, cy) => {
+    dragging = true;
+    const r = node.el.getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    offX = cx - cr.left - node.x;
+    offY = cy - cr.top - node.y;
+    selectNode(node.id);
+  };
+  const move = (cx, cy) => {
+    if (!dragging) return;
+    const cr = canvas.getBoundingClientRect();
+    node.x = Math.max(0, Math.min(cr.width - 40, cx - cr.left - offX));
+    node.y = Math.max(0, Math.min(cr.height - 30, cy - cr.top - offY));
+    node.el.style.left = node.x + 'px';
+    node.el.style.top = node.y + 'px';
+    drawEdges();
+  };
+  node.el.addEventListener('mousedown', e => { e.preventDefault(); start(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+  window.addEventListener('mouseup', () => dragging = false);
+  node.el.addEventListener('touchstart', e => { const tch = e.touches[0]; start(tch.clientX, tch.clientY); }, { passive: true });
+  window.addEventListener('touchmove', e => { if (dragging && e.touches[0]) { move(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: true });
+  window.addEventListener('touchend', () => dragging = false);
+}
+
+function selectNode(id) {
+  selectedId = id;
+  nodes.forEach(n => n.el.classList.toggle('selected', n.id === id));
+  const node = nodes.find(n => n.id === id);
+  if (node) {
+    $('#edit-label').value = node.label;
+    $('#status').innerHTML = '<span style="color:var(--text2)">' + t('selNode').replace('%1', id) + '</span>';
+  } else {
+    $('#status').textContent = t('selNone');
+  }
+}
+
+function deleteSelected() {
+  if (!selectedId) return;
+  nodes = nodes.filter(n => n.id !== selectedId);
+  edges = edges.filter(e => e.from !== selectedId && e.to !== selectedId);
+  const el = canvas.querySelector('.node[data-id="' + selectedId + '"]');
+  if (el) el.remove();
+  selectedId = null;
+  drawEdges();
+  $('#status').textContent = t('selNone');
+}
+
+function drawEdges() {
+  // Clear
+  svg.innerHTML = '<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent2)"></path></marker></defs>';
+  const cr = canvas.getBoundingClientRect();
+  for (const e of edges) {
+    const a = nodes.find(n => n.id === e.from);
+    const b = nodes.find(n => n.id === e.to);
+    if (!a || !b) continue;
+    const ar = a.el.getBoundingClientRect();
+    const br = b.el.getBoundingClientRect();
+    const x1 = ar.left - cr.left + ar.width / 2;
+    const y1 = ar.top - cr.top + ar.height / 2;
+    const x2 = br.left - cr.left + br.width / 2;
+    const y2 = br.top - cr.top + br.height / 2;
+    // Trim the line so it starts/ends at the box edge (rough)
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const ax = Math.max(ar.width, ar.height) / 2;
+    const bx = Math.max(br.width, br.height) / 2;
+    const sx = x1 + dx * (ax / len);
+    const sy = y1 + dy * (ax / len);
+    const ex = x2 - dx * (bx / len);
+    const ey = y2 - dy * (bx / len);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', sx); line.setAttribute('y1', sy);
+    line.setAttribute('x2', ex); line.setAttribute('y2', ey);
+    line.setAttribute('stroke', 'var(--accent2)');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('marker-end', 'url(#arrow)');
+    svg.appendChild(line);
+  }
+}
+
+function addShape(type) {
+  const defaults = { terminal: 'Start', process: 'Process', decision: 'Yes/No?', io: 'Input', connector: 'A' };
+  // Place near center but slightly offset each time
+  const cx = 100 + (nodes.length % 5) * 30;
+  const cy = 60 + (nodes.length % 5) * 30;
+  const node = makeNode(type, cx, cy, defaults[type] || 'Node');
+  selectNode(node.id);
+  drawEdges();
+}
+
+$('#palette').innerHTML = `
+  <button onclick="addShape('terminal')">${t('terminal')}</button>
+  <button onclick="addShape('process')">${t('process')}</button>
+  <button onclick="addShape('decision')">${t('decision')}</button>
+  <button onclick="addShape('io')">${t('io')}</button>
+  <button onclick="addShape('connector')">${t('connector')}</button>`;
+
+$('#edit-label').addEventListener('input', () => {
+  if (!selectedId) return;
+  const node = nodes.find(n => n.id === selectedId);
+  if (node) { node.label = $('#edit-label').value; node.labelEl.textContent = node.label; }
+});
+
+$('#connect-to').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (!selectedId) return;
+    const target = $('#connect-to').value.trim().toUpperCase();
+    const match = nodes.find(n => n.id.toUpperCase() === target);
+    if (match) {
+      edges.push({ from: selectedId, to: match.id });
+      $('#status').innerHTML = '<span style="color:var(--gz-success)">' + t('connOk').replace('%1', selectedId).replace('%2', match.id) + '</span>';
+      $('#connect-to').value = '';
+      drawEdges();
+    } else {
+      $('#status').innerHTML = '<span style="color:var(--gz-accent)">' + t('connFail').replace('%1', target) + '</span>';
+    }
+  }
+});
+
+// Click empty canvas to deselect
+canvas.addEventListener('click', e => { if (e.target === canvas) { selectedId = null; nodes.forEach(n => n.el.classList.remove('selected')); $('#status').textContent = t('selNone'); } });
+
+function loadExample() {
+  clearAll();
+  const start = makeNode('terminal', 200, 30, 'Start');
+  const input = makeNode('io', 180, 110, 'Read X');
+  const dec = makeNode('decision', 170, 200, 'X > 0?');
+  const yes = makeNode('process', 60, 320, 'Print "Positive"');
+  const no = makeNode('process', 280, 320, 'Print "Non-positive"');
+  const end = makeNode('terminal', 200, 410, 'End');
+  edges.push({ from: start.id, to: input.id });
+  edges.push({ from: input.id, to: dec.id });
+  edges.push({ from: dec.id, to: yes.id });
+  edges.push({ from: dec.id, to: no.id });
+  edges.push({ from: yes.id, to: end.id });
+  edges.push({ from: no.id, to: end.id });
+  drawEdges();
+}
+
+function clearAll() {
+  nodes.forEach(n => n.el.remove());
+  nodes = []; edges = []; selectedId = null; seq = 1;
+  drawEdges();
+  $('#status').textContent = t('selNone');
+  $('#edit-label').value = '';
+}
+
+function exportSVG() {
+  // Build a standalone SVG that contains the canvas content
+  const cr = canvas.getBoundingClientRect();
+  const w = Math.ceil(cr.width), h = Math.ceil(cr.height);
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--glass') || '#0e0e1a';
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#4ecdc4';
+  const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2') || '#ffe66d';
+  const text = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#fff';
+  const border = getComputedStyle(document.documentElement).getPropertyValue('--border') || '#333';
+  let out = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  out += `<rect width="${w}" height="${h}" fill="${bg.trim()}"/>`;
+  // edges
+  out += `<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="${accent2.trim()}"/></marker></defs>`;
+  for (const e of edges) {
+    const a = nodes.find(n => n.id === e.from), b = nodes.find(n => n.id === e.to);
+    if (!a || !b) continue;
+    const ar = a.el.getBoundingClientRect(), br = b.el.getBoundingClientRect();
+    const x1 = ar.left - cr.left + ar.width / 2, y1 = ar.top - cr.top + ar.height / 2;
+    const x2 = br.left - cr.left + br.width / 2, y2 = br.top - cr.top + br.height / 2;
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${accent2.trim()}" stroke-width="2" marker-end="url(#ar)"/>`;
+  }
+  // nodes
+  for (const n of nodes) {
+    const r = n.el.getBoundingClientRect();
+    const x = r.left - cr.left, y = r.top - cr.top, ww = r.width, hh = r.height;
+    let rx = 10;
+    if (n.type === 'terminal') rx = 30;
+    if (n.type === 'decision') rx = 0;
+    if (n.type === 'io') rx = 0;
+    out += `<rect x="${x}" y="${y}" width="${ww}" height="${hh}" rx="${rx}" fill="${bg.trim()}" stroke="${accent.trim()}" stroke-width="2"/>`;
+    // label centered
+    out += `<text x="${x + ww/2}" y="${y + hh/2}" fill="${text.trim()}" font-size="12" font-family="sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(n.label)}</text>`;
+  }
+  out += '</svg>';
+  downloadFile('flowchart.svg', out, 'image/svg+xml;charset=utf-8');
+}
+
+function exportPNG() {
+  const cr = canvas.getBoundingClientRect();
+  const w = Math.ceil(cr.width), h = Math.ceil(cr.height);
+  // Reuse SVG markup from exportSVG by extracting
+  const svgMarkup = exportSVGMarkup(w, h, cr);
+  const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = w * 2; c.height = h * 2;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0e0e1a';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    c.toBlob(b => {
+      const u = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = u; a.download = 'flowchart.png';
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(u); }, 100);
+    }, 'image/png');
+  };
+  img.src = url;
+}
+
+function exportSVGMarkup(w, h, cr) {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--glass') || '#0e0e1a';
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#4ecdc4';
+  const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent2') || '#ffe66d';
+  const text = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#fff';
+  let out = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  out += `<rect width="${w}" height="${h}" fill="${bg.trim()}"/>`;
+  out += `<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="${accent2.trim()}"/></marker></defs>`;
+  for (const e of edges) {
+    const a = nodes.find(n => n.id === e.from), b = nodes.find(n => n.id === e.to);
+    if (!a || !b) continue;
+    const ar = a.el.getBoundingClientRect(), br = b.el.getBoundingClientRect();
+    const x1 = ar.left - cr.left + ar.width / 2, y1 = ar.top - cr.top + ar.height / 2;
+    const x2 = br.left - cr.left + br.width / 2, y2 = br.top - cr.top + br.height / 2;
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${accent2.trim()}" stroke-width="2" marker-end="url(#ar)"/>`;
+  }
+  for (const n of nodes) {
+    const r = n.el.getBoundingClientRect();
+    const x = r.left - cr.left, y = r.top - cr.top, ww = r.width, hh = r.height;
+    let rx = 10;
+    if (n.type === 'terminal') rx = 30;
+    out += `<rect x="${x}" y="${y}" width="${ww}" height="${hh}" rx="${rx}" fill="${bg.trim()}" stroke="${accent.trim()}" stroke-width="2"/>`;
+    out += `<text x="${x + ww/2}" y="${y + hh/2}" fill="${text.trim()}" font-size="12" font-family="sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(n.label)}</text>`;
+  }
+  out += '</svg>';
+  return out;
+}
+
+function escapeXml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="exportSVG()">⬇ ${t('exportSvg')}</button>
+  <button class="gz-btn" onclick="exportPNG()">⬇ ${t('exportPng')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+
+// Redraw on resize
+window.addEventListener('resize', drawEdges);
+window.addEventListener('scroll', drawEdges, { passive: true });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔀', href:'/dev/mermaid-editor.html', name:'Mermaid Editor'},
+    {icon:'🔀', href:'/dev/wireframe-generator.html', name:'Wireframe Generator'},
+    {icon:'🔀', href:'/fun/mind-map.html', name:'Mind Map'},
+    {icon:'🔀', href:'/fun/whiteboard.html', name:'Whiteboard'},
+  ]
+});
+
+// Initial state
+$('#status').textContent = t('selNone');
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

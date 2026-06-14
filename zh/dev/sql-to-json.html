@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>SQL 转 JSON 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="将 SQL INSERT 语句、多行 VALUES 和 SELECT 风格的列定义转换为整洁的 JSON。支持 NULL、数字、布尔值和字符串转义。完全浏览器本地运行。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/sql-to-json.html">
+<meta property="og:title" content="SQL 转 JSON 转换器">
+<meta property="og:description" content="将 SQL INSERT 语句、多行 VALUES 和 SELECT 风格的列定义转换为整洁的 JSON。支持 NULL、数字、布尔值和字符串转义。完全浏览器本地运行。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/sql-to-json.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SQL 转 JSON 转换器">
+<meta name="twitter:description" content="将 SQL INSERT 语句、多行 VALUES 和 SELECT 风格的列定义转换为整洁的 JSON。支持 NULL、数字、布尔值和字符串转义。完全浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.sj-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.sj-grid{grid-template-columns:1fr}}
+.sj-col{display:flex;flex-direction:column;gap:6px}
+.sj-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.sj-col textarea{min-height:420px;padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.86em;line-height:1.55;resize:vertical;tab-size:2}
+.sj-col textarea:focus{outline:none;border-color:var(--accent)}
+.sj-opts{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85em}
+.sj-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.sj-opts select{padding:4px 8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px}
+.sj-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.sj-status.ok{color:var(--success)}.sj-status.err{color:var(--danger)}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SQL to JSON Converter","description":"Free SQL to JSON converter. Paste INSERT statements or SELECT column lists and get clean JSON instantly. Handles multiple statements, NULL and quoted strings. Runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/sql-to-json.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What kinds of SQL can this converter handle?","acceptedAnswer":{"@type":"Answer","text":"It parses INSERT statements (INSERT INTO table (cols) VALUES (...)) and produces a JSON array of objects keyed by column name. It also handles bare column-list + value-tuples, single-row results, and multiple INSERT statements at once. NULL, numbers, booleans, single-quoted strings and double-quoted identifiers are all recognised."}},{"@type":"Question","name":"How are SQL values typed in the JSON output?","acceptedAnswer":{"@type":"Answer","text":"SQL NULL becomes JSON null. Unquoted numeric tokens become JSON numbers (Int or Float). The tokens true, false (and 1/0 with the boolean option) become JSON booleans. Everything else, including single-quoted strings, becomes a JSON string. Quoted string escapes ('' and \\\\' ) are unescaped automatically."}},{"@type":"Question","name":"Does it run INSERT INTO ... VALUES with multiple rows?","acceptedAnswer":{"@type":"Answer","text":"Yes. A single INSERT with multiple value tuples like VALUES (1,'a'),(2,'b') produces a JSON array with one object per row. When several INSERT statements are pasted, each is merged into the same output array."}},{"@type":"Question","name":"Is my SQL sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing and conversion happens entirely in your browser using JavaScript. Nothing is uploaded, stored, or transmitted. The tool works offline after the page loads."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sql-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sql-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sql-to-json.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="sj-opts">
+      <label><span id="lbl-mode"></span>
+        <select id="mode">
+          <option value="auto">Auto-detect</option>
+          <option value="insert">INSERT statements</option>
+          <option value="rows">Bare rows (col list + tuples)</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="pretty" checked> <span id="lbl-pretty"></span></label>
+      <label><input type="checkbox" id="onePerTable"> <span id="lbl-split"></span></label>
+    </div>
+    <div class="sj-grid">
+      <div class="sj-col">
+        <label id="lbl-input"></label>
+        <textarea id="input" spellcheck="false" placeholder="INSERT INTO users (id, name, active) VALUES (1, 'Alice', true);"></textarea>
+      </div>
+      <div class="sj-col">
+        <label id="lbl-output"></label>
+        <textarea id="output" spellcheck="false" readonly placeholder="JSON output appears here..."></textarea>
+      </div>
+    </div>
+    <div class="sj-status" id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SQL to JSON Converter',
+    toolDesc: 'Convert SQL INSERT statements, multiple-row VALUES and SELECT-style column lists into clean JSON. Handles NULL, numbers, booleans and string escapes. Runs entirely in your browser.',
+    lblMode: 'Mode', lblPretty: 'Pretty print', lblSplit: 'Group by table name',
+    lblInput: 'SQL Input', lblOutput: 'JSON Output',
+    ok: '✓ Converted — N row(s)',
+    err: '✗ Could not parse SQL: ',
+    errEmpty: '✗ No valid rows found in input',
+    auto: 'Auto-detect', insert: 'INSERT statements', rows: 'Bare rows',
+    step1: 'Paste your SQL INSERT statement(s) into the input area',
+    step2: 'Choose a parse mode or leave on Auto-detect',
+    step3: 'Clean JSON appears instantly on the right',
+    step4: 'Click Copy or Download to use the JSON',
+  },
+  zh: {
+    toolTitle: 'SQL 转 JSON 转换器',
+    toolDesc: '将 SQL INSERT 语句、多行 VALUES 和 SELECT 风格的列定义转换为整洁的 JSON。支持 NULL、数字、布尔值和字符串转义。完全浏览器本地运行。',
+    lblMode: '模式', lblPretty: '美化输出', lblSplit: '按表名分组',
+    lblInput: 'SQL 输入', lblOutput: 'JSON 输出',
+    ok: '✓ 已转换 — N 行',
+    err: '✗ 无法解析 SQL：',
+    errEmpty: '✗ 输入中未找到有效行',
+    auto: '自动检测', insert: 'INSERT 语句', rows: '裸行',
+    step1: '将 SQL INSERT 语句粘贴到输入区',
+    step2: '选择解析模式或保持「自动检测」',
+    step3: '整洁的 JSON 立即出现在右侧',
+    step4: '点击「复制」或「下载」即可使用 JSON',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// ---- SQL value tokenizer/parser ----
+function parseValueTuple(s) {
+  // s is the inside of (...) — parse comma-separated values respecting quotes
+  const out = [];
+  let i = 0, cur = '', inStr = false, depth = 0, strQuote = '';
+  while (i < s.length) {
+    const c = s[i];
+    if (inStr) {
+      if (c === '\\\\' && i + 1 < s.length) { cur += c + s[i + 1]; i += 2; continue; }
+      if (c === strQuote) {
+        if (s[i + 1] === strQuote) { cur += strQuote; i += 2; continue; } // doubled quote escape
+        inStr = false; strQuote = ''; i++; continue;
+      }
+      cur += c; i++; continue;
+    }
+    if (c === "'" || c === '"') { inStr = true; strQuote = c; i++; continue; }
+    if (c === '(' ) { depth++; cur += c; i++; continue; }
+    if (c === ')') { depth--; cur += c; i++; continue; }
+    if (c === ',' && depth === 0) { out.push(coerce(cur)); cur = ''; i++; continue; }
+    cur += c; i++;
+  }
+  if (cur.trim() !== '') out.push(coerce(cur));
+  return out;
+}
+
+function coerce(raw) {
+  const v = raw.trim();
+  if (v === '') return '';
+  // quoted string already unwrapped by tokenizer
+  if (/^null$/i.test(v)) return null;
+  if (/^true$/i.test(v)) return true;
+  if (/^false$/i.test(v)) return false;
+  if (/^-?\d+$/.test(v)) { const n = Number(v); return Number.isSafeInteger(n) ? n : v; }
+  if (/^-?\d*\.\d+([eE][+-]?\d+)?$/.test(v) || /^-?\d+[eE][+-]?\d+$/.test(v)) return Number(v);
+  return v;
+}
+
+// Extract column list and value tuples from a single INSERT statement
+function parseInsert(stmt) {
+  const m = stmt.match(/insert\s+into\s+["'`]?([\w\.]+)["'`]?\s*\(([^)]*)\)\s*values\s*([\s\S]+)$/i);
+  if (m) {
+    const table = m[1];
+    const cols = m[2].split(',').map(c => c.trim().replace(/^["'`]|["'`]$/g, ''));
+    const tuples = extractTuples(m[3]);
+    return { table, cols, tuples };
+  }
+  // INSERT without column list: INSERT INTO t VALUES (...)
+  const m2 = stmt.match(/insert\s+into\s+["'`]?([\w\.]+)["'`]?\s*values\s*([\s\S]+)$/i);
+  if (m2) {
+    const table = m2[1];
+    const tuples = extractTuples(m2[2]);
+    return { table, cols: null, tuples };
+  }
+  // bare rows: "id,name\n(1,'a'),(2,'b')" or "(1,'a'),(2,'b')"
+  return null;
+}
+
+function extractTuples(s) {
+  const out = [];
+  let i = 0, depth = 0, start = -1, inStr = false, q = '';
+  while (i < s.length) {
+    const c = s[i];
+    if (inStr) {
+      if (c === '\\\\') { i += 2; continue; }
+      if (c === q) { if (s[i+1] === q) { i += 2; continue; } inStr = false; }
+      i++; continue;
+    }
+    if (c === "'" || c === '"') { inStr = true; q = c; i++; continue; }
+    if (c === '(') { if (depth === 0) start = i + 1; depth++; i++; continue; }
+    if (c === ')') { depth--; if (depth === 0 && start >= 0) { out.push(s.slice(start, i)); start = -1; } i++; continue; }
+    if (c === ';' && depth === 0) { /* statement sep, ignore */ }
+    i++;
+  }
+  return out.map(parseValueTuple);
+}
+
+function splitStatements(sql) {
+  const out = [];
+  let i = 0, cur = '', inStr = false, q = '';
+  while (i < sql.length) {
+    const c = sql[i];
+    if (inStr) {
+      cur += c;
+      if (c === '\\\\' && i + 1 < sql.length) { cur += sql[i+1]; i += 2; continue; }
+      if (c === q) { if (sql[i+1] === q) { cur += sql[i+1]; i += 2; continue; } inStr = false; }
+      i++; continue;
+    }
+    if (c === "'" || c === '"') { inStr = true; q = c; cur += c; i++; continue; }
+    if (c === '-' && sql[i+1] === '-') { while (i < sql.length && sql[i] !== '\n') i++; continue; }
+    if (c === '/' && sql[i+1] === '*') { i += 2; while (i < sql.length && !(sql[i] === '*' && sql[i+1] === '/')) i++; i += 2; continue; }
+    if (c === ';') { const t = cur.trim(); if (t) out.push(t); cur = ''; i++; continue; }
+    cur += c; i++;
+  }
+  const t = cur.trim(); if (t) out.push(t);
+  return out;
+}
+
+function parseBareRows(sql) {
+  // first line(s) before first '(' may be the column header
+  const firstParen = sql.indexOf('(');
+  if (firstParen === -1) return { cols: null, tuples: extractTuples(sql) };
+  const head = sql.slice(0, firstParen).trim();
+  let cols = null;
+  const lines = head.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const lastLine = lines[lines.length - 1] || '';
+  if (lines.length && /^[\w,"'`\s]+$/.test(lastLine) && lastLine.includes(',')) {
+    cols = lastLine.split(',').map(c => c.trim().replace(/^["'`]|["'`]$/g, ''));
+  }
+  return { cols, tuples: extractTuples(sql.slice(firstParen)) };
+}
+
+function run() {
+  const raw = $('#input').value;
+  const status = $('#status');
+  if (!raw.trim()) { $('#output').value = ''; status.textContent = ''; status.className = 'sj-status'; return; }
+  try {
+    const mode = $('#mode').value;
+    const pretty = $('#pretty').checked;
+    const groupByTable = $('#onePerTable').checked;
+    const rows = []; // {table, obj}
+    const grouped = {}; // table -> []
+
+    function addRow(table, obj) {
+      if (groupByTable) {
+        (grouped[table] = grouped[table] || []).push(obj);
+      } else {
+        rows.push(table ? Object.assign({ __table: table }, obj) : obj);
+      }
+    }
+
+    let hasInsert = /insert\s+into/i.test(raw);
+    if (mode === 'insert') hasInsert = true;
+    if (mode === 'rows') hasInsert = false;
+
+    if (hasInsert) {
+      const stmts = splitStatements(raw);
+      let any = false;
+      for (const st of stmts) {
+        const pr = parseInsert(st);
+        if (!pr) continue;
+        any = true;
+        for (const tup of pr.tuples) {
+          const obj = {};
+          if (pr.cols) {
+            for (let k = 0; k < pr.cols.length; k++) obj[pr.cols[k]] = tup[k];
+          } else {
+            for (let k = 0; k < tup.length; k++) obj['col' + (k + 1)] = tup[k];
+          }
+          addRow(pr.table, obj);
+        }
+      }
+      if (!any) throw new Error(t('errEmpty'));
+    } else {
+      const { cols, tuples } = parseBareRows(raw);
+      if (!tuples.length) throw new Error(t('errEmpty'));
+      for (const tup of tuples) {
+        const obj = {};
+        if (cols) { for (let k = 0; k < cols.length; k++) obj[cols[k]] = tup[k]; }
+        else { for (let k = 0; k < tup.length; k++) obj['col' + (k + 1)] = tup[k]; }
+        addRow(null, obj);
+      }
+    }
+
+    let result;
+    const total = groupByTable
+      ? Object.values(grouped).reduce((a, b) => a + b.length, 0)
+      : rows.length;
+    if (groupByTable) {
+      result = pretty ? JSON.stringify(grouped, null, 2) : JSON.stringify(grouped);
+    } else {
+      result = pretty ? JSON.stringify(rows, null, 2) : JSON.stringify(rows);
+    }
+    $('#output').value = result;
+    status.textContent = t('ok').replace('N', total);
+    status.className = 'sj-status ok';
+  } catch (e) {
+    $('#output').value = '';
+    status.textContent = t('err') + e.message;
+    status.className = 'sj-status err';
+  }
+}
+
+function loadExample() {
+  $('#input').value =
+`INSERT INTO users (id, name, email, score, active, created_at)
+VALUES (1, 'Alice', 'alice@example.com', 4.8, true, NULL),
+       (2, 'Bob', 'bob''s mail', 3.5, false, NULL),
+       (3, 'Carol', 'carol@example.com', 5.0, true, NULL);`;
+  run();
+}
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').textContent = ''; }
+function doDownload() {
+  const text = $('#output').value; if (!text) return;
+  const blob = new Blob([text], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'data.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+$('#lbl-mode').textContent = t('lblMode');
+$('#lbl-pretty').textContent = t('lblPretty');
+$('#lbl-split').textContent = t('lblSplit');
+$('#lbl-input').textContent = t('lblInput');
+$('#lbl-output').textContent = t('lblOutput');
+$('#mode').querySelectorAll('option').forEach((o, i) => { o.textContent = [t('auto'), t('insert'), t('rows')][i]; });
+
+$('#input').addEventListener('input', run);
+$('#mode').addEventListener('change', run);
+$('#pretty').addEventListener('change', run);
+$('#onePerTable').addEventListener('change', run);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="run()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'📊', href:'/convert/json-to-csv.html', name:'JSON to CSV'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🧪', href:'/dev/sql-tester.html', name:'SQL Tester'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
