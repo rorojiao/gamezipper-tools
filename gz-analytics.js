@@ -1,7 +1,5 @@
 /* watchdog-set tunnel URL: https://yorkshire-contractors-cloudy-leone.trycloudflare.com -- auto-replaced by tunnel-watchdog.sh */
 /* gz-analytics.js — lightweight behavioral tracking, no deps, <5KB
-   CDN-PROPAGATION-TEST-1781396029
-
    2026-06-05 fix: connected to Vercel /api/collect.js → BI server pipeline
    2026-06-08 fix: attach vid/sid/device/screen/browser/os/referrer/site/path
                    on every event so BI Server can compute UV/session/device split.
