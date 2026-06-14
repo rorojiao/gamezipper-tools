@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>IMEI 检查器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用 Luhn 算法验证任意 IMEI 号码。解码 TAC（制造商）、报告机构、序列号和校验位。支持 15 位和 16 位 IMEI/IMEISV。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/imei-checker.html">
+  <meta property="og:title" content="IMEI 检查器">
+  <meta property="og:description" content="使用 Luhn 算法验证任意 IMEI 号码。解码 TAC（制造商）、报告机构、序列号和校验位。支持 15 位和 16 位 IMEI/IMEISV。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/imei-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="IMEI 检查器">
+<meta name="twitter:description" content="使用 Luhn 算法验证任意 IMEI 号码。解码 TAC（制造商）、报告机构、序列号和校验位。支持 15 位和 16 位 IMEI/IMEISV。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.imei-input{font-size:1.4rem!important;font-family:monospace;letter-spacing:2px;text-align:center;max-width:500px!important}
+.imei-display{font-family:monospace;font-size:1.6rem;letter-spacing:3px;text-align:center;padding:16px;background:var(--glass2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px}
+.decode-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+.decode-row:last-child{border-bottom:none}
+.decode-row .key{font-weight:600;color:var(--text2)}
+.decode-row .val{font-weight:700;color:var(--accent)}
+.check-valid{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:700;font-size:.9em}
+.check-ok{background:#27ae60;color:#fff}
+.check-fail{background:#e74c3c;color:#fff}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IMEI Checker","description":"Free IMEI checker. Validate any IMEI number using the Luhn algorithm, decode the TAC (manufacturer), reporting body, serial number, and check digit. Supports 15 and 16-digit IMEI/SV.","url": "https://tools.gamezipper.com/zh/dev/imei-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an IMEI number?","acceptedAnswer":{"@type":"Answer","text":"An IMEI (International Mobile Equipment Identity) is a unique 15-digit number that identifies every mobile phone. It is used by networks to identify valid devices and can block stolen phones."}},{"@type":"Question","name":"How do I find my IMEI number?","acceptedAnswer":{"@type":"Answer","text":"Dial *#06# on your phone to display the IMEI on screen. You can also find it on the device packaging, under the battery (removable batteries), or in the phone settings under About."}},{"@type":"Question","name":"What is the IMEI check digit?","acceptedAnswer":{"@type":"Answer","text":"The last digit of a 15-digit IMEI is a check digit calculated using the Luhn algorithm. It validates the IMEI and helps detect transcription errors. This tool computes and verifies it."}},{"@type":"Question","name":"What does TAC mean in an IMEI?","acceptedAnswer":{"@type":"Answer","text":"TAC (Type Allocation Code) is the first 8 digits of the IMEI. It identifies the device manufacturer and model. The first 2 digits of the TAC indicate the reporting body (e.g., 01 = CTIA/US)."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/imei-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/imei-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/imei-checker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="app"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'IMEI Checker',
+    toolDesc: 'Validate any IMEI number using the Luhn algorithm. Decode the TAC (manufacturer), reporting body, serial number, and check digit. Supports 15 and 16-digit IMEI/IMEISV.',
+    placeholder: 'Enter 15-digit IMEI',
+    check: 'Check IMEI',
+    invalid: 'IMEI must be 14-16 digits.',
+    valid: '✓ Valid IMEI',
+    invalid2: '✗ Invalid IMEI (check digit mismatch)',
+    validSV: '✓ Valid IMEISV (16 digits)',
+    luhnCheck: 'Luhn Validation',
+    type: 'IMEI Type',
+    type15: 'Standard IMEI (15 digits)',
+    type16: 'IMEISV (16 digits)',
+    type14: 'IMEI without check digit (14 digits)',
+    tac: 'TAC (Type Allocation Code)',
+    manufacturer: 'Brand / Manufacturer',
+    reportingBody: 'Reporting Body (RBI)',
+    modelId: 'Model Identifier',
+    serial: 'Serial Number (SNR)',
+    softwareVersion: 'Software Version (SV)',
+    checkDigit: 'Check Digit',
+    notFound: 'Unknown / Not in database',
+    unknownBrand: 'Unknown Brand',
+    step1: 'Find your IMEI by dialing *#06# on your phone',
+    step2: 'Enter the 15-digit number in the field above',
+    step3: 'Click Check IMEI to validate and decode',
+    step4: 'Review the manufacturer, check digit and serial info',
+  },
+  zh: {
+    toolTitle: 'IMEI 检查器',
+    toolDesc: '使用 Luhn 算法验证任意 IMEI 号码。解码 TAC（制造商）、报告机构、序列号和校验位。支持 15 位和 16 位 IMEI/IMEISV。',
+    placeholder: '输入 15 位 IMEI',
+    check: '检查 IMEI',
+    invalid: 'IMEI 必须为 14-16 位数字。',
+    valid: '✓ 有效 IMEI',
+    invalid2: '✗ 无效 IMEI（校验位不匹配）',
+    validSV: '✓ 有效 IMEISV（16 位）',
+    luhnCheck: 'Luhn 验证',
+    type: 'IMEI 类型',
+    type15: '标准 IMEI（15 位）',
+    type16: 'IMEISV（16 位）',
+    type14: '无校验位 IMEI（14 位）',
+    tac: 'TAC（型号分配码）',
+    manufacturer: '品牌 / 制造商',
+    reportingBody: '报告机构 (RBI)',
+    modelId: '型号标识',
+    serial: '序列号 (SNR)',
+    softwareVersion: '软件版本 (SV)',
+    checkDigit: '校验位',
+    notFound: '未知 / 数据库中无记录',
+    unknownBrand: '未知品牌',
+    step1: '在手机上拨打 *#06# 获取 IMEI',
+    step2: '在上方输入框中输入 15 位数字',
+    step3: '点击"检查 IMEI"进行验证和解析',
+    step4: '查看制造商、校验位和序列信息',
+  }
+});
+
+const { $, t } = GZ;
+
+// Reporting Body Identifier (first 2 digits of TAC)
+const RBIS = {
+  '01':'CTIA (USA)',
+  '02':'CTIA (USA)',
+  '10':'DECT devices',
+  '30':'TIA (USA)',
+  '35':'BABT (UK)',
+  '40':'BABT (UK)',
+  '44':'BABT (UK)',
+  '49':'PTCRB / NBTC',
+  '50':'BCECB / NTT (Japan)',
+  '51':'BCECB / CEPT',
+  '52':'CRT (China)',
+  '53':'CRT (China)',
+  '54':'CRT (China)',
+  '55':'CRT (China)',
+  '56':'CRT (China)',
+  '57':'CRT (China)',
+  '58':'CRT (China)',
+  '59':'CRT (China)',
+  '60':'PTCRB (NAFTA)',
+  '61':'PTCRB / CSA',
+  '62':'PTCRB / CSA',
+  '63':'PTCRB / CSA',
+  '64':'PTCRB / CSA',
+  '65':'PTCRB / CSA',
+  '66':'PTCRB / CSA',
+  '67':'PTCRB / CSA',
+  '68':'PTCRB / CSA',
+  '69':'PTCRB / CSA',
+  '70':'ICASA (South Africa)',
+  '71':'ICASA (South Africa)',
+  '72':'ICASA (South Africa)',
+  '73':'ICASA (South Africa)',
+  '74':'ICASA (South Africa)',
+  '75':'ICASA (South Africa)',
+  '76':'ICASA (South Africa)',
+  '77':'ICASA (South Africa)',
+  '78':'ICASA (South Africa)',
+  '79':'ICASA (South Africa)',
+  '80':'PTCRB (NAFTA)',
+  '81':'PTCRB (NAFTA)',
+  '82':'PTCRB (NAFTA)',
+  '83':'PTCRB (NAFTA)',
+  '84':'PTCRB (NAFTA)',
+  '85':'PTCRB (NAFTA)',
+  '86':'PTCRB (NAFTA)',
+  '87':'PTCRB (NAFTA)',
+  '88':'PTCRB (NAFTA)',
+  '89':'PTCRB (NAFTA)',
+  '90':'PTCRB (NAFTA)',
+  '91':'PTCRB (NAFTA)',
+  '92':'PTCRB (NAFTA)',
+  '93':'PTCRB (NAFTA)',
+  '94':'PTCRB (NAFTA)',
+  '95':'PTCRB (NAFTA)',
+  '96':'PTCRB (NAFTA)',
+  '97':'PTCRB (NAFTA)',
+  '98':'PTCRB (NAFTA)',
+  '99':'Global CFOG',
+};
+
+// Manufacturer by TAC prefix (first 8 digits or key prefixes)
+// These are commonly known TAC ranges; full GSMA database not available client-side
+const BRANDS = [
+  // Apple
+  {prefix:'0139',brand:'Apple iPhone'},
+  {prefix:'3533',brand:'Apple iPhone'},
+  {prefix:'3582',brand:'Apple iPhone'},
+  {prefix:'3591',brand:'Apple iPhone'},
+  // Samsung
+  {prefix:'3517',brand:'Samsung Galaxy'},
+  {prefix:'3520',brand:'Samsung Galaxy'},
+  {prefix:'3528',brand:'Samsung Galaxy'},
+  {prefix:'3542',brand:'Samsung Galaxy'},
+  {prefix:'3553',brand:'Samsung Galaxy'},
+  {prefix:'3569',brand:'Samsung Galaxy'},
+  {prefix:'3579',brand:'Samsung Galaxy'},
+  // Nokia (old)
+  {prefix:'3520',brand:'Nokia'},
+  {prefix:'3534',brand:'Nokia'},
+  {prefix:'3557',brand:'Nokia'},
+  // Huawei
+  {prefix:'8609',brand:'Huawei'},
+  {prefix:'8612',brand:'Huawei'},
+  {prefix:'8640',brand:'Huawei'},
+  {prefix:'8651',brand:'Huawei'},
+  {prefix:'8663',brand:'Huawei'},
+  // Xiaomi
+  {prefix:'8615',brand:'Xiaomi'},
+  {prefix:'8654',brand:'Xiaomi'},
+  {prefix:'8669',brand:'Xiaomi'},
+  // LG
+  {prefix:'3531',brand:'LG'},
+  {prefix:'3555',brand:'LG'},
+  // Motorola
+  {prefix:'3540',brand:'Motorola'},
+  {prefix:'3560',brand:'Motorola'},
+  // Sony
+  {prefix:'3578',brand:'Sony Xperia'},
+  {prefix:'3585',brand:'Sony Xperia'},
+  // Google Pixel
+  {prefix:'3535',brand:'Google Pixel'},
+  {prefix:'3556',brand:'Google Pixel'},
+  // OnePlus
+  {prefix:'8642',brand:'OnePlus'},
+  // OPPO
+  {prefix:'8657',brand:'OPPO'},
+  // vivo
+  {prefix:'8641',brand:'vivo'},
+  {prefix:'8666',brand:'vivo'},
+  // Lenovo
+  {prefix:'8643',brand:'Lenovo / Motorola'},
+  // ZTE
+  {prefix:'8650',brand:'ZTE'},
+  // HTC
+  {prefix:'3558',brand:'HTC'},
+  // Blackberry
+  {prefix:'3593',brand:'BlackBerry'},
+  // Dell
+  {prefix:'8658',brand:'Dell'},
+];
+
+function luhnValid(imei) {
+  let sum = 0;
+  let dbl = false;
+  for (let i = imei.length - 1; i >= 0; i--) {
+    let d = parseInt(imei[i]);
+    if (dbl) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+    dbl = !dbl;
+  }
+  return sum % 10 === 0;
+}
+
+function calcCheckDigit(first14) {
+  let sum = 0;
+  let dbl = true; // for the 15th position
+  for (let i = 13; i >= 0; i--) {
+    let d = parseInt(first14[i]);
+    if (!dbl) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+    dbl = !dbl;
+  }
+  return (10 - (sum % 10)) % 10;
+}
+
+function getBrand(tac) {
+  const tac8 = tac.substring(0, 4);
+  for (const b of BRANDS) {
+    if (tac8.startsWith(b.prefix.substring(0, 4))) return b.brand;
+  }
+  return t('unknownBrand');
+}
+
+$('#app').innerHTML = `
+  <div class="gz-field" style="margin-bottom:16px">
+    <input type="text" id="imei" class="imei-input" maxlength="16" placeholder="${t('placeholder')}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+  </div>
+  <button class="gz-btn" onclick="check()" style="width:100%;max-width:400px;font-size:1.05em;padding:12px">${t('check')}</button>
+  <div id="result" style="margin-top:16px"></div>
+`;
+
+function row(key, val) {
+  return `<div class="decode-row"><span class="key">${key}</span><span class="val">${val}</span></div>`;
+}
+
+function check() {
+  let imei = $('#imei').value.trim();
+  if (!/^\d{14,16}$/.test(imei)) {
+    $('#result').innerHTML = `<div style="color:#e74c3c;padding:12px;text-align:center">${t('invalid')}</div>`;
+    return;
+  }
+
+  let valid, typeLabel, isSV = false, isShort = false;
+  if (imei.length === 15) {
+    valid = luhnValid(imei);
+    typeLabel = t('type15');
+  } else if (imei.length === 16) {
+    // IMEISV - no check digit, 8 TAC + 6 SV
+    valid = true;
+    isSV = true;
+    typeLabel = t('type16');
+  } else {
+    // 14 digits - show computed check digit
+    isShort = true;
+    valid = true;
+    typeLabel = t('type14');
+  }
+
+  const tac = imei.substring(0, 8);
+  const rbi = tac.substring(0, 2);
+  const reportingBody = RBIS[rbi] || t('notFound');
+  const brand = getBrand(tac);
+  const modelId = tac.substring(2);
+
+  let serial, sv, checkDig;
+  if (isSV) {
+    serial = imei.substring(8, 12);
+    sv = imei.substring(12);
+    checkDig = 'N/A (IMEISV)';
+  } else if (isShort) {
+    const cd = calcCheckDigit(imei);
+    serial = imei.substring(8);
+    checkDig = `${cd} (computed)`;
+  } else {
+    serial = imei.substring(8, 14);
+    checkDig = imei[14];
+    sv = 'N/A';
+  }
+
+  let colors = [];
+  for (let i = 0; i < imei.length; i++) {
+    let bg = '#9b59b6';
+    if (i < 8) bg = '#4ecdc4';
+    else if (i < 14 && !isShort) bg = '#f39c12';
+    else if (!isSV && i === imei.length - 1) bg = valid ? '#27ae60' : '#e74c3c';
+    else bg = '#3498db';
+    colors.push(`<span style="color:#fff;background:${bg};border-radius:4px;padding:2px 0">${imei[i]}</span>`);
+  }
+
+  const status = isSV ? t('validSV') : (valid ? t('valid') : t('invalid2'));
+  const statusClass = (isSV || valid) ? 'check-ok' : 'check-fail';
+
+  $('#result').innerHTML = `
+    <div class="imei-display">${colors.join('&nbsp;')}</div>
+    <div style="background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:4px 16px;margin-bottom:16px">
+      ${row(t('luhnCheck'), `<span class="check-valid ${statusClass}">${status}</span>`)}
+      ${row(t('type'), typeLabel)}
+    </div>
+    <div style="background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:4px 16px">
+      ${row(t('tac'), tac)}
+      ${row(t('manufacturer'), brand)}
+      ${row(t('reportingBody'), `${reportingBody} (${rbi})`)}
+      ${row(t('modelId'), modelId)}
+      ${row(t('serial'), serial)}
+      ${isSV ? row(t('softwareVersion'), sv) : ''}
+      ${row(t('checkDigit'), checkDig)}
+    </div>
+  `;
+}
+
+$('#toolbar').innerHTML = ``;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔢', href:'/dev/uuid.html', name:'UUID Generator'},
+    {icon:'🔐', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'📱', href:'/dev/base64.html', name:'Base64 Encode'},
+    {icon:'🔑', href:'/dev/password.html', name:'Password Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

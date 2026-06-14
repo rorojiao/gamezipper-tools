@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>化学方程式配平器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时配平任意化学方程式。输入反应物和生成物，获得带正确化学计量系数的配平方程式。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/chemical-equation-balancer.html">
+  <meta property="og:title" content="化学方程式配平器">
+  <meta property="og:description" content="即时配平任意化学方程式。输入反应物和生成物，获得带正确化学计量系数的配平方程式。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/chemical-equation-balancer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="化学方程式配平器">
+<meta name="twitter:description" content="即时配平任意化学方程式。输入反应物和生成物，获得带正确化学计量系数的配平方程式。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+#eqInput{width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:1.1em;font-family:monospace;margin:8px 0;box-sizing:border-box}
+.chem-help{font-size:.8em;color:var(--text2);margin:8px 0;line-height:1.8}
+.chem-help code{background:var(--glass2);padding:2px 6px;border-radius:4px;font-family:monospace}
+#balanced{font-size:1.3em;font-family:monospace;padding:16px;border-radius:10px;background:var(--glass2);border:1px solid var(--border);margin:12px 0;text-align:center;line-height:1.8;word-break:break-word}
+#balanced .coef{color:var(--accent);font-weight:700;font-size:1.1em}
+#balanced .arrow{color:var(--text2);margin:0 8px}
+.chem-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chem-presets button{padding:4px 10px;border-radius:6px;font-size:.8em;border:1px solid var(--border);background:var(--glass);color:var(--text);cursor:pointer}
+.chem-presets button:hover{border-color:var(--accent)}
+sub{font-size:.7em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Chemical Equation Balancer","description":"Balance any chemical equation instantly. Enter reactants and products and get the balanced equation with coefficients. Free, instant, browser-based chemistry tool.","url": "https://tools.gamezipper.com/zh/calc/chemical-equation-balancer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the chemical equation balancer work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool parses your chemical formula, builds a matrix of element counts for each compound, and solves a system of linear equations to find the smallest whole-number stoichiometric coefficients that balance both sides of the reaction."}}, {"@type": "Question", "name": "How do I format my chemical equation?", "acceptedAnswer": {"@type": "Answer", "text": "Use the = sign to separate reactants from products. Separate compounds with +. Use numbers after elements for subscripts (e.g. H2O, CO2). For groups use parentheses (e.g. Ca(OH)2). Example: H2+O2=H2O"}}, {"@type": "Question", "name": "Can it handle complex equations with parentheses?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The parser supports polyatomic groups in parentheses like Ca(NO3)2 and Al2(SO4)3, as well as hydration dots and multiple-element compounds."}}, {"@type": "Question", "name": "Why does my equation fail to balance?", "acceptedAnswer": {"@type": "Answer", "text": "Some equations cannot be balanced — for example if an element appears only on one side, or if the compounds are chemically impossible. Check your formulas and make sure all elements appear on both sides of the equation."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/chemical-equation-balancer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/chemical-equation-balancer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/chemical-equation-balancer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="status"></div>
+    <input id="eqInput" spellcheck="false" placeholder="H2+O2=H2O">
+    <div class="chem-help" id="help"></div>
+    <div class="chem-presets" id="presets"></div>
+    <div id="balanced"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Chemical Equation Balancer',
+    toolDesc: 'Balance any chemical equation instantly. Enter reactants and products to get the balanced equation with correct stoichiometric coefficients.',
+    balance: 'Balance', clear: 'Clear',
+    enterEq: 'Enter a chemical equation to balance.',
+    error: 'Could not balance equation. Check your formulas — all elements must appear on both sides.',
+    fmt: 'Format:',
+    fmtEx: 'use = between sides, + between compounds, numbers for subscripts',
+    step1: 'Enter your equation using format like H2+O2=H2O',
+    step2: 'Use parentheses for groups, e.g. Ca(OH)2',
+    step3: 'Click Balance to find the correct coefficients',
+    step4: 'Copy the balanced equation for your homework or notes',
+  },
+  zh: {
+    toolTitle: '化学方程式配平器',
+    toolDesc: '即时配平任意化学方程式。输入反应物和生成物，获得带正确化学计量系数的配平方程式。',
+    balance: '配平', clear: '清除',
+    enterEq: '输入化学方程式进行配平。',
+    error: '无法配平该方程式。请检查化学式 — 所有元素必须同时出现在等式两侧。',
+    fmt: '格式：',
+    fmtEx: '用 = 分隔两边，+ 分隔化合物，数字表示下标',
+    step1: '输入方程式，格式如 H2+O2=H2O',
+    step2: '用括号表示原子团，如 Ca(OH)2',
+    step3: '点击「配平」获取正确系数',
+    step4: '复制配平后的方程式',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Parse a compound formula into element->count map
+function parseFormula(formula) {
+  const counts = {};
+  let i = 0;
+  function parseGroup(depth) {
+    const local = {};
+    while (i < formula.length) {
+      const ch = formula[i];
+      if (ch === '(') { i++; const sub = parseGroup(depth+1); mergeInto(local, sub); }
+      else if (ch === ')') { i++; break; }
+      else if (/[A-Z]/.test(ch)) {
+        let elem = ch; i++;
+        if (i < formula.length && /[a-z]/.test(formula[i])) { elem += formula[i]; i++; }
+        let numStr = '';
+        while (i < formula.length && /[0-9]/.test(formula[i])) { numStr += formula[i]; i++; }
+        const num = numStr ? parseInt(numStr) : 1;
+        local[elem] = (local[elem] || 0) + num;
+      } else { i++; }
+    }
+    // Apply multiplier after closing paren
+    if (depth > 0) {
+      let numStr = '';
+      while (i < formula.length && /[0-9]/.test(formula[i])) { numStr += formula[i]; i++; }
+      if (numStr) { const m = parseInt(numStr); for (const k in local) local[k] *= m; }
+    }
+    return local;
+  }
+  function mergeInto(a, b) { for (const k in b) a[k] = (a[k] || 0) + b[k]; }
+  const result = parseGroup(0);
+  return result;
+}
+
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+
+function balance() {
+  const input = $('#eqInput').value.trim().replace(/\s+/g, '').replace(/→|->|⟶/g, '=').replace(/·|\./g, '');
+  $('#status').innerHTML = '';
+  $('#balanced').innerHTML = '';
+  if (!input || !input.includes('=')) { $('#status').innerHTML = `<span style="color:var(--text2)">${t('enterEq')}</span>`; return; }
+
+  const [left, right] = input.split('=');
+  const reactants = left.split('+').filter(s => s);
+  const products = right.split('+').filter(s => s);
+  if (!reactants.length || !products.length) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}</span>`; return; }
+
+  try {
+    const compounds = [...reactants, ...products];
+    const matrices = compounds.map(parseFormula);
+
+    // Collect all elements
+    const elementSet = new Set();
+    matrices.forEach(m => Object.keys(m).forEach(e => elementSet.add(e)));
+    const elements = [...elementSet].sort();
+
+    // Build coefficient matrix: rows=elements, cols=compounds. Reactants positive, products negative.
+    const rows = elements.length, cols = compounds.length;
+    const A = [];
+    for (let r = 0; r < rows; r++) {
+      A.push([]);
+      for (let c = 0; c < cols; c++) {
+        const count = matrices[c][elements[r]] || 0;
+        A[r].push(c < reactants.length ? count : -count);
+      }
+    }
+
+    // Solve homogeneous system Ax = 0 using Gauss elimination with fractions
+    // Represent as integer fractions using BigInt-free rational (enough for typical equations)
+    // We'll use fraction-free Gaussian elimination to find null space
+    const coeffs = solveNullSpace(A, rows, cols);
+    if (!coeffs) throw new Error('nosol');
+
+    // Build display
+    let html = '';
+    reactants.forEach((f, idx) => {
+      const coef = coeffs[idx];
+      if (coef > 1) html += `<span class="coef">${coef}</span>`;
+      html += formulaHTML(f);
+      if (idx < reactants.length - 1) html += ' + ';
+    });
+    html += ` <span class="arrow">→</span> `;
+    products.forEach((f, idx) => {
+      const coef = coeffs[reactants.length + idx];
+      if (coef > 1) html += `<span class="coef">${coef}</span>`;
+      html += formulaHTML(f);
+      if (idx < products.length - 1) html += ' + ';
+    });
+    $('#balanced').innerHTML = html;
+
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}</span>`;
+  }
+}
+
+function formulaHTML(f) {
+  return f.replace(/(\d+)/g, '<sub>$1</sub>');
+}
+
+// Find integer null-space vector of matrix A (rows x cols)
+function solveNullSpace(A, rows, cols) {
+  // Augmented Gaussian elimination using exact integer arithmetic
+  // Copy matrix
+  let M = A.map(r => [...r]);
+  let pivotCols = [];
+  let pr = 0;
+
+  for (let pc = 0; pc < cols && pr < rows; pc++) {
+    // Find pivot
+    let pivot = -1;
+    for (let r = pr; r < rows; r++) { if (M[r][pc] !== 0) { pivot = r; break; } }
+    if (pivot === -1) continue;
+    [M[pr], M[pivot]] = [M[pivot], M[pr]];
+    pivotCols.push(pc);
+    // Eliminate
+    for (let r = 0; r < rows; r++) {
+      if (r === pr) continue;
+      if (M[r][pc] !== 0) {
+        const factor = M[r][pc];
+        const pivotVal = M[pr][pc];
+        for (let c = 0; c < cols; c++) {
+          M[r][c] = M[r][c] * pivotVal - M[pr][c] * factor;
+        }
+      }
+    }
+    pr++;
+  }
+
+  // Find free variable
+  const freeCols = [];
+  for (let c = 0; c < cols; c++) if (!pivotCols.includes(c)) freeCols.push(c);
+  if (freeCols.length === 0) return null; // Only trivial solution
+
+  // Set first free variable = 1, back-substitute
+  const fc = freeCols[0];
+  let x = new Array(cols).fill(0);
+  x[fc] = 1;
+
+  // For each pivot row, solve for pivot variable
+  for (let r = pivotCols.length - 1; r >= 0; r--) {
+    const pcol = pivotCols[r];
+    let sum = 0;
+    for (let c = 0; c < cols; c++) {
+      if (c !== pcol) sum += M[r][c] * x[c];
+    }
+    if (M[r][pcol] === 0) return null;
+    x[pcol] = -sum / M[r][pcol];
+  }
+
+  // Convert to integers
+  // Find LCM of denominators
+  let denominators = x.map(v => {
+    if (Number.isInteger(v)) return 1;
+    const str = v.toString();
+    const dotIdx = str.indexOf('.');
+    if (dotIdx === -1) return 1;
+    return Math.pow(10, str.length - dotIdx - 1);
+  });
+  let lcmVal = 1;
+  denominators.forEach(d => { lcmVal = lcmVal * d / gcd(lcmVal, d); });
+
+  x = x.map(v => Math.round(v * lcmVal));
+
+  // Make all positive and reduce by GCD
+  if (x.some(v => v < 0)) {
+    const negCount = x.filter(v => v < 0).length;
+    if (negCount > x.length / 2) x = x.map(v => -v);
+    else if (x.filter(v => v < 0).length === x.filter(v => v > 0).length) {
+      // Check: should all be same sign ideally
+      if (x[0] < 0) x = x.map(v => -v);
+    }
+  }
+  // If still has mixed signs, flip
+  if (x.some(v => v < 0) && x.some(v => v > 0)) {
+    x = x.map(v => Math.abs(v));
+  }
+  const g = x.reduce((a, b) => gcd(a, b));
+  x = x.map(v => v / g);
+
+  // Validate: all elements must balance
+  for (let r = 0; r < rows; r++) {
+    let s = 0;
+    for (let c = 0; c < cols; c++) s += A[r][c] * x[c];
+    if (Math.abs(s) > 0.0001) return null;
+  }
+  if (x.some(v => v <= 0)) return null;
+  return x;
+}
+
+const presets = [
+  { label: 'H₂ + O₂ → H₂O', expr: 'H2+O2=H2O' },
+  { label: 'Fe + O₂ → Fe₂O₃', expr: 'Fe+O2=Fe2O3' },
+  { label: 'C₃H₈ + O₂', expr: 'C3H8+O2=CO2+H2O' },
+  { label: 'NaOH + H₂SO₄', expr: 'NaOH+H2SO4=Na2SO4+H2O' },
+  { label: 'Ca(OH)₂ + HCl', expr: 'Ca(OH)2+HCl=CaCl2+H2O' },
+  { label: 'Al + O₂', expr: 'Al+O2=Al2O3' },
+];
+
+$('#help').innerHTML = `${t('fmt')} <code>H2+O2=H2O</code> · ${t('fmtEx')}`;
+
+$('#presets').innerHTML = presets.map(p =>
+  `<button onclick="document.getElementById('eqInput').value='${p.expr}';balance()">${p.label}</button>`
+).join('');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="balance()">${t('balance')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#balanced').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('eqInput').value='';document.getElementById('balanced').innerHTML=''">${t('clear')}</button>`;
+
+$('#eqInput').addEventListener('keydown', e => { if (e.key === 'Enter') balance(); });
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🧮', href:'/calc/fraction-calculator.html', name:'Fraction Calc'},
+    {icon:'📐', href:'/calc/triangle-calculator.html', name:'Triangle Solver'},
+    {icon:'📊', href:'/calc/statistics-calculator.html', name:'Statistics'},
+    {icon:'🔢', href:'/calc/prime-factorization-calculator.html', name:'Prime Factors'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

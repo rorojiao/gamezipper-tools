@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Kubernetes YAML 生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="为 Deployment、Service、ConfigMap 等生成 K8s 清单文件。可视化表单构建，即时生成 YAML。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/k8s-yaml-generator.html">
+  <meta property="og:title" content="Kubernetes YAML 生成器">
+  <meta property="og:description" content="为 Deployment、Service、ConfigMap 等生成 K8s 清单文件。可视化表单构建，即时生成 YAML。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/k8s-yaml-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Kubernetes YAML 生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-grid label{font-size:.85em;display:block;margin-bottom:3px}
+.form-grid input,.form-grid select{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--gz-border);border-radius:6px;padding:6px 10px;color:var(--gz-text);font-size:.85em}
+.form-grid .full{grid-column:1/-1}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.82em;line-height:1.5;max-height:520px;overflow-y:auto}
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.tab-btn{padding:6px 16px;border:1px solid var(--gz-border);border-radius:8px;cursor:pointer;font-size:.85em;background:var(--gz-surface);color:var(--gz-text)}
+.tab-btn.active{background:var(--gz-accent);color:#000;border-color:var(--gz-accent);font-weight:700}
+.env-list,.port-list,.container-list{grid-column:1/-1}
+.env-row,.port-row{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.env-row input,.port-row input{flex:1}
+.env-row button,.port-row button{padding:4px 10px;flex-shrink:0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kubernetes YAML Generator","description":"Generate Kubernetes YAML manifests for Deployments, Services, ConfigMaps, Secrets and Pods. Visual form-based K8s YAML generator — free, browser-based.","url": "https://tools.gamezipper.com/zh/dev/k8s-yaml-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What Kubernetes resources can I generate?","acceptedAnswer":{"@type":"Answer","text":"You can generate YAML manifests for Deployments, Services (ClusterIP, NodePort, LoadBalancer), ConfigMaps, Secrets, and standalone Pods with full customization."}},{"@type":"Question","name":"Do I need kubectl installed?","acceptedAnswer":{"@type":"Answer","text":"No. The generator creates valid YAML in your browser. You can then copy it and apply with kubectl apply -f or save it as a file."}},{"@type":"Question","name":"Can I add environment variables and ports?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can add multiple environment variables, container ports with names, resource limits, probes, volumes and volume mounts through the visual form."}},{"@type":"Question","name":"Is my configuration sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All YAML generation happens entirely in your browser. Your configuration data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/k8s-yaml-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/k8s-yaml-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/k8s-yaml-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tab-row" id="tabRow"></div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="formArea"></div>
+    <div class="gz-output" id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Kubernetes YAML Generator',
+    toolDesc: 'Generate K8s manifests for Deployments, Services, ConfigMaps and more. Visual form builder with instant YAML output.',
+    step1: 'Select a Kubernetes resource type (Deployment, Service, ConfigMap, etc.)',
+    step2: 'Fill in the form fields — name, image, ports, environment variables',
+    step3: 'YAML generates automatically as you type',
+    step4: 'Copy the YAML or download it as a .yaml file and apply with kubectl',
+    tabs: { deployment: 'Deployment', service: 'Service', configmap: 'ConfigMap', secret: 'Secret', pod: 'Pod' },
+  },
+  zh: {
+    toolTitle: 'Kubernetes YAML 生成器',
+    toolDesc: '为 Deployment、Service、ConfigMap 等生成 K8s 清单文件。可视化表单构建，即时生成 YAML。',
+    step1: '选择 Kubernetes 资源类型（Deployment、Service、ConfigMap 等）',
+    step2: '填写表单字段 — 名称、镜像、端口、环境变量',
+    step3: 'YAML 会随输入自动生成',
+    step4: '复制 YAML 或下载为 .yaml 文件，用 kubectl 应用',
+    tabs: { deployment: 'Deployment', service: 'Service', configmap: 'ConfigMap', secret: 'Secret', pod: 'Pod' },
+  }
+});
+
+const { $, copyText, t } = GZ;
+let currentTab = 'deployment';
+
+const TABS = ['deployment', 'service', 'configmap', 'secret', 'pod'];
+
+function buildTabs() {
+  $('#tabRow').innerHTML = TABS.map(function(tab) {
+    return '<button class="tab-btn ' + (tab === currentTab ? 'active' : '') + '" onclick="switchTab(\'' + tab + '\')">⚓ ' + t('tabs')[tab] + '</button>';
+  }).join('');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  buildTabs();
+  buildForm();
+  gen();
+}
+
+function field(id, label, val, placeholder, full) {
+  return '<div class="' + (full ? 'full' : '') + '"><label>' + label + '</label><input type="text" id="f_' + id + '" value="' + (val || '') + '" placeholder="' + (placeholder || '') + '" oninput="gen()"></div>';
+}
+
+function buildForm() {
+  const area = $('#formArea');
+  if (currentTab === 'deployment' || currentTab === 'pod') {
+    area.innerHTML =
+      '<div class="form-grid">' +
+      field('name', 'Name', 'my-app', 'my-app') +
+      field('namespace', 'Namespace', 'default', 'default') +
+      field('image', 'Container Image', 'nginx:latest', 'nginx:latest', true) +
+      field('replicas', 'Replicas', '3', '3') +
+      field('port', 'Container Port', '80', '80') +
+      field('portName', 'Port Name', 'http', 'http') +
+      '<div class="full"><label>CPU / Memory Limits</label><input type="text" id="f_limits" value="256Mi,500m" placeholder="256Mi,500m" oninput="gen()"></div>' +
+      '</div>';
+    if (currentTab === 'pod') { document.getElementById('f_replicas').parentElement.style.display = 'none'; }
+  } else if (currentTab === 'service') {
+    area.innerHTML =
+      '<div class="form-grid">' +
+      field('name', 'Name', 'my-service', 'my-service') +
+      field('namespace', 'Namespace', 'default', 'default') +
+      '<div><label>Service Type</label><select id="f_type" onchange="gen()"><option value="ClusterIP">ClusterIP</option><option value="NodePort">NodePort</option><option value="LoadBalancer">LoadBalancer</option></select></div>' +
+      field('selector', 'Selector (app label)', 'my-app', 'my-app') +
+      field('port', 'Port', '80', '80') +
+      field('targetPort', 'Target Port', '8080', '8080') +
+      field('nodePort', 'Node Port (optional)', '', '30000-32767', true) +
+      '</div>';
+  } else if (currentTab === 'configmap') {
+    area.innerHTML =
+      '<div class="form-grid">' +
+      field('name', 'Name', 'app-config', 'app-config') +
+      field('namespace', 'Namespace', 'default', 'default') +
+      '<div class="full"><label>Data (key=value per line)</label><textarea id="f_data" rows="5" style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--gz-border);border-radius:6px;padding:6px 10px;color:var(--gz-text);font-size:.85em;font-family:monospace" oninput="gen()">DATABASE_HOST=localhost\nDATABASE_PORT=5432\nLOG_LEVEL=info</textarea></div>' +
+      '</div>';
+  } else if (currentTab === 'secret') {
+    area.innerHTML =
+      '<div class="form-grid">' +
+      field('name', 'Name', 'app-secret', 'app-secret') +
+      field('namespace', 'Namespace', 'default', 'default') +
+      '<div><label>Secret Type</label><select id="f_stype" onchange="gen()"><option value="Opaque">Opaque</option><option value="kubernetes.io/basic-auth">basic-auth</option><option value="kubernetes.io/tls">tls</option></select></div>' +
+      '<div class="full"><label>Data (key=value per line, auto base64-encoded)</label><textarea id="f_data" rows="5" style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--gz-border);border-radius:6px;padding:6px 10px;color:var(--gz-text);font-size:.85em;font-family:monospace" oninput="gen()">username=admin\npassword=secretpass</textarea></div>' +
+      '</div>';
+  }
+}
+
+function val(id) {
+  const el = document.getElementById('f_' + id);
+  return el ? el.value.trim() : '';
+}
+
+function parseKV(text) {
+  const lines = text.trim().split('\n');
+  const result = [];
+  for (const line of lines) {
+    const idx = line.indexOf('=');
+    if (idx > 0) result.push({ key: line.substring(0, idx).trim(), val: line.substring(idx + 1).trim() });
+  }
+  return result;
+}
+
+function gen() {
+  let yaml = '';
+  if (currentTab === 'deployment') {
+    const name = val('name') || 'my-app';
+    const ns = val('namespace') || 'default';
+    const image = val('image') || 'nginx:latest';
+    const replicas = val('replicas') || '1';
+    const port = val('port');
+    const portName = val('portName') || 'http';
+    const limits = val('limits');
+    yaml = 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: ' + name + '\n  namespace: ' + ns + '\n  labels:\n    app: ' + name + '\nspec:\n  replicas: ' + replicas + '\n  selector:\n    matchLabels:\n      app: ' + name + '\n  template:\n    metadata:\n      labels:\n        app: ' + name + '\n    spec:\n      containers:\n      - name: ' + name + '\n        image: ' + image;
+    if (port) yaml += '\n        ports:\n        - containerPort: ' + port + '\n          name: ' + portName;
+    if (limits) {
+      const parts = limits.split(',');
+      const mem = parts[0] ? parts[0].trim() : '';
+      const cpu = parts[1] ? parts[1].trim() : '';
+      yaml += '\n        resources:\n          limits:\n';
+      if (mem) yaml += '            memory: ' + mem + '\n';
+      if (cpu) yaml += '            cpu: ' + cpu + '\n';
+      yaml += '          requests:\n';
+      if (mem) yaml += '            memory: ' + mem + '\n';
+      if (cpu) yaml += '            cpu: ' + cpu;
+    }
+  } else if (currentTab === 'service') {
+    const name = val('name') || 'my-service';
+    const ns = val('namespace') || 'default';
+    const type = val('type');
+    const selector = val('selector') || 'my-app';
+    const port = val('port') || '80';
+    const targetPort = val('targetPort') || port;
+    const nodePort = val('nodePort');
+    yaml = 'apiVersion: v1\nkind: Service\nmetadata:\n  name: ' + name + '\n  namespace: ' + ns + '\nspec:\n  type: ' + type + '\n  selector:\n    app: ' + selector + '\n  ports:\n  - port: ' + port + '\n    targetPort: ' + targetPort + '\n    protocol: TCP\n    name: http';
+    if (type === 'NodePort' && nodePort) yaml += '\n    nodePort: ' + nodePort;
+  } else if (currentTab === 'configmap') {
+    const name = val('name') || 'app-config';
+    const ns = val('namespace') || 'default';
+    const data = parseKV(val('data'));
+    yaml = 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: ' + name + '\n  namespace: ' + ns + '\ndata:';
+    for (const d of data) yaml += '\n  ' + d.key + ': |-\n    ' + d.val;
+  } else if (currentTab === 'secret') {
+    const name = val('name') || 'app-secret';
+    const ns = val('namespace') || 'default';
+    const stype = val('stype');
+    const data = parseKV(val('data'));
+    yaml = 'apiVersion: v1\nkind: Secret\nmetadata:\n  name: ' + name + '\n  namespace: ' + ns + '\ntype: ' + stype + '\ndata:';
+    for (const d of data) yaml += '\n  ' + d.key + ': ' + btoa(d.val);
+  } else if (currentTab === 'pod') {
+    const name = val('name') || 'my-pod';
+    const ns = val('namespace') || 'default';
+    const image = val('image') || 'nginx:latest';
+    const port = val('port');
+    const portName = val('portName') || 'http';
+    yaml = 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: ' + name + '\n  namespace: ' + ns + '\n  labels:\n    app: ' + name + '\nspec:\n  containers:\n  - name: ' + name + '\n    image: ' + image;
+    if (port) yaml += '\n    ports:\n    - containerPort: ' + port + '\n      name: ' + portName;
+  }
+  $('#output').textContent = yaml;
+}
+
+function doDownload() {
+  const yaml = $('#output').textContent;
+  if (!yaml) return;
+  const blob = new Blob([yaml], { type: 'text/yaml;charset=utf-8' });
+  const a = document.createElement('a');
+  a.download = (currentTab === 'configmap' || currentTab === 'secret' ? 'k8s-' : '') + currentTab + '.yaml';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function doCopy() {
+  const yaml = $('#output').textContent;
+  if (yaml) copyText(yaml);
+}
+
+buildTabs();
+buildForm();
+gen();
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doCopy()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')} .yaml</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🐳', href:'/dev/docker-compose.html', name:'Docker Compose'},
+    {icon:'🐳', href:'/dev/dockerfile-generator.html', name:'Dockerfile Generator'},
+    {icon:'⚙️', href:'/dev/nginx-config.html', name:'Nginx Config'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
