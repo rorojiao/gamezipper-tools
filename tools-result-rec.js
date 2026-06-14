@@ -120,14 +120,9 @@
       try { sessionStorage.setItem(SESSION_KEY, '1'); } catch(e){}
     });
 
-    // Track clicks for analytics
+    // rec-click tracking removed 2026-06-14: was a dead 501 hit, no data delivered
     wrap.querySelectorAll('.gz-rec-item').forEach(function(link){
-      link.addEventListener('click', function(){
-        try {
-          var img = new Image();
-          img.src = 'https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p=/rec-click/' + encodeURIComponent(location.pathname);
-        } catch(e){}
-      });
+      link.addEventListener('click', function(){});
     });
   }
 
@@ -136,11 +131,7 @@
     render();
     var el = document.getElementById(REC_ID);
     if (!el) return;
-    // Track impression
-    try {
-      var img = new Image();
-      img.src = 'https://site-analytics.gamezipper.com/hit?s=tools.gamezipper.com&p=/rec-show/' + encodeURIComponent(location.pathname);
-    } catch(e){}
+    // rec-show impression tracking removed 2026-06-14: was a dead 501 hit, no data delivered
 
     // Trigger animation on next frame
     requestAnimationFrame(function(){
