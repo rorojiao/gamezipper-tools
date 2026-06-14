@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>JSON to GraphQL Converter - Generate Schema from JSON | GameZipper Tools</title>
+<meta name="description" content="Free JSON to GraphQL converter. Paste any JSON and instantly generate clean GraphQL SDL type definitions with smart type inference for nested objects, arrays and scalars. Runs in your browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/json-to-graphql.html">
+<meta property="og:title" content="JSON to GraphQL Converter - Generate Schema from JSON | GameZipper Tools">
+<meta property="og:description" content="Free JSON to GraphQL converter. Paste JSON and generate clean GraphQL SDL type definitions with smart type inference. Runs in your browser.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/json-to-graphql.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JSON to GraphQL Converter - Generate Schema from JSON | GameZipper Tools">
+<meta name="twitter:description" content="Free JSON to GraphQL converter. Paste JSON and generate clean GraphQL SDL type definitions. Runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.jg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.jg-grid{grid-template-columns:1fr}}
+.jg-col{display:flex;flex-direction:column;gap:6px}
+.jg-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.jg-col textarea{min-height:420px;padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.86em;line-height:1.55;resize:vertical;tab-size:2}
+.jg-col textarea:focus{outline:none;border-color:var(--accent)}
+.jg-opts{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85em}
+.jg-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.jg-opts input[type=text]{width:130px;padding:4px 8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-family:inherit}
+.jg-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.jg-status.ok{color:var(--success)}.jg-status.err{color:var(--danger)}
+.gql-kw{color:#e06c75}.gql-type{color:#61afef}.gql-fld{color:#e5c07b}.gql-scl{color:#98c379}.gql-com{color:#6a737d}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to GraphQL Converter","description":"Free JSON to GraphQL converter. Paste JSON and generate clean GraphQL SDL type definitions with smart type inference for nested objects, arrays and scalars. Runs entirely in your browser.","url":"https://tools.gamezipper.com/dev/json-to-graphql.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the JSON to GraphQL converter infer types?","acceptedAnswer":{"@type":"Answer","text":"The converter inspects each value: JSON booleans map to GraphQL Boolean, integers to Int, decimals to Float, and strings to String. Nested objects become named GraphQL object types, and arrays become list types ([Type!]!). Arrays of objects are merged so all fields across the sample are captured."}},{"@type":"Question","name":"What GraphQL output does it produce?","acceptedAnswer":{"@type":"Answer","text":"It produces GraphQL Schema Definition Language (SDL): a 'type RootName { ... }' block for the top object plus one type per nested object, with correctly named types, list wrappers, and optional non-null (!) markers. You can also generate a sample query that selects every leaf field."}},{"@type":"Question","name":"Can I convert an array of JSON objects?","acceptedAnswer":{"@type":"Answer","text":"Yes. If your top-level JSON is an array, the tool creates one item type and exposes the root as a list of that type. The objects inside the array are merged so every field present in any element is included in the resulting type."}},{"@type":"Question","name":"Is my JSON data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing and schema generation runs entirely in your browser. Nothing is uploaded, stored, or transmitted. The tool works offline after the page loads."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-graphql.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-graphql.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-graphql.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="jg-opts">
+      <label><span id="lbl-root"></span> <input type="text" id="rootName" value="RootType"></label>
+      <label><input type="checkbox" id="nonNull" checked> <span id="lbl-nonnull"></span></label>
+      <label><input type="checkbox" id="sampleQuery"> <span id="lbl-query"></span></label>
+    </div>
+    <div class="jg-grid">
+      <div class="jg-col">
+        <label id="lbl-input"></label>
+        <textarea id="input" spellcheck="false" placeholder='{"id":1,"name":"GameZipper","active":true,"tags":["tools","dev"],"owner":{"id":42,"email":"a@b.com"}}'></textarea>
+      </div>
+      <div class="jg-col">
+        <label id="lbl-output"></label>
+        <textarea id="output" spellcheck="false" readonly placeholder="GraphQL SDL appears here..."></textarea>
+      </div>
+    </div>
+    <div class="jg-status" id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to GraphQL Converter',
+    toolDesc: 'Paste any JSON and instantly generate clean GraphQL SDL type definitions with smart type inference for nested objects, arrays and scalars. Optional sample query. Runs entirely in your browser.',
+    lblRoot: 'Root type name', lblNonnull: 'Non-null fields (!)', lblQuery: 'Also generate sample query',
+    lblInput: 'JSON Input', lblOutput: 'GraphQL Schema (SDL)',
+    ok: '✓ GraphQL schema generated', okN: '✓ Schema generated — N type(s)',
+    err: '✗ Invalid JSON: ',
+    errRootObj: '✗ Root JSON must be an object or an array',
+    step1: 'Paste your JSON sample into the input area on the left',
+    step2: 'Enter a root type name and choose options above',
+    step3: 'The GraphQL SDL appears on the right instantly',
+    step4: 'Click Copy or Download to use the schema in your project',
+  },
+  zh: {
+    toolTitle: 'JSON 转 GraphQL 转换器',
+    toolDesc: '粘贴任意 JSON，即时生成整洁的 GraphQL SDL 类型定义，智能推断嵌套对象、数组和标量。可选生成示例查询。完全浏览器本地运行。',
+    lblRoot: '根类型名称', lblNonnull: '非空字段 (!)', lblQuery: '同时生成示例查询',
+    lblInput: 'JSON 输入', lblOutput: 'GraphQL Schema (SDL)',
+    ok: '✓ GraphQL schema 已生成', okN: '✓ schema 已生成 — N 个类型',
+    err: '✗ JSON 无效：',
+    errRootObj: '✗ 根 JSON 必须是对象或数组',
+    step1: '将 JSON 示例粘贴到左侧输入区',
+    step2: '填写根类型名称并选择上方选项',
+    step3: 'GraphQL SDL 立即出现在右侧',
+    step4: '点击「复制」或「下载」即可在项目中使用 schema',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function singularize(w) {
+  if (/(children|people|men|women)$/i.test(w)) return w.replace(/ren|ple$/i, '');
+  if (/(s|x|ch|sh)es$/i.test(w)) return w.replace(/es$/i, '');
+  if (/ies$/i.test(w)) return w.replace(/ies$/i, 'y');
+  if (/ss$/i.test(w)) return w;
+  if (/s$/i.test(w)) return w.replace(/s$/i, '');
+  return w;
+}
+function titleCase(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function isIdent(s) { return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s); }
+function safeName(s) {
+  let n = s.replace(/[^A-Za-z0-9_]+/g, '_').replace(/^([0-9])/, '_$1');
+  if (!n) n = 'Field';
+  n = titleCase(n);
+  if (!/^[A-Z]/.test(n)) n = 'T' + n;
+  return n;
+}
+
+function scalarType(v) {
+  if (typeof v === 'boolean') return 'Boolean';
+  if (typeof v === 'number') return Number.isInteger(v) ? 'Int' : 'Float';
+  if (typeof v === 'string') {
+    if (/^[0-9a-f]{24}$/i.test(v)) return 'ID';
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) return 'ID';
+    return 'String';
+  }
+  return 'String';
+}
+
+function jsonToGql(json, rootName, nonNull, wantQuery) {
+  const types = new Map();
+  const used = new Set();
+  let order = 0;
+
+  function claim(base) {
+    let n = safeName(base);
+    if (!used.has(n)) { used.add(n); return n; }
+    let i = 2;
+    while (used.has(n + i)) i++;
+    used.add(n + i);
+    return n + i;
+  }
+
+  function makeType(obj, name) {
+    if (types.has(name)) return name;
+    types.set(name, { fields: [], order: order++ });
+    const def = types.get(name);
+    for (const key of Object.keys(obj)) {
+      def.fields.push([key, valueToType(obj[key], key, name)]);
+    }
+    return name;
+  }
+
+  function valueToType(val, key, parent) {
+    if (val === null || val === undefined) return 'String';
+    if (Array.isArray(val)) {
+      return '[' + arrayElemType(val, key, parent) + '!' + (nonNull ? '!' : '') + ']';
+    }
+    if (typeof val === 'object') {
+      const nm = claim(parent + safeName(singularize(key)));
+      return makeType(val, nm) + (nonNull ? '!' : '');
+    }
+    return scalarType(val) + (nonNull ? '!' : '');
+  }
+
+  function arrayElemType(arr, key, parent) {
+    const samples = arr.filter(x => x !== null && x !== undefined);
+    if (samples.length === 0) return 'String';
+    const objSamples = samples.filter(x => typeof x === 'object' && !Array.isArray(x));
+    if (objSamples.length === 0) {
+      return scalarType(samples[0]);
+    }
+    const merged = {};
+    for (const o of objSamples) for (const k of Object.keys(o)) if (!(k in merged)) merged[k] = o[k];
+    const nm = claim(safeName(singularize(key)));
+    return makeType(merged, nm);
+  }
+
+  let rootType;
+  if (Array.isArray(json)) {
+    if (json.length === 0) { rootType = 'String'; }
+    else {
+      const elem = arrayElemType(json, rootName + 'Item', '');
+      rootType = '[' + elem + '!'!]';
+    }
+    // expose a wrapper type
+    const wrapName = claim(rootName);
+    types.set(wrapName, { fields: [['items', rootType]], order: order++ });
+    rootType = wrapName;
+  } else if (typeof json === 'object') {
+    rootType = makeType(json, claim(rootName));
+  } else {
+    throw new Error('root');
+  }
+
+  // build SDL
+  const arr = [...types.entries()].sort((a, b) => a[1].order - b[1].order);
+  let out = '';
+  for (const [name, def] of arr) {
+    out += 'type ' + name + ' {\n';
+    for (const [fn, ft] of def.fields) {
+      const fieldName = isIdent(fn) ? fn : JSON.stringify(fn);
+      out += '  ' + fieldName + ': ' + ft + '\n';
+    }
+    out += '}\n\n';
+  }
+  out = out.trimEnd();
+
+  if (wantQuery) {
+    // build a sample query for the root object type
+    const rootDef = types.get(rootType);
+    let q = '# Sample query\nquery {\n';
+    q += buildQueryBody(rootDef, '  ', types, new Set([rootType]));
+    q += '\n}';
+    out += '\n\n\n' + q;
+  }
+  return { schema: out, count: types.size };
+}
+
+function buildQueryBody(def, indent, types, seen) {
+  let s = '';
+  for (const [fn, ft] of def.fields) {
+    const inner = ft.replace(/^[\[!]+/, '').replace(/[!\]]+$/, '');
+    if (types.has(inner) && !seen.has(inner)) {
+      seen.add(inner);
+      s += indent + fn + ' {\n';
+      s += buildQueryBody(types.get(inner), indent + '  ', types, seen);
+      s += indent + '}\n';
+    } else {
+      s += indent + fn + '\n';
+    }
+  }
+  return s;
+}
+
+function run() {
+  const inp = $('#input').value.trim();
+  const status = $('#status');
+  if (!inp) { $('#output').value = ''; status.textContent = ''; status.className = 'jg-status'; return; }
+  let json;
+  try { json = JSON.parse(inp); }
+  catch (e) {
+    $('#output').value = '';
+    let msg = e.message;
+    const pm = msg.match(/position (\d+)/);
+    if (pm) { const p = +pm[1]; const before = inp.slice(0, p); msg += ' (line ' + (before.split('\n').length) + ')'; }
+    status.textContent = t('err') + msg; status.className = 'jg-status err'; return;
+  }
+  try {
+    const rootName = ($('#rootName').value || 'RootType').trim() || 'RootType';
+    const nonNull = $('#nonNull').checked;
+    const wantQuery = $('#sampleQuery').checked;
+    const { schema, count } = jsonToGql(json, rootName, nonNull, wantQuery);
+    $('#output').value = schema;
+    status.textContent = t('okN').replace('N', count); status.className = 'jg-status ok';
+  } catch (e) {
+    $('#output').value = '';
+    status.textContent = (e.message === 'root') ? t('errRootObj') : (t('err') + e.message);
+    status.className = 'jg-status err';
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    id: 1,
+    name: 'GameZipper',
+    active: true,
+    score: 4.8,
+    tags: ['tools', 'dev', 'games'],
+    createdAt: '2026-01-01T00:00:00Z',
+    owner: { id: 42, email: 'founder@gamezipper.com', verified: true },
+    tools: [
+      { id: '507f1f77bcf86cd799439011', title: 'JSON Formatter', uses: 1000 },
+      { id: '507f1f77bcf86cd799439012', title: 'Base64 Encoder', uses: 850 }
+    ]
+  });
+  $('#rootName').value = 'App';
+  run();
+}
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').textContent = ''; }
+function doDownload() {
+  const text = $('#output').value; if (!text) return;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'schema.graphql'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+$('#lbl-root').textContent = t('lblRoot');
+$('#lbl-nonnull').textContent = t('lblNonnull');
+$('#lbl-query').textContent = t('lblQuery');
+$('#lbl-input').textContent = t('lblInput');
+$('#lbl-output').textContent = t('lblOutput');
+
+$('#input').addEventListener('input', run);
+$('#rootName').addEventListener('input', run);
+$('#nonNull').addEventListener('change', run);
+$('#sampleQuery').addEventListener('change', run);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="run()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📝', href:'/dev/yaml.html', name:'YAML Formatter'},
+    {icon:'🌐', href:'/dev/graphql-explorer.html', name:'GraphQL Explorer'},
+    {icon:'🧬', href:'/dev/json-to-typescript.html', name:'JSON to TypeScript'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
