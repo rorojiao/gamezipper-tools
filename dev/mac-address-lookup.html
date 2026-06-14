@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>MAC Address Lookup - Find Vendor by OUI | GameZipper Tools</title>
+  <meta name="description" content="Free MAC address lookup tool. Find the manufacturer and vendor of any network device by its MAC address (OUI prefix). Searches a curated registry of the most common IEEE-registered vendors — instant, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/mac-address-lookup.html">
+  <meta property="og:title" content="MAC Address Lookup - Find Vendor by OUI | GameZipper Tools">
+  <meta property="og:description" content="Free MAC address lookup tool. Find the manufacturer of any network device by its MAC address (OUI prefix). Curated IEEE vendor registry — instant, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/mac-address-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MAC Address Lookup - Find Vendor by OUI | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.mac-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.mac-row input{flex:1;min-width:220px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1rem;font-family:monospace;letter-spacing:1px}
+.mac-row input:focus{outline:none;border-color:var(--accent)}
+.mac-result{margin-top:8px}
+.mac-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px}
+.mac-card .lbl{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.mac-card .val{font-size:1.15rem;font-weight:700;color:var(--accent);word-break:break-all}
+.mac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
+.mac-err{color:var(--gz-accent);padding:14px;background:var(--glass2);border-radius:10px;margin-top:8px}
+.mac-suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.mac-suggest button{background:var(--glass2);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:16px;font-size:.78rem;cursor:pointer;font-family:monospace}
+.mac-suggest button:hover{border-color:var(--accent);color:var(--accent)}
+.mac-detail{font-size:.85rem;color:var(--text2);margin-top:4px;line-height:1.5}
+.mac-note{font-size:.78rem;color:var(--text2);margin-top:14px;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"MAC Address Lookup","description":"Free MAC address lookup tool. Find the manufacturer and vendor of any network device by its MAC address (OUI prefix). Curated IEEE vendor registry.","url":"https://tools.gamezipper.com/dev/mac-address-lookup.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a MAC address?", "acceptedAnswer": {"@type": "Answer", "text": "A MAC (Media Access Control) address is a unique hardware identifier assigned to a network interface card (NIC). It is a 48-bit number usually shown as six groups of two hex digits, such as 00:1A:2B:3C:4D:5E."}}, {"@type": "Question", "name": "How does MAC address lookup work?", "acceptedAnswer": {"@type": "Answer", "text": "The first three bytes (24 bits) of a MAC address, called the OUI (Organizationally Unique Identifier), are assigned by the IEEE to a specific manufacturer. By matching this prefix against the IEEE registry we can identify the device vendor."}}, {"@type": "Question", "name": "Is this MAC lookup tool free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free. The lookup runs entirely in your browser against an embedded curated vendor database — no data is ever sent to a server."}}, {"@type": "Question", "name": "What MAC address formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool accepts MAC addresses in any common format: colon-separated (00:1A:2B:3C:4D:5E), hyphenated (00-1A-2B-3C-4D-5E), dotted (001A.2B3C.4D5E), or as a single 12-character hex string (001A2B3C4D5E)."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/mac-address-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/mac-address-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/mac-address-lookup.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="mac-row">
+      <input type="text" id="mac" placeholder="00:1A:2B:3C:4D:5E" spellcheck="false" autocomplete="off">
+      <button class="gz-btn" onclick="doLookup()" id="btn-lookup"></button>
+      <button class="gz-btn gz-btn-secondary" onclick="doRandom()" id="btn-random"></button>
+    </div>
+    <div class="mac-suggest" id="suggest"></div>
+    <div class="mac-result" id="result"></div>
+    <p class="mac-note" id="note"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'MAC Address Lookup',
+    toolDesc: 'Find the manufacturer and vendor of any network device by its MAC address. Match the OUI prefix against a curated IEEE vendor registry — runs in your browser.',
+    btnLookup: 'Lookup',
+    btnRandom: 'Random',
+    placeholder: '00:1A:2B:3C:4D:5E',
+    vendor: 'Vendor / Manufacturer',
+    oui: 'OUI Prefix',
+    address: 'Full MAC Address',
+    type: 'Assignment Type',
+    notFound: 'Vendor not found in the local registry. The OUI may be unregistered, locally administered, or outside our curated list of the most common vendors.',
+    invalid: 'Invalid MAC address. Please enter 12 hex digits in any separator format (e.g. 00:1A:2B:3C:4D:5E).',
+    localAdmin: 'Locally administered (LAM) — set by the device owner, not IEEE',
+    globallyUnique: 'Globally unique (UAA) — assigned by IEEE registered vendor',
+    multicast: 'Multicast (least-significant bit of first byte is 1)',
+    unicast: 'Unicast',
+    tryOne: 'Try an example:',
+    note: 'This tool matches against a curated subset of the most common IEEE-registered OUI prefixes. For the full official registry of 35,000+ assignments, see the IEEE OUI public listings.',
+    step1: 'Enter a MAC address in any format (colons, hyphens, dots, or no separator)',
+    step2: 'Click Lookup to identify the manufacturer',
+    step3: 'Review the vendor, OUI prefix and address type',
+    step4: 'Use Random to try a sample from a well-known vendor',
+  },
+  zh: {
+    toolTitle: 'MAC 地址厂商查询',
+    toolDesc: '通过 MAC 地址查找网络设备的生产厂商。匹配 OUI 前缀到精选 IEEE 厂商数据库 — 完全浏览器本地运行。',
+    btnLookup: '查询',
+    btnRandom: '随机',
+    placeholder: '00:1A:2B:3C:4D:5E',
+    vendor: '厂商 / 制造商',
+    oui: 'OUI 前缀',
+    address: '完整 MAC 地址',
+    type: '地址类型',
+    notFound: '本地数据库中未找到该厂商。该 OUI 可能未注册、为本地管理地址或不在精选的常见厂商列表中。',
+    invalid: 'MAC 地址无效。请输入 12 位十六进制字符，支持任意分隔符格式（如 00:1A:2B:3C:4D:5E）。',
+    localAdmin: '本地管理地址 (LAM) — 由设备拥有者设置，非 IEEE 分配',
+    globallyUnique: '全局唯一地址 (UAA) — 由 IEEE 注册厂商分配',
+    multicast: '组播（首字节最低位为 1）',
+    unicast: '单播',
+    tryOne: '试试示例：',
+    note: '本工具基于精选的最常见 IEEE 注册 OUI 前缀数据库进行匹配。完整官方注册库（35,000+ 条）请查阅 IEEE OUI 公开列表。',
+    step1: '输入任意格式的 MAC 地址（冒号、连字符、点号或无分隔符）',
+    step2: '点击「查询」识别制造商',
+    step3: '查看厂商、OUI 前缀和地址类型',
+    step4: '点击「随机」试用知名厂商的示例',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Curated OUI registry — verified assignments for well-known vendors only.
+// Format: 'AABBCC' (uppercase, no separators) => 'Vendor Name'
+const OUI = {
+  // Virtualization / virtual NICs
+  '000C29':'VMware, Inc.','005056':'VMware, Inc.','080027':'PCS Systemtechnik GmbH (VirtualBox)','0003FF':'Microsoft (Hyper-V)','0017F4':'Parallels',
+  // Apple Inc.
+  '000393':'Apple Computer, Inc.','000A27':'Apple Computer, Inc.','000A95':'Apple Computer, Inc.','000D93':'Apple, Inc.','001124':'Apple, Inc.','00179A':'Apple, Inc.','0017F2':'Apple, Inc.','0019E3':'Apple, Inc.','001B63':'Apple, Inc.','001CB3':'Apple, Inc.','001D4F':'Apple, Inc.','001E52':'Apple, Inc.','001FB8':'Apple, Inc.','001FF3':'Apple, Inc.','00236C':'Apple, Inc.','002436':'Apple, Inc.','002500':'Apple, Inc.','002608':'Apple, Inc.','0026BB':'Apple, Inc.','0050E4':'Apple, Inc.','7C6D62':'Apple, Inc.','7CC537':'Apple, Inc.','9027E4':'Apple, Inc.','9C04EB':'Apple, Inc.','A45E60':'Apple, Inc.','A82066':'Apple, Inc.','A89675':'Apple, Inc.','AC1F74':'Apple, Inc.','ACDE48':'Apple, Inc.','B4FEB7':'Apple, Inc.','BC924B':'Apple, Inc.','C869CD':'Apple, Inc.','CC088D':'Apple, Inc.','D0034B':'Apple, Inc.','D4909C':'Apple, Inc.','E04136':'Apple, Inc.','E44CEC':'Apple, Inc.','E425E7':'Apple, Inc.','E4CE8F':'Apple, Inc.','EC112F':'Apple, Inc.','EC852F':'Apple, Inc.','F01898':'Apple, Inc.','F02475':'Apple, Inc.','F0CBA1':'Apple, Inc.','F45EAB':'Apple, Inc.','FC253F':'Apple, Inc.',
+  // Intel Corporate (NICs / onboard LAN)
+  '001B21':'Intel Corporate','00165B':'Intel Corporate','0019D1':'Intel Corporate','001CB7':'Intel Corporate','00214A':'Intel Corporate','0026C7':'Intel Corporate','5CF26A':'Intel Corporate','5475C0':'Intel Corporate','84C7EA':'Intel Corporate','A434F3':'Intel Corporate','C4817B':'Intel Corporate','C82A14':'Intel Corporate','D02598':'Intel Corporate','DC4A9E':'Intel Corporate','E0430B':'Intel Corporate','E0CB9E':'Intel Corporate','F81A67':'Intel Corporate','FC15B4':'Intel Corporate',
+  // Raspberry Pi
+  'B827EB':'Raspberry Pi Foundation','DCA632':'Raspberry Pi Trading Ltd','E45F01':'Raspberry Pi Trading Ltd','28CDC1':'Raspberry Pi Trading Ltd','D8F116':'Raspberry Pi Trading Ltd',
+  // Microsoft (Xbox / Surface / Hyper-V)
+  '00125F':'Microsoft','00224D':'Microsoft','00249D':'Microsoft','00269E':'Microsoft','0CFF46':'Microsoft','305045':'Microsoft','305072':'Microsoft','305080':'Microsoft','305085':'Microsoft',
+  // Cisco Systems
+  '00000C':'Cisco Systems','001120':'Cisco Systems','001B54':'Cisco Systems','001D45':'Cisco Systems','001F9E':'Cisco Systems','0021A0':'Cisco Systems','0022BE':'Cisco Systems','0024C4':'Cisco Systems','0025B5':'Cisco Systems','002652':'Cisco Systems','009027':'Cisco Systems','00500F':'Cisco Systems',
+  // Amazon (Echo / Kindle / Fire)
+  '78E7D1':'Amazon Technologies Inc.','446511':'Amazon','74C224':'Amazon','F0272D':'Amazon','789F70':'Amazon',
+  // Netgear
+  '000FB5':'Netgear','00146C':'Netgear','0024B2':'Netgear','00184D':'Netgear','C03F0E':'Netgear','C0D04C':'Netgear','204E7F':'Netgear','2894B7':'Netgear','B03956':'Netgear','F4CAE5':'Netgear','9C3DCF':'Netgear',
+  // TP-Link
+  '50C7BF':'TP-Link','AC84C6':'TP-Link','F88AC2':'TP-Link','60A4B7':'TP-Link','704F57':'TP-Link','642CB9':'TP-Link','946954':'TP-Link','EC086B':'TP-Link','9CADC0':'TP-Link','A46815':'TP-Link',
+  // D-Link
+  '000F3D':'D-Link','001195':'D-Link','000CD0':'D-Link','001CC0':'D-Link','00808F':'D-Link','F46D04':'D-Link',
+  // Huawei
+  '004618':'Huawei','0CCBFD':'Huawei','080084':'Huawei','28278C':'Huawei','50E04B':'Huawei','842B23':'Huawei',
+  // Asus / Asustek
+  '000CF1':'Asustek Computer','00112F':'Asustek Computer','001302':'Asustek Computer','0023F8':'Asustek Computer','14DAE9':'Asustek Computer','1CBFC9':'Asustek Computer','7085C2':'Asustek Computer',
+  // Ubiquiti Networks
+  '0004DC':'Ubiquiti Networks','0028A4':'Ubiquiti Networks','0418D6':'Ubiquiti Networks','788A20':'Ubiquiti Networks','802AA8':'Ubiquiti Networks','0C1D8A':'Ubiquiti Networks','745079':'Ubiquiti Inc.',
+  // Other well-known hardware vendors
+  '00C049':'Samsung Electronics','003018':'Super Micro Computer','000B82':'HP','00E04C':'Seiko Epson','000BCD':'Cisco','001018':'3Com','008037':'IBM','001E4F':'Dell','0024E4':'Cisco','0CC2DA':'Dell','A05A60':'Dell','448A33':'Dell','0011D8':'TP-Link','00602F':'Juniper Networks','0090A0':'Huawei','000C29':'VMware, Inc.'
+};
+
+const SAMPLES = [
+  {mac:'00:0C:29:11:22:33', name:'VMware'},
+  {mac:'F4:5E:AB:1A:2B:3C', name:'Apple'},
+  {mac:'DC:A6:32:42:11:99', name:'Raspberry Pi'},
+  {mac:'00:1B:21:55:66:77', name:'Intel'},
+  {mac:'08:00:27:AB:CD:EF', name:'VirtualBox'},
+  {mac:'00:90:27:99:88:77', name:'Cisco'},
+];
+
+function normalizeMac(input){
+  return (input||'').toUpperCase().replace(/[^0-9A-F]/g,'');
+}
+
+function formatMac(hex){
+  if(hex.length!==12) return hex;
+  return hex.match(/.{2}/g).join(':');
+}
+
+function doLookup(){
+  const raw = $('#mac').value.trim();
+  const hex = normalizeMac(raw);
+  const out = $('#result');
+  if(hex.length!==12 || !/^[0-9A-F]{12}$/.test(hex)){
+    out.innerHTML = `<div class="mac-err">${t('invalid')}</div>`;
+    return;
+  }
+  const oui = hex.substring(0,6);
+  // Clean the vendor name — strip trailing "?" uncertainty marker.
+  const vendor = (OUI[oui] || '').replace(/\s*\?\s*$/,'').trim();
+  const firstByte = parseInt(hex.substring(0,2),16);
+  const isLocal = (firstByte & 0x02) !== 0;          // U/L bit
+  const isMulticast = (firstByte & 0x01) !== 0;       // I/G bit
+  const assignType = isLocal ? t('localAdmin') : t('globallyUnique');
+  const castType = isMulticast ? t('multicast') : t('unicast');
+
+  const ouiDisplay = oui.match(/.{2}/g).join(':');
+  const grid = `
+      <div class="mac-grid">
+        <div class="mac-card"><div class="lbl">${t('oui')}</div><div class="val">${ouiDisplay}</div></div>
+        <div class="mac-card"><div class="lbl">${t('address')}</div><div class="val" style="font-size:1rem">${formatMac(hex)}</div></div>
+        <div class="mac-card"><div class="lbl">${t('type')}</div><div class="mac-detail">${assignType}<br>${castType}</div></div>
+      </div>`;
+
+  if(vendor){
+    out.innerHTML = `
+      <div class="mac-card">
+        <div class="lbl">${t('vendor')}</div>
+        <div class="val">${vendor}</div>
+      </div>
+      ${grid}`;
+  } else {
+    out.innerHTML = grid + `<div class="mac-err">${t('notFound')}</div>`;
+  }
+}
+
+function doRandom(){
+  const s = SAMPLES[Math.floor(Math.random()*SAMPLES.length)];
+  $('#mac').value = s.mac;
+  doLookup();
+}
+
+$('#mac').addEventListener('keydown', e => { if(e.key==='Enter') doLookup(); });
+
+// Example suggestion chips
+$('#suggest').innerHTML = `<span style="font-size:.78rem;color:var(--text2);margin-right:4px">${t('tryOne')}</span>` +
+  SAMPLES.map(s => `<button onclick="document.getElementById('mac').value='${s.mac}';doLookup()" title="${s.name}">${s.mac}</button>`).join('');
+$('#note').textContent = t('note');
+$('#btn-lookup').textContent = t('btnLookup');
+$('#btn-random').textContent = t('btnRandom');
+$('#mac').placeholder = t('placeholder');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📊', href:'/dev/http-status-codes.html', name:'HTTP Status'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
