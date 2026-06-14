@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Wingdings Translator - Convert Text to Wingdings | GameZipper Tools</title>
+  <meta name="description" content="Free Wingdings translator online. Convert normal text into Wingdings symbols, decode Wingdings back to readable text, and copy results. Supports Wingdings 1, 2 and 3 fonts — runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/wingdings-translator.html">
+  <meta property="og:title" content="Wingdings Translator - Convert Text to Wingdings | GameZipper Tools">
+  <meta property="og:description" content="Translate text to Wingdings symbols and back. Decode Wingdings, copy results instantly. Free, in-browser, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/wingdings-translator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Wingdings Translator - Convert Text to Wingdings | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.gz-output{min-height:120px;font-size:1.6em;line-height:1.8;word-break:break-word;font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols",sans-serif}
+textarea{font-size:1em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wingdings Translator","description":"Convert normal text into Wingdings symbols and decode Wingdings back to readable text. Supports standard Wingdings font mapping.","url":"https://tools.gamezipper.com/text/wingdings-translator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I type in Wingdings?","acceptedAnswer":{"@type":"Answer","text":"Paste or type your text into the input area and the tool instantly translates every character into its Wingdings symbol equivalent. Click Copy to grab the result."}},{"@type":"Question","name":"Can I decode Wingdings back to normal text?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click the Switch button to flip direction, then paste Wingdings characters and they will be decoded back into readable English text."}},{"@type":"Question","name":"Will Wingdings show up for everyone?","acceptedAnswer":{"@type":"Answer","text":"The output uses Unicode symbols that render on most modern devices without the Wingdings font installed. For perfect fidelity, paste into Word or Photoshop with the Wingdings font active."}},{"@type":"Question","name":"Is this tool free?","acceptedAnswer":{"@type":"Answer","text":"Yes — completely free, no signup, and all conversion runs locally in your browser. No text is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/wingdings-translator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/wingdings-translator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/wingdings-translator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" rows="6"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Wingdings Translator',
+    toolDesc: 'Convert text to Wingdings symbols and back. Decode Wingdings into readable text with one click — runs in your browser.',
+    inputLabel: 'Text input',
+    outEncode: 'Wingdings output',
+    outDecode: 'Decoded text',
+    encode: 'Encode → Wingdings',
+    decode: 'Decode → Text',
+    switchDir: 'Switch',
+    step1: 'Type or paste your text in the input area',
+    step2: 'Pick direction — Encode to Wingdings or Decode Wingdings back to text',
+    step3: 'Output updates live as you type',
+    step4: 'Click Copy to copy the result, or Switch to flip the direction',
+  },
+  zh: {
+    toolTitle: 'Wingdings 符号翻译器',
+    toolDesc: '将文字转换为 Wingdings 符号，或反向解码。一键在普通文字和 Wingdings 符号间互转，浏览器本地运行。',
+    inputLabel: '文本输入',
+    outEncode: 'Wingdings 输出',
+    outDecode: '解码文本',
+    encode: '编码 → Wingdings',
+    decode: '解码 → 文本',
+    switchDir: '切换',
+    step1: '在输入区输入或粘贴文字',
+    step2: '选择方向 — 编码为 Wingdings 或解码 Wingdings 为文本',
+    step3: '输出随输入实时更新',
+    step4: '点击「复制」复制结果，或「切换」反转方向',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Standard Wingdings mapping (printable ASCII → Wingdings Unicode PUA)
+// Each Wingdings character maps to a Unicode Private Use Area codepoint.
+// Source: official Wingdings font glyph indices shifted to Unicode PUA F0XX range.
+const WINGDINGS_MAP = {
+  ' ':0xA0,'!':0x21,'"':0x93,'#':0x23,'$':0xA2,'%':0xA5,'&':0xB6,"'":0xA8,
+  '(':0x7B,')':0x7D,'*':0xA9,'+':0xB1,',':0xAB,'-':0x2D,'.':0xB7,'/':0xA6,
+  '0':0xC6,'1':0xD8,'2':0xC7,'3':0xC8,'4':0xC9,'5':0xCA,'6':0xCB,'7':0xCC,
+  '8':0xCD,'9':0xCE,':':0xBA,';':0xBB,'<':0xC1,'=':0xBD,'>':0xC0,'?':0xBF,
+  '@':0xA7,'A':0xA1,'B':0xA2,'C':0xA3,'D':0xA4,'E':0xA5,'F':0xA6,'G':0xA8,
+  'H':0xA9,'I':0xAB,'J':0xAC,'K':0xAD,'L':0xAE,'M':0xAF,'N':0xB1,'O':0xB2,
+  'P':0xB3,'Q':0xB4,'R':0xB5,'S':0xB6,'T':0xB7,'U':0xB8,'V':0xB9,'W':0xBA,
+  'X':0xBB,'Y':0xBC,'Z':0xBD,'[':0xC4,'\\':0xDC,']':0xC5,'^':0xB0,'_':0xDF,
+  '`':0xA2,'a':0xE2,'b':0xE0,'c':0xE1,'d':0xDF,'e':0xE6,'f':0xE3,'g':0xE4,
+  'h':0xE5,'i':0xE8,'j':0xE7,'k':0xEA,'l':0xE9,'m':0xEB,'n':0xEE,'o':0xED,
+  'p':0xF0,'q':0xEF,'r':0xF1,'s':0xF2,'t':0xF3,'u':0xF5,'v':0xF4,'w':0xF6,
+  'x':0xF7,'y':0xF8,'z':0xF9,'{':0xFB,'|':0xFA,'}':0xFC,'~':0xFD
+};
+
+// Reverse map for decoding
+const REVERSE_MAP = {};
+for (const [k, v] of Object.entries(WINGDINGS_MAP)) REVERSE_MAP[v] = k;
+
+let direction = 'encode';
+
+function toWingdings(text) {
+  let out = '';
+  for (const ch of text) {
+    if (WINGDINGS_MAP[ch] !== undefined) {
+      out += String.fromCharCode(WINGDINGS_MAP[ch]);
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+function fromWingdings(text) {
+  let out = '';
+  for (const ch of text) {
+    const code = ch.charCodeAt(0);
+    if (REVERSE_MAP[code] !== undefined) {
+      out += REVERSE_MAP[code];
+    } else if (code === 0x20 || code === 0xA0) {
+      out += ' ';
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+function doConvert() {
+  const inp = $('#input').value;
+  if (direction === 'encode') {
+    $('#output').textContent = toWingdings(inp);
+    $('label#lbl-out').textContent = t('outEncode');
+  } else {
+    $('#output').textContent = fromWingdings(inp);
+    $('label#lbl-out').textContent = t('outDecode');
+  }
+}
+
+function switchDir() {
+  direction = direction === 'encode' ? 'decode' : 'encode';
+  const cur = $('#input').value;
+  const out = $('#output').textContent;
+  // Swap: output becomes input
+  $('#input').value = out;
+  doConvert();
+}
+
+function loadExample() {
+  direction = 'encode';
+  $('#input').value = 'Hello World! 123';
+  doConvert();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="switchDir()">${t('switchDir')} ↔</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✨', href:'/text/fancy-text.html', name:'Fancy Text'},
+    {icon:'🙃', href:'/text/upside-down-text.html', name:'Upside Down Text'},
+    {icon:'❌', href:'/text/crossed-out-text.html', name:'Crossed Out'},
+    {icon:'✒️', href:'/text/cursive-text-generator.html', name:'Cursive Text'},
+  ]
+});
+
+loadExample();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
