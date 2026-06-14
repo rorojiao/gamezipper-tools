@@ -155,7 +155,7 @@ function jsonToGql(json, rootName, nonNull, wantQuery) {
   function valueToType(val, key, parent) {
     if (val === null || val === undefined) return 'String';
     if (Array.isArray(val)) {
-      return '[' + arrayElemType(val, key, parent) + '!' + (nonNull ? '!' : '') + ']';
+      return '[' + arrayElemType(val, key, parent) + '!]' + (nonNull ? '!' : '');
     }
     if (typeof val === 'object') {
       const nm = claim(parent + safeName(singularize(key)));
@@ -179,14 +179,18 @@ function jsonToGql(json, rootName, nonNull, wantQuery) {
 
   let rootType;
   if (Array.isArray(json)) {
-    if (json.length === 0) { rootType = 'String'; }
-    else {
-      const elem = arrayElemType(json, rootName + 'Item', '');
-      rootType = '[' + elem + '!'!]';
+    const samples = json.filter(x => x !== null && typeof x === 'object' && !Array.isArray(x));
+    const elemName = claim(rootName);
+    const wrapName = claim(rootName + 'List');
+    if (samples.length === 0) {
+      types.set(wrapName, { fields: [['items', '[String!]']], order: order++ });
+    } else {
+      const merged = {};
+      for (const o of samples) for (const k of Object.keys(o)) if (!(k in merged)) merged[k] = o[k];
+      makeType(merged, elemName);
+      const listType = '[' + elemName + '!]' + (nonNull ? '!' : '');
+      types.set(wrapName, { fields: [['items', listType]], order: order++ });
     }
-    // expose a wrapper type
-    const wrapName = claim(rootName);
-    types.set(wrapName, { fields: [['items', rootType]], order: order++ });
     rootType = wrapName;
   } else if (typeof json === 'object') {
     rootType = makeType(json, claim(rootName));
