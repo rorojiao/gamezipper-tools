@@ -1,6 +1,8 @@
-// GameZipper Tools Service Worker v2
+// GameZipper Tools Service Worker v3
 // Pure caching — Monetag push NOTIFICATIONS DISABLED
-const CACHE='gzt-v2';
+// v3: bypass browser cache for gz-analytics.js so EP rotation propagates immediately
+//     (tunnel rotates every ~5min, but CDN cache + SW cache could hold stale EP for 4h)
+const CACHE='gzt-v3';
 
 self.addEventListener('install',e=>{
   self.skipWaiting();
@@ -15,6 +17,14 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   var url=new URL(e.request.url);
   if(!url.protocol.startsWith('http'))return;
+
+  // v3: Network-only for gz-analytics.js — bypass SW cache + browser HTTP cache.
+  // CDN cache still applies but `?v=` bumping in HTML references busts it on every tunnel rotation.
+  // Without this, SW would return stale EP from local cache for the lifetime of the SW.
+  if(url.pathname==='/gz-analytics.js'||url.pathname.startsWith('/gz-analytics.')){
+    e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>fetch(e.request)));
+    return;
+  }
 
   // Cache-first for static assets
   if(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|mp3|ogg|wav|webp)$/i.test(url.pathname)){
