@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>HTML Table to CSV Converter | GameZipper Tools</title>
+  <meta name="description" content="Extract tables from HTML and convert them to CSV online for free. Paste HTML markup or a URL's table code and download clean CSV/TSV/Excel files. Handles multiple tables, headers, colspan/rowspan — browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/html-table-to-csv.html">
+  <meta property="og:title" content="HTML Table to CSV Converter | GameZipper Tools">
+  <meta property="og:description" content="Extract tables from HTML and convert to CSV online for free. Paste HTML markup, get clean CSV/TSV/Excel downloads. Handles headers, colspan/rowspan and multiple tables. Browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/html-table-to-csv.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HTML Table to CSV Converter | GameZipper Tools">
+<meta name="twitter:description" content="Extract tables from HTML and convert to CSV online for free. Handles multiple tables, headers, colspan. Browser-only, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+#preview{overflow-x:auto;margin-top:12px}
+#preview table{width:100%;border-collapse:collapse;font-size:.85em}
+#preview th,#preview td{border:1px solid var(--border);padding:6px 10px;text-align:left;white-space:nowrap;max-width:300px;overflow:hidden;text-overflow:ellipsis}
+#preview th{background:var(--glass2);font-weight:600}
+#status{margin-top:8px;font-size:.85em}
+.opt-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:.85em;color:var(--text2)}
+.opt-row label{display:flex;flex-direction:column;gap:4px}
+.opt-row select{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:.9em}
+.table-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.table-tabs button{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:4px 12px;color:var(--text);font-size:.85em;cursor:pointer}
+.table-tabs button.active{border-color:var(--accent);background:var(--glass2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HTML Table to CSV Converter","description":"Extract tables from HTML and convert them to CSV online for free. Paste HTML markup or a URL's table code and download clean CSV/TSV/Excel files. Handles multiple tables, headers, colspan/rowspan — browser-only, no upload.","url":"https://tools.gamezipper.com/convert/html-table-to-csv.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert an HTML table to CSV?", "acceptedAnswer": {"@type": "Answer", "text": "Paste the HTML markup that contains one or more <table> elements into the input area, pick a delimiter and click Convert. The tool parses the DOM, extracts every table and lets you preview and download each one as CSV, TSV or Excel-ready XLS."}}, {"@type": "Question", "name": "Does it handle colspan and rowspan?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The parser expands colspans and rowspans into a clean rectangular grid, repeating each cell value across the spanned cells so the resulting CSV opens correctly in Excel, Sheets or pandas without gaps."}}, {"@type": "Question", "name": "What if the HTML has multiple tables?", "acceptedAnswer": {"@type": "Answer", "text": "Each table gets its own tab in the preview. Use the Table 1 / Table 2 / ... buttons to switch between them, then download whichever table you need. You can also re-emit all tables as one CSV file separated by blank lines."}}, {"@type": "Question", "name": "Is my HTML sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Parsing happens in your browser using the built-in DOMParser. No markup, table data or extracted CSV is uploaded anywhere."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/html-table-to-csv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/html-table-to-csv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/html-table-to-csv.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" placeholder="<table>...</table>"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div class="opt-row">
+      <label><span id="lbl-delimiter"></span>
+        <select id="delimiter">
+          <option value=",">Comma (,)</option>
+          <option value=";">Semicolon (;)</option>
+          <option value="&#9;">Tab</option>
+          <option value="|">Pipe (|)</option>
+        </select>
+      </label>
+      <label><span id="lbl-format"></span>
+        <select id="format">
+          <option value="csv">CSV (.csv)</option>
+          <option value="xls">Excel (.xls)</option>
+          <option value="tsv">TSV (.tsv)</option>
+        </select>
+      </label>
+    </div>
+    <div class="table-tabs" id="table-tabs"></div>
+    <h3 style="margin-top:16px;font-size:1em" id="lbl-preview"></h3>
+    <div id="preview"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HTML Table to CSV Converter',
+    toolDesc: 'Extract tables from any HTML markup and convert them to clean CSV, TSV or Excel files. Handles multiple tables per page, thead/tbody, headers and colspan/rowspan expansion — entirely in your browser, no upload.',
+    delimiter: 'CSV Delimiter',
+    format: 'Output Format',
+    preview: 'Preview',
+    convert: 'Convert',
+    download: 'Download',
+    example: 'Load Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    valid: '✓ Found %1 table(s); table %2 has %3 rows × %4 cols',
+    invalid: '✗ No <table> elements found in the HTML',
+    error: '✗ Parse error: %1',
+    step1: 'Paste HTML markup containing one or more <table> elements',
+    step2: 'Pick a delimiter and output format',
+    step3: 'Click Convert to extract, expand spans and preview each table',
+    step4: 'Switch tabs to pick a table, then click Download',
+  },
+  zh: {
+    toolTitle: 'HTML 表格转 CSV 转换器',
+    toolDesc: '从任意 HTML 标记中提取表格，并转换为干净的 CSV、TSV 或 Excel 文件。支持每页多个表格、thead/tbody、表头以及 colspan/rowspan 展开 — 完全在浏览器本地运行，不上传。',
+    delimiter: 'CSV 分隔符',
+    format: '输出格式',
+    preview: '预览',
+    convert: '转换',
+    download: '下载',
+    example: '加载示例',
+    clear: '清除',
+    copy: '复制',
+    valid: '✓ 找到 %1 个表格；表格 %2 有 %3 行 × %4 列',
+    invalid: '✗ HTML 中未找到 <table> 元素',
+    error: '✗ 解析错误：%1',
+    step1: '粘贴包含一个或多个 <table> 元素的 HTML 标记',
+    step2: '选择分隔符和输出格式',
+    step3: '点击「转换」提取、展开合并单元格并预览每个表格',
+    step4: '切换标签页选择表格，然后点击「下载」',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let tables = [];   // array of 2D arrays (rows of cells)
+let activeTable = 0;
+
+function parseHTMLTables(html) {
+  const doc = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html');
+  const out = [];
+  doc.querySelectorAll('table').forEach(table => {
+    // Determine grid size, accounting for colspan/rowspan
+    const rows = table.querySelectorAll('tr');
+    if (!rows.length) return;
+    // Build a sparse grid and fill it
+    const grid = [];
+    const occupied = []; // grid[r][c] = true if filled
+    let maxCols = 0;
+    rows.forEach((tr, r) => {
+      while (grid.length <= r) { grid.push([]); occupied.push([]); }
+      let c = 0;
+      const cells = tr.querySelectorAll('th,td');
+      for (const cell of cells) {
+        while (occupied[r][c]) c++;
+        const text = cell.textContent.replace(/\s+/g, ' ').trim();
+        const cs = Math.max(1, parseInt(cell.getAttribute('colspan') || '1', 10));
+        const rs = Math.max(1, parseInt(cell.getAttribute('rowspan') || '1', 10));
+        for (let rr = 0; rr < rs; rr++) {
+          for (let cc = 0; cc < cs; cc++) {
+            while (grid.length <= r + rr) { grid.push([]); occupied.push([]); }
+            while (grid[r + rr].length <= c + cc) { grid[r + rr].push(''); occupied[r + rr].push(false); }
+            grid[r + rr][c + cc] = text;
+            occupied[r + rr][c + cc] = true;
+            if (c + cc + 1 > maxCols) maxCols = c + cc + 1;
+          }
+        }
+        c += cs;
+      }
+    });
+    // Pad rows to maxCols
+    for (const row of grid) while (row.length < maxCols) row.push('');
+    out.push(grid);
+  });
+  return out;
+}
+
+function escapeCSVCell(v, delim) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  if (/[",\n\r]/.test(s) || s.includes(delim)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function buildCSV(grid, delim) {
+  return grid.map(r => r.map(c => escapeCSVCell(c, delim)).join(delim)).join('\n');
+}
+
+function xmlEscape(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildXLS(grid) {
+  let xml = '<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n';
+  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+  xml += '<Worksheet ss:Name="Sheet1"><Table>\n';
+  for (const row of grid) {
+    const cells = row.map(v => {
+      if (v === '') return '<Cell><Data ss:Type="String"></Data></Cell>';
+      const num = Number(v);
+      if (!isNaN(num) && /^-?\d+(\.\d+)?$/.test(v)) return '<Cell><Data ss:Type="Number">' + xmlEscape(num) + '</Data></Cell>';
+      return '<Cell><Data ss:Type="String">' + xmlEscape(v) + '</Data></Cell>';
+    });
+    xml += '<Row>' + cells.join('') + '</Row>\n';
+  }
+  xml += '</Table></Worksheet></Workbook>';
+  return xml;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderPreview() {
+  if (!tables.length) { $('#preview').innerHTML = ''; return; }
+  const grid = tables[activeTable];
+  let html = '<table><tbody>';
+  grid.forEach((row, idx) => {
+    const tag = idx === 0 ? 'th' : 'td';
+    html += '<tr>' + row.map(c => '<' + tag + ' title="' + escapeHtml(c) + '">' + escapeHtml(c) + '</' + tag + '>').join('') + '</tr>';
+  });
+  html += '</tbody></table>';
+  if (grid.length > 100) html += '<p style="margin-top:8px;color:var(--text2);font-size:.85em">Showing first 100 of ' + grid.length + ' rows.</p>';
+  $('#preview').innerHTML = html;
+}
+
+function renderTabs() {
+  const tabs = $('#table-tabs');
+  if (tables.length <= 1) { tabs.innerHTML = ''; return; }
+  tabs.innerHTML = tables.map((_, i) => `<button class="${i === activeTable ? 'active' : ''}" onclick="selectTable(${i})">Table ${i + 1}</button>`).join('');
+}
+
+function selectTable(i) {
+  activeTable = i;
+  renderTabs();
+  renderPreview();
+  updateOutput();
+  if (tables[i]) {
+    const grid = tables[i];
+    $('#status').innerHTML = '<span style="color:var(--gz-success)">' + t('valid').replace('%1', tables.length).replace('%2', i + 1).replace('%3', grid.length).replace('%4', grid[0] ? grid[0].length : 0) + '</span>';
+  }
+}
+
+function updateOutput() {
+  if (!tables.length) { $('#output').textContent = ''; return; }
+  const grid = tables[activeTable];
+  const fmt = $('#format').value;
+  const delim = $('#delimiter').value;
+  if (fmt === 'csv') $('#output').textContent = buildCSV(grid, delim);
+  else if (fmt === 'tsv') $('#output').textContent = buildCSV(grid, '\t');
+  else $('#output').textContent = buildXLS(grid);
+}
+
+function doConvert() {
+  const text = $('#input').value;
+  $('#output').textContent = '';
+  $('#preview').innerHTML = '';
+  $('#table-tabs').innerHTML = '';
+  if (!text.trim()) { $('#status').textContent = ''; tables = []; return; }
+  try {
+    const parsed = parseHTMLTables(text);
+    if (!parsed.length) {
+      $('#status').innerHTML = '<span style="color:var(--gz-error)">' + t('invalid') + '</span>';
+      tables = [];
+      return;
+    }
+    tables = parsed;
+    activeTable = 0;
+    renderTabs();
+    renderPreview();
+    updateOutput();
+    const grid = tables[0] || [];
+    $('#status').innerHTML = '<span style="color:var(--gz-success)">' + t('valid').replace('%1', tables.length).replace('%2', 1).replace('%3', grid.length).replace('%4', grid[0] ? grid[0].length : 0) + '</span>';
+  } catch (e) {
+    $('#status').innerHTML = '<span style="color:var(--gz-error)">' + t('error').replace('%1', e.message) + '</span>';
+    tables = [];
+  }
+}
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob(['\ufeff' + content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+function doDownload() {
+  if (!tables.length) { doConvert(); if (!tables.length) return; }
+  const grid = tables[activeTable];
+  const fmt = $('#format').value;
+  const delim = $('#delimiter').value;
+  const ts = new Date().toISOString().slice(0, 10);
+  const suffix = tables.length > 1 ? ('-t' + (activeTable + 1)) : '';
+  if (fmt === 'csv') downloadFile('table' + suffix + '-' + ts + '.csv', buildCSV(grid, delim), 'text/csv;charset=utf-8');
+  else if (fmt === 'tsv') downloadFile('table' + suffix + '-' + ts + '.tsv', buildCSV(grid, '\t'), 'text/tab-separated-values;charset=utf-8');
+  else downloadFile('table' + suffix + '-' + ts + '.xls', buildXLS(grid), 'application/vnd.ms-excel;charset=utf-8');
+}
+
+function loadExample() {
+  $('#input').value = `<table>
+  <thead><tr><th>Rank</th><th>Name</th><th>Country</th><th>Score</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Alice</td><td rowspan="2">USA</td><td>9.8</td></tr>
+    <tr><td>2</td><td>Bob</td><td>9.5</td></tr>
+    <tr><td>3</td><td>Carol</td><td>UK</td><td>9.2</td></tr>
+    <tr><td>4</td><td>Dan</td><td>Japan</td><td colspan="2">8.9 (tie)</td></tr>
+  </tbody>
+</table>`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#preview').innerHTML = ''; $('#table-tabs').innerHTML = ''; $('#status').textContent = ''; tables = []; }
+
+$('#input').addEventListener('input', doConvert);
+$('#delimiter').addEventListener('change', updateOutput);
+$('#format').addEventListener('change', updateOutput);
+
+$('#lbl-delimiter').textContent = t('delimiter');
+$('#lbl-format').textContent = t('format');
+$('#lbl-preview').textContent = t('preview');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn" onclick="doDownload()">⬇ ${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-excel.html', name:'CSV to Excel'},
+    {icon:'📊', href:'/convert/html-table-to-markdown.html', name:'HTML Table → Markdown'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'📊', href:'/convert/json-to-excel.html', name:'JSON to Excel'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
