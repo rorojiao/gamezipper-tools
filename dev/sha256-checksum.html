@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>SHA-256 Hash Generator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Generate SHA-1, SHA-256, SHA-384 and SHA-512 checksums from any text or file instantly. Free online hash generator and verifier. Runs entirely in your browser — no upload, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/sha256-checksum.html">
+  <meta property="og:title" content="SHA-256 Hash Generator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Generate SHA-1, SHA-256, SHA-384 and SHA-512 checksums from any text or file instantly. Free online hash generator and verifier. Runs entirely in your browser — no upload, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/sha256-checksum.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SHA-256 Hash Generator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+#input{height:160px}
+.gz-hash-row{display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 10px;background:var(--gz-surface-2);border-radius:8px;border:1px solid var(--gz-border)}
+.gz-hash-row label{min-width:88px;font-weight:600;font-size:.82em;opacity:.85}
+.gz-hash-row code{flex:1;font-family:monospace;font-size:.82em;word-break:break-all;color:var(--gz-accent);background:none}
+.gz-hash-row button{flex-shrink:0}
+.gz-drop{border:2px dashed var(--gz-border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;opacity:.8;margin-top:10px;transition:.15s}
+.gz-drop:hover,.gz-drop.drag{opacity:1;border-color:var(--gz-accent);background:var(--gz-surface-2)}
+#fileInfo{font-size:.82em;margin-top:6px;opacity:.75}
+#verifyBox{margin-top:14px;padding:10px;background:var(--gz-surface-2);border-radius:8px;border:1px solid var(--gz-border)}
+#verifyBox input{width:100%;font-family:monospace;font-size:.85em;margin-top:6px}
+.gz-match{color:var(--gz-success);font-weight:600}
+.gz-nomatch{color:var(--gz-accent);font-weight:600}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SHA-256 Hash Generator","description":"Generate SHA-1, SHA-256, SHA-384 and SHA-512 checksums from any text or file instantly. Free online hash generator and verifier. Runs entirely in your browser — no upload, no signup.","url":"https://tools.gamezipper.com/dev/sha256-checksum.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I generate a SHA-256 hash?", "acceptedAnswer": {"@type": "Answer", "text": "Type or paste your text into the input box and the SHA-256 hash is computed instantly using your browser's built-in Web Crypto API. You can also drag and drop a file to hash its full contents without uploading it anywhere."}}, {"@type": "Question", "name": "Is this SHA-256 generator safe for passwords?", "acceptedAnswer": {"@type": "Answer", "text": "All hashing happens locally in your browser — nothing is sent to a server. However, plain SHA-256 is not recommended for storing passwords; use a dedicated key-derivation function like bcrypt, scrypt or Argon2 for password storage."}}, {"@type": "Question", "name": "Can I verify a checksum against a known hash?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Paste the expected hash into the verify box and the tool compares it in real time against every algorithm, highlighting a green match so you can confirm file or text integrity."}}, {"@type": "Question", "name": "Which hash algorithms are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool computes SHA-1, SHA-256, SHA-384 and SHA-512 simultaneously for the same input, so you can copy whichever checksum you need for your use case."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sha256-checksum.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sha256-checksum.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sha256-checksum.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label id="lbl-in"></label>
+    <textarea id="input" spellcheck="false" placeholder=""></textarea>
+    <div class="gz-drop" id="drop" id2="dropzone"></div>
+    <div id="fileInfo"></div>
+    <div id="verifyBox">
+      <label id="lbl-verify" style="font-weight:600"></label>
+      <input id="verifyInput" spellcheck="false" autocomplete="off">
+      <div id="verifyResult" style="margin-top:6px;font-size:.85em"></div>
+    </div>
+    <div id="hashes" style="margin-top:14px"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SHA-256 Hash Generator',
+    toolDesc: 'Generate SHA-1, SHA-256, SHA-384 and SHA-512 checksums from any text or file. Instant, browser-only, no upload.',
+    lblIn: 'Enter text to hash',
+    dropHint: '📂 Drop a file here, or click to choose — its bytes are hashed locally',
+    fileInfo: 'File: %f (%s bytes)',
+    verify: 'Verify checksum — paste an expected hash to compare',
+    copy: 'Copy',
+    clear: 'Clear',
+    match: '✓ Match found (%a)',
+    nomatch: 'No algorithm matches this hash',
+    empty: 'Enter text or drop a file above to generate checksums',
+    step1: 'Type or paste text into the input box',
+    step2: 'Drag and drop a file to hash its raw bytes',
+    step3: 'Click Copy next to any hash (SHA-1/256/384/512)',
+    step4: 'Paste a known hash in the verify box to confirm integrity',
+  },
+  zh: {
+    toolTitle: 'SHA-256 哈希生成器',
+    toolDesc: '从任意文本或文件生成 SHA-1、SHA-256、SHA-384、SHA-512 校验和。即时、纯浏览器运行、无需上传。',
+    lblIn: '输入要哈希的文本',
+    dropHint: '📂 拖入文件或点击选择 — 文件内容在本地进行哈希',
+    fileInfo: '文件：%f（%s 字节）',
+    verify: '校验和验证 — 粘贴期望的哈希值进行比对',
+    copy: '复制',
+    clear: '清空',
+    match: '✓ 匹配成功（%a）',
+    nomatch: '没有算法与此哈希匹配',
+    empty: '在上方输入文本或拖入文件以生成校验和',
+    step1: '在输入框中输入或粘贴文本',
+    step2: '拖入文件以对其原始字节进行哈希',
+    step3: '点击任一哈希旁的「复制」（SHA-1/256/384/512）',
+    step4: '在验证框中粘贴已知哈希以确认完整性',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const ALGOS = ['SHA-1','SHA-256','SHA-384','SHA-512'];
+let verifyHash = '';
+
+async function digest(algo, data){
+  const buf = await crypto.subtle.digest(algo, data);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function renderHashes(map){
+  const box = $('#hashes');
+  if(!Object.keys(map).length){ box.innerHTML = `<div style="opacity:.6;text-align:center;padding:14px">${t('empty')}</div>`; return; }
+  box.innerHTML = ALGOS.map(a=>{
+    const h = map[a] || '';
+    return `<div class="gz-hash-row"><label>${a}</label><code id="h-${a}">${h}</code><button class="gz-btn gz-btn-secondary" onclick="copyText('${h}')">${t('copy')}</button></div>`;
+  }).join('');
+  runVerify();
+}
+
+async function fromText(){
+  const txt = $('#input').value;
+  const map = {};
+  if(!txt){ renderHashes(map); return; }
+  const data = new TextEncoder().encode(txt);
+  for(const a of ALGOS) map[a] = await digest(a, data);
+  renderHashes(map);
+}
+
+async function fromFile(file){
+  if(!file) return;
+  $('#fileInfo').textContent = t('fileInfo').replace('%f',file.name).replace('%s',file.size.toLocaleString());
+  const buf = await file.arrayBuffer();
+  const map = {};
+  for(const a of ALGOS) map[a] = await digest(a, buf);
+  renderHashes(map);
+}
+
+function runVerify(){
+  const v = $('#verifyInput').value.trim().toLowerCase();
+  const res = $('#verifyResult');
+  if(!v){ res.innerHTML=''; return; }
+  for(const a of ALGOS){
+    const el = document.getElementById('h-'+a);
+    if(el && el.textContent.toLowerCase() === v){
+      res.innerHTML = `<span class="gz-match">${t('match').replace('%a',a)}</span>`;
+      return;
+    }
+  }
+  res.innerHTML = `<span class="gz-nomatch">${t('nomatch')}</span>`;
+}
+
+function doClear(){ $('#input').value=''; $('#fileInfo').textContent=''; $('#verifyInput').value=''; fromText(); }
+
+$('#input').addEventListener('input', fromText);
+$('#verifyInput').addEventListener('input', runVerify);
+
+const drop = $('#drop');
+drop.addEventListener('click', ()=>{ const i=document.createElement('input'); i.type='file'; i.onchange=e=>fromFile(e.target.files[0]); i.click(); });
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
+drop.addEventListener('drop',e=>{ if(e.dataTransfer.files[0]) fromFile(e.dataTransfer.files[0]); });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="fromText()">${t('copy')==='Copy'?'Hash text':'哈希文本'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+drop.textContent = t('dropHint');
+$('#lbl-in').textContent = t('lblIn');
+$('#lbl-verify').textContent = t('verify');
+$('#input').placeholder = t('lblIn');
+renderHashes({});
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔑', href:'/dev/api-key-generator.html', name:'API Key Gen'},
+    {icon:'🪙', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🛡️', href:'/dev/string-escape.html', name:'String Escape'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
