@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>正态分布计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="计算正态分布的 z 分数与概率，附带实时钟形曲线图。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/normal-distribution.html">
+  <meta property="og:title" content="正态分布计算器">
+  <meta property="og:description" content="计算正态分布的 z 分数与概率，附带实时钟形曲线图。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/normal-distribution.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="正态分布计算器">
+<meta name="twitter:description" content="计算正态分布的 z 分数与概率，附带实时钟形曲线图。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.nd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0}
+.nd-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.nd-card .value{font-size:1.6rem;font-weight:800;color:var(--accent);line-height:1.2;word-break:break-all}
+.nd-card .label{font-size:.78em;color:var(--text2);margin-top:4px}
+.nd-inputs{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.nd-inputs label{display:flex;flex-direction:column;gap:4px;font-size:.85em;color:var(--text2)}
+.nd-inputs input{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:1em;width:110px}
+#plot{display:block;margin:16px auto;max-width:100%;background:var(--bg);border-radius:12px;border:1px solid var(--border)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Normal Distribution Calculator","description":"Free normal distribution calculator. Enter mean, standard deviation and x to get the z-score, P(X<x), P(X>x) and P(a<X<b) with a live bell-curve plot. Stats homework helper.","url": "https://tools.gamezipper.com/zh/calc/normal-distribution.html","applicationCategory":"Educational","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a z-score?","acceptedAnswer":{"@type":"Answer","text":"A z-score measures how many standard deviations a value x is from the mean. Formula: z = (x - mean) / standard deviation. Positive z means above the mean, negative means below."}},{"@type":"Question","name":"How is P(X < x) calculated?","acceptedAnswer":{"@type":"Answer","text":"It is the cumulative distribution function (CDF) of the standard normal at the z-score. We compute it with the error function (erf): CDF(z) = 0.5 * (1 + erf(z / sqrt(2)))."}},{"@type":"Question","name":"Can I find the probability between two values?","acceptedAnswer":{"@type":"Answer","text":"Yes. Enter both a Lower and Upper bound. The tool computes P(a < X < b) = CDF(upper) - CDF(lower) and shades the area on the curve."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/normal-distribution.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/normal-distribution.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/normal-distribution.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="nd-inputs">
+      <label><span id="lbl-mean"></span><input type="number" id="mean" value="100" step="any"></label>
+      <label><span id="lbl-sd"></span><input type="number" id="sd" value="15" step="any" min="0.0001"></label>
+      <label><span id="lbl-x"></span><input type="number" id="x" value="115" step="any"></label>
+      <label><span id="lbl-lo"></span><input type="number" id="lo" value="85" step="any"></label>
+      <label><span id="lbl-hi"></span><input type="number" id="hi" value="130" step="any"></label>
+      <button class="gz-btn" id="btn-calc" onclick="calc()"></button>
+    </div>
+    <div class="nd-grid" id="results"></div>
+    <canvas id="plot" width="720" height="280"></canvas>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Normal Distribution Calculator',
+    toolDesc: 'Compute z-scores and probabilities for the normal distribution with a live bell-curve plot.',
+    mean: 'Mean (μ)',
+    sd: 'Std Dev (σ)',
+    x: 'Value (x)',
+    lo: 'Lower (a)',
+    hi: 'Upper (b)',
+    calcBtn: 'Calculate',
+    zscore: 'Z-score',
+    lessThan: 'P(X < x)',
+    greaterThan: 'P(X > x)',
+    between: 'P(a < X < b)',
+    percentile: 'Percentile',
+    step1: 'Enter the mean (μ) and standard deviation (σ)',
+    step2: 'Enter a value x to get its z-score and cumulative probability',
+    step3: 'Optionally enter lower and upper bounds for an interval probability',
+    step4: 'Read the results and inspect the shaded bell-curve plot',
+  },
+  zh: {
+    toolTitle: '正态分布计算器',
+    toolDesc: '计算正态分布的 z 分数与概率，附带实时钟形曲线图。',
+    mean: '均值 (μ)',
+    sd: '标准差 (σ)',
+    x: '数值 (x)',
+    lo: '下限 (a)',
+    hi: '上限 (b)',
+    calcBtn: '计算',
+    zscore: 'Z 分数',
+    lessThan: 'P(X < x)',
+    greaterThan: 'P(X > x)',
+    between: 'P(a < X < b)',
+    percentile: '百分位数',
+    step1: '输入均值 (μ) 和标准差 (σ)',
+    step2: '输入数值 x 获取其 z 分数和累积概率',
+    step3: '可选择输入上下限计算区间概率',
+    step4: '查看结果并观察高亮区域的钟形曲线',
+  }
+});
+
+const { $, t } = GZ;
+['mean','sd','x','lo','hi'].forEach(k => $('#lbl-'+k).textContent = t(k));
+$('#btn-calc').textContent = t('calcBtn');
+
+// erf via Abramowitz-Stegun 7.1.26 (max error ~1.5e-7)
+function erf(x) {
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+function cdf(z){ return 0.5*(1+erf(z/Math.SQRT2)); }
+function pdf(x){ return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); }
+
+function calc() {
+  const mu = parseFloat($('#mean').value);
+  const sigma = parseFloat($('#sd').value);
+  const x = parseFloat($('#x').value);
+  const a = parseFloat($('#lo').value);
+  const b = parseFloat($('#hi').value);
+  if ([mu,sigma,x,a,b].some(isNaN) || sigma <= 0) return;
+  const z = (x-mu)/sigma;
+  const pLess = cdf(z);
+  const pMore = 1-pLess;
+  const pBetween = Math.max(0, cdf((b-mu)/sigma) - cdf((a-mu)/sigma));
+  $('#results').innerHTML = `
+    <div class="nd-card"><div class="value">${z.toFixed(4)}</div><div class="label">${t('zscore')}</div></div>
+    <div class="nd-card"><div class="value">${(pLess*100).toFixed(2)}%</div><div class="label">${t('lessThan')}</div></div>
+    <div class="nd-card"><div class="value">${(pMore*100).toFixed(2)}%</div><div class="label">${t('greaterThan')}</div></div>
+    <div class="nd-card"><div class="value">${(pBetween*100).toFixed(2)}%</div><div class="label">${t('between')}</div></div>
+    <div class="nd-card"><div class="value">${(pLess*100).toFixed(1)}</div><div class="label">${t('percentile')}</div></div>`;
+  draw(mu, sigma, x, a, b);
+}
+
+function draw(mu, sigma, x, a, b) {
+  const cv = $('#plot'), ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  const padL=40, padR=20, padT=20, padB=30;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const xMin = mu-4*sigma, xMax = mu+4*sigma;
+  const xToPx = v => padL + (v-xMin)/(xMax-xMin)*plotW;
+  const yMax = pdf(0)/sigma;
+  const yToPx = y => padT + plotH - (y/yMax)*plotH;
+
+  // axes
+  ctx.strokeStyle = getCss('--border') || '#444';
+  ctx.fillStyle = getCss('--text2') || '#888';
+  ctx.lineWidth = 1;
+  ctx.font = '11px monospace';
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+plotH); ctx.lineTo(padL+plotW, padT+plotH); ctx.stroke();
+  for (let i=-4;i<=4;i++){
+    const v = mu+i*sigma;
+    const px = xToPx(v);
+    ctx.beginPath(); ctx.moveTo(px, padT+plotH); ctx.lineTo(px, padT+plotH+4); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillText(v.toFixed(0), px, padT+plotH+16);
+  }
+
+  // shaded region a..b
+  ctx.fillStyle = 'rgba(255,217,61,0.35)';
+  ctx.beginPath();
+  ctx.moveTo(xToPx(a), padT+plotH);
+  for (let v=a; v<=b; v+= (b-a)/60) ctx.lineTo(xToPx(v), yToPx(pdf((v-mu)/sigma)/sigma));
+  ctx.lineTo(xToPx(b), padT+plotH);
+  ctx.closePath(); ctx.fill();
+
+  // shaded P(X<x)
+  ctx.fillStyle = 'rgba(0,214,114,0.18)';
+  ctx.beginPath();
+  ctx.moveTo(xToPx(xMin), padT+plotH);
+  for (let v=xMin; v<=x; v+= sigma/40) ctx.lineTo(xToPx(v), yToPx(pdf((v-mu)/sigma)/sigma));
+  ctx.lineTo(xToPx(x), padT+plotH);
+  ctx.closePath(); ctx.fill();
+
+  // curve
+  ctx.strokeStyle = getCss('--accent') || '#ffd93d';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let px=0; px<=plotW; px++){
+    const v = xMin + (px/plotW)*(xMax-xMin);
+    const y = pdf((v-mu)/sigma)/sigma;
+    const X = padL+px, Y = yToPx(y);
+    if (px===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+  }
+  ctx.stroke();
+
+  // x marker
+  ctx.strokeStyle = '#e94560';
+  ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(xToPx(x), padT); ctx.lineTo(xToPx(x), padT+plotH); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#e94560';
+  ctx.textAlign='left';
+  ctx.fillText('x='+x, xToPx(x)+4, padT+12);
+}
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+$('#toolbar').innerHTML = '';
+calc();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/calc/statistics-calculator.html', name:'Statistics'},
+    {icon:'🎯', href:'/calc/confidence-interval-calculator.html', name:'Confidence Interval'},
+    {icon:'🧮', href:'/calc/percentage-calculator.html', name:'Percentage'},
+    {icon:'🎲', href:'/calc/permutation.html', name:'Permutations'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

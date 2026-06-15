@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>数独求解器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时求解任意 9x9 数独谜题 — 输入已知数字即可获得完整解，并实时校验。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/sudoku-solver.html">
+  <meta property="og:title" content="数独求解器">
+  <meta property="og:description" content="即时求解任意 9x9 数独谜题 — 输入已知数字即可获得完整解，并实时校验。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/sudoku-solver.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="数独求解器">
+<meta name="twitter:description" content="即时求解任意 9x9 数独谜题 — 输入已知数字即可获得完整解，并实时校验。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+#sudoku{display:grid;grid-template-columns:repeat(9,40px);gap:0;border:3px solid var(--text);width:max-content;margin:0 auto;background:var(--text);border-radius:8px;overflow:hidden}
+#sudoku input{width:40px;height:40px;text-align:center;font-size:1.1rem;font-weight:600;border:none;outline:none;background:var(--bg);color:var(--text)}
+#sudoku input:focus{background:var(--accent);color:#000}
+#sudoku input.given{background:var(--glass2);font-weight:800}
+#sudoku .b-right{border-right:2px solid var(--text)}
+#sudoku .b-bottom{border-bottom:2px solid var(--text)}
+#sudoku .err{background:#e94560 !important;color:#fff !important}
+.sudoku-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+#status{margin-top:12px;text-align:center;font-weight:600}
+@media(max-width:480px){#sudoku{grid-template-columns:repeat(9,32px)}#sudoku input{width:32px;height:32px;font-size:.9rem}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sudoku Solver","description":"Solve any Sudoku puzzle instantly. Enter the known numbers and our free Sudoku solver finds the solution using backtracking — with validation, hints and a printable 9x9 grid.","url": "https://tools.gamezipper.com/zh/fun/sudoku-solver.html","applicationCategory":"Game","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the Sudoku solver work?","acceptedAnswer":{"@type":"Answer","text":"The solver uses a backtracking algorithm. It tries numbers 1-9 in each empty cell, checks if the placement is valid (no duplicates in row, column, or 3x3 box), and recurses. If a path fails it backtracks and tries the next number."}},{"@type":"Question","name":"Can it solve any Sudoku difficulty?","acceptedAnswer":{"@type":"Answer","text":"Yes. The backtracking algorithm solves easy, medium, hard, expert and even 'evil' difficulty puzzles. Multiple-solution puzzles will report the first valid solution found."}},{"@type":"Question","name":"Does this work offline?","acceptedAnswer":{"@type":"Answer","text":"Yes. All solving happens locally in your browser. Once the page loads you can even disconnect from the internet and it will still work."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/sudoku-solver.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/sudoku-solver.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/sudoku-solver.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="sudoku"></div>
+    <div id="status"></div>
+    <div class="sudoku-actions" id="actions"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Sudoku Solver',
+    toolDesc: 'Solve any 9x9 Sudoku puzzle instantly — enter the clues and get the complete solution with validation.',
+    solve: 'Solve',
+    clear: 'Clear',
+    loadPuzzle: 'Load Example',
+    validate: 'Check',
+    solving: 'Solving...',
+    solved: '✓ Solved!',
+    noSolution: '✗ No solution exists for this puzzle',
+    invalid: '✗ Invalid: conflicts detected',
+    valid: '✓ Current entries are valid',
+    step1: 'Click a cell and type a number 1-9 for each given clue',
+    step2: 'Use Backspace or 0 to clear a cell',
+    step3: 'Click Solve to find the complete solution',
+    step4: 'Click Check to validate the current entries for conflicts',
+  },
+  zh: {
+    toolTitle: '数独求解器',
+    toolDesc: '即时求解任意 9x9 数独谜题 — 输入已知数字即可获得完整解，并实时校验。',
+    solve: '求解',
+    clear: '清空',
+    loadPuzzle: '加载示例',
+    validate: '检查',
+    solving: '求解中...',
+    solved: '✓ 已解出！',
+    noSolution: '✗ 此谜题无解',
+    invalid: '✗ 无效：检测到冲突',
+    valid: '✓ 当前填写有效',
+    step1: '点击单元格并输入已知数字（1-9）',
+    step2: '按 Backspace 或输入 0 可清空单元格',
+    step3: '点击「求解」获得完整答案',
+    step4: '点击「检查」校验当前填写的冲突',
+  }
+});
+
+const { $, t } = GZ;
+
+// Build the 9x9 input grid
+const grid = $('#sudoku');
+for (let r = 0; r < 9; r++) {
+  for (let c = 0; c < 9; c++) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.inputMode = 'numeric';
+    inp.maxLength = 1;
+    inp.dataset.r = r;
+    inp.dataset.c = c;
+    if (c === 2 || c === 5) inp.classList.add('b-right');
+    if (r === 2 || r === 5) inp.classList.add('b-bottom');
+    inp.addEventListener('input', e => {
+      const v = e.target.value.replace(/[^1-9]/g, '');
+      e.target.value = v;
+      e.target.classList.toggle('given', !!v);
+    });
+    inp.addEventListener('keydown', e => {
+      const r = +e.target.dataset.r, c = +e.target.dataset.c;
+      let nr = r, nc = c;
+      if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) { nc = (c + 1) % 9; e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) { nc = (c + 8) % 9; e.preventDefault(); }
+      else if (e.key === 'ArrowDown') { nr = (r + 1) % 9; e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { nr = (r + 8) % 9; e.preventDefault(); }
+      else if (e.key === 'Backspace' && !e.target.value) { nc = (c + 8) % 9; }
+      if (nr !== r || nc !== c) { grid.querySelector(`[data-r="${nr}"][data-c="${nc}"]`).focus(); }
+    });
+    grid.appendChild(inp);
+  }
+}
+
+function readBoard() {
+  const b = [];
+  for (let r = 0; r < 9; r++) {
+    b.push([]);
+    for (let c = 0; c < 9; c++) {
+      const v = grid.querySelector(`[data-r="${r}"][data-c="${c}"]`).value;
+      b[r].push(v ? +v : 0);
+    }
+  }
+  return b;
+}
+
+function isValid(b, r, c, n) {
+  for (let i = 0; i < 9; i++) {
+    if (b[r][i] === n || b[i][c] === n) return false;
+  }
+  const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+  for (let i = br; i < br+3; i++)
+    for (let j = bc; j < bc+3; j++)
+      if (b[i][j] === n) return false;
+  return true;
+}
+
+function hasConflicts(b) {
+  const errs = new Set();
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const n = b[r][c];
+      if (!n) continue;
+      b[r][c] = 0;
+      if (!isValid(b, r, c, n)) errs.add(r + ',' + c);
+      b[r][c] = n;
+    }
+  }
+  return errs;
+}
+
+function solve(b) {
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (b[r][c] === 0) {
+        for (let n = 1; n <= 9; n++) {
+          if (isValid(b, r, c, n)) {
+            b[r][c] = n;
+            if (solve(b)) return true;
+            b[r][c] = 0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function clearErrors() {
+  grid.querySelectorAll('.err').forEach(el => el.classList.remove('err'));
+}
+
+function doSolve() {
+  clearErrors();
+  const b = readBoard();
+  const errs = hasConflicts(b.map(row => row.slice()));
+  if (errs.size) {
+    errs.forEach(k => { const [r,c] = k.split(','); grid.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('err'); });
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}</span>`;
+    return;
+  }
+  $('#status').textContent = t('solving');
+  // defer to allow paint
+  setTimeout(() => {
+    const ok = solve(b);
+    if (ok) {
+      for (let r = 0; r < 9; r++)
+        for (let c = 0; c < 9; c++) {
+          const inp = grid.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+          if (!inp.value) { inp.value = b[r][c]; inp.classList.remove('given'); }
+        }
+      $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('solved')}</span>`;
+    } else {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noSolution')}</span>`;
+    }
+  }, 20);
+}
+
+function doValidate() {
+  clearErrors();
+  const b = readBoard();
+  const errs = hasConflicts(b);
+  if (errs.size) {
+    errs.forEach(k => { const [r,c] = k.split(','); grid.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('err'); });
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}</span>`;
+  } else {
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+  }
+}
+
+function doClear() {
+  grid.querySelectorAll('input').forEach(i => { i.value = ''; i.classList.remove('given', 'err'); });
+  $('#status').textContent = '';
+}
+
+function loadExample() {
+  // Medium puzzle
+  const p = [
+    [5,3,0,0,7,0,0,0,0],
+    [6,0,0,1,9,5,0,0,0],
+    [0,9,8,0,0,0,0,6,0],
+    [8,0,0,0,6,0,0,0,3],
+    [4,0,0,8,0,3,0,0,1],
+    [7,0,0,0,2,0,0,0,6],
+    [0,6,0,0,0,0,2,8,0],
+    [0,0,0,4,1,9,0,0,5],
+    [0,0,0,0,8,0,0,7,9],
+  ];
+  for (let r = 0; r < 9; r++)
+    for (let c = 0; c < 9; c++) {
+      const inp = grid.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+      inp.value = p[r][c] || '';
+      inp.classList.toggle('given', !!p[r][c]);
+      inp.classList.remove('err');
+    }
+  $('#status').textContent = '';
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="doSolve()">${t('solve')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doValidate()">${t('validate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('loadPuzzle')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔢', href:'/fun/sudoku.html', name:'Sudoku Game'},
+    {icon:'🧮', href:'/calc/prime-number.html', name:'Prime Numbers'},
+    {icon:'🧩', href:'/fun/wordle-solver.html', name:'Wordle Solver'},
+    {icon:'➕', href:'/calc/multiplication-table.html', name:'Times Table'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

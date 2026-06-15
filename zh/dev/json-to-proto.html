@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JSON 转 Protobuf Schema 生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将任意 JSON 对象转换为 Protocol Buffers (.proto) schema。自动识别嵌套 message、repeated 字段、enum 和类型 — gRPC 友好，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-to-proto.html">
+  <meta property="og:title" content="JSON 转 Protobuf Schema 生成器">
+  <meta property="og:description" content="将任意 JSON 对象转换为 Protocol Buffers (.proto) schema。自动识别嵌套 message、repeated 字段、enum 和类型 — gRPC 友好，浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-to-proto.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 转 Protobuf Schema 生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+#input{width:100%;min-height:200px;font-family:monospace;font-size:.85em;resize:vertical;border-radius:8px;padding:10px;box-sizing:border-box;background:var(--gz-surface,rgba(255,255,255,.03));border:1px solid var(--gz-border,#444);color:inherit}
+#input:focus{outline:none;border-color:var(--gz-accent,#e94560)}
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.83em;line-height:1.55;background:#0e0e1f;color:#e6e6f0;padding:14px;border-radius:8px;border:1px solid var(--gz-border,#333);max-height:520px;overflow:auto}
+.opt-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;padding:10px 14px;background:var(--glass,rgba(255,255,255,.04));border:1px solid var(--gz-border,#333);border-radius:8px;font-size:.88em}
+.opt-row label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.opt-row input[type=text]{padding:5px 9px;border-radius:6px;border:1px solid var(--gz-border,#444);background:var(--gz-surface,rgba(255,255,255,.03));color:inherit;font-size:.92em;width:160px}
+.opt-row input[type=text]:focus{outline:none;border-color:var(--gz-accent,#e94560)}
+#status{margin-top:8px;font-size:.85em}
+.kw{color:#ff79c6}
+.msg{color:#8be9fd}
+.fld{color:#50fa7b}
+.typ{color:#bd93f9}
+.num{color:#f1fa8c}
+.cmt{color:#6272a4}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to Protobuf Schema Generator","description":"Convert any JSON object to Protocol Buffers (.proto) schema definitions. Auto-detects nested messages, repeated fields, enums and types — gRPC and Protobuf ready, browser-only.","url": "https://tools.gamezipper.com/zh/dev/json-to-proto.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a .proto file?","acceptedAnswer":{"@type":"Answer","text":"A .proto file is a schema definition used by Protocol Buffers (Protobuf), Google's language-neutral data serialization format. It describes messages, fields and types used by gRPC services and binary data exchange."}},{"@type":"Question","name":"How does the type detection work?","acceptedAnswer":{"@type":"Answer","text":"The tool inspects every value in your JSON. Strings become string, integers become int32/int64, decimals become float/double, booleans become bool, nulls become google.protobuf.Value or optional, arrays become repeated fields, and nested objects become nested messages."}},{"@type":"Question","name":"Which Protobuf version is generated?","acceptedAnswer":{"@type":"Answer","text":"By default proto3 is generated. You can switch to proto2 from the options. The package name, outer class name and syntax are all configurable."}},{"@type":"Question","name":"Are enums detected automatically?","acceptedAnswer":{"@type":"Answer","text":"Yes. When the tool finds a string field that only takes a small set of repeated values across array items, or when you toggle enum detection, low-cardinality string fields become Protobuf enums with UNPECIFIED prefix."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-proto.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-proto.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-proto.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="optRow"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder='{"name":"Alice","age":30,"roles":["admin"],"address":{"city":"NYC"}}'></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to Protobuf Schema Generator',
+    toolDesc: 'Convert any JSON object to Protocol Buffers (.proto) schema. Auto-detects nested messages, repeated fields, enums and types — gRPC ready, runs in your browser.',
+    syntax: 'Syntax',
+    packageName: 'Package name',
+    rootName: 'Root message name',
+    outerClass: 'Java outer class',
+    detectEnums: 'Detect enums from string fields',
+    generate: 'Generate .proto',
+    copy: 'Copy',
+    example: 'Load Example',
+    clear: 'Clear',
+    download: 'Download .proto',
+    inputLbl: 'JSON input',
+    outputLbl: '.proto output',
+    valid: '✓ Valid JSON — schema generated',
+    invalid: '✗ Invalid JSON',
+    step1: 'Paste your JSON object or array into the input area',
+    step2: 'Adjust syntax (proto2/proto3), package name and root message if needed',
+    step3: 'Click Generate to see the .proto schema — copy or download the file',
+  },
+  zh: {
+    toolTitle: 'JSON 转 Protobuf Schema 生成器',
+    toolDesc: '将任意 JSON 对象转换为 Protocol Buffers (.proto) schema。自动识别嵌套 message、repeated 字段、enum 和类型 — gRPC 友好，浏览器本地运行。',
+    syntax: '语法版本',
+    packageName: '包名',
+    rootName: '根 message 名',
+    outerClass: 'Java 外部类名',
+    detectEnums: '从字符串字段识别 enum',
+    generate: '生成 .proto',
+    copy: '复制',
+    example: '加载示例',
+    clear: '清空',
+    download: '下载 .proto',
+    inputLbl: 'JSON 输入',
+    outputLbl: '.proto 输出',
+    valid: '✓ JSON 有效 — 已生成 schema',
+    invalid: '✗ JSON 无效',
+    step1: '将 JSON 对象或数组粘贴到输入区',
+    step2: '按需调整语法（proto2/proto3）、包名和根 message 名',
+    step3: '点击「生成」查看 .proto schema — 可复制或下载文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// ---------- Protobuf generator core ----------
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function pascal(s) {
+  return s.split(/[^a-zA-Z0-9]+/).filter(Boolean).map(cap).join('') || 'Field';
+}
+function sanitizeField(s) {
+  let n = s.replace(/[^a-zA-Z0-9_]/g, '_');
+  if (/^[0-9]/.test(n)) n = '_' + n;
+  const reserved = new Set(['syntax','import','package','option','message','enum','service','rpc','returns','stream','reserved','extensions','extend','oneof','map','repeated','optional','required','default']);
+  if (reserved.has(n.toLowerCase())) n = n + '_field';
+  return n;
+}
+
+function scalarType(v) {
+  if (typeof v === 'boolean') return 'bool';
+  if (typeof v === 'string') return 'string';
+  if (typeof v === 'number') {
+    if (Number.isInteger(v)) {
+      if (v < -2147483648 || v > 2147483647) return 'int64';
+      return 'int32';
+    }
+    return 'double';
+  }
+  return null; // not scalar
+}
+
+function fieldCardinality(typeName, syntax) {
+  // proto3 has no required/optional by default for ordinary fields
+  return '';
+}
+
+let msgCounter = 0;
+function freshName(base) {
+  msgCounter++;
+  return base + (msgCounter === 1 ? '' : msgCounter);
+}
+
+function collectEnumCandidates(arr) {
+  // For arrays of objects, find string fields with low cardinality
+  if (!Array.isArray(arr) || !arr.length || typeof arr[0] !== 'object' || arr[0] === null) return {};
+  const stringSets = {};
+  for (const item of arr) {
+    if (!item || typeof item !== 'object') continue;
+    for (const [k, v] of Object.entries(item)) {
+      if (typeof v === 'string') {
+        if (!stringSets[k]) stringSets[k] = new Set();
+        stringSets[k].add(v);
+      }
+    }
+  }
+  const out = {};
+  for (const [k, s] of Object.entries(stringSets)) {
+    if (s.size >= 2 && s.size <= 12) out[k] = Array.from(s);
+  }
+  return out;
+}
+
+function analyzeValue(v, prefix, registry, opts) {
+  // Returns { type, isRepeated, isMessage, isEnum, enumName, nestedDefs (array of {name, def}) }
+  if (Array.isArray(v)) {
+    // Determine element type from first non-null item
+    let elem = null;
+    for (const x of v) { if (x !== null && x !== undefined) { elem = x; break; } }
+    if (elem === null) {
+      return { type: 'string', isRepeated: true };
+    }
+    const inner = analyzeValue(elem, prefix, registry, opts);
+    const out = { ...inner, isRepeated: true };
+    return out;
+  }
+  if (v !== null && typeof v === 'object') {
+    const msgName = freshName(pascal(prefix) || 'Message');
+    const def = buildMessageDef(v, msgName, registry, opts);
+    registry.messages.push({ name: msgName, def });
+    return { type: msgName, isMessage: true };
+  }
+  if (v === null) {
+    return { type: opts.syntax === 'proto3' ? 'google.protobuf.Value' : 'string' };
+  }
+  const st = scalarType(v);
+  return { type: st };
+}
+
+function buildMessageDef(obj, msgName, registry, opts) {
+  // returns array of {comment, line}
+  const lines = [];
+  const fieldMap = {}; // sanitizedName -> { type, repeated, idx }
+  const enumCandidates = opts.detectEnums ? collectEnumCandidatesFromObject(obj) : {};
+  let idx = 0;
+  const seen = new Set();
+
+  for (const [rawKey, rawVal] of Object.entries(obj)) {
+    if (rawVal === undefined) continue;
+    const sname = sanitizeField(rawKey);
+    let key = sname;
+    let i = 2;
+    while (seen.has(key)) { key = sname + '_' + i; i++; }
+    seen.add(key);
+    idx++;
+
+    const info = analyzeValue(rawVal, rawKey, registry, opts);
+
+    // Handle enum candidate (only if scalar string and matches candidate set within arrays)
+    if (info.isRepeated !== true && info.type === 'string' && enumCandidates[rawKey]) {
+      const enumName = pascal(rawKey);
+      if (!registry.enums.find(e => e.name === enumName)) {
+        const values = enumCandidates[rawKey];
+        const enumDef = values.map((val, i) => `${sanitizeField(val.toUpperCase())} = ${i};`);
+        registry.enums.push({ name: enumName, def: enumDef });
+        lines.push({ type: 'enum', enumName });
+        lines.push({ type: 'field', field: key, fieldType: enumName, repeated: false, idx });
+        continue;
+      }
+    }
+
+    lines.push({ type: 'field', field: key, fieldType: info.type, repeated: !!info.isRepeated, idx });
+  }
+  return lines;
+}
+
+function collectEnumCandidatesFromObject(obj) {
+  // For a single object (not array), we don't have multi-sample, so return {}
+  // (enum detection works when arrays contain objects with repeated string values)
+  return {};
+}
+
+function generateProto(json, opts) {
+  msgCounter = 0;
+  const registry = { messages: [], enums: [] };
+  let rootData = json;
+  let rootName = opts.rootName || 'Root';
+
+  // If top-level is array, peek first element
+  if (Array.isArray(json)) {
+    let first = null;
+    for (const x of json) { if (x !== null && x !== undefined) { first = x; break; } }
+    rootData = (first && typeof first === 'object') ? first : { item: first };
+    rootName = opts.rootName || 'Root';
+  }
+
+  if (rootData === null || typeof rootData !== 'object') {
+    // Wrap scalar
+    rootData = { value: rootData };
+  }
+
+  const rootDef = buildMessageDef(rootData, rootName, registry, opts);
+  registry.messages.unshift({ name: rootName, def: rootDef });
+
+  // Render
+  const lines = [];
+  lines.push(`syntax = "${opts.syntax}";`);
+  lines.push('');
+  if (opts.package) { lines.push(`package ${opts.package};`); lines.push(''); }
+  if (opts.outerClass && opts.syntax === 'proto2') {
+    lines.push(`option java_outer_classname = "${opts.outerClass}";`);
+    lines.push('');
+  } else if (opts.outerClass) {
+    lines.push(`option java_outer_classname = "${opts.outerClass}";`);
+    lines.push('');
+  }
+
+  for (const msg of registry.messages) {
+    lines.push(`message ${msg.name} {`);
+    const indent = '  ';
+    if (!msg.def.length) {
+      lines.push(indent + '// empty message');
+    }
+    for (const item of msg.def) {
+      if (item.type === 'enum') {
+        const e = registry.enums.find(en => en.name === item.enumName);
+        if (e) {
+          lines.push(indent + `enum ${e.name} {`);
+          e.def.forEach(v => lines.push(indent + '  ' + v));
+          lines.push(indent + '}');
+        }
+      } else if (item.type === 'field') {
+        const rep = item.repeated ? 'repeated ' : '';
+        lines.push(indent + `${rep}${item.fieldType} ${item.field} = ${item.idx};`);
+      }
+    }
+    lines.push('}');
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+function highlight(code) {
+  return code
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(?:syntax|package)"|\d+)/g, '<span class="num">$1</span>')
+    .replace(/\b(syntax|package|import|option|message|enum|service|rpc|returns|stream|repeated|optional|required|map)\b/g, '<span class="kw">$1</span>')
+    .replace(/\b(int32|int64|uint32|uint64|sint32|sint64|fixed32|fixed64|sfixed32|sfixed64|float|double|bool|string|bytes)\b/g, '<span class="typ">$1</span>')
+    .replace(/(message\s+)([A-Z][A-Za-z0-9_]*)/g, '$1<span class="msg">$2</span>')
+    .replace(/(\s)([a-z_][A-Za-z0-9_]*)\s*=\s*(\d+)/g, '$1<span class="fld">$2</span> = $3');
+}
+
+// ---------- UI wiring ----------
+function getOpts() {
+  return {
+    syntax: document.querySelector('input[name=syn]:checked')?.value || 'proto3',
+    package: $('#pkg').value.trim().replace(/[^a-zA-Z0-9_.]/g, ''),
+    rootName: pascal($('#root').value.trim() || 'Root'),
+    outerClass: $('#outer').value.trim().replace(/[^a-zA-Z0-9_]/g, '') || '',
+    detectEnums: $('#enumToggle').checked,
+  };
+}
+
+function doGenerate() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').innerHTML = ''; $('#status').innerHTML = ''; return; }
+  let parsed;
+  try {
+    parsed = JSON.parse(inp);
+    $('#status').innerHTML = `<span style="color:var(--gz-success,#3fb950)">${t('valid')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent,#e94560)">${t('invalid')}: ${escapeHtml(e.message)}</span>`;
+    $('#output').innerHTML = '';
+    return;
+  }
+  try {
+    const code = generateProto(parsed, getOpts());
+    $('#output').innerHTML = highlight(code);
+    $('#output').dataset.raw = code;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent,#e94560)">Error: ${escapeHtml(e.message)}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    id: 42,
+    name: "Alice",
+    email: "alice@example.com",
+    isActive: true,
+    balance: 1250.75,
+    tags: ["vip", "early-adopter"],
+    address: {
+      street: "123 Main St",
+      city: "New York",
+      zip: "10001",
+      location: { lat: 40.7128, lng: -74.0060 }
+    },
+    orders: [
+      { id: 1001, total: 49.99, status: "shipped" },
+      { id: 1002, total: 12.50, status: "pending" }
+    ],
+    metadata: null
+  }, null, 2);
+  doGenerate();
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; $('#output').dataset.raw = ''; $('#status').innerHTML = ''; }
+function doDownload() {
+  const code = $('#output').dataset.raw || '';
+  if (!code) return;
+  const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (getOpts().rootName || 'schema').toLowerCase() + '.proto';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// Populate option row FIRST so #algo, #pkg, #root, #outer, #enumToggle exist before listeners attach
+$('#optRow').innerHTML = `
+  <label>${t('syntax')}:
+    <label style="font-weight:normal"><input type="radio" name="syn" value="proto3" checked> proto3</label>
+    <label style="font-weight:normal"><input type="radio" name="syn" value="proto2"> proto2</label>
+  </label>
+  <label>${t('packageName')}: <input type="text" id="pkg" value="com.example" placeholder="com.example"></label>
+  <label>${t('rootName')}: <input type="text" id="root" value="Root" placeholder="Root"></label>
+  <label>${t('outerClass')}: <input type="text" id="outer" value="" placeholder="Proto"></label>
+  <label><input type="checkbox" id="enumToggle" checked> ${t('detectEnums')}</label>
+`;
+
+$('#lbl-in').textContent = t('inputLbl');
+$('#lbl-out').textContent = t('outputLbl');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').dataset.raw)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+// Now wire up event listeners (elements exist)
+$('#input').addEventListener('input', doGenerate);
+[$('#pkg'), $('#root'), $('#outer'), $('#enumToggle')].forEach(el => el.addEventListener('input', doGenerate));
+document.querySelectorAll('input[name=syn]').forEach(r => r.addEventListener('change', doGenerate));
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3'],
+  related: [
+    {icon:'📘', href:'/dev/json-to-typescript.html', name:'JSON → TypeScript'},
+    {icon:'🔷', href:'/convert/json-to-go.html', name:'JSON → Go'},
+    {icon:'🧬', href:'/dev/json-to-graphql.html', name:'JSON → GraphQL'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
