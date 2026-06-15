@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>键码查看器 - JavaScript 键盘事件码 | GameZipper 工具箱</title>
+<meta name="description" content="按下任意按键即可查看其 JavaScript 键盘事件属性：e.key、e.code、e.keyCode、e.which、按键位置和实时修饰键状态。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/keycode.html">
+<meta property="og:title" content="键码查看器 - JavaScript 键盘事件码 | GameZipper 工具箱">
+<meta property="og:description" content="按下任意按键即可查看其 JavaScript 键盘事件属性：e.key、e.code、e.keyCode、e.which、按键位置和实时修饰键状态。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/keycode.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="键码查看器 - JavaScript 键盘事件码 | GameZipper 工具箱">
+<meta name="twitter:description" content="按下任意按键即可查看其 JavaScript 键盘事件属性：e.key、e.code、e.keyCode、e.which、按键位置和实时修饰键状态。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+.kc-stage{background:var(--glass2);border:1px solid var(--border);border-radius:16px;padding:28px;text-align:center;min-height:220px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.kc-big{font-size:5.5rem;font-weight:800;line-height:1;color:var(--accent);font-family:'SF Mono','Monaco',monospace;min-height:90px;word-break:break-all}
+.kc-big.placeholder{font-size:1.2rem;font-weight:500;color:var(--text3);font-family:inherit}
+.kc-sub{font-size:.9rem;color:var(--text3);margin-top:6px}
+.kc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px}
+.kc-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px}
+.kc-card .k{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:6px}
+.kc-card .v{font-size:1.15rem;font-family:'SF Mono','Monaco',monospace;color:var(--text);word-break:break-all;min-height:1.4em}
+.kc-card .v.accent{color:var(--accent)}
+.mod-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;justify-content:center}
+.mod{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--glass);font-size:.8em;color:var(--text3);transition:all .12s}
+.mod.on{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.kc-log{margin-top:18px;background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:10px;max-height:160px;overflow:auto}
+.kc-log-row{display:grid;grid-template-columns:60px 1fr 1fr 60px;gap:8px;padding:4px 6px;font-family:'SF Mono','Monaco',monospace;font-size:.78em;border-bottom:1px solid var(--border)}
+.kc-log-row:last-child{border-bottom:none}
+.kc-log-row .lcode{color:var(--accent);font-weight:700}
+.kc-log-head{color:var(--text3);font-size:.68em;text-transform:uppercase;position:sticky;top:0;background:var(--glass)}
+@media(max-width:600px){.kc-big{font-size:3.6rem}.kc-log-row{grid-template-columns:1fr 1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Keycode Viewer","description":"Press any key to see its JavaScript event properties instantly: e.key, e.code, e.keyCode, e.which, location and modifier keys. The fastest keyboard event inspector for developers.","url":"https://tools.gamezipper.com/zh/dev/keycode.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a keycode in JavaScript?","acceptedAnswer":{"@type":"Answer","text":"A keycode is a numeric identifier for the physical key that was pressed. In modern JavaScript you should use event.code (the physical key, e.g. KeyA) and event.key (the logical character, e.g. 'a' or 'A') instead of the deprecated event.keyCode property."}},{"@type":"Question","name":"What is the difference between e.key and e.code?","acceptedAnswer":{"@type":"Answer","text":"event.key returns the character produced by the key, which changes with the keyboard layout and modifier keys (Shift, AltGr). event.code returns the physical key location on the keyboard and stays the same regardless of layout, making it ideal for game controls and shortcuts."}},{"@type":"Question","name":"Why is e.keyCode deprecated?","acceptedAnswer":{"@type":"Answer","text":"keyCode is deprecated because it is inconsistent across browsers and layouts and cannot distinguish some keys. This tool still shows it for legacy debugging, but new code should use event.key and event.code instead."}},{"@type":"Question","name":"Does this tool record or upload my keystrokes?","acceptedAnswer":{"@type":"Answer","text":"No. The key events are captured and displayed only in your browser. Nothing is recorded permanently or sent to any server. Clearing the log or leaving the page removes everything."}}]}</script>
+<script>localStorage.setItem('gz-lang','zh');</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/keycode.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/keycode.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/keycode.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="kc-stage" tabindex="0" id="stage">
+      <div class="kc-big placeholder" id="big">⌨️ Press any key…</div>
+      <div class="kc-sub" id="sub"></div>
+      <div class="mod-row" id="mods"></div>
+    </div>
+    <div class="kc-grid" id="grid"></div>
+    <div class="kc-log" id="log"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Keycode Viewer',
+    toolDesc: 'Press any key to inspect its JavaScript keyboard event properties: e.key, e.code, e.keyCode, e.which, location and live modifier state.',
+    press: '⌨️ Press any key…',
+    focusHint: 'click here and press a key',
+    key: 'key',
+    code: 'code',
+    keyCode: 'keyCode',
+    which: 'which',
+    location: 'location',
+    ascii: 'ASCII / charCode',
+    step1: 'Click anywhere on the key stage area to focus it',
+    step2: 'Press any key on your physical keyboard',
+    step3: 'Read e.key, e.code, keyCode and modifier state from the cards',
+    step4: 'Review recent presses in the log, or click Clear to reset',
+  },
+  zh: {
+    toolTitle: '键码查看器',
+    toolDesc: '按下任意按键即可查看其 JavaScript 键盘事件属性：e.key、e.code、e.keyCode、e.which、按键位置和实时的修饰键状态。',
+    press: '⌨️ 按下任意键…',
+    focusHint: '点击此处并按下按键',
+    key: 'key',
+    code: 'code',
+    keyCode: 'keyCode',
+    which: 'which',
+    location: '位置',
+    ascii: 'ASCII / charCode',
+    step1: '点击按键展示区域的任意位置使其获得焦点',
+    step2: '在物理键盘上按下任意按键',
+    step3: '从下方卡片读取 e.key、e.code、keyCode 和修饰键状态',
+    step4: '在日志中查看最近的按键，或点击「清空」重置',
+  }
+});
+
+const { $, t } = GZ;
+const LOC_NAMES = {0:'Standard (0)', 1:'Left (1)', 2:'Right (2)', 3:'Numpad (3)'};
+const MOD_KEYS = ['Shift','Control','Alt','Meta'];
+let log = [];
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function displayKey(v){
+  if (v === ' ') return 'Space';
+  if (v === undefined || v === null || v === '') return '—';
+  return esc(v);
+}
+
+function renderMods(e){
+  $('#mods').innerHTML = MOD_KEYS.map(m =>
+    `<span class="mod${e && e[(m==='Control'?'ctrl':m==='Meta'?'meta':m.toLowerCase())+'Key']?' on':''}">${m}</span>`).join('');
+}
+
+function renderCards(e){
+  const keyCode = e.keyCode;
+  const which = e.which;
+  const loc = LOC_NAMES[e.location] !== undefined ? LOC_NAMES[e.location] : String(e.location);
+  const charCode = e.key && e.key.length === 1 ? e.key.charCodeAt(0) : 0;
+  const cards = [
+    {k:t('key'), v:displayKey(e.key), accent:true},
+    {k:t('code'), v:esc(e.code||'—')},
+    {k:t('keyCode'), v:keyCode},
+    {k:t('which'), v:which},
+    {k:t('location'), v:loc},
+    {k:t('ascii'), v:charCode ? `${charCode}  (0x${charCode.toString(16).toUpperCase().padStart(2,'0')})` : '—'},
+  ];
+  $('#grid').innerHTML = cards.map(c =>
+    `<div class="kc-card"><div class="k">${c.k}</div><div class="v${c.accent?' accent':''}">${c.v}</div></div>`).join('');
+}
+
+function addLog(e){
+  log.unshift({key:e.key||'—', code:e.code||'—', keyCode:e.keyCode||'—'});
+  if (log.length > 30) log.pop();
+  const lang = GZI18n.getLang();
+  const head = lang==='zh'
+    ? `<div class="kc-log-row kc-log-head"><span>keyCode</span><span>key</span><span>code</span><span></span></div>`
+    : `<div class="kc-log-row kc-log-head"><span>keyCode</span><span>key</span><span>code</span><span></span></div>`;
+  $('#log').innerHTML = (log.length ? head : '') + log.map(r =>
+    `<div class="kc-log-row"><span class="lcode">${esc(r.keyCode)}</span><span>${displayKey(r.key)}</span><span>${esc(r.code)}</span><span></span></div>`).join('');
+}
+
+function show(e){
+  e.preventDefault();
+  const big = $('#big');
+  big.classList.remove('placeholder');
+  const label = e.key === ' ' ? 'Space' : e.key;
+  big.textContent = e.key && e.key.length === 1 ? e.key : (e.key || e.code || '—');
+  if (e.key && e.key.length > 1) big.textContent = e.key;
+  $('#sub').textContent = e.code ? `event.code = "${e.code}"` : '';
+  renderMods(e);
+  renderCards(e);
+  addLog(e);
+}
+
+document.addEventListener('keydown', show);
+$('#stage').addEventListener('click', () => $('#stage').focus());
+
+function clearLog(){ log=[]; $('#log').innerHTML=''; $('#big').classList.add('placeholder'); $('#big').textContent=t('press'); $('#sub').textContent=''; $('#grid').innerHTML=''; renderMods(null); }
+
+$('#toolbar').innerHTML = `<button class="gz-btn gz-btn-secondary" onclick="clearLog()">${t('clear')}</button>
+  <span style="margin-left:auto;font-size:.8em;color:var(--text3);align-self:center">${t('focusHint')} 🎯</span>`;
+renderMods(null);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⌨️', href:'/fun/keyboard-tester.html', name:'Keyboard Tester'},
+    {icon:'⚡', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'🎨', href:'/dev/ascii-table.html', name:'ASCII Table'},
+    {icon:'🛡️', href:'/dev/string-escape.html', name:'String Escape'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
