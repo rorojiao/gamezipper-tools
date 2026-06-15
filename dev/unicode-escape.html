@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Unicode Escape Converter - Encode \uXXXX Online | GameZipper Tools</title>
+<meta name="description" content="Convert text to Unicode escape sequences (\uXXXX, \xXX) and back. Encode and decode JavaScript, JSON and Java string escapes, UTF-8 hex and HTML numeric entities online.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/unicode-escape.html">
+<meta property="og:title" content="Unicode Escape Converter - Encode \uXXXX Online | GameZipper Tools">
+<meta property="og:description" content="Convert text to Unicode escape sequences (\uXXXX, \xXX) and back. Encode and decode JavaScript, JSON and Java string escapes, UTF-8 hex and HTML numeric entities online.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/unicode-escape.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Unicode Escape Converter - Encode \uXXXX Online | GameZipper Tools">
+<meta name="twitter:description" content="Convert text to Unicode escape sequences (\uXXXX, \xXX) and back. Encode and decode JavaScript, JSON and Java string escapes online.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:'SF Mono','Monaco',monospace;font-size:.85em;line-height:1.5;min-height:120px}
+#status{margin-top:8px;font-size:.85em}
+.opt-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:8px;font-size:.82em;color:var(--text3)}
+.opt-row label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.opt-row input{accent-color:var(--accent)}
+.codepoint-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;margin-top:10px}
+.cp{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 4px;text-align:center;font-size:.75em}
+.cp .ch{font-size:1.4em;line-height:1}
+.cp .hex{color:var(--accent);font-family:monospace}
+.cp .dec{color:var(--text3);font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Unicode Escape Converter","description":"Convert text to Unicode escape sequences (\u005cuXXXX, \u005cxXX) and back. Encode and decode JavaScript, JSON and Java string escapes, UTF-8 hex and HTML numeric entities online.","url":"https://tools.gamezipper.com/dev/unicode-escape.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a Unicode escape sequence?","acceptedAnswer":{"@type":"Answer","text":"A Unicode escape sequence represents a character by its code point using a backslash followed by u and four hex digits, for example \\u0041 is the letter A. JavaScript, JSON and Java use this format for characters that cannot be typed directly, such as emoji or non-Latin scripts."}},{"@type":"Question","name":"What is the difference between \\u, \\x and \\U escapes?","acceptedAnswer":{"@type":"Answer","text":"\\uXXXX is a 4-digit BMP escape used in JavaScript, JSON and Java. \\xXX is a 2-digit Latin-1 escape. \\UXXXXXXXX is an 8-digit escape for code points above U+FFFF used in Python and C++. This tool supports all three plus UTF-8 hex bytes."}},{"@type":"Question","name":"Can this tool decode mixed escape sequences?","acceptedAnswer":{"@type":"Answer","text":"Yes. The decoder recognises \\uXXXX, \\u{...}, \\UXXXXXXXX, \\xXX, \\n, \\t and other common backslash escapes in the same string and converts them all back to readable text."}},{"@type":"Question","name":"Is my text sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All encoding and decoding runs entirely in your browser using built-in JavaScript. Your text never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/unicode-escape.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/unicode-escape.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/unicode-escape.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="input" rows="6" spellcheck="false"></textarea>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+    <div class="opt-row" id="opts"></div>
+    <div class="codepoint-grid" id="cpgrid"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Unicode Escape Converter',
+    toolDesc: 'Convert text to \\uXXXX / \\xXX escape sequences and back. Supports JavaScript, JSON, Java, Python, UTF-8 hex and HTML entities.',
+    modeEnc: 'Encode → escapes',
+    modeDec: 'Decode → text',
+    asciiOnly: 'Only escape non-ASCII',
+    escapeQuotes: 'Escape quotes & backslash',
+    lowerHex: 'Lowercase hex',
+    step1: 'Type or paste your text (or escaped text) in the input box',
+    step2: 'Pick Encode to turn text into \\uXXXX escapes, or Decode to convert escapes back to text',
+    step3: 'Use the checkboxes to control which characters get escaped',
+    step4: 'Click Copy to copy the result, or inspect each character code point below',
+  },
+  zh: {
+    toolTitle: 'Unicode 转义转换器',
+    toolDesc: '在文本与 \\uXXXX / \\xXX 转义序列之间互转，支持 JavaScript、JSON、Java、Python、UTF-8 十六进制和 HTML 实体。',
+    modeEnc: '编码 → 转义',
+    modeDec: '解码 → 文本',
+    asciiOnly: '仅转义非 ASCII 字符',
+    escapeQuotes: '转义引号和反斜杠',
+    lowerHex: '小写十六进制',
+    step1: '在输入框输入或粘贴文本（或已转义的文本）',
+    step2: '选择「编码」将文本转为 \\uXXXX 转义，或「解码」将转义还原为文本',
+    step3: '使用复选框控制哪些字符需要转义',
+    step4: '点击「复制」复制结果，或在下方查看每个字符的码位',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'enc';           // 'enc' | 'dec'
+let asciiOnly = true;
+let escapeMeta = false;
+let lowerHex = true;
+
+const HEX = n => (lowerHex ? n.toString(16) : n.toString(16).toUpperCase());
+
+function pad(n, w) { return n.toString(16).padStart(w, lowerHex ? '0' : '0').toUpperCase(); }
+
+function encode(str) {
+  let out = '';
+  for (const ch of str) {
+    const cp = ch.codePointAt(0);
+    if (escapeMeta && (ch === '"' || ch === "'" || ch === '\\')) { out += '\\' + ch; continue; }
+    if (asciiOnly && cp <= 0x7F) {
+      if (ch === '\n') out += escapeMeta ? '\\n' : ch;
+      else if (ch === '\r') out += escapeMeta ? '\\r' : ch;
+      else if (ch === '\t') out += escapeMeta ? '\\t' : ch;
+      else out += ch;
+    } else if (cp <= 0xFF) {
+      out += '\\x' + pad(cp, 2);
+    } else if (cp <= 0xFFFF) {
+      out += '\\u' + pad(cp, 4);
+    } else {
+      out += '\\u' + pad(((cp - 0x10000) >> 10) + 0xD800, 4) + '\\u' + pad(((cp - 0x10000) & 0x3FF) + 0xDC00, 4);
+    }
+  }
+  return out;
+}
+
+function decode(str) {
+  // Recognise \uXXXX, \u{...}, \UXXXXXXXX, \xXX, \n \r \t \b \f \v \0 \\ \" \' and bare UTF-8
+  let out = '';
+  let i = 0;
+  let ok = true;
+  const controlMap = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v', '0':'\0'};
+  while (i < str.length) {
+    const c = str[i];
+    if (c === '\\') {
+      const next = str[i + 1];
+      if (next === 'u' && str[i + 2] === '{') {
+        const end = str.indexOf('}', i + 3);
+        if (end === -1) { out += str.slice(i); ok = false; break; }
+        const cp = parseInt(str.slice(i + 3, end), 16);
+        if (!isNaN(cp)) out += String.fromCodePoint(cp); else ok = false;
+        i = end + 1;
+      } else if (next === 'u') {
+        const hex = str.substr(i + 2, 4);
+        if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+          out += String.fromCharCode(parseInt(hex, 16));
+          i += 6;
+        } else { out += c; i++; }
+      } else if (next === 'U') {
+        const hex = str.substr(i + 2, 8);
+        if (/^[0-9a-fA-F]{8}$/.test(hex)) {
+          out += String.fromCodePoint(parseInt(hex, 16));
+          i += 10;
+        } else { out += c; i++; }
+      } else if (next === 'x') {
+        const hex = str.substr(i + 2, 2);
+        if (/^[0-9a-fA-F]{2}$/.test(hex)) {
+          out += String.fromCharCode(parseInt(hex, 16));
+          i += 4;
+        } else { out += c; i++; }
+      } else if (controlMap[next] !== undefined) {
+        out += controlMap[next]; i += 2;
+      } else if (next === '\\') { out += '\\'; i += 2; }
+      else if (next === '"' || next === "'") { out += next; i += 2; }
+      else { out += c; i++; }
+    } else {
+      out += c; i++;
+    }
+  }
+  return { text: out, ok };
+}
+
+function renderCp(str) {
+  const limit = 48;
+  const chars = Array.from(str).slice(0, limit);
+  if (!chars.length) { $('#cpgrid').innerHTML = ''; return; }
+  $('#cpgrid').innerHTML = chars.map(ch => {
+    const cp = ch.codePointAt(0);
+    const display = cp < 32 ? '·' : ch;
+    return `<div class="cp"><div class="ch">${cp===32?'␣':escapeHtml(display)}</div><div class="hex">U+${cp.toString(16).toUpperCase().padStart(4,'0')}</div><div class="dec">${cp}</div></div>`;
+  }).join('') + (Array.from(str).length > limit ? `<div class="cp"><div class="ch">…</div><div class="hex">${Array.from(str).length}+</div></div>` : '');
+}
+
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function run() {
+  const inp = $('#input').value;
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; $('#cpgrid').innerHTML = ''; return; }
+  try {
+    if (mode === 'enc') {
+      const res = encode(inp);
+      $('#output').textContent = res;
+      $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${res.length} chars</span>`;
+      renderCp(inp);
+    } else {
+      const { text, ok } = decode(inp);
+      $('#output').textContent = text;
+      $('#status').innerHTML = ok
+        ? `<span style="color:var(--gz-success)">✓ decoded ${text.length} chars</span>`
+        : `<span style="color:var(--gz-accent)">⚠ decoded with some unrecognised sequences</span>`;
+      renderCp(text);
+    }
+  } catch (e) {
+    $('#output').textContent = '';
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = 'Hello 世界 🌍\nEmoji: 😀';
+  run();
+}
+
+function doClear() { $('#input').value=''; run(); }
+
+function swapMode(m) { mode = m; run(); updateToolbar(); }
+
+function updateToolbar() {
+  $('#toolbar').innerHTML = `
+    <button class="gz-btn${mode==='enc'?'':''}" onclick="swapMode('enc')" style="${mode==='enc'?'background:var(--accent);color:#000':''}">${t('modeEnc')}</button>
+    <button class="gz-btn" onclick="swapMode('dec')" style="${mode==='dec'?'background:var(--accent);color:#000':''}">${t('modeDec')}</button>
+    <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+  $('#opts').innerHTML = `
+    <label><input type="checkbox" ${asciiOnly?'checked':''} onchange="asciiOnly=this.checked;run()"> ${t('asciiOnly')}</label>
+    <label><input type="checkbox" ${escapeMeta?'checked':''} onchange="escapeMeta=this.checked;run()"> ${t('escapeQuotes')}</label>
+    <label><input type="checkbox" ${lowerHex?'checked':''} onchange="lowerHex=this.checked;run()"> ${t('lowerHex')}</label>`;
+}
+
+$('#input').addEventListener('input', run);
+updateToolbar();
+run();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🛡️', href:'/dev/string-escape.html', name:'String Escape'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔤', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'📊', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
