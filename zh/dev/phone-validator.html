@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>电话号码验证器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="验证国际电话号码 — 检查格式、国家、类型（手机 / 座机）和 E.164 转换。批量粘贴，全部在浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/phone-validator.html">
+  <meta property="og:title" content="电话号码验证器">
+  <meta property="og:description" content="验证国际电话号码 — 检查格式、国家、类型（手机 / 座机）和 E.164 转换。批量粘贴，全部在浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/phone-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="电话号码验证器">
+<meta name="twitter:description" content="验证国际电话号码 — 检查格式、国家、类型（手机 / 座机）和 E.164 转换。批量粘贴，全部在浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<style>
+textarea{height:160px;font-family:monospace;font-size:.9em}
+#results{margin-top:12px;border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.pv-row{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:.88em}
+.pv-row:nth-child(even){background:var(--glass)}
+.pv-row:last-child{border-bottom:none}
+.pv-icon{font-size:1.2em;text-align:center}
+.pv-input{font-family:monospace;font-weight:600;word-break:break-all;color:var(--text)}
+.pv-details{font-size:.78em;color:var(--text2);margin-top:3px}
+.pv-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:.7em;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.pv-valid{background:rgba(0,214,114,.12);color:#00d672}
+.pv-invalid{background:rgba(233,69,96,.12);color:#e94560}
+.pv-e164{font-family:monospace;background:var(--glass2);padding:1px 6px;border-radius:4px;margin-left:4px}
+#stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:.85em}
+#stats span{background:var(--glass);padding:5px 12px;border-radius:8px;border:1px solid var(--border)}
+@media(max-width:600px){.pv-row{grid-template-columns:28px 1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Phone Number Validator","description":"Free online phone number validator. Validate international phone numbers for format, country, type (mobile/landline), E.164 conversion and region. Bulk validation, browser-based.","url": "https://tools.gamezipper.com/zh/dev/phone-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does phone number validation work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool parses each number, normalizes it (strips spaces, dashes, parentheses), checks the country calling code against an embedded international database, validates digit length and format for the detected region, and converts it to the international E.164 standard. It also classifies the number as mobile, landline, or unknown."}}, {"@type": "Question", "name": "Does the validator check if a phone number actually exists?", "acceptedAnswer": {"@type": "Answer", "text": "No. The tool performs format and region validation only — it does not send an SMS or call the number. To confirm a number is actually in service, you need a carrier-side HLR lookup service. This tool runs entirely in your browser and verifies whether a number is well-formed and plausibly valid."}}, {"@type": "Question", "name": "What is the E.164 format?", "acceptedAnswer": {"@type": "Answer", "text": "E.164 is the international standard for phone numbers: a + sign, followed by the country code and subscriber number, with no spaces or symbols. For example, +1 (415) 555-2671 becomes +14155552671. E.164 is required by SMS APIs (Twilio, MessageBird) and most backend phone storage."}}, {"@type": "Question", "name": "Can I validate multiple phone numbers at once?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Paste one phone number per line. The tool validates all of them in bulk, shows a per-number breakdown with country and type, and a summary of valid/invalid counts. All processing happens locally in your browser — no data is uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/phone-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/phone-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/phone-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder=""></textarea>
+    <div id="stats"></div>
+    <div id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Phone Number Validator',
+    toolDesc: 'Validate international phone numbers — check format, country, type (mobile / landline) and E.164 conversion. Bulk paste, all in your browser.',
+    phInput: 'Paste phone numbers here, one per line...\ne.g.\n+1 (415) 555-2671\n07911 123456 (UK)',
+    step1: 'Paste one or more phone numbers (one per line)',
+    step2: 'Click Validate to parse and check each number',
+    step3: 'Review country, type, and E.164 format for each row',
+    step4: 'Copy valid E.164 numbers to use with SMS APIs',
+    validate: 'Validate',
+    valid: 'Valid',
+    invalid: 'Invalid',
+    country: 'Country',
+    type: 'Type',
+    e164: 'E.164',
+    unknown: 'Unknown',
+    mobile: 'Mobile',
+    landline: 'Landline',
+    summary: (v, t) => `${v} valid · ${t - v} invalid · ${t} total`,
+  },
+  zh: {
+    toolTitle: '电话号码验证器',
+    toolDesc: '验证国际电话号码 — 检查格式、国家、类型（手机 / 座机）和 E.164 转换。批量粘贴，全部在浏览器本地运行。',
+    phInput: '在此粘贴电话号码，每行一个...\n例如：\n+1 (415) 555-2671\n07911 123456 (英国)',
+    step1: '粘贴一个或多个电话号码（每行一个）',
+    step2: '点击「验证」解析并检查每个号码',
+    step3: '查看每行的国家、类型和 E.164 格式',
+    step4: '复制有效的 E.164 号码用于短信 API',
+    validate: '验证',
+    valid: '有效',
+    invalid: '无效',
+    country: '国家',
+    type: '类型',
+    e164: 'E.164',
+    unknown: '未知',
+    mobile: '手机',
+    landline: '座机',
+    summary: (v, t) => `${v} 有效 · ${t - v} 无效 · 共 ${t} 个`,
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Embedded calling-code → country map (subset of ISO countries, ~110 most-used).
+const COUNTRY_MAP = {
+  '1':{name:'USA / Canada / NANP',iso:'US/CA',min:10,max:11,mobile:['201','202','203','204','205','206','207','208','209','210','212','213','214','215','216','218','219','224','225','226','227','228','229','231','234','236','239','240','248','249','250','251','252','253','254','256','257','258','259','260','262','263','264','267','269','270','272','276','278','279','281','283','289','301','302','303','304','305','306','307','308','309','310','312','313','314','315','316','317','318','319','320','321','323','325','326','327','328','330','331','332','334','336','337','339','340','341','343','345','346','347','349','351','352','360','361','364','365','367','368','369','380','382','385','386','387','401','402','403','404','405','406','407','408','409','410','412','413','414','415','416','417','418','419','423','424','425','430','431','432','434','435','437','438','440','441','442','443','444','445','447','448','449','450','451','456','458','459','460','463','464','469','470','472','473','475','478','479','480','484','501','502','503','504','505','506','507','508','509','510','512','513','514','515','516','517','518','519','520','530','531','533','534','539','540','541','544','548','549','551','557','559','561','562','563','564','567','570','571','572','573','574','575','580','582','583','585','586','588','590','598','601','602','603','604','605','606','607','608','609','610','612','613','614','615','616','617','618','619','620','623','626','627','628','629','630','631','636','639','640','641','646','647','649','650','651','657','658','659','660','661','662','667','669','678','679','680','681','682','689','701','702','703','704','706','707','708','712','713','714','715','716','717','718','719','720','721','724','725','726','727','730','731','732','734','737','740','743','747','752','754','757','758','760','762','763','764','765','769','770','771','772','773','774','775','778','779','780','781','782','785','786','787','801','802','803','804','805','806','807','808','810','812','813','814','815','816','817','818','820','828','829','830','832','833','835','838','843','844','845','848','850','854','855','856','857','858','859','860','862','863','864','865','870','872','878','901','902','903','904','905','906','907','908','909','910','912','913','914','915','916','917','918','919','920','921','925','927','928','929','931','934','935','936','937','938','939','940','941','947','949','951','952','954','956','957','959','970','971','972','973','974','975','976','978','979','980','984','985','986','989'],landline:['900','901']},
+  '7':{name:'Russia / Kazakhstan',iso:'RU/KZ',min:10,max:10},
+  '20':{name:'Egypt',iso:'EG',min:10,max:10},
+  '27':{name:'South Africa',iso:'ZA',min:9,max:9},
+  '30':{name:'Greece',iso:'GR',min:10,max:10},
+  '31':{name:'Netherlands',iso:'NL',min:9,max:9},
+  '32':{name:'Belgium',iso:'BE',min:9,max:9},
+  '33':{name:'France',iso:'FR',min:9,max:9},
+  '34':{name:'Spain',iso:'ES',min:9,max:9},
+  '36':{name:'Hungary',iso:'HU',min:9,max:9},
+  '39':{name:'Italy',iso:'IT',min:10,max:10},
+  '40':{name:'Romania',iso:'RO',min:9,max:9},
+  '41':{name:'Switzerland',iso:'CH',min:9,max:9},
+  '43':{name:'Austria',iso:'AT',min:11,max:11},
+  '44':{name:'United Kingdom',iso:'GB',min:10,max:10},
+  '45':{name:'Denmark',iso:'DK',min:8,max:8},
+  '46':{name:'Sweden',iso:'SE',min:7,max:13},
+  '47':{name:'Norway',iso:'NO',min:8,max:8},
+  '48':{name:'Poland',iso:'PL',min:9,max:9},
+  '49':{name:'Germany',iso:'DE',min:10,max:11},
+  '51':{name:'Peru',iso:'PE',min:9,max:9},
+  '52':{name:'Mexico',iso:'MX',min:10,max:10},
+  '53':{name:'Cuba',iso:'CU',min:8,max:8},
+  '54':{name:'Argentina',iso:'AR',min:10,max:11},
+  '55':{name:'Brazil',iso:'BR',min:11,max:11},
+  '56':{name:'Chile',iso:'CL',min:9,max:9},
+  '57':{name:'Colombia',iso:'CO',min:10,max:10},
+  '58':{name:'Venezuela',iso:'VE',min:10,max:10},
+  '60':{name:'Malaysia',iso:'MY',min:9,max:10},
+  '61':{name:'Australia',iso:'AU',min:9,max:9},
+  '62':{name:'Indonesia',iso:'ID',min:9,max:12},
+  '63':{name:'Philippines',iso:'PH',min:10,max:10},
+  '64':{name:'New Zealand',iso:'NZ',min:9,max:10},
+  '65':{name:'Singapore',iso:'SG',min:8,max:8},
+  '66':{name:'Thailand',iso:'TH',min:9,max:9},
+  '81':{name:'Japan',iso:'JP',min:10,max:10},
+  '82':{name:'South Korea',iso:'KR',min:9,max:10},
+  '84':{name:'Vietnam',iso:'VN',min:9,max:10},
+  '86':{name:'China',iso:'CN',min:11,max:11},
+  '90':{name:'Turkey',iso:'TR',min:10,max:10},
+  '91':{name:'India',iso:'IN',min:10,max:10},
+  '92':{name:'Pakistan',iso:'PK',min:10,max:10},
+  '93':{name:'Afghanistan',iso:'AF',min:9,max:9},
+  '94':{name:'Sri Lanka',iso:'LK',min:9,max:9},
+  '95':{name:'Myanmar',iso:'MM',min:8,max:10},
+  '98':{name:'Iran',iso:'IR',min:10,max:10},
+  '212':{name:'Morocco',iso:'MA',min:9,max:9},
+  '213':{name:'Algeria',iso:'DZ',min:9,max:9},
+  '234':{name:'Nigeria',iso:'NG',min:10,max:10},
+  '351':{name:'Portugal',iso:'PT',min:9,max:9},
+  '352':{name:'Luxembourg',iso:'LU',min:8,max:8},
+  '353':{name:'Ireland',iso:'IE',min:9,max:9},
+  '354':{name:'Iceland',iso:'IS',min:7,max:7},
+  '358':{name:'Finland',iso:'FI',min:9,max:10},
+  '359':{name:'Bulgaria',iso:'BG',min:9,max:9},
+  '370':{name:'Lithuania',iso:'LT',min:8,max:8},
+  '371':{name:'Latvia',iso:'LV',min:8,max:8},
+  '372':{name:'Estonia',iso:'EE',min:7,max:8},
+  '374':{name:'Armenia',iso:'AM',min:8,max:8},
+  '375':{name:'Belarus',iso:'BY',min:9,max:9},
+  '380':{name:'Ukraine',iso:'UA',min:9,max:9},
+  '381':{name:'Serbia',iso:'RS',min:8,max:9},
+  '385':{name:'Croatia',iso:'HR',min:9,max:9},
+  '386':{name:'Slovenia',iso:'SI',min:8,max:8},
+  '420':{name:'Czech Republic',iso:'CZ',min:9,max:9},
+  '421':{name:'Slovakia',iso:'SK',min:9,max:9},
+  '852':{name:'Hong Kong',iso:'HK',min:8,max:8},
+  '853':{name:'Macau',iso:'MO',min:8,max:8},
+  '855':{name:'Cambodia',iso:'KH',min:8,max:9},
+  '856':{name:'Laos',iso:'LA',min:8,max:10},
+  '880':{name:'Bangladesh',iso:'BD',min:10,max:10},
+  '886':{name:'Taiwan',iso:'TW',min:9,max:9},
+  '960':{name:'Maldives',iso:'MV',min:7,max:7},
+  '961':{name:'Lebanon',iso:'LB',min:7,max:8},
+  '962':{name:'Jordan',iso:'JO',min:9,max:9},
+  '963':{name:'Syria',iso:'SY',min:9,max:9},
+  '964':{name:'Iraq',iso:'IQ',min:10,max:10},
+  '965':{name:'Kuwait',iso:'KW',min:8,max:8},
+  '966':{name:'Saudi Arabia',iso:'SA',min:9,max:9},
+  '971':{name:'United Arab Emirates',iso:'AE',min:9,max:9},
+  '972':{name:'Israel',iso:'IL',min:9,max:9},
+  '974':{name:'Qatar',iso:'QA',min:8,max:8},
+  '977':{name:'Nepal',iso:'NP',min:10,max:10},
+};
+
+function detectCountry(digits) {
+  // Try 3-digit, then 2-digit, then 1-digit codes.
+  const c3 = COUNTRY_MAP[digits.slice(0, 3)];
+  if (c3) return { code: digits.slice(0, 3), info: c3, national: digits.slice(3) };
+  const c2 = COUNTRY_MAP[digits.slice(0, 2)];
+  if (c2) return { code: digits.slice(0, 2), info: c2, national: digits.slice(2) };
+  const c1 = COUNTRY_MAP[digits.slice(0, 1)];
+  if (c1) return { code: digits.slice(0, 1), info: c1, national: digits.slice(1) };
+  return null;
+}
+
+function classifyNational(code, national) {
+  const info = COUNTRY_MAP[code];
+  if (!info) return 'unknown';
+  // NANP: mobile if area code is not 900-series toll.
+  if (info.mobile && info.mobile.indexOf(national.slice(0, 3)) >= 0) return 'mobile';
+  // Heuristic: most countries route mobile to a leading prefix.
+  const mobilePrefix = /^(?:1[3-9]\d|5[0-9]|6[0-9]|7[0-9]|8[1-9]|9[0-9])/; // China-style or generic mobile
+  if (/^[6-9]/.test(national) && national.length >= 9) return 'mobile';
+  if (/^[2-5]/.test(national) && national.length >= 8) return 'landline';
+  return 'unknown';
+}
+
+function validateOne(raw) {
+  const original = raw.trim();
+  if (!original) return null;
+  // Strip everything but digits and a leading +.
+  const hasPlus = /^\s*\+/.test(original);
+  let digits = original.replace(/[^\d]/g, '');
+  if (!digits) return { ok: false, raw: original, reason: 'empty' };
+
+  let national, code, info;
+  // If + present, treat as international.
+  if (hasPlus) {
+    const det = detectCountry(digits);
+    if (!det) return { ok: false, raw: original, reason: 'unknown_country_code' };
+    code = det.code; info = det.info; national = det.national;
+  } else {
+    // Try as international first (no +). If the first 1-3 digits match a known code, treat that way.
+    const det = detectCountry(digits);
+    if (det && det.national.length >= 6) {
+      code = det.code; info = det.info; national = det.national;
+    } else {
+      // No country code detected — ambiguous without a default.
+      return { ok: false, raw: original, reason: 'missing_country_code', digits };
+    }
+  }
+
+  const len = national.length;
+  const ok = len >= info.min && len <= info.max && /^\d+$/.test(national);
+  const type = ok ? classifyNational(code, national) : 'unknown';
+  const e164 = '+' + code + national;
+
+  return {
+    ok,
+    raw: original,
+    e164: ok ? e164 : null,
+    country: info.name + ' (+' + code + ')',
+    iso: info.iso,
+    type,
+    reason: ok ? null : (len < info.min ? 'too_short' : 'too_long'),
+  };
+}
+
+function runValidate() {
+  const lines = $('#input').value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!lines.length) { $('#results').innerHTML = ''; $('#stats').innerHTML = ''; return; }
+  const rows = lines.map(validateOne);
+  const validCount = rows.filter(r => r && r.ok).length;
+
+  const html = rows.map((r, i) => {
+    if (!r) return '';
+    if (r.ok) {
+      return `<div class="pv-row">
+        <span class="pv-icon">✅</span>
+        <div>
+          <div class="pv-input">${esc(r.raw)} <span class="pv-badge pv-valid">${t('valid')}</span></div>
+          <div class="pv-details">${t('country')}: ${esc(r.country)} · ${t('type')}: ${typeLabel(r.type)}${r.e164 ? ` · ${t('e164')}: <span class="pv-e164">${esc(r.e164)}</span>` : ''}</div>
+        </div>
+        <button class="gz-btn gz-btn-secondary" style="font-size:.75em;padding:4px 10px" onclick="copyText('${esc(r.e164 || '')}')">${GZ.t('copy')}</button>
+      </div>`;
+    }
+    return `<div class="pv-row">
+      <span class="pv-icon">❌</span>
+      <div>
+        <div class="pv-input">${esc(r.raw)} <span class="pv-badge pv-invalid">${t('invalid')}</span></div>
+        <div class="pv-details">${reasonLabel(r.reason)}</div>
+      </div>
+      <span></span>
+    </div>`;
+  }).join('');
+  $('#results').innerHTML = html;
+  $('#stats').innerHTML = `<span>${t('summary')(validCount, rows.filter(Boolean).length)}</span>`;
+}
+
+function typeLabel(k) { return t(k) || t('unknown'); }
+function reasonLabel(r) {
+  const m = {
+    empty: 'No digits found',
+    unknown_country_code: 'Unknown or unsupported country calling code',
+    missing_country_code: 'No country code detected — prefix with + or the dial code',
+    too_short: 'Number is shorter than expected for this country',
+    too_long: 'Number is longer than expected for this country',
+  };
+  return m[r] || 'Invalid format';
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function loadExample() {
+  $('#input').value = '+1 (415) 555-2671\n+44 20 7946 0958\n+86 138 0013 8000\n+91 98765 43210\n+49 30 12345678\n555-1234\n+1 999 0000';
+  runValidate();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="runValidate()">${t('validate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${GZ.t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#input').value)">${GZ.t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';runValidate()">${GZ.t('clear')}</button>`;
+$('#input').placeholder = t('phInput');
+$('#input').addEventListener('input', () => { /* manual button */ });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📧', href:'/dev/email-validator.html', name:'Email Validator'},
+    {icon:'💳', href:'/dev/credit-card-validator.html', name:'Credit Card Validator'},
+    {icon:'🆔', href:'/text/iban-validator.html', name:'IBAN Validator'},
+    {icon:'🔢', href:'/dev/luhn-validator.html', name:'Luhn Validator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

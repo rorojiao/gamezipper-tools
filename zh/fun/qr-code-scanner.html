@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>二维码扫描器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="用摄像头扫描二维码或从图片解码。免费、即时、100% 隐私 — 完全在浏览器中运行，无需 App、无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/qr-code-scanner.html">
+  <meta property="og:title" content="二维码扫描器">
+  <meta property="og:description" content="用摄像头扫描二维码或从图片解码。免费、即时、100% 隐私 — 完全在浏览器中运行，无需 App、无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/qr-code-scanner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="二维码扫描器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260614c"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<style>
+.gz-scan-stage{position:relative;width:100%;max-width:480px;margin:0 auto;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3}
+.gz-scan-stage video,#snapCanvas{display:block;width:100%;height:100%;object-fit:cover}
+.gz-scan-overlay{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.gz-scan-frame{width:62%;height:62%;border:3px solid rgba(255,255,255,.85);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
+.gz-scan-stage.idle::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 12px,transparent 12px 24px)}
+.gz-cam-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.gz-upload{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.gz-upload input{display:none}
+.gz-result{margin-top:14px;padding:12px;background:var(--gz-surface-2);border:1px solid var(--gz-border);border-radius:10px;word-break:break-all}
+.gz-result .label{font-size:.78em;opacity:.65;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.gz-result .value{font-family:monospace;font-size:.95em;color:var(--gz-accent)}
+.gz-result .value a{color:var(--gz-accent)}
+.gz-history{margin-top:14px}
+.gz-history-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--gz-border);font-size:.85em}
+.gz-history-item .ts{opacity:.5;flex-shrink:0;font-size:.78em}
+.gz-history-item .txt{flex:1;word-break:break-all;font-family:monospace}
+.gz-status{text-align:center;font-size:.85em;margin-top:6px;min-height:1.2em}
+.gz-warn{color:var(--gz-accent)}
+.gz-ok{color:var(--gz-success)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Code Scanner","description":"Scan QR codes free with your camera or upload an image. Decode QR codes, barcodes and WiFi codes instantly in your browser. No app, no signup, 100% private.","url": "https://tools.gamezipper.com/zh/fun/qr-code-scanner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Do I need to install an app to scan a QR code?", "acceptedAnswer": {"@type": "Answer", "text": "No. This tool works directly in your browser using your device camera. Click Start Camera, allow the permission prompt, and point the camera at any QR code to decode it instantly."}}, {"@type": "Question", "name": "Can I scan a QR code from an image file?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click Upload Image and choose a PNG, JPG or screenshot containing a QR code. The tool decodes it locally with the jsQR library without uploading the image anywhere."}}, {"@type": "Question", "name": "Is the camera scanning private?", "acceptedAnswer": {"@type": "Answer", "text": "Completely. The camera feed is processed frame-by-frame inside your browser and never sent to any server. Nothing you scan leaves your device."}}, {"@type": "Question", "name": "What types of QR codes are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The scanner reads any standard QR code, including URLs, plain text, WiFi credentials, vCards, email addresses, phone numbers, calendar events and more. Links are detected automatically and made clickable."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/qr-code-scanner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/qr-code-scanner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/qr-code-scanner.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-scan-stage idle" id="stage">
+      <video id="video" playsinline muted></video>
+      <canvas id="snapCanvas" style="display:none"></canvas>
+      <div class="gz-scan-overlay"><div class="gz-scan-frame"></div></div>
+    </div>
+    <div class="gz-status" id="status"></div>
+    <div class="gz-cam-controls" id="camControls"></div>
+    <div class="gz-upload">
+      <label class="gz-btn gz-btn-secondary" id="uploadLabel"></label>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+    <div class="gz-result" id="result" style="display:none">
+      <div class="label" id="resultLabel"></div>
+      <div class="value" id="resultValue"></div>
+    </div>
+    <div class="gz-history" id="historyBox" style="display:none">
+      <h3 id="historyTitle" style="font-size:1em;margin:8px 0"></h3>
+      <div id="history"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'QR Code Scanner',
+    toolDesc: 'Scan QR codes with your camera or decode them from an image. Free, instant, 100% private — runs entirely in your browser, no app, no signup.',
+    startCam: '▶ Start Camera',
+    stopCam: '■ Stop',
+    switchCam: '↔ Switch Camera',
+    uploadLabel: '📁 Upload Image',
+    resultLabel: 'Decoded result',
+    copy: 'Copy',
+    open: 'Open link',
+    clear: 'Clear',
+    historyTitle: 'Scan history',
+    statusIdle: 'Camera stopped. Click Start Camera or upload an image.',
+    statusActive: 'Point the camera at a QR code…',
+    statusNoCam: 'No camera found on this device',
+    statusDenied: 'Camera access denied. Please allow the permission or upload an image instead.',
+    statusNoQR: 'No QR code detected in the image',
+    statusDecoded: '✓ Decoded',
+    empty: 'Nothing scanned yet',
+    step1: 'Click Start Camera and allow the permission prompt',
+    step2: 'Point the camera at a QR code inside the frame',
+    step3: 'Or click Upload Image to scan a saved picture',
+    step4: 'Copy the result or open the decoded link directly',
+  },
+  zh: {
+    toolTitle: '二维码扫描器',
+    toolDesc: '用摄像头扫描二维码或从图片解码。免费、即时、100% 隐私 — 完全在浏览器中运行，无需 App、无需注册。',
+    startCam: '▶ 启动摄像头',
+    stopCam: '■ 停止',
+    switchCam: '↔ 切换摄像头',
+    uploadLabel: '📁 上传图片',
+    resultLabel: '解码结果',
+    copy: '复制',
+    open: '打开链接',
+    clear: '清空',
+    historyTitle: '扫描历史',
+    statusIdle: '摄像头已停止。点击「启动摄像头」或上传图片。',
+    statusActive: '将摄像头对准二维码…',
+    statusNoCam: '此设备未找到摄像头',
+    statusDenied: '摄像头访问被拒绝，请允许权限或改用上传图片。',
+    statusNoQR: '图片中未检测到二维码',
+    statusDecoded: '✓ 已解码',
+    empty: '尚未扫描任何内容',
+    step1: '点击「启动摄像头」并允许权限',
+    step2: '将摄像头对准框内的二维码',
+    step3: '或点击「上传图片」扫描已保存的图片',
+    step4: '复制结果或直接打开解码的链接',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let stream = null, raf = null, facing = 'environment', scanning = false;
+const history = [];
+
+const video = $('#video'), canvas = $('#snapCanvas'), ctx = canvas.getContext('2d', {willReadFrequently:true});
+
+function setStatus(msg, kind){ const el=$('#status'); el.textContent=msg; el.className='gz-status '+(kind?('gz-'+kind):''); }
+
+async function startCam(){
+  stopCam();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}}, audio:false});
+    video.srcObject = stream;
+    await video.play();
+    $('#stage').classList.remove('idle');
+    setStatus(t('statusActive'),'ok');
+    scanning = true;
+    tick();
+    renderCamControls(true);
+  } catch(e){
+    if(e.name==='NotFoundError' || e.name==='DevicesNotFoundError') setStatus(t('statusNoCam'),'warn');
+    else if(e.name==='NotAllowedError' || e.name==='SecurityError') setStatus(t('statusDenied'),'warn');
+    else setStatus(t('statusNoCam'),'warn');
+    $('#stage').classList.add('idle');
+  }
+}
+
+function stopCam(){
+  scanning = false;
+  if(raf) cancelAnimationFrame(raf);
+  if(stream){ stream.getTracks().forEach(tr=>tr.stop()); stream=null; }
+  video.srcObject = null;
+  $('#stage').classList.add('idle');
+  setStatus(t('statusIdle'));
+  renderCamControls(false);
+}
+
+function tick(){
+  if(!scanning) return;
+  if(video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth){
+    const w = video.videoWidth, h = video.videoHeight;
+    if(canvas.width !== w){ canvas.width = w; canvas.height = h; }
+    ctx.drawImage(video, 0, 0, w, h);
+    try {
+      const img = ctx.getImageData(0,0,w,h);
+      const code = jsQR(img.data, w, h, {inversionAttempts:'dontInvert'});
+      if(code && code.data) handleResult(code.data);
+    } catch(e){}
+  }
+  raf = requestAnimationFrame(tick);
+}
+
+async function scanImage(file){
+  if(!file) return;
+  setStatus('');
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = ()=>{
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const max = 1500;
+    const scale = Math.min(1, max/Math.max(w,h));
+    canvas.width = Math.round(w*scale); canvas.height = Math.round(h*scale);
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    URL.revokeObjectURL(url);
+    const data = ctx.getImageData(0,0,canvas.width,canvas.height);
+    let code = jsQR(data.data, canvas.width, canvas.height, {inversionAttempts:'attemptBoth'});
+    if(code && code.data){ handleResult(code.data); setStatus(t('statusDecoded'),'ok'); }
+    else setStatus(t('statusNoQR'),'warn');
+  };
+  img.onerror = ()=>{ URL.revokeObjectURL(url); setStatus(t('statusNoQR'),'warn'); };
+  img.src = url;
+}
+
+function handleResult(data){
+  data = String(data);
+  if(history[0] && history[0].txt === data) return; // dedupe consecutive
+  history.unshift({txt:data, ts:new Date()});
+  if(history.length>20) history.pop();
+  showResult(data);
+  renderHistory();
+}
+
+function isUrl(s){ return /^https?:\/\/[^\s]+$/i.test(s) || /^www\.[^\s]+\.[a-z]{2,}/i.test(s); }
+
+function showResult(data){
+  $('#result').style.display='block';
+  $('#resultValue').innerHTML = isUrl(data)
+    ? `<a href="${data.startsWith('http')?data:'http://'+data}" target="_blank" rel="noopener">${data}</a>`
+    : data.replace(/</g,'&lt;');
+  $('#resultValue').dataset.raw = data;
+  setStatus(t('statusDecoded'),'ok');
+}
+
+function renderHistory(){
+  if(!history.length){ $('#historyBox').style.display='none'; return; }
+  $('#historyBox').style.display='block';
+  $('#history').innerHTML = history.map(h=>{
+    const time = h.ts.toLocaleTimeString();
+    const safe = h.txt.replace(/</g,'&lt;');
+    return `<div class="gz-history-item"><span class="ts">${time}</span><span class="txt">${safe}</span><button class="gz-btn gz-btn-secondary" onclick="copyText(${JSON.stringify(h.txt)})">${t('copy')}</button></div>`;
+  }).join('');
+}
+
+function switchCam(){ facing = facing==='environment'?'user':'environment'; if(stream) startCam(); }
+
+function clearAll(){ history.length=0; $('#result').style.display='none'; renderHistory(); setStatus(t('statusIdle')); }
+
+function renderCamControls(active){
+  $('#camControls').innerHTML = active
+    ? `<button class="gz-btn" onclick="stopCam()">${t('stopCam')}</button>
+       <button class="gz-btn gz-btn-secondary" onclick="switchCam()">${t('switchCam')}</button>
+       <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`
+    : `<button class="gz-btn" onclick="startCam()">${t('startCam')}</button>
+       <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+}
+
+$('#fileInput').addEventListener('change', e=>{ scanImage(e.target.files[0]); e.target.value=''; });
+$('#uploadLabel').htmlFor = 'fileInput';
+$('#uploadLabel').textContent = t('uploadLabel');
+$('#resultLabel').textContent = t('resultLabel');
+$('#historyTitle').textContent = t('historyTitle');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText($('#resultValue').dataset.raw||'')">${t('copy')}</button>`;
+
+if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+  setStatus(t('statusDenied').replace('denied.','unavailable on this browser.'),'warn');
+} else {
+  setStatus(t('statusIdle'));
+}
+renderCamControls(false);
+
+// stop camera when leaving
+window.addEventListener('beforeunload', ()=>{ if(stream) stream.getTracks().forEach(tr=>tr.stop()); });
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📶', href:'/fun/wifi-qr-code-generator.html', name:'WiFi QR Gen'},
+    {icon:'🔳', href:'/image/qrcode-generator.html', name:'QR Code Gen'},
+    {icon:'🎨', href:'/text/qrcode-designer.html', name:'QR Designer'},
+    {icon:'📷', href:'/convert/qr-reader.html', name:'Barcode Reader'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
