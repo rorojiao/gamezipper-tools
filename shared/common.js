@@ -3,7 +3,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://sustainable-spies-hormone-framing.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://seller-hydraulic-reflects-without.trycloudflare.com/api/collect';
   var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260614v2';s1.defer=true;document.head.appendChild(s1);
   // adsterra-manager.js removed — zone IDs were placeholders, wasting resources
   // v5.4.2 (2026-06-14): cache buster bumped 20260612a → 20260614b for adsense-auto race-condition fix
@@ -14,7 +14,7 @@
   // which returns 501 with no data). Catches all 1780 subpages that load common.js.
   // Cache v=20260614aa is the first tools-side bump; higher lexicographically than
   // gamezipper.com's v=202606147b so we know it's the new one.
-  var s5=document.createElement('script');s5.src='/gz-analytics.js?v=20260614ac';s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  var s5=document.createElement('script');s5.src='/gz-analytics.js?v=202606159ZR';s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
