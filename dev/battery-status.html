@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Battery Status Monitor - Check Battery Health & Level | GameZipper Tools</title>
+  <meta name="description" content="Free in-browser battery status monitor. See your current battery level, charging state, charging and discharging time, and live updates using the Battery Status API. No app install.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/battery-status.html">
+  <meta property="og:title" content="Battery Status Monitor - Check Battery Health & Level | GameZipper Tools">
+  <meta property="og:description" content="Check your battery level, charging state and time remaining live in your browser via the Battery Status API. Free, no install.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/battery-status.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Battery Status Monitor - Check Battery Health & Level | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606163c"></script>
+<style>
+.battery-wrap{display:flex;gap:28px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.battery-vis{flex:0 0 auto;text-align:center}
+.bat-svg{filter:drop-shadow(0 6px 20px rgba(78,205,196,.2))}
+.bat-pct{font-size:2.6rem;font-weight:900;margin-top:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.bat-status{font-size:.95em;color:var(--text2);margin-top:2px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;flex:1;min-width:260px}
+.stat-cell{background:var(--glass2);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.stat-cell .num{font-size:1.45rem;font-weight:800;color:var(--accent2)}
+.stat-cell .lbl{font-size:.78em;color:var(--text2);margin-top:3px}
+.notice{padding:14px 18px;background:var(--glass);border:1px solid var(--border);border-radius:12px;font-size:.85em;color:var(--text2);line-height:1.55}
+.notice b{color:var(--text)}
+.log{margin-top:14px;max-height:200px;overflow:auto;background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:.78em;font-family:monospace;color:var(--text2)}
+.log div{padding:2px 0;border-bottom:1px solid var(--border)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Battery Status Monitor","description":"Check your battery level, charging state and time remaining live in your browser via the Battery Status API.","url":"https://tools.gamezipper.com/dev/battery-status.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does the battery monitor show?","acceptedAnswer":{"@type":"Answer","text":"It shows your current battery level as a percentage, whether the device is plugged in and charging, and the estimated time until fully charged or until empty, updating live as values change."}},{"@type":"Question","name":"Why does it say battery info is not available?","acceptedAnswer":{"@type":"Answer","text":"The Battery Status API is only available in some browsers (mostly Chromium on desktop and Android). Firefox and Safari removed or never shipped it for privacy reasons. On unsupported browsers the tool shows the supported fallbacks."}},{"@type":"Question","name":"Is my battery data sent anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. The Battery Status API runs entirely in your browser and this page never transmits the data to any server. It is read-only and only visible to you."}},{"@type":"Question","name":"Does this work on iPhone or iPad?","acceptedAnswer":{"@type":"Answer","text":"No. Apple's Safari (iOS and iPadOS) does not support the Battery Status API, so on those devices the native percentage is not exposed to web pages. Use your device's status bar instead."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/battery-status.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/battery-status.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/battery-status.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="output"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Battery Status Monitor',
+    toolDesc: 'Check your device battery level, charging state and time remaining live in your browser using the Battery Status API.',
+    charging: 'Charging',
+    discharging: 'On battery',
+    level: 'Battery level',
+    state: 'Power state',
+    timeFull: 'Time to full',
+    timeEmpty: 'Time to empty',
+    plugged: 'Plugged in',
+    calc: 'calculating…',
+    unknown: 'unknown',
+    refresh: 'Refresh',
+    notSupported: '⚠️ The Battery Status API is not supported in this browser. It works best in Chromium-based browsers (Chrome, Edge, Opera, Brave) on desktop or Android. Firefox and Safari do not expose battery info to web pages.',
+    navFallback: 'You can also see your network connection type below using the Network Information API.',
+    logTitle: 'Live event log',
+    changed: 'changed',
+    hours: 'h',
+    min: 'm',
+    step1: 'Open the page on a Chromium-based browser for full battery data',
+    step2: 'See battery level, charging state and time remaining',
+    step3: 'Plug or unplug the charger to watch values update live',
+    step4: 'Check the event log for a history of changes',
+  },
+  zh: {
+    toolTitle: '电池状态监测器',
+    toolDesc: '使用 Battery Status API 在浏览器中实时查看设备电池电量、充电状态和剩余时间。',
+    charging: '充电中',
+    discharging: '使用电池',
+    level: '电池电量',
+    state: '电源状态',
+    timeFull: '充满时间',
+    timeEmpty: '耗尽时间',
+    plugged: '已接入电源',
+    calc: '计算中…',
+    unknown: '未知',
+    refresh: '刷新',
+    notSupported: '⚠️ 当前浏览器不支持 Battery Status API。该 API 在桌面或 Android 上的 Chromium 内核浏览器（Chrome、Edge、Opera、Brave）中效果最好；Firefox 和 Safari 不向网页开放电池信息。',
+    navFallback: '你还可以在下方使用 Network Information API 查看当前网络连接类型。',
+    logTitle: '实时事件日志',
+    changed: '已变化',
+    hours: '时',
+    min: '分',
+    step1: '在 Chromium 内核浏览器中打开本页以获取完整电池数据',
+    step2: '查看电池电量、充电状态和剩余时间',
+    step3: '插拔充电器即可看到数值实时更新',
+    step4: '查看事件日志了解变化历史',
+  }
+});
+
+const { $, t } = GZ;
+let battery = null;
+let logEntries = [];
+
+function fmtTime(seconds) {
+  if (seconds === Infinity || isNaN(seconds) || seconds <= 0) return t('unknown');
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h} ${t('hours')} ${m} ${t('min')}`;
+  return `${m} ${t('min')}`;
+}
+
+function batterySVG(level, charging) {
+  const w = 120, h = 56, pad = 6, fillW = Math.max(2, (w - pad * 2 - 4) * level);
+  const col = level <= 0.15 ? '#f87171' : level <= 0.3 ? '#fbbf24' : '#4ade80';
+  const bolt = charging ? `<path d="M ${w/2+2} 14 L ${w/2-8} 32 L ${w/2-1} 32 L ${w/2-4} 44 L ${w/2+8} 26 L ${w/2+1} 26 Z" fill="#fff" stroke="#0003" stroke-width="1"/>` : '';
+  return `<svg class="bat-svg" width="${w+10}" height="${h+10}" viewBox="0 0 ${w+10} ${h+10}" aria-hidden="true">
+    <rect x="5" y="8" width="${w}" height="${h}" rx="8" fill="none" stroke="${col}" stroke-width="3"/>
+    <rect x="${5+w+2}" y="${8+h/2-9}" width="5" height="18" rx="2" fill="${col}"/>
+    <rect x="${5+pad}" y="${8+pad}" width="${fillW}" height="${h-pad*2}" rx="4" fill="${col}"/>
+    ${bolt}
+  </svg>`;
+}
+
+function logChange(field, val) {
+  const now = new Date().toLocaleTimeString();
+  logEntries.unshift(`<div>[${now}] <b style="color:var(--accent)">${field}</b> ${t('changed')}: ${val}</div>`);
+  if (logEntries.length > 30) logEntries.pop();
+  const logEl = $('#event-log');
+  if (logEl) logEl.innerHTML = logEntries.join('');
+}
+
+function render() {
+  if (!battery) return;
+  const level = battery.level;
+  const pct = Math.round(level * 100);
+  const charging = battery.charging;
+  const stateTxt = charging ? `🔌 ${t('charging')}` : `🔋 ${t('discharging')}`;
+  const timeFull = battery.chargingTime;
+  const timeEmpty = battery.dischargingTime;
+
+  $('#output').innerHTML = `
+    <div class="battery-wrap">
+      <div class="battery-vis">
+        ${batterySVG(level, charging)}
+        <div class="bat-pct">${pct}%</div>
+        <div class="bat-status">${stateTxt}</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-cell"><div class="num">${pct}%</div><div class="lbl">${t('level')}</div></div>
+        <div class="stat-cell"><div class="num" style="font-size:1.05em">${stateTxt}</div><div class="lbl">${t('state')}</div></div>
+        <div class="stat-cell"><div class="num" style="font-size:1.15em">${charging ? fmtTime(timeFull) : '—'}</div><div class="lbl">${t('timeFull')}</div></div>
+        <div class="stat-cell"><div class="num" style="font-size:1.15em">${!charging ? fmtTime(timeEmpty) : '—'}</div><div class="lbl">${t('timeEmpty')}</div></div>
+      </div>
+    </div>
+    <div class="log" id="event-log">${logEntries.join('')}</div>`;
+}
+
+function renderUnsupported() {
+  let navInfo = '';
+  if (navigator.connection) {
+    const c = navigator.connection;
+    const et = c.effectiveType || t('unknown');
+    navInfo = `<div class="notice" style="margin-top:10px">📶 ${t('navFallback')}<br><b>effectiveType:</b> ${et} · <b>downlink:</b> ${c.downlink ?? '?'} Mbps · <b>rtt:</b> ${c.rtt ?? '?'} ms</div>`;
+  }
+  $('#output').innerHTML = `
+    <div class="notice">${t('notSupported')}</div>
+    <div class="notice" style="margin-top:10px"><b>navigator.getBattery:</b> ${typeof navigator.getBattery}<br><b>userAgent:</b> ${navigator.userAgent.slice(0,120)}</div>
+    ${navInfo}`;
+}
+
+function attach(bat) {
+  battery = bat;
+  ['chargingchange','levelchange','chargingtimechange','dischargingtimechange'].forEach(ev => {
+    bat.addEventListener(ev, () => {
+      const field = ev.replace('change','');
+      let val = bat[field.replace('chargingtime','chargingTime').replace('dischargingtime','dischargingTime')] ?? bat.level;
+      logChange(field, typeof val === 'number' && field === 'level' ? Math.round(val*100)+'%' : val);
+      render();
+    });
+  });
+  logChange('init', Math.round(bat.level*100)+'%');
+  render();
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="location.reload()">🔄 ${t('refresh')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⚡', href:'/dev/web-vitals.html', name:'Web Vitals'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'📶', href:'/dev/speed-test.html', name:'Speed Test'},
+    {icon:'🆔', href:'/dev/user-agent-parser.html', name:'User Agent Parser'},
+  ]
+});
+
+if (navigator.getBattery) {
+  navigator.getBattery().then(attach).catch(renderUnsupported);
+} else {
+  renderUnsupported();
+}
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
