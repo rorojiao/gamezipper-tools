@@ -4,10 +4,10 @@
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
   window.GZ_COLLECT_ENDPOINT = 'https://binary-thou-celebrate-valves.trycloudflare.com/api/collect';
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260614v2';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260617z1';s1.defer=true;document.head.appendChild(s1);
   // adsterra-manager.js removed — zone IDs were placeholders, wasting resources
   // v5.4.2 (2026-06-14): cache buster bumped 20260612a → 20260614b for adsense-auto race-condition fix
-  var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260614b';s4.defer=true;document.head.appendChild(s4);
+  var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260617z2';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
   // 2026-06-14: load gz-analytics.js globally so every tools page fires page_view
   // with vid/sid (replaces per-page new Image().src hits to site-analytics.gamezipper.com
