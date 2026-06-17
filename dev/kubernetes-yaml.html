@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Kubernetes YAML Validator & Formatter (k8s Manifest) | GameZipper Tools</title>
+  <meta name="description" content="Free online Kubernetes YAML validator and formatter. Validate k8s manifests, format YAML, check apiVersion, kind, metadata, labels and common fields. Browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/kubernetes-yaml.html">
+  <meta property="og:title" content="Kubernetes YAML Validator & Formatter | GameZipper Tools">
+  <meta property="og:description" content="Validate and format Kubernetes manifests. Check apiVersion, kind, metadata, labels and common fields. Free, private, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/kubernetes-yaml.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Kubernetes YAML Validator & Formatter | GameZipper Tools">
+<meta name="twitter:description" content="Validate and format Kubernetes manifests. Check apiVersion, kind, metadata and labels. Free, private, browser-based.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260617a"></script>
+<style>
+.k8s-wrap{max-width:1100px;margin:0 auto}
+#k8s-in{width:100%;min-height:230px;font-family:monospace;font-size:.88rem;resize:vertical;box-sizing:border-box}
+#k8s-out{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.88rem}
+.k8s-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.k8s-grid{grid-template-columns:1fr}}
+#k8s-status{margin-top:8px;font-size:.85rem}
+.k8s-docs{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.k8s-doc{display:flex;gap:8px;align-items:flex-start;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:.8rem}
+.k8s-doc .badge{flex-shrink:0;background:var(--gz-accent);color:#08121a;border-radius:6px;padding:2px 8px;font-weight:700;font-size:.72rem;text-transform:uppercase}
+.k8s-doc.ok .badge{background:var(--gz-success,#1ec97b)}
+.k8s-doc.warn .badge{background:#e5454a;color:#fff}
+.k8s-doc .msg{flex:1;color:var(--text2)}
+.k8s-doc .msg b{color:var(--text1)}
+.k8s-hint{font-size:.78rem;color:var(--text2);margin:6px 2px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kubernetes YAML Validator & Formatter","description":"Validate and format Kubernetes manifests. Check apiVersion, kind, metadata, labels and common fields. Free, private, browser-only.","url":"https://tools.gamezipper.com/dev/kubernetes-yaml.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does this upload my Kubernetes YAML to a server?","acceptedAnswer":{"@type":"Answer","text":"No. Parsing, validation and formatting all run in your browser using JavaScript. Your manifest is never sent to any server, so it is safe to paste production configs."}},{"@type":"Question","name":"Can it validate multiple documents in one file?","acceptedAnswer":{"@type":"Answer","text":"Yes. A single YAML file separated by --- is split into multiple documents and each one is validated independently, just like kubectl and Helm process them."}},{"@type":"Question","name":"What does the validator check?","acceptedAnswer":{"@type":"Answer","text":"It verifies that YAML syntax is valid, that each document has the required k8s top-level fields (apiVersion, kind, metadata), that metadata.name or metadata.generateName is present, that names follow Kubernetes naming rules, and that known resource kinds have the fields kubectl expects. It is a lint pass, not a full admission webhook."}},{"@type":"Question","name":"Can it apply or deploy to my cluster?","acceptedAnswer":{"@type":"Answer","text":"No. This is a static validator and formatter only. It never connects to a cluster and cannot run kubectl apply. Use it to catch mistakes before you deploy."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/kubernetes-yaml.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/kubernetes-yaml.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/kubernetes-yaml.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="k8s-wrap">
+      <div class="gz-toolbar" style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="gz-btn" id-lang="btnValidate" onclick="doValidate()"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnFormat" onclick="doFormat()"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnMinify" onclick="doMinify()"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnExample" onclick="loadExample()"></button>
+        <button class="gz-btn" onclick="copyText($('#k8s-out').textContent)" id-lang="btnCopy"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnClear" onclick="clearAll()"></button>
+      </div>
+      <div class="k8s-grid">
+        <div>
+          <label id-lang="lbIn" style="font-size:.82rem;color:var(--text2)"></label>
+          <textarea id="k8s-in" id-lang="ph" spellcheck="false"></textarea>
+        </div>
+        <div>
+          <label id-lang="lbOut" style="font-size:.82rem;color:var(--text2)"></label>
+          <div class="gz-output" id="k8s-out"></div>
+        </div>
+      </div>
+      <div id="k8s-status"></div>
+      <div class="k8s-docs" id="k8s-docs"></div>
+      <p class="k8s-hint" id-lang="hint"></p>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Kubernetes YAML Validator & Formatter',
+    toolDesc: 'Validate, format and lint Kubernetes manifests. Multi-document aware, checks apiVersion, kind, metadata and naming — private and browser-only.',
+    ph: 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: …',
+    lbIn: 'Input YAML', lbOut: 'Formatted output',
+    btnValidate: 'Validate', btnFormat: 'Format', btnMinify: 'Minify',
+    btnExample: 'Example', btnCopy: 'Copy', btnClear: 'Clear',
+    hint: 'Static linter, not a full admission webhook. Always review before applying to production.',
+    okValid: '✓ Valid YAML — {n} document(s) parsed',
+    invalid: '✗ Invalid YAML',
+    step1: 'Paste your Kubernetes manifest YAML (Deployment, Service, Pod, etc.)',
+    step2: 'Click Validate to lint required fields and naming',
+    step3: 'Click Format to clean up indentation, or Minify to compact it',
+    step4: 'Copy the formatted output back into your repo',
+  },
+  zh: {
+    toolTitle: 'Kubernetes YAML 验证与格式化',
+    toolDesc: '验证、格式化和检查 Kubernetes 清单文件。支持多文档，检查 apiVersion、kind、metadata 和命名规范 — 私密、浏览器本地运行。',
+    ph: 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: …',
+    lbIn: '输入 YAML', lbOut: '格式化输出',
+    btnValidate: '验证', btnFormat: '格式化', btnMinify: '压缩',
+    btnExample: '示例', btnCopy: '复制', btnClear: '清空',
+    hint: '静态检查工具，不是完整的准入 Webhook。应用到生产环境前请务必人工复核。',
+    okValid: '✓ YAML 有效 — 解析了 {n} 个文档',
+    invalid: '✗ YAML 无效',
+    step1: '粘贴你的 Kubernetes 清单 YAML（Deployment、Service、Pod 等）',
+    step2: '点击「验证」检查必填字段和命名规范',
+    step3: '点击「格式化」清理缩进，或「压缩」紧凑输出',
+    step4: '将格式化结果复制回你的代码仓库',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// ---- Minimal YAML parser/formatter (subset: mappings, sequences, scalars, --- docs) ----
+// We implement a small indent-based YAML reader sufficient for k8s manifests.
+
+function tokenizeLines(raw){
+  return raw.replace(/\r/g,'').split('\n');
+}
+
+function parseYAML(raw){
+  // Returns array of docs (JS objects). Throws on error.
+  const text = raw.replace(/\r/g, '');
+  const docChunks = text.split(/^---[ \t]*$/m);
+  const docs = [];
+  for(const chunk of docChunks){
+    if(!chunk.trim()) continue;
+    docs.push(parseDoc(chunk));
+  }
+  return docs.length ? docs : [{}];
+}
+
+// ---- Tokenize into logical lines (strip comments, keep indentation) ----
+function yamlLines(chunk){
+  const out = [];
+  const raw = chunk.split('\n');
+  for(let i = 0; i < raw.length; i++){
+    let line = raw[i];
+    // strip trailing comment (not inside quotes)
+    const ci = findComment(line);
+    if(ci >= 0) line = line.slice(0, ci);
+    if(!line.trim()) continue;
+    const indent = line.match(/^[ \t]*/)[0].replace(/\t/g, '  ').length;
+    out.push({ indent, text: line.replace(/^[ \t]+/, ''), lineNo: i + 1 });
+  }
+  return out;
+}
+
+function findComment(line){
+  let inS = false, inD = false;
+  for(let i = 0; i < line.length; i++){
+    const c = line[i];
+    if(c === '"' && !inS) inD = !inD;
+    else if(c === "'" && !inD) inS = !inS;
+    else if(c === '#' && !inS && !inD && (i === 0 || /\s/.test(line[i-1]))) return i;
+  }
+  return -1;
+}
+
+// ---- Recursive descent parser ----
+// parseNode(lines, pos, indent): parses a block (mapping or sequence) at the given indent.
+// returns { value, next }
+function parseNode(lines, pos, indent){
+  if(pos >= lines.length) return { value: null, next: pos };
+  if(lines[pos].text.startsWith('- ' ) || lines[pos].text === '-'){
+    return parseSequence(lines, pos, indent);
+  }
+  return parseMapping(lines, pos, indent);
+}
+
+function parseMapping(lines, pos, indent){
+  const obj = {};
+  let i = pos;
+  while(i < lines.length){
+    const ln = lines[i];
+    if(ln.indent < indent) break;
+    if(ln.indent > indent){
+      throw new Error('Unexpected indentation at line ' + ln.lineNo);
+    }
+    // Must be a "key: value" or "key:"
+    const colon = findColon(ln.text);
+    if(colon < 0){
+      throw new Error('Expected "key: value" at line ' + ln.lineNo);
+    }
+    const key = unquote(ln.text.slice(0, colon).trim());
+    const rest = ln.text.slice(colon + 1).trim();
+    i++;
+    if(rest === '' || rest === '|' || rest === '>'){
+      // nested block or null
+      if(i < lines.length && lines[i].indent > indent){
+        const child = parseNode(lines, i, lines[i].indent);
+        obj[key] = rest === '|' || rest === '>' ? blockScalar(rest, child.value) : child.value;
+        i = child.next;
+      } else {
+        obj[key] = null;
+      }
+    } else {
+      obj[key] = parseScalar(rest);
+    }
+  }
+  return { value: obj, next: i };
+}
+
+function parseSequence(lines, pos, indent){
+  const arr = [];
+  let i = pos;
+  while(i < lines.length){
+    const ln = lines[i];
+    if(ln.indent < indent) break;
+    if(ln.indent > indent){
+      throw new Error('Unexpected indentation in sequence at line ' + ln.lineNo);
+    }
+    if(!ln.text.startsWith('-')) break;
+    // content after "- "
+    const afterDash = ln.text.startsWith('- ') ? ln.text.slice(2) : '';
+    if(afterDash === ''){
+      // nested block on following lines
+      i++;
+      if(i < lines.length && lines[i].indent > indent){
+        const child = parseNode(lines, i, lines[i].indent);
+        arr.push(child.value);
+        i = child.next;
+      } else {
+        arr.push(null);
+      }
+      continue;
+    }
+    // Check if item content is "key: value" (inline mapping start)
+    const colon = findColon(afterDash);
+    if(colon >= 0){
+      // The dash + 2 spaces defines the item's mapping indent
+      const itemIndent = indent + 2;
+      // Build a synthetic line list: the first key on this line, then continuation lines
+      const firstKey = unquote(afterDash.slice(0, colon).trim());
+      const firstVal = afterDash.slice(colon + 1).trim();
+      const itemObj = {};
+      i++;
+      if(firstVal === ''){
+        if(i < lines.length && lines[i].indent >= itemIndent && !lines[i].text.startsWith('-')){
+          const child = parseNode(lines, i, lines[i].indent > itemIndent ? lines[i].indent : itemIndent);
+          itemObj[firstKey] = child.value;
+          i = child.next;
+        } else {
+          itemObj[firstKey] = null;
+        }
+      } else {
+        itemObj[firstKey] = parseScalar(firstVal);
+      }
+      // parse remaining keys at itemIndent (they are at column itemIndent)
+      while(i < lines.length && lines[i].indent === itemIndent && !lines[i].text.startsWith('-')){
+        const kln = lines[i];
+        const kc = findColon(kln.text);
+        if(kc < 0) break;
+        const k = unquote(kln.text.slice(0, kc).trim());
+        const v = kln.text.slice(kc + 1).trim();
+        i++;
+        if(v === ''){
+          if(i < lines.length && lines[i].indent > itemIndent){
+            const child = parseNode(lines, i, lines[i].indent);
+            itemObj[k] = child.value;
+            i = child.next;
+          } else {
+            itemObj[k] = null;
+          }
+        } else {
+          itemObj[k] = parseScalar(v);
+        }
+      }
+      arr.push(itemObj);
+    } else {
+      // scalar sequence item
+      arr.push(parseScalar(afterDash));
+      i++;
+    }
+  }
+  return { value: arr, next: i };
+}
+
+function blockScalar(flag, val){ return val == null ? '' : String(val); }
+
+function findColon(text){
+  // find first ": " or trailing ":" not inside quotes/brackets
+  let inS = false, inD = false, depth = 0;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(c === '"' && !inS) inD = !inD;
+    else if(c === "'" && !inD) inS = !inS;
+    else if(!inS && !inD){
+      if(c === '[' || c === '{') depth++;
+      else if(c === ']' || c === '}') depth--;
+      else if(c === ':' && depth === 0 && (i === text.length - 1 || text[i+1] === ' ' || text[i+1] === '\t')){
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+function unquote(s){
+  if((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))){
+    return s.slice(1, -1);
+  }
+  return s;
+}
+
+function parseScalar(s){
+  if(s === '') return '';
+  if(s === '~' || s === 'null' || s === 'Null' || s === 'NULL') return null;
+  if(s === 'true' || s === 'True' || s === 'TRUE') return true;
+  if(s === 'false' || s === 'False' || s === 'FALSE') return false;
+  if((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))){
+    return s.slice(1, -1);
+  }
+  // inline flow array [a, b]
+  if(s.startsWith('[') && s.endsWith(']')){
+    const inner = s.slice(1, -1).trim();
+    if(!inner) return [];
+    return inner.split(',').map(x => parseScalar(x.trim()));
+  }
+  // inline flow map {a: b}
+  if(s.startsWith('{') && s.endsWith('}')){
+    const inner = s.slice(1, -1).trim();
+    const obj = {};
+    if(inner){
+      inner.split(',').forEach(pair => {
+        const ci = findColon(pair);
+        if(ci > 0) obj[unquote(pair.slice(0,ci).trim())] = parseScalar(pair.slice(ci+1).trim());
+      });
+    }
+    return obj;
+  }
+  if(/^-?\d+$/.test(s)) return parseInt(s, 10);
+  if(/^-?\d+\.\d+$/.test(s)) return parseFloat(s);
+  if(/^-?\d+(?:\.\d+)?e-?\d+$/i.test(s)) return parseFloat(s);
+  return s;
+}
+
+function parseDoc(chunk){
+  const lines = yamlLines(chunk);
+  if(lines.length === 0) return {};
+  const res = parseNode(lines, 0, lines[0].indent);
+  return res.value || {};
+}
+
+function stringifyYAML(value, indent = 0, opts = {}){
+  const pad = '  '.repeat(indent);
+  if(value === null) return 'null';
+  if(typeof value === 'string') return quoteIfNeeded(value);
+  if(typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if(Array.isArray(value)){
+    if(value.length === 0) return '[]';
+    return value.map(item => {
+      if(item !== null && typeof item === 'object' && !Array.isArray(item)){
+        const keys = Object.keys(item);
+        if(keys.length === 0) return pad + '- {}';
+        // Render the object at child indent, then replace the leading pad of the
+        // first line with "- " so the dash sits at the parent indent.
+        const childStr = mappingToString(item, indent + 1);
+        const parts = childStr.split('\n');
+        const firstLine = parts[0].replace(/^ +/, '');
+        const restLines = parts.slice(1);
+        return pad + '- ' + firstLine + (restLines.length ? '\n' + restLines.join('\n') : '');
+      }
+      return pad + '- ' + stringifyYAML(item, indent + 1);
+    }).join('\n');
+  }
+  if(typeof value === 'object'){
+    return mappingToString(value, indent);
+  }
+  return String(value);
+}
+
+// Render a mapping at the given indent. Complex values go on a new line.
+function mappingToString(value, indent){
+  const pad = '  '.repeat(indent);
+  const keys = Object.keys(value);
+  if(keys.length === 0) return '{}';
+  return keys.map(k => {
+    const v = value[k];
+    if(v !== null && typeof v === 'object'){
+      if(Array.isArray(v) && v.length === 0) return pad + k + ': []';
+      if(!Array.isArray(v) && Object.keys(v).length === 0) return pad + k + ': {}';
+      return pad + k + ':\n' + stringifyYAML(v, indent + 1);
+    }
+    return pad + k + ': ' + stringifyYAML(v, indent + 1);
+  }).join('\n');
+}
+
+
+function quoteIfNeeded(s){
+  if(s === '') return '""';
+  // quote if it looks like a number/bool/null or contains special chars
+  if(/^(true|false|null|~|\d)/.test(s) || /[:#\[\]{}&*!|>'"%@`]/.test(s) || /\s/.test(s)){
+    return JSON.stringify(s);
+  }
+  return s;
+}
+
+// ---- k8s lint ----
+const NAME_RE = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+const NAME_RE_DNS = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/;
+const KNOWN_KINDS = {
+  Pod: { req:['spec'] },
+  Deployment: { req:['spec'], apiGroup:'apps' },
+  StatefulSet: { req:['spec'], apiGroup:'apps' },
+  DaemonSet: { req:['spec'], apiGroup:'apps' },
+  ReplicaSet: { req:['spec'], apiGroup:'apps' },
+  Job: { req:['spec'], apiGroup:'batch' },
+  CronJob: { req:['spec'], apiGroup:'batch' },
+  Service: { req:['spec'] },
+  ConfigMap: {},
+  Secret: { type:'Opaque' },
+  Namespace: {},
+  Node: {},
+  PersistentVolume: { req:['spec'] },
+  PersistentVolumeClaim: { req:['spec'] },
+  Ingress: { req:['spec'], apiGroup:'networking.k8s.io' },
+  ServiceAccount: {},
+  Role: { req:['rules'] },
+  RoleBinding: { req:['roleRef','subjects'] },
+  ClusterRole: { req:['rules'] },
+  ClusterRoleBinding: { req:['roleRef','subjects'] },
+  HorizontalPodAutoscaler: { req:['spec'], apiGroup:'autoscaling' },
+  NetworkPolicy: { req:['spec'] },
+};
+
+function lintDoc(doc){
+  const issues = []; // {level:'ok'|'warn', msg}
+  if(doc === null || typeof doc !== 'object' || Array.isArray(doc)){
+    issues.push({ level:'warn', kind:'Structure', msg:'Document is not a mapping' });
+    return issues;
+  }
+  const apiVersion = doc.apiVersion;
+  const kind = doc.kind;
+  const meta = doc.metadata || {};
+  if(!apiVersion) issues.push({ level:'warn', kind:'apiVersion', msg:'Missing <b>apiVersion</b> field' });
+  if(!kind) issues.push({ level:'warn', kind:'kind', msg:'Missing <b>kind</b> field' });
+  if(!doc.metadata) issues.push({ level:'warn', kind:'metadata', msg:'Missing <b>metadata</b> field' });
+
+  if(kind && KNOWN_KINDS[kind]){
+    const spec = KNOWN_KINDS[kind];
+    (spec.req || []).forEach(f => {
+      if(doc[f] === undefined){
+        issues.push({ level:'warn', kind:kind, msg:`Resource <b>${kind}</b> is usually expected to have <b>${f}</b>` });
+      }
+    });
+    // apiGroup check
+    if(spec.apiGroup && apiVersion && !apiVersion.startsWith(spec.apiGroup.split('.')[0])){
+      // apps -> apiVersion should start with apps/
+      const grp = spec.apiGroup;
+      if(!apiVersion.includes(grp) && !apiVersion.startsWith(grp + '/')){
+        issues.push({ level:'warn', kind:'apiVersion', msg:`<b>${kind}</b> typically uses apiVersion in the <b>${grp}</b> group (e.g. <b>${grp}/v1</b>)` });
+      }
+    }
+  }
+
+  // metadata.name / generateName
+  if(doc.metadata){
+    if(meta.name === undefined && meta.generateName === undefined){
+      issues.push({ level:'warn', kind:'metadata.name', msg:'metadata should define <b>name</b> or <b>generateName</b>' });
+    } else if(meta.name !== undefined){
+      if(typeof meta.name !== 'string' || !NAME_RE.test(meta.name)){
+        issues.push({ level:'warn', kind:'metadata.name', msg:`metadata.name "<b>${meta.name}</b>" should match DNS label rules (lowercase, alphanum and -, ≤63 chars)` });
+      }
+    }
+    if(meta.namespace !== undefined && typeof meta.namespace === 'string' && !NAME_RE.test(meta.namespace)){
+      issues.push({ level:'warn', kind:'metadata.namespace', msg:`metadata.namespace "<b>${meta.namespace}</b>" should be a valid DNS label` });
+    }
+  }
+
+  // labels / annotations type check
+  if(meta.labels !== undefined && (typeof meta.labels !== 'object' || Array.isArray(meta.labels))){
+    issues.push({ level:'warn', kind:'metadata.labels', msg:'metadata.labels should be a mapping (key: value), not a list or scalar' });
+  }
+  if(meta.annotations !== undefined && (typeof meta.annotations !== 'object' || Array.isArray(meta.annotations))){
+    issues.push({ level:'warn', kind:'metadata.annotations', msg:'metadata.annotations should be a mapping' });
+  }
+
+  // Secret type
+  if(kind === 'Secret'){
+    if(doc.type && typeof doc.type === 'string' && !/^(Opaque|kubernetes.io\/.+|service-account\.token|Opaque)$/.test(doc.type) && !doc.type.includes('kubernetes.io')){
+      issues.push({ level:'warn', kind:'Secret.type', msg:`Unknown Secret type "<b>${doc.type}</b>" (common: Opaque, kubernetes.io/tls, kubernetes.io/dockerconfigjson)` });
+    }
+  }
+
+  if(issues.length === 0){
+    issues.push({ level:'ok', kind:kind || 'doc', msg:'All required fields and naming checks passed' });
+  }
+  return issues;
+}
+
+function doValidate(){
+  const raw = $('#k8s-in').value;
+  if(!raw.trim()){
+    $('#k8s-status').innerHTML = '';
+    $('#k8s-docs').innerHTML = '';
+    $('#k8s-out').textContent = '';
+    return;
+  }
+  let docs;
+  try {
+    docs = parseYAML(raw);
+    $('#k8s-status').innerHTML = `<span style="color:var(--gz-success,#1ec97b)">${t('okValid').replace('{n}', docs.length)}</span>`;
+    // also show formatted version
+    $('#k8s-out').textContent = docs.map(d => stringifyYAML(d)).join('\n---\n');
+    // render per-doc lint
+    const lang = GZI18n.getLang();
+    const html = docs.map((doc, idx) => {
+      const issues = lintDoc(doc);
+      return issues.map(is => {
+        const level = is.level === 'ok' ? 'ok' : 'warn';
+        const label = is.level === 'ok' ? (lang==='zh'?'通过':'OK') : (lang==='zh'?'注意':'CHECK');
+        return `<div class="k8s-doc ${level}"><span class="badge">${label}</span><span class="msg"><b>Doc ${idx+1}${is.kind?` · ${is.kind}`:''}:</b> ${is.msg}</span></div>`;
+      }).join('');
+    }).join('');
+    $('#k8s-docs').innerHTML = html;
+  } catch(e){
+    $('#k8s-status').innerHTML = `<span style="color:#e5454a">${t('invalid')}: ${escapeHtml(e.message)}</span>`;
+    $('#k8s-docs').innerHTML = '';
+  }
+}
+
+function doFormat(){
+  const raw = $('#k8s-in').value;
+  if(!raw.trim()) return;
+  try {
+    const docs = parseYAML(raw);
+    const out = docs.map(d => stringifyYAML(d)).join('\n---\n');
+    $('#k8s-out').textContent = out;
+    $('#k8s-status').innerHTML = `<span style="color:var(--gz-success,#1ec97b)">${t('okValid').replace('{n}', docs.length)}</span>`;
+  } catch(e){
+    $('#k8s-status').innerHTML = `<span style="color:#e5454a">${t('invalid')}: ${escapeHtml(e.message)}</span>`;
+  }
+}
+
+function doMinify(){
+  const raw = $('#k8s-in').value;
+  if(!raw.trim()) return;
+  try {
+    const docs = parseYAML(raw);
+    // Minify: JSON-style flow mapping, one line per doc
+    const out = docs.map(d => flowYAML(d)).join('\n---\n');
+    $('#k8s-out').textContent = out;
+    $('#k8s-status').innerHTML = `<span style="color:var(--gz-success,#1ec97b)">${t('okValid').replace('{n}', docs.length)}</span>`;
+  } catch(e){
+    $('#k8s-status').innerHTML = `<span style="color:#e5454a">${t('invalid')}: ${escapeHtml(e.message)}</span>`;
+  }
+}
+
+function flowYAML(value){
+  if(value === null) return 'null';
+  if(typeof value === 'string') return quoteIfNeeded(value);
+  if(typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if(Array.isArray(value)) return '[' + value.map(flowYAML).join(',') + ']';
+  if(typeof value === 'object'){
+    const keys = Object.keys(value);
+    if(keys.length === 0) return '{}';
+    return '{' + keys.map(k => k + ':' + flowYAML(value[k])).join(',') + '}';
+  }
+  return String(value);
+}
+
+function loadExample(){
+  $('#k8s-in').value = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+spec:
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 80
+`;
+  doValidate();
+}
+
+function clearAll(){
+  $('#k8s-in').value = ''; $('#k8s-out').textContent = ''; $('#k8s-status').innerHTML = ''; $('#k8s-docs').innerHTML = '';
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setLangAttrs(){
+  document.querySelectorAll('[id-lang]').forEach(el => {
+    const key = el.getAttribute('id-lang');
+    const txt = t(key);
+    if(!txt) return;
+    if(el.tagName === 'TEXTAREA') el.placeholder = txt;
+    else if(el.tagName === 'BUTTON') el.textContent = txt;
+    else if(el.tagName === 'LABEL') el.textContent = txt;
+  });
+}
+setLangAttrs();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/dev/yaml.html', name:'YAML Formatter'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+    {icon:'🐳', href:'/dev/docker-compose.html', name:'Docker Compose'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

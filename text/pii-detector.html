@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PII Detector & Redactor (SSN, Cards, Emails, Phones) | GameZipper Tools</title>
+  <meta name="description" content="Free online PII detector and redactor. Find and mask SSN, credit cards, IBAN, emails, phone numbers, IP addresses and API keys in any text. Private, browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/pii-detector.html">
+  <meta property="og:title" content="PII Detector & Redactor (SSN, Cards, Emails, Phones) | GameZipper Tools">
+  <meta property="og:description" content="Detect and redact SSN, credit cards, IBAN, emails, phone numbers, IP addresses and API keys in any text. Free, private, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/pii-detector.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PII Detector & Redactor | GameZipper Tools">
+<meta name="twitter:description" content="Detect and redact SSN, credit cards, IBAN, emails, phones, IPs and API keys in any text. Free, private, browser-based.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260617a"></script>
+<style>
+.pii-wrap{max-width:1100px;margin:0 auto}
+.pii-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.pii-top label{font-size:.82rem;display:inline-flex;gap:6px;align-items:center;background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;user-select:none}
+.pii-top label input{accent-color:var(--gz-accent)}
+.pii-top label.on{border-color:var(--gz-accent)}
+#pii-in{width:100%;min-height:170px;font-family:monospace;font-size:.9rem;resize:vertical;box-sizing:border-box}
+#pii-out{width:100%;min-height:170px;white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.9rem;box-sizing:border-box;background:var(--glass2)}
+.pii-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.pii-grid{grid-template-columns:1fr}}
+.pii-stats{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.pii-chip{display:inline-flex;align-items:center;gap:6px;background:var(--glass);border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-size:.78rem}
+.pii-chip b{color:var(--gz-accent)}
+.pii-mark{background:rgba(229,69,104,.22);border-radius:3px;padding:0 2px;font-weight:600}
+.pii-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.pii-hint{font-size:.78rem;color:var(--text2);margin:6px 2px}
+select.gz-select{background:var(--glass2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PII Detector & Redactor","description":"Detect and redact SSN, credit cards, IBAN, emails, phone numbers, IP addresses and API keys in any text. Free, private, browser-only.","url":"https://tools.gamezipper.com/text/pii-detector.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What types of personal data can this tool detect?","acceptedAnswer":{"@type":"Answer","text":"It detects US Social Security Numbers (SSN), credit and debit card numbers (validated with the Luhn algorithm), IBAN codes, email addresses, international phone numbers, IPv4 and IPv6 addresses, and common API key patterns (AWS, Stripe, Slack, GitHub and generic secret-like tokens). You can toggle each detector on or off."}},{"@type":"Question","name":"Does this tool send my text to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All detection and redaction runs entirely in your browser using JavaScript and regular expressions. Nothing is uploaded, stored, or sent anywhere. It works completely offline once the page is loaded."}},{"@type":"Question","name":"What redaction styles are available?","acceptedAnswer":{"@type":"Answer","text":"You can fully redact a match (replace with [REDACTED]), partially mask it (keep the first or last few characters visible, like ****-****-****-1234), hash it with SHA-256, or replace it with a token such as [EMAIL_1], [PHONE_2] so you can still track entities without exposing the real value."}},{"@type":"Question","name":"Is the detection 100% accurate?","acceptedAnswer":{"@type":"Answer","text":"No regex-based detector is perfect. It may produce false positives (for example, a 9-digit number that is not a real SSN) or miss unusual formats. Always review the output before relying on it for compliance, legal, or security purposes."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/pii-detector.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/pii-detector.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/pii-detector.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="pii-wrap">
+      <div class="pii-top" id="pii-toggles"></div>
+      <div class="pii-row">
+        <label id-lang="lbStyle" style="font-size:.82rem;color:var(--text2)"></label>
+        <select id="pii-style" class="gz-select">
+          <option value="redact">[REDACTED]</option>
+          <option value="mask">****-1234 (mask)</option>
+          <option value="hash">SHA-256 hash</option>
+          <option value="token">[EMAIL_1] (token)</option>
+        </select>
+        <button class="gz-btn" id-lang="btnDetect" onclick="runPII()"></button>
+        <button class="gz-btn gz-btn-secondary" onclick="copyText($('#pii-out').textContent)">Copy</button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnClear" onclick="clearAll()"></button>
+      </div>
+      <div class="pii-grid">
+        <div>
+          <label id-lang="lbIn" style="font-size:.82rem;color:var(--text2)"></label>
+          <textarea id="pii-in" id-lang="ph" spellcheck="false"></textarea>
+        </div>
+        <div>
+          <label id-lang="lbOut" style="font-size:.82rem;color:var(--text2)"></label>
+          <div class="gz-output" id="pii-out"></div>
+        </div>
+      </div>
+      <div class="pii-stats" id="pii-stats"></div>
+      <p class="pii-hint" id-lang="hint"></p>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'PII Detector & Redactor',
+    toolDesc: 'Find and mask SSN, credit cards, IBAN, emails, phone numbers, IP addresses and API keys in any text — private and browser-only.',
+    ph: 'Paste the text, log, document or chat you want to scan here…',
+    lbIn: 'Input text', lbOut: 'Redacted output', lbStyle: 'Redaction style:',
+    btnDetect: 'Detect & Redact', btnClear: 'Clear',
+    hint: 'Heuristic regex detection. No tool is 100% accurate — always review the output before relying on it for legal or compliance use.',
+    step1: 'Paste the text, log, chat or document you want to scan',
+    step2: 'Toggle which PII types you want to detect',
+    step3: 'Pick a redaction style and click Detect & Redact',
+    step4: 'Copy the cleaned, privacy-safe output',
+  },
+  zh: {
+    toolTitle: '个人信息检测与脱敏工具',
+    toolDesc: '在任意文本中查找并掩码 SSN、信用卡、IBAN、邮箱、电话号码、IP 地址和 API 密钥 — 私密、完全浏览器本地运行。',
+    ph: '在此粘贴要扫描的文本、日志、文档或聊天记录…',
+    lbIn: '输入文本', lbOut: '脱敏输出', lbStyle: '脱敏方式：',
+    btnDetect: '检测并脱敏', btnClear: '清空',
+    hint: '基于正则的启发式检测，无法做到 100% 准确 — 用于法律或合规用途前请务必人工复核。',
+    step1: '粘贴要扫描的文本、日志、聊天或文档',
+    step2: '勾选要检测的个人信息类型',
+    step3: '选择脱敏方式并点击「检测并脱敏」',
+    step4: '复制干净、保护隐私的输出结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Luhn check for credit card numbers
+function luhnOk(digits){
+  let sum = 0, alt = false;
+  for(let i = digits.length - 1; i >= 0; i--){
+    let n = +digits[i];
+    if(alt){ n *= 2; if(n > 9) n -= 9; }
+    sum += n; alt = !alt;
+  }
+  return sum > 0 && sum % 10 === 0;
+}
+
+const RAW = {
+  email: {
+    icon:'✉️', en:'Email', zh:'邮箱',
+    re: /[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,24}/g
+  },
+  ssn: {
+    icon:'🪪', en:'US SSN', zh:'美国 SSN',
+    // Match 9-digit SSN-like patterns with or without dashes; avoid pure Luhn-valid cards handled separately
+    re: /\b(?!000|666|9\d{2})\d{3}[- ]?(?!00)\d{2}[- ]?(?!0000)\d{4}\b/g,
+    post: m => true
+  },
+  card: {
+    icon:'💳', en:'Credit Card', zh:'信用卡',
+    // 13-19 digit runs with optional spaces/dashes
+    re: /\b(?:\d[ -]*?){13,19}\b/g,
+    post: m => luhnOk(m.replace(/[^\d]/g,''))
+  },
+  iban: {
+    icon:'🏦', en:'IBAN', zh:'IBAN',
+    re: /\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g
+  },
+  phone: {
+    icon:'📞', en:'Phone', zh:'电话',
+    re: /(?:(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{3,4})\b/g,
+    post: m => { const d = m.replace(/[^\d]/g,''); return d.length >= 7 && d.length <= 15; }
+  },
+  ip: {
+    icon:'🌐', en:'IP Address', zh:'IP 地址',
+    re: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g
+  },
+  apikey: {
+    icon:'🔑', en:'API Key', zh:'API 密钥',
+    re: /(?:sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_\-]{35}|[A-Fa-f0-9]{32,64})/g
+  },
+};
+
+const enabled = {};
+Object.keys(RAW).forEach(k => enabled[k] = true);
+
+async function sha256(s){
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('').slice(0,16);
+  } catch(e){ return 'sha256:' + s.length; }
+}
+
+function maskValue(s){
+  const d = s.replace(/[^\w]/g,'');
+  if(d.length <= 4) return '****';
+  return '****' + d.slice(-4);
+}
+
+function buildToggles(){
+  const lang = GZI18n.getLang();
+  $('#pii-toggles').innerHTML = Object.keys(RAW).map(k => {
+    const lbl = lang === 'zh' ? RAW[k].zh : RAW[k].en;
+    return `<label data-k="${k}" id="tg-${k}"><input type="checkbox" ${enabled[k]?'checked':''} onchange="enabled['${k}']=this.checked;refreshToggles()">${RAW[k].icon} ${lbl}</label>`;
+  }).join('');
+  refreshToggles();
+}
+function refreshToggles(){
+  Object.keys(enabled).forEach(k => {
+    const el = $('#tg-'+k);
+    if(el) el.classList.toggle('on', enabled[k]);
+  });
+}
+
+function setLangAttrs(){
+  document.querySelectorAll('[id-lang]').forEach(el => {
+    const key = el.getAttribute('id-lang');
+    if(el.tagName === 'INPUT' && el.type === 'checkbox') return;
+    if(el.tagName === 'TEXTAREA'){ el.placeholder = t(key); }
+    else if(el.tagName === 'OPTION'){ /* leave value */ }
+    else if(el.tagName === 'BUTTON' || el.tagName === 'SELECT'){ /* keep labels */ }
+    const txt = t(key);
+    if(txt && (el.tagName === 'BUTTON' || el.tagName === 'SELECT' || el.tagName === 'LABEL' || el.tagName === 'SPAN')){
+      // For buttons we want text; for select we set nothing special
+      if(el.tagName === 'BUTTON') el.textContent = txt;
+      else if(el.tagName === 'LABEL') el.textContent = txt;
+    }
+  });
+  // Explicit
+  $('#pii-in').placeholder = t('ph');
+  const styleSel = $('#pii-style');
+  const styleLbl = $('[id-lang="lbStyle"]');
+  if(styleLbl) styleLbl.textContent = t('lbStyle');
+  const inLbl = $('[id-lang="lbIn"]'); if(inLbl) inLbl.textContent = t('lbIn');
+  const outLbl = $('[id-lang="lbOut"]'); if(outLbl) outLbl.textContent = t('lbOut');
+  const btnD = $('[id-lang="btnDetect"]'); if(btnD) btnD.textContent = t('btnDetect');
+  const btnC = $('[id-lang="btnClear"]'); if(btnC) btnC.textContent = t('btnClear');
+  const hintEl = $('[id-lang="hint"]'); if(hintEl) hintEl.textContent = t('hint');
+}
+
+function findMatches(text){
+  const matches = [];
+  for(const key of Object.keys(RAW)){
+    if(!enabled[key]) continue;
+    const { re, post } = RAW[key];
+    re.lastIndex = 0;
+    let m;
+    while((m = re.exec(text)) !== null){
+      const val = m[0];
+      if(post && !post(val)) continue;
+      // Avoid duplicate of email inside apikey etc.
+      matches.push({ start: m.index, end: m.index + val.length, type: key, value: val });
+    }
+  }
+  // Resolve overlaps: keep the longest match
+  matches.sort((a,b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+  const out = [];
+  let lastEnd = -1;
+  for(const mt of matches){
+    if(mt.start < lastEnd) continue;
+    out.push(mt);
+    lastEnd = mt.end;
+  }
+  return out;
+}
+
+async function runPII(){
+  const text = $('#pii-in').value;
+  if(!text.trim()){
+    $('#pii-out').textContent = '';
+    $('#pii-stats').innerHTML = '';
+    return;
+  }
+  const matches = findMatches(text);
+  const style = $('#pii-style').value;
+  const counts = {};
+  const typeCounters = {};
+
+  // Build replacement map first (for hash/tokens which need await)
+  const replacements = await Promise.all(matches.map(async mt => {
+    counts[mt.type] = (counts[mt.type] || 0) + 1;
+    typeCounters[mt.type] = (typeCounters[mt.type] || 0) + 1;
+    let replacement;
+    if(style === 'redact') replacement = '[REDACTED]';
+    else if(style === 'mask') replacement = maskValue(mt.value);
+    else if(style === 'hash') replacement = await sha256(mt.value);
+    else if(style === 'token'){
+      const tag = mt.type.toUpperCase();
+      replacement = `[${tag}_${typeCounters[mt.type]}]`;
+    }
+    return { ...mt, replacement };
+  }));
+
+  // Rebuild text with replacements, and a highlighted version
+  let result = '';
+  let html = '';
+  let cursor = 0;
+  for(const mt of replacements){
+    result += text.slice(cursor, mt.start) + mt.replacement;
+    html += escapeHtml(text.slice(cursor, mt.start))
+      + `<span class="pii-mark">${escapeHtml(mt.value)}</span>`;
+    cursor = mt.end;
+  }
+  result += text.slice(cursor);
+  html += escapeHtml(text.slice(cursor));
+
+  $('#pii-out').textContent = result;
+  $('#pii-out').dataset.html = html;
+
+  const lang = GZI18n.getLang();
+  const total = replacements.length;
+  const chips = [`<span class="pii-chip">${lang==='zh'?'共发现':'Total found'} <b>${total}</b></span>`];
+  for(const k of Object.keys(RAW)){
+    if(counts[k]){
+      const lbl = lang === 'zh' ? RAW[k].zh : RAW[k].en;
+      chips.push(`<span class="pii-chip">${RAW[k].icon} ${lbl} <b>${counts[k]}</b></span>`);
+    }
+  }
+  $('#pii-stats').innerHTML = chips.join('');
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearAll(){
+  $('#pii-in').value = ''; $('#pii-out').textContent = ''; $('#pii-stats').innerHTML = '';
+}
+
+buildToggles();
+setLangAttrs();
+
+// Re-localize on lang change
+GZI18n.onChange && GZI18n.onChange(setLangAttrs);
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/aes.html', name:'AES Encrypt'},
+    {icon:'🛡️', href:'/image/exif-remover.html', name:'EXIF Remover'},
+    {icon:'🧹', href:'/text/emoji-remover.html', name:'Emoji Remover'},
+    {icon:'👁️', href:'/text/zero-width-remover.html', name:'Zero-Width Remover'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

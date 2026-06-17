@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Service Worker Generator (PWA Offline Cache) | GameZipper Tools</title>
+  <meta name="description" content="Free online Service Worker generator. Build a production-ready PWA service worker with offline caching, cache-first, network-first and stale-while-revalidate strategies. Copy or download — browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/service-worker-generator.html">
+  <meta property="og:title" content="Service Worker Generator (PWA Offline Cache) | GameZipper Tools">
+  <meta property="og:description" content="Generate a production-ready PWA service worker with offline caching, cache-first, network-first and stale-while-revalidate strategies. Free, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/service-worker-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Service Worker Generator | GameZipper Tools">
+<meta name="twitter:description" content="Generate a PWA service worker with offline caching strategies. Free, browser-based.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260617a"></script>
+<style>
+.sw-wrap{max-width:1100px;margin:0 auto}
+.sw-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:760px){.sw-form{grid-template-columns:1fr}}
+.sw-field{display:flex;flex-direction:column;gap:4px}
+.sw-field label{font-size:.8rem;color:var(--text2)}
+.sw-field input,.sw-field select,.sw-field textarea{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:inherit;font:inherit;font-size:.9rem}
+.sw-field textarea{min-height:70px;font-family:monospace;resize:vertical}
+.sw-field input[type=checkbox]{width:auto}
+.sw-check{flex-direction:row;align-items:center;gap:8px}
+.sw-check input{accent-color:var(--gz-accent)}
+#sw-out{white-space:pre;font-family:monospace;font-size:.84rem;overflow-x:auto;line-height:1.5}
+.sw-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.sw-strat{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:.82rem;color:var(--text2)}
+.sw-strat select{flex:1}
+.sw-note{font-size:.78rem;color:var(--text2);margin:8px 2px;background:var(--glass2);border-left:3px solid var(--gz-accent);padding:8px 10px;border-radius:6px}
+.kw-str{color:#00d672}.kw-kw{color:#61afef;font-weight:700}.kw-com{color:#7d8590;font-style:italic}.kw-fn{color:#e5b86c}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Service Worker Generator","description":"Generate a production-ready PWA service worker with offline caching strategies. Free, browser-only.","url":"https://tools.gamezipper.com/dev/service-worker-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a service worker?","acceptedAnswer":{"@type":"Answer","text":"A service worker is a script that the browser runs in the background, separate from a web page. It can intercept network requests, cache resources, and let your site work offline or load faster — the foundation of Progressive Web Apps (PWAs)."}},{"@type":"Question","name":"Which caching strategy should I choose?","acceptedAnswer":{"@type":"Answer","text":"Cache-first is best for static assets (images, fonts, CSS/JS bundles) that rarely change. Network-first is best for HTML pages and API calls where fresh content matters but you want an offline fallback. Stale-while-revalidate serves cached content immediately while refreshing in the background — a great default for most assets."}},{"@type":"Question","name":"How do I register the generated service worker?","acceptedAnswer":{"@type":"Answer","text":"Copy the generated registration snippet into your main page JavaScript. It checks for service worker support and then registers sw.js from the root of your site, so it can control the whole scope. The generated code includes a ready-to-paste registration block."}},{"@type":"Question","name":"Is my configuration sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. The service worker code is generated entirely in your browser from the options you pick. Nothing is uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/service-worker-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/service-worker-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/service-worker-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="sw-wrap">
+      <div class="sw-form">
+        <div class="sw-field">
+          <label id-lang="lbCacheName"></label>
+          <input type="text" id="sw-cache-name" value="my-app-v1">
+        </div>
+        <div class="sw-field">
+          <label id-lang="lbPrecache"></label>
+          <textarea id="sw-precache" placeholder="/, /index.html, /styles.css, /app.js">/, /index.html</textarea>
+        </div>
+        <div class="sw-field sw-check">
+          <input type="checkbox" id="sw-skip-wait" checked>
+          <label for="sw-skip-wait" id-lang="lbSkipWait"></label>
+        </div>
+        <div class="sw-field sw-check">
+          <input type="checkbox" id="sw-clients-claim" checked>
+          <label for="sw-clients-claim" id-lang="lbClientsClaim"></label>
+        </div>
+        <div class="sw-field sw-check">
+          <input type="checkbox" id="sw-cleanup" checked>
+          <label for="sw-cleanup" id-lang="lbCleanup"></label>
+        </div>
+        <div class="sw-field sw-check">
+          <input type="checkbox" id="sw-navigate-fallback" checked>
+          <label for="sw-navigate-fallback" id-lang="lbNavFallback"></label>
+        </div>
+      </div>
+
+      <div style="font-size:.82rem;color:var(--text2);margin:8px 0 4px" id-lang="lbStrategies"></div>
+      <div class="sw-strat">
+        <span style="min-width:130px">🖼️ <span id-lang="stImages"></span></span>
+        <select class="gz-select" id="sw-st-images">
+          <option value="cache-first">Cache-first</option>
+          <option value="network-first">Network-first</option>
+          <option value="stale-while-revalidate" selected>Stale-while-revalidate</option>
+          <option value="cache-only">Cache-only</option>
+          <option value="network-only">Network-only</option>
+        </select>
+      </div>
+      <div class="sw-strat">
+        <span style="min-width:130px">📄 <span id-lang="stStatic"></span></span>
+        <select class="gz-select" id="sw-st-static">
+          <option value="cache-first" selected>Cache-first</option>
+          <option value="network-first">Network-first</option>
+          <option value="stale-while-revalidate">Stale-while-revalidate</option>
+        </select>
+      </div>
+      <div class="sw-strat">
+        <span style="min-width:130px">🌐 <span id-lang="stNav"></span></span>
+        <select class="gz-select" id="sw-st-nav">
+          <option value="cache-first">Cache-first</option>
+          <option value="network-first" selected>Network-first</option>
+          <option value="stale-while-revalidate">Stale-while-revalidate</option>
+        </select>
+      </div>
+      <div class="sw-strat">
+        <span style="min-width:130px">🔌 <span id-lang="stApi"></span></span>
+        <select class="gz-select" id="sw-st-api">
+          <option value="cache-first">Cache-first</option>
+          <option value="network-first" selected>Network-first</option>
+          <option value="stale-while-revalidate">Stale-while-revalidate</option>
+          <option value="network-only">Network-only</option>
+        </select>
+      </div>
+
+      <div class="sw-actions">
+        <button class="gz-btn" id-lang="btnGen" onclick="generate()"></button>
+        <button class="gz-btn" onclick="copyText($('#sw-out').textContent)" id-lang="btnCopy"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnDownload" onclick="downloadSW()"></button>
+      </div>
+
+      <div class="gz-output" id="sw-out"></div>
+      <div class="sw-note" id-lang="note"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Service Worker Generator',
+    toolDesc: 'Build a production-ready PWA service worker with precaching, runtime caching and offline fallback. No build step, copy or download — browser-only.',
+    lbCacheName: 'Cache name (version)', lbPrecache: 'Precache URLs (one per line)',
+    lbSkipWait: 'Activate new SW immediately (skipWaiting)',
+    lbClientsClaim: 'Take control of open tabs (clients.claim)',
+    lbCleanup: 'Delete old caches on activate',
+    lbNavFallback: 'Offline navigation fallback to /index.html',
+    lbStrategies: 'Runtime caching strategies by request type',
+    stImages: 'Images', stStatic: 'CSS/JS/Fonts', stNav: 'HTML navigations', stApi: 'API calls',
+    btnGen: 'Generate Service Worker', btnCopy: 'Copy', btnDownload: 'Download sw.js',
+    note: 'Tip: serve sw.js from your site root so it can control the full scope. Bump the cache name version when you ship new precached assets to invalidate the old cache.',
+    step1: 'Set a cache name with a version suffix (e.g. my-app-v1)',
+    step2: 'List the URLs to precache on install (one per line)',
+    step3: 'Pick caching strategies for images, static assets, navigations and API calls',
+    step4: 'Click Generate, then Copy the code or Download sw.js',
+  },
+  zh: {
+    toolTitle: 'Service Worker 生成器',
+    toolDesc: '生成生产可用的 PWA Service Worker，支持预缓存、运行时缓存和离线回退。无需构建，复制或下载即可 — 浏览器本地运行。',
+    lbCacheName: '缓存名称（带版本号）', lbPrecache: '预缓存 URL（每行一个）',
+    lbSkipWait: '立即激活新 SW（skipWaiting）',
+    lbClientsClaim: '接管已打开的标签页（clients.claim）',
+    lbCleanup: '激活时删除旧缓存',
+    lbNavFallback: '离线导航回退到 /index.html',
+    lbStrategies: '按请求类型设置运行时缓存策略',
+    stImages: '图片', stStatic: 'CSS/JS/字体', stNav: 'HTML 导航', stApi: 'API 调用',
+    btnGen: '生成 Service Worker', btnCopy: '复制', btnDownload: '下载 sw.js',
+    note: '提示：将 sw.js 放在站点根目录，以便控制整个作用域。发布新的预缓存资源时，递增缓存名称的版本号以失效旧缓存。',
+    step1: '设置带版本后缀的缓存名称（如 my-app-v1）',
+    step2: '列出安装时预缓存的 URL（每行一个）',
+    step3: '为图片、静态资源、导航和 API 调用选择缓存策略',
+    step4: '点击「生成」，复制代码或「下载 sw.js」',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function generate(){
+  const cacheName = ($('#sw-cache-name').value || 'my-app-v1').trim();
+  const precache = $('#sw-precache').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const skipWait = $('#sw-skip-wait').checked;
+  const clientsClaim = $('#sw-clients-claim').checked;
+  const cleanup = $('#sw-cleanup').checked;
+  const navFallback = $('#sw-navigate-fallback').checked;
+  const stImages = $('#sw-st-images').value;
+  const stStatic = $('#sw-st-static').value;
+  const stNav = $('#sw-st-nav').value;
+  const stApi = $('#sw-st-api').value;
+
+  const precacheArray = precache.map(u => `'${u.replace(/'/g,"\\'")}'`).join(',\n    ');
+
+  const code = `/**
+ * Service Worker generated by tools.gamezipper.com
+ * Cache name: ${cacheName}
+ * Generated: ${new Date().toISOString().slice(0,10)}
+ */
+const CACHE_NAME = '${cacheName}';
+
+const PRECACHE_URLS = [
+    ${precacheArray || "/* add precache URLs here */"}
+];
+
+/* ------------------------------------------------------------------ */
+/* Lifecycle: install + activate                                       */
+/* ------------------------------------------------------------------ */
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then((cache) => cache.addAll(PRECACHE_URLS))
+            ${skipWait ? '.then(() => self.skipWaiting())' : ''}
+            .catch((err) => console.warn('[SW] precache failed:', err))
+    );
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil((async () => {
+        ${cleanup ? `// Delete old caches
+        const keys = await caches.keys();
+        await Promise.all(
+            keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        );` : '// cache cleanup disabled'}
+        ${clientsClaim ? 'await self.clients.claim();' : '// clients.claim disabled'}
+    })());
+});
+
+/* ------------------------------------------------------------------ */
+/* Runtime caching strategies                                          */
+/* ------------------------------------------------------------------ */
+
+${stratFn('cacheFirst', 'Cache-first')}
+${stratFn('networkFirst', 'Network-first')}
+${stratFn('staleWhileRevalidate', 'Stale-while-revalidate')}
+${stratFn('cacheOnly', 'Cache-only')}
+${stratFn('networkOnly', 'Network-only')}
+
+/* ------------------------------------------------------------------ */
+/* Fetch handler                                                       */
+/* ------------------------------------------------------------------ */
+
+self.addEventListener('fetch', (event) => {
+    const req = event.request;
+
+    // Only handle GET
+    if (req.method !== 'GET') return;
+
+    const url = new URL(req.url);
+
+    // Skip cross-origin requests unless explicitly desired
+    if (url.origin !== self.location.origin) return;
+
+    // 1. HTML navigations
+    if (req.mode === 'navigate') {
+        ${navFallback ? `event.respondWith((async () => {
+            try {
+                return await ${stratCall(stNav)}(req);
+            } catch (err) {
+                const cache = await caches.open(CACHE_NAME);
+                return (await cache.match('/index.html')) || Response.error();
+            }
+        })());
+        return;` : `event.respondWith(${stratCall(stNav)}(req));
+        return;`}
+    }
+
+    // 2. Images
+    if (req.destination === 'image') {
+        event.respondWith(${stratCall(stImages)}(req));
+        return;
+    }
+
+    // 3. Static assets: styles, scripts, fonts
+    if (['style', 'script', 'font', 'manifest'].includes(req.destination)) {
+        event.respondWith(${stratCall(stStatic)}(req));
+        return;
+    }
+
+    // 4. API calls (XHR/fetch)
+    if (req.mode === 'cors' || url.pathname.startsWith('/api/')) {
+        event.respondWith(${stratCall(stApi)}(req));
+        return;
+    }
+
+    // 5. Default: try network, fall back to cache
+    event.respondWith(${stratCall(stNav)}(req));
+});
+
+/* ------------------------------------------------------------------ */
+/* Registration snippet (paste in your main page JS)                   */
+/* ------------------------------------------------------------------ */
+/*
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((reg) => console.log('[SW] registered', reg.scope))
+            .catch((err) => console.warn('[SW] registration failed:', err));
+    });
+}
+*/
+`;
+
+  $('#sw-out').innerHTML = highlightJS(code);
+}
+
+function stratFn(name, label){
+  const map = {
+    cacheFirst: `async function cacheFirst(req) {
+    const cached = await caches.match(req);
+    return cached || fetch(req);
+}`,
+    networkFirst: `async function networkFirst(req) {
+    try {
+        const res = await fetch(req);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, res.clone());
+        return res;
+    } catch (err) {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        throw err;
+    }
+}`,
+    staleWhileRevalidate: `async function staleWhileRevalidate(req) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(req);
+    const fetchPromise = fetch(req).then((res) => {
+        if (res && res.status === 200) cache.put(req, res.clone());
+        return res;
+    }).catch(() => cached);
+    return cached || fetchPromise;
+}`,
+    cacheOnly: `async function cacheOnly(req) {
+    return (await caches.match(req)) || Response.error();
+}`,
+    networkOnly: `async function networkOnly(req) {
+    return fetch(req);
+}`,
+  };
+  return map[name] || '';
+}
+
+function stratCall(name){
+  return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function highlightJS(code){
+  // Single-pass tokenizer so inserted span tags are never re-matched.
+  const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tokenRe = /(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`)|\b(const|let|var|function|async|await|return|if|else|try|catch|new|of|in|import|export|from|default|throw|typeof|instanceof|class|extends|while|for|do|switch|case|break|continue)\b|\b(self|caches|event|fetch|Response|URL|URLSearchParams|Request|console|navigator|window|document|Promise|JSON|Object|Array|Math|Date|caches)\b/g;
+  return escaped.replace(tokenRe, (m, com, str, kw, fn) => {
+    if(com) return '<span class="kw-com">'+com+'</span>';
+    if(str) return '<span class="kw-str">'+str+'</span>';
+    if(kw)  return '<span class="kw-kw">'+kw+'</span>';
+    if(fn)  return '<span class="kw-fn">'+fn+'</span>';
+    return m;
+  });
+}
+
+function downloadSW(){
+  const code = $('#sw-out').textContent;
+  const blob = new Blob([code], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'sw.js'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function setLangAttrs(){
+  document.querySelectorAll('[id-lang]').forEach(el => {
+    const key = el.getAttribute('id-lang');
+    const txt = t(key);
+    if(!txt) return;
+    if(el.tagName === 'LABEL') el.textContent = txt;
+    else if(el.tagName === 'SPAN') el.textContent = txt;
+    else if(el.tagName === 'BUTTON') el.textContent = txt;
+  });
+}
+setLangAttrs();
+generate();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📱', href:'/dev/webmanifest.html', name:'PWA Manifest'},
+    {icon:'⚡', href:'/dev/web-vitals.html', name:'Core Web Vitals'},
+    {icon:'🛠️', href:'/dev/htaccess.html', name:'.htaccess Generator'},
+    {icon:'📄', href:'/dev/js-minifier.html', name:'JS Minifier'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
