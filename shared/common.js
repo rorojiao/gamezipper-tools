@@ -5,8 +5,8 @@
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
   window.GZ_COLLECT_ENDPOINT = 'https://sauce-prediction-customized-henry.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
-  var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618v65';sAd.defer=true;document.head.appendChild(sAd);
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260618v65';s1.defer=true;document.head.appendChild(s1);
+  var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260618P0fix';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.2 (2026-06-14): cache buster bumped 20260612a → 20260614b for adsense-auto race-condition fix
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260617z2';s4.defer=true;document.head.appendChild(s4);
@@ -16,7 +16,7 @@
   // which returns 501 with no data). Catches all 1780 subpages that load common.js.
   // Cache v=20260614aa is the first tools-side bump; higher lexicographically than
   // gamezipper.com's v=202606147b so we know it's the new one.
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=202606163b";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=20260618P0fix";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
