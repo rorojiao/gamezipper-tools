@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>3D 模型查看器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在浏览器中直接打开和查看 GLB、GLTF、STL、OBJ 3D 文件。支持轨道控制、线框、网格、灯光和背景切换，文件不上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/3d-model-viewer.html">
+  <meta property="og:title" content="3D 模型查看器">
+  <meta property="og:description" content="在浏览器中直接打开和查看 GLB、GLTF、STL、OBJ 3D 文件。支持轨道控制、线框、网格、灯光和背景切换，文件不上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/3d-model-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="3D 模型查看器">
+  <meta name="twitter:description" content="在浏览器中直接打开和查看 GLB、GLTF、STL、OBJ 3D 文件。支持轨道控制、线框、网格、灯光和背景切换，文件不上传。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606163c"></script>
+<style>
+.viewer-wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.drop-zone{background:var(--gz-bg-alt);border:2px dashed var(--gz-border);border-radius:14px;padding:36px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--gz-accent);background:rgba(78,205,196,.06)}
+.drop-zone .ic{font-size:2.6em;margin-bottom:8px}
+.drop-zone .ttl{font-weight:700;font-size:1.05em}
+.drop-zone .sub{font-size:.85em;opacity:.6;margin-top:6px}
+.canvas-card{background:var(--gz-bg-alt);border:1px solid var(--gz-border);border-radius:14px;overflow:hidden;position:relative}
+#canvas3d{width:100%;height:520px;display:block;background:#0e0e1a}
+#canvas3d.light{background:#e8eef5}
+.canvas-toolbar{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border-top:1px solid var(--gz-border);align-items:center}
+.canvas-toolbar button,.canvas-toolbar label{padding:8px 14px;border-radius:8px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-text);cursor:pointer;font-size:.85em;font-weight:600}
+.canvas-toolbar button.active,.canvas-toolbar input:checked + label{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+.canvas-toolbar .chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.info-bar{display:flex;flex-wrap:wrap;gap:14px;padding:10px 14px;font-size:.82em;opacity:.75;border-top:1px solid var(--gz-border)}
+.info-bar span b{color:var(--gz-accent)}
+.spinner{position:absolute;top:14px;right:14px;color:var(--gz-accent);font-size:.85em;display:none}
+.spinner.show{display:block}
+.err{color:#e74c3c;font-size:.85em;padding:10px 14px;display:none}
+.err.show{display:block}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"3D Model Viewer","description":"Free online 3D model viewer. Open GLB, GLTF, STL and OBJ files in your browser with orbit controls, wireframe, grid, lighting and background options. No upload, fully private.","url": "https://tools.gamezipper.com/zh/dev/3d-model-viewer.html","applicationCategory":"DesignApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which 3D file formats are supported?","acceptedAnswer":{"@type":"Answer","text":"This viewer supports GLB (binary glTF), GLTF (.gltf with embedded or separate resources), STL (binary and ASCII, popular for 3D printing), and OBJ (Wavefront). Files are parsed in the browser using Three.js loaders."}},{"@type":"Question","name":"Is my 3D model uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. Your model is read directly from disk into the browser via the File API and rendered locally with WebGL. Nothing is uploaded, stored, or transmitted anywhere."}},{"@type":"Question","name":"Can I view very large 3D models?","acceptedAnswer":{"@type":"Answer","text":"Performance depends on your device's GPU and memory. Models with tens of millions of polygons may be slow. For large files, reduce polygon count in your 3D editor first."}},{"@type":"Question","name":"Does this viewer need an internet connection?","acceptedAnswer":{"@type":"Answer","text":"It needs to load the Three.js library once from a CDN. After that, opening and viewing local 3D files works offline within the same browser session."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/3d-model-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/3d-model-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/3d-model-viewer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="viewer-wrap">
+      <div class="drop-zone" id="drop">
+        <div class="ic">📦</div>
+        <div class="ttl" id="dzTitle"></div>
+        <div class="sub" id="dzSub"></div>
+        <input type="file" id="fileInput" accept=".glb,.gltf,.stl,.obj" style="display:none">
+      </div>
+      <div class="canvas-card" id="canvasCard" style="display:none">
+        <div style="position:relative">
+          <canvas id="canvas3d"></canvas>
+          <div class="spinner" id="spinner">⏳ <span id="spinTxt"></span></div>
+        </div>
+        <div class="info-bar" id="infoBar"></div>
+        <div class="err" id="errBox"></div>
+        <div class="canvas-toolbar">
+          <button id="btnWire" onclick="toggleWire()"></button>
+          <button id="btnGrid" onclick="toggleGrid()"></button>
+          <button id="btnBg" onclick="toggleBg()"></button>
+          <button id="btnReset" onclick="resetView()"></button>
+          <button id="btnAuto" onclick="toggleAuto()"></button>
+          <span style="flex:1"></span>
+          <span class="chk"><input type="checkbox" id="chkLight" onchange="setLight(this.checked)"><label for="chkLight" id="lblLight"></label></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.137.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.137.0/examples/js/loaders/OBJLoader.js"></script>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: '3D Model Viewer',
+    toolDesc: 'Open and inspect GLB, GLTF, STL and OBJ 3D files right in your browser. Orbit controls, wireframe, grid, lighting and background toggle. Nothing is uploaded.',
+    dzTitle: 'Drop a 3D file here or click to browse',
+    dzSub: 'Supported: .glb · .gltf · .stl · .obj — processed locally in your browser',
+    loading: 'Loading model...',
+    btnWire: 'Wireframe',
+    btnGrid: 'Grid',
+    btnBg: 'Background',
+    btnReset: 'Reset View',
+    btnAuto: 'Auto-rotate',
+    lblLight: 'Bright BG',
+    infoFile: 'File',
+    infoSize: 'Size',
+    infoTris: 'Triangles',
+    infoVerts: 'Vertices',
+    infoMeshes: 'Meshes',
+    errParse: 'Could not parse this file. Make sure it is a valid GLB/GLTF/STL/OBJ.',
+    errLib: '3D library failed to load (no internet?). Please retry.',
+    step1: 'Click the drop zone or drag a .glb / .gltf / .stl / .obj file onto it',
+    step2: 'Wait for the model to load and center automatically in the viewer',
+    step3: 'Drag to orbit, scroll to zoom, right-drag to pan around the model',
+    step4: 'Toggle wireframe, grid, auto-rotate and background using the toolbar',
+  },
+  zh: {
+    toolTitle: '3D 模型查看器',
+    toolDesc: '在浏览器中直接打开和查看 GLB、GLTF、STL、OBJ 3D 文件。支持轨道控制、线框、网格、灯光和背景切换，文件不上传。',
+    dzTitle: '拖入 3D 文件或点击浏览',
+    dzSub: '支持：.glb · .gltf · .stl · .obj — 完全在浏览器本地处理',
+    loading: '正在加载模型...',
+    btnWire: '线框',
+    btnGrid: '网格',
+    btnBg: '背景',
+    btnReset: '重置视角',
+    btnAuto: '自动旋转',
+    lblLight: '亮色背景',
+    infoFile: '文件',
+    infoSize: '大小',
+    infoTris: '三角面',
+    infoVerts: '顶点',
+    infoMeshes: '网格数',
+    errParse: '无法解析此文件，请确认是有效的 GLB/GLTF/STL/OBJ。',
+    errLib: '3D 库加载失败（无网络？），请重试。',
+    step1: '点击拖放区或将 .glb / .gltf / .stl / .obj 文件拖入',
+    step2: '等待模型加载并自动居中显示',
+    step3: '拖拽旋转、滚轮缩放、右键拖拽平移',
+    step4: '使用工具栏切换线框、网格、自动旋转和背景',
+  }
+});
+
+const { $, t } = GZ;
+let scene, camera, renderer, controls, currentModel, gridHelper, autoRotate=false, wireframe=false;
+
+// labels
+$('#dzTitle').textContent = t('dzTitle');
+$('#dzSub').textContent = t('dzSub');
+$('#btnWire').textContent = t('btnWire');
+$('#btnGrid').textContent = t('btnGrid');
+$('#btnBg').textContent = t('btnBg');
+$('#btnReset').textContent = t('btnReset');
+$('#btnAuto').textContent = t('btnAuto');
+$('#lblLight').textContent = t('lblLight');
+
+function err(msg){
+  const e = $('#errBox');
+  e.textContent = msg;
+  e.classList.add('show');
+}
+
+function initThree(){
+  if(scene) return;
+  if(typeof THREE === 'undefined'){ err(t('errLib')); return false; }
+  const canvas = $('#canvas3d');
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, canvas.clientWidth/canvas.clientHeight, 0.1, 1000);
+  camera.position.set(5,4,8);
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  // lights
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x444466, 1.2));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.4); dl.position.set(5,10,7); scene.add(dl);
+  const dl2 = new THREE.DirectionalLight(0xffffff, 0.6); dl2.position.set(-6,3,-5); scene.add(dl2);
+  // grid
+  gridHelper = new THREE.GridHelper(20, 20, 0x4ecdc4, 0x333355);
+  gridHelper.visible = true;
+  scene.add(gridHelper);
+  // controls
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  window.addEventListener('resize', onResize);
+  animate();
+  return true;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(currentModel && autoRotate) currentModel.rotation.y += 0.006;
+  if(controls) controls.update();
+  if(renderer) renderer.render(scene, camera);
+}
+
+function onResize(){
+  const c = $('#canvas3d');
+  if(!c || !renderer) return;
+  camera.aspect = c.clientWidth/c.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(c.clientWidth, c.clientHeight, false);
+}
+
+function clearModel(){
+  if(currentModel){
+    scene.remove(currentModel);
+    currentModel.traverse(o=>{
+      if(o.geometry) o.geometry.dispose();
+      if(o.material){
+        if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose());
+        else o.material.dispose();
+      }
+    });
+    currentModel = null;
+  }
+}
+
+function fitCamera(object){
+  const box = new THREE.Box3().setFromObject(object);
+  if(box.isEmpty()) return;
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * (Math.PI/180);
+  let dist = maxDim / 2 / Math.tan(fov/2);
+  dist *= 1.6;
+  // recenter model on grid
+  object.position.x += (object.position.x - center.x);
+  object.position.z += (object.position.z - center.z);
+  object.position.y -= box.min.y;
+  camera.position.set(dist*0.7, dist*0.55, dist);
+  camera.near = maxDim/100; camera.far = maxDim*100;
+  camera.updateProjectionMatrix();
+  controls.target.set(0, size.y/2, 0);
+  controls.update();
+}
+
+function countStats(object){
+  let tris=0, verts=0, meshes=0;
+  object.traverse(o=>{
+    if(o.isMesh){
+      meshes++;
+      const g = o.geometry;
+      if(g){
+        if(g.index) tris += g.index.count/3;
+        else if(g.attributes.position) tris += g.attributes.position.count/3;
+        if(g.attributes.position) verts += g.attributes.position.count;
+      }
+    }
+  });
+  return {tris:Math.round(tris), verts, meshes};
+}
+
+function applyWire(m){
+  m.traverse(o=>{ if(o.isMesh && o.material){ const mats = Array.isArray(o.material)?o.material:[o.material]; mats.forEach(mt=>{ if('wireframe' in mt) mt.wireframe = m; }); } });
+}
+
+function loadFile(file){
+  $('#errBox').classList.remove('show');
+  $('#canvasCard').style.display = '';
+  if(!initThree()) return;
+  onResize();
+  $('#spinner').classList.add('show');
+  $('#spinTxt').textContent = t('loading');
+  const ext = file.name.split('.').pop().toLowerCase();
+  const url = URL.createObjectURL(file);
+
+  function done(object){
+    clearModel();
+    currentModel = object;
+    scene.add(object);
+    fitCamera(object);
+    if(wireframe) applyWire(true);
+    const st = countStats(object);
+    const bar = $('#infoBar');
+    bar.innerHTML =
+      '<span><b>'+t('infoFile')+':</b> '+file.name+'</span>'+
+      '<span><b>'+t('infoSize')+':</b> '+(file.size/1024).toFixed(1)+' KB</span>'+
+      '<span><b>'+t('infoMeshes')+':</b> '+st.meshes+'</span>'+
+      '<span><b>'+t('infoTris')+':</b> '+st.tris.toLocaleString()+'</span>'+
+      '<span><b>'+t('infoVerts')+':</b> '+st.verts.toLocaleString()+'</span>';
+    $('#spinner').classList.remove('show');
+    URL.revokeObjectURL(url);
+  }
+  function fail(){ $('#spinner').classList.remove('show'); err(t('errParse')); URL.revokeObjectURL(url); }
+
+  setTimeout(()=>{
+    try {
+      if(ext === 'glb' || ext === 'gltf'){
+        const loader = new THREE.GLTFLoader();
+        loader.load(url, gltf => done(gltf.scene), undefined, fail);
+      } else if(ext === 'stl'){
+        const loader = new THREE.STLLoader();
+        loader.load(url, geo => {
+          const mat = new THREE.MeshStandardMaterial({color:0x9fd8d2, metalness:0.1, roughness:0.6, flatShading:false});
+          const mesh = new THREE.Mesh(geo, mat);
+          done(mesh);
+        }, undefined, fail);
+      } else if(ext === 'obj'){
+        const loader = new THREE.OBJLoader();
+        loader.load(url, obj => {
+          obj.traverse(o=>{ if(o.isMesh){ o.material = new THREE.MeshStandardMaterial({color:0x9fd8d2, metalness:0.1, roughness:0.6}); } });
+          done(obj);
+        }, undefined, fail);
+      } else { fail(); }
+    } catch(e){ console.error(e); fail(); }
+  }, 50);
+}
+
+// Toolbar
+function toggleWire(){
+  wireframe = !wireframe;
+  $('#btnWire').classList.toggle('active', wireframe);
+  if(currentModel) applyWire(wireframe);
+}
+function toggleGrid(){
+  gridHelper.visible = !gridHelper.visible;
+  $('#btnGrid').classList.toggle('active', gridHelper.visible);
+}
+function toggleBg(){
+  const c = $('#canvas3d');
+  const dark = c.style.background === '' || c.style.background.includes('1a');
+  c.style.background = dark ? '#e8eef5' : '#0e0e1a';
+  $('#btnBg').classList.toggle('active', !dark);
+}
+function resetView(){
+  if(currentModel){ fitCamera(currentModel); }
+}
+function toggleAuto(){
+  autoRotate = !autoRotate;
+  $('#btnAuto').classList.toggle('active', autoRotate);
+}
+function setLight(on){
+  const c = $('#canvas3d');
+  c.style.background = on ? '#e8eef5' : '#0e0e1a';
+}
+
+// file input + drag/drop
+const drop = $('#drop');
+const fileInput = $('#fileInput');
+drop.addEventListener('click', ()=>fileInput.click());
+fileInput.addEventListener('change', e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); });
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('drag'); }));
+drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/svg-editor.html', name:'SVG Editor'},
+    {icon:'🖼️', href:'/image/svg-to-png.html', name:'SVG to PNG'},
+    {icon:'✏️', href:'/image/drawing-pad.html', name:'Drawing Pad'},
+    {icon:'🧊', href:'/css-tools/css-3d-transform.html', name:'CSS 3D Transform'},
+    {icon:'📐', href:'/image/pixel-art-editor.html', name:'Pixel Art Editor'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

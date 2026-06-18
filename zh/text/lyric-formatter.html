@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>歌词格式化 / 歌词编辑器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="一键清理杂乱歌词，自动标注主歌/副歌/桥段，按行统计音节数，导出 Markdown 或纯文本。完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/lyric-formatter.html">
+  <meta property="og:title" content="歌词格式化 / 歌词编辑器">
+  <meta property="og:description" content="一键清理杂乱歌词，自动标注主歌/副歌/桥段，按行统计音节数，导出 Markdown 或纯文本。完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/lyric-formatter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="歌词格式化 / 歌词编辑器">
+<meta name="twitter:description" content="一键清理杂乱歌词，自动标注主歌/副歌/桥段，按行统计音节数，导出 Markdown 或纯文本。完全在浏览器中运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606163c"></script>
+<style>
+.lf-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;align-items:center}
+.lf-options{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;font-size:.9em}
+.lf-options label{display:flex;align-items:center;gap:6px}
+.lf-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:10px 0}
+.lf-stat{background:var(--gz-bg,#1a1a2e);border:1px solid var(--gz-border,#333);border-radius:10px;padding:10px;text-align:center}
+.lf-stat .num{font-size:1.5em;font-weight:800;color:var(--gz-accent,#4ecdc4)}
+.lf-stat .lbl{font-size:.78em;opacity:.7;text-transform:uppercase;letter-spacing:.04em}
+#output{white-space:pre-wrap;font-family:inherit;line-height:1.7;padding:14px}
+.lf-verse{color:#fff;font-weight:700;text-transform:uppercase;font-size:.85em;letter-spacing:.08em;opacity:.85;margin-top:6px}
+.lf-tag{display:inline-block;padding:1px 8px;border-radius:10px;background:rgba(78,205,196,.18);color:var(--gz-accent);font-size:.7em;margin-right:6px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Lyric Formatter & Song Lyric Editor","description":"Free online lyric formatter and song lyric editor. Clean up messy lyrics, auto-tag verse/chorus/bridge sections, count syllables per line, transpose the song key and export clean Markdown or text.","url": "https://tools.gamezipper.com/zh/text/lyric-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does the Lyric Formatter do?", "acceptedAnswer": {"@type": "Answer", "text": "It cleans up messy song lyrics: trims extra whitespace, removes duplicate blank lines, capitalizes lines, and optionally auto-tags sections like Verse, Chorus, Bridge and Hook based on common patterns in your text."}}, {"@type": "Question", "name": "Can it count syllables per line?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Toggle 'Show syllable count' and every line will display an estimated syllable count next to it — perfect for matching melody, rap flow or song rhythm."}}, {"@type": "Question", "name": "Does it work for non-English lyrics?", "acceptedAnswer": {"@type": "Answer", "text": "Syllable estimation works best for English and Latin-script text. The cleaner, capitalizer and section tagger work for any language since they only manipulate whitespace and structure."}}, {"@type": "Question", "name": "Is my song lyric data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All formatting happens locally in your browser. Your lyrics are never uploaded to a server or stored anywhere."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/lyric-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/lyric-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/lyric-formatter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="lf-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder=""></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div class="lf-stats" id="stats"></div>
+    <div class="lf-options" id="options"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Lyric Formatter & Song Lyric Editor',
+    toolDesc: 'Clean up messy lyrics, auto-tag verse/chorus/bridge sections, count syllables per line, transpose key and export clean Markdown or text. All in your browser.',
+    lblIn: 'Your lyrics (raw)',
+    lblOut: 'Formatted lyrics',
+    format: 'Format',
+    markdown: '⬇ Markdown',
+    copy: 'Copy',
+    clear: 'Clear',
+    example: 'Example',
+    optTrim: 'Trim whitespace',
+    optCaps: 'Capitalize lines',
+    optTag: 'Auto-tag sections',
+    optSyll: 'Show syllable count',
+    optStrip: 'Strip existing tags',
+    optNumbers: 'Number lines',
+    statLines: 'Lines',
+    statWords: 'Words',
+    statSyll: 'Syllables',
+    statSections: 'Sections',
+    statChars: 'Characters',
+    placeholder: 'Paste your raw lyrics here…',
+    step1: 'Paste your raw or messy lyrics in the input box',
+    step2: 'Toggle options — auto-tag sections, count syllables, capitalize',
+    step3: 'Click Format to clean and structure your lyrics',
+    step4: 'Use Copy or Markdown to export the formatted result',
+  },
+  zh: {
+    toolTitle: '歌词格式化 / 歌词编辑器',
+    toolDesc: '一键清理杂乱歌词，自动标注主歌/副歌/桥段，按行统计音节数，导出 Markdown 或纯文本。完全在浏览器中运行。',
+    lblIn: '原始歌词',
+    lblOut: '格式化后的歌词',
+    format: '格式化',
+    markdown: '⬇ Markdown',
+    copy: '复制',
+    clear: '清空',
+    example: '示例',
+    optTrim: '去除空白',
+    optCaps: '首字母大写',
+    optTag: '自动标注段落',
+    optSyll: '显示音节数',
+    optStrip: '移除已有标签',
+    optNumbers: '添加行号',
+    statLines: '行数',
+    statWords: '词数',
+    statSyll: '音节',
+    statSections: '段落',
+    statChars: '字符数',
+    placeholder: '在此粘贴原始歌词…',
+    step1: '在输入框粘贴原始或杂乱的歌词',
+    step2: '勾选选项 — 自动段落标注、音节统计、首字母大写',
+    step3: '点击「格式化」清理并结构化歌词',
+    step4: '使用「复制」或「Markdown」导出结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Section header patterns (case-insensitive)
+const SECTION_RE = /^\s*\[?\s*(verse|chorus|bridge|hook|pre[-\s]?chorus|intro|outro|refrain|interlude|solo|instrumental|v\d|c\d|b\d)(?:\s*\d+)?\s*:?\s*\]?\s*$/i;
+
+// Syllable estimate: count vowel groups per word (English)
+function countSyllables(line){
+  if(!line.trim()) return 0;
+  let total=0;
+  const words=line.toLowerCase().match(/[a-zà-ÿ]+/g) || [];
+  for(const w of words){
+    const groups=w.match(/[aeiouyà-ÿ]+/g);
+    let n = groups ? groups.length : 1;
+    // subtract silent trailing 'e' unless word ends in 'le' after consonant
+    if(w.endsWith('e') && n>1 && !/le$/.test(w)) n--;
+    if(w.endsWith('es') && n>1) n--;
+    if(n<1) n=1;
+    // small heuristic for cn/jp etc.
+    total+=n;
+  }
+  // for CJK: count characters as syllables
+  const cjk=(line.match(/[\u3400-\u9fff]/g)||[]).length;
+  total+=cjk;
+  return total;
+}
+
+function capitalize(s){
+  if(!s) return s;
+  // title-case-ish: first non-space char uppercase
+  return s.replace(/^(\s*)([a-zà-ÿ])/i, (m,sp,c)=> sp + c.toUpperCase());
+}
+
+function formatLyrics(){
+  let txt=$('#input').value;
+  if(!txt.trim()){ $('#output').innerHTML=''; updateStats(''); return; }
+  const opts=readOpts();
+  let lines=txt.replace(/\r/g,'').split('\n');
+
+  // Strip existing tags ONLY when strip is on AND tag is off.
+  // (When tag is on, the detector reads the original section header first.)
+  if(opts.strip && !opts.tag){
+    lines=lines.map(l=> l.replace(SECTION_RE,'').trimEnd());
+  }
+
+  if(opts.trim){
+    lines=lines.map(l=>l.trim());
+    // collapse 2+ blank lines to 1
+    const out=[];
+    let prevBlank=false;
+    for(const l of lines){
+      const blank=!l.trim();
+      if(blank && prevBlank) continue;
+      out.push(l);
+      prevBlank=blank;
+    }
+    lines=out;
+  }
+
+  if(opts.caps){
+    lines=lines.map(l=> capitalize(l));
+  }
+
+  if(opts.tag){
+    // auto-detect likely section starts: a short line whose first word is a known
+    // section keyword (case-insensitive), e.g. "VERSE 1", "Chorus", "[Bridge]"
+    const tagged=[];
+    let sectionCount=0;
+    let lineIdx=0;
+    const known=['verse','chorus','bridge','hook','pre-chorus','prechorus','intro','outro','refrain','interlude','solo','instrumental'];
+    for(let i=0;i<lines.length;i++){
+      const l=lines[i];
+      const trimmed=l.trim();
+      const firstWord=(trimmed.toLowerCase().split(/[\s\[:\]]/)[0]||'').trim();
+      const isLikelySection =
+        trimmed.length>0 && trimmed.length<32 &&
+        known.includes(firstWord) &&
+        // sanity: not a real lyric line that just happens to start with "verse" etc.
+        trimmed.split(/\s+/).length <= 4;
+      if(isLikelySection){
+        // Normalize to "Verse 1", "Chorus" etc.
+        const nice = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+        tagged.push({type:'section', text: nice});
+        sectionCount++;
+      } else {
+        tagged.push({type:'line', text:l, idx:lineIdx++});
+      }
+    }
+    renderTagged(tagged, opts);
+    let plain='';
+    let syllTotal=0;
+    let wordCount=0, charCount=0;
+    let lineCounter=0;
+    for(const item of tagged){
+      if(item.type==='section'){
+        plain += `[${item.text.toUpperCase()}]\n`;
+      } else {
+        let l=item.text;
+        if(opts.numbers){ lineCounter++; l = `${lineCounter}. ${l}`; }
+        if(opts.syll){
+          const sc=countSyllables(l);
+          syllTotal+=sc;
+          plain += `${l}  ·${sc}\n`;
+        } else {
+          syllTotal+=countSyllables(l);
+          plain += l+'\n';
+        }
+        wordCount += (l.match(/\S+/g)||[]).length;
+        charCount += l.length;
+      }
+    }
+    updateStats(plain, {lines: tagged.filter(x=>x.type==='line').length, words: wordCount, syll: syllTotal, sections: sectionCount, chars: charCount});
+    return;
+  }
+
+  // No tagging path
+  let plain='';
+  let syllTotal=0, wordCount=0, charCount=0, lineCount=0;
+  let html='';
+  lines.forEach((l,i)=>{
+    let display=l;
+    if(opts.numbers){ lineCount++; display=`${lineCount}. ${l}`; }
+    if(opts.syll){
+      const sc=countSyllables(l);
+      syllTotal+=sc;
+      html += `<div>${escapeHtml(display)} <span class="lf-tag">${sc}</span></div>`;
+      plain += `${display}  ·${sc}\n`;
+    } else {
+      syllTotal+=countSyllables(l);
+      html += `<div>${escapeHtml(display)}</div>`;
+      plain += display+'\n';
+    }
+    wordCount += (l.match(/\S+/g)||[]).length;
+    charCount += l.length;
+  });
+  $('#output').innerHTML = html || '<div style="opacity:.5">(empty)</div>';
+  updateStats(plain, {lines: lines.filter(l=>l.trim()).length, words: wordCount, syll: syllTotal, sections: 0, chars: charCount});
+}
+
+function renderTagged(items, opts){
+  let html='';
+  let plain='';
+  let lineCounter=0;
+  for(const it of items){
+    if(it.type==='section'){
+      html += `<div class="lf-verse">${escapeHtml(it.text.toUpperCase())}</div>`;
+      plain += `[${it.text.toUpperCase()}]\n`;
+    } else {
+      let l=it.text;
+      if(opts.numbers){ lineCounter++; l=`${lineCounter}. ${l}`; }
+      if(opts.syll){
+        const sc=countSyllables(l);
+        html += `<div>${escapeHtml(l)} <span class="lf-tag">${sc}</span></div>`;
+        plain += `${l}  ·${sc}\n`;
+      } else {
+        html += `<div>${escapeHtml(l)}</div>`;
+        plain += l+'\n';
+      }
+    }
+  }
+  $('#output').innerHTML=html || '<div style="opacity:.5">(empty)</div>';
+}
+
+function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+const OPT_DEFS=[
+  {id:'optTrim', key:'trim', def:true},
+  {id:'optCaps', key:'caps', def:true},
+  {id:'optTag',  key:'tag',  def:true},
+  {id:'optSyll', key:'syll', def:false},
+  {id:'optStrip',key:'strip',def:false},
+  {id:'optNumbers',key:'numbers',def:false},
+];
+
+function readOpts(){
+  const o={};
+  OPT_DEFS.forEach(d=>{ o[d.key] = $('#'+d.id).checked; });
+  return o;
+}
+
+function buildOptions(){
+  const lang=GZI18n.getLang();
+  $('#options').innerHTML = OPT_DEFS.map(d=>`
+    <label><input type="checkbox" id="${d.id}" ${d.def?'checked':''}> ${t(d.id)}</label>
+  `).join('');
+  OPT_DEFS.forEach(d=>{
+    $('#'+d.id).onchange=formatLyrics;
+  });
+}
+
+function updateStats(plain, extra){
+  const txt = typeof plain==='string' ? plain : $('#input').value;
+  const lines=txt.split('\n').filter(l=>l.trim()).length;
+  const words=(txt.match(/\S+/g)||[]).length;
+  const chars=txt.length;
+  const syll=(txt.split('\n').reduce((a,l)=>a+countSyllables(l),0));
+  $('#stats').innerHTML=`
+    <div class="lf-stat"><div class="num">${extra?.lines ?? lines}</div><div class="lbl">${t('statLines')}</div></div>
+    <div class="lf-stat"><div class="num">${extra?.words ?? words}</div><div class="lbl">${t('statWords')}</div></div>
+    <div class="lf-stat"><div class="num">${extra?.syll ?? syll}</div><div class="lbl">${t('statSyll')}</div></div>
+    <div class="lf-stat"><div class="num">${extra?.sections ?? 0}</div><div class="lbl">${t('statSections')}</div></div>
+    <div class="lf-stat"><div class="num">${extra?.chars ?? chars}</div><div class="lbl">${t('statChars')}</div></div>
+  `;
+}
+
+function exportMarkdown(){
+  const txt=$('#output').innerText;
+  if(!txt.trim()) return;
+  // Convert our [SECTION] markers to Markdown headings if present
+  const md=txt.split('\n').map(l=>{
+    const m=l.match(/^\[(.+)\]$/);
+    return m? `### ${m[1]}` : l;
+  }).join('\n');
+  const blob=new Blob([md],{type:'text/markdown'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='lyrics.md';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+
+function loadExample(){
+  const ex = `VERSE 1
+   Walking down an empty street
+the rain is falling  on my feet
+      I can't remember where to go
+
+CHORUS
+        cause you are the rhythm of my heart
+You are the light when it gets dark
+   Take me back to the very start
+
+Verse 2
+every moment feels the same
+playing this lonely guessing game`;
+  $('#input').value=ex;
+  formatLyrics();
+}
+
+function doClear(){ $('#input').value=''; $('#output').innerHTML=''; updateStats(''); }
+
+$('#input').placeholder=t('placeholder');
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="formatLyrics()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').innerText)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportMarkdown()">${t('markdown')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>
+`;
+
+document.querySelector('label#lbl-in').textContent = t('lblIn');
+document.querySelector('label#lbl-out').textContent = t('lblOut');
+
+$('#input').addEventListener('input', formatLyrics);
+buildOptions();
+formatLyrics();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📝', href:'/text/word-counter.html', name:'Word Counter'},
+    {icon:'🔤', href:'/text/case-converter.html', name:'Case Converter'},
+    {icon:'📖', href:'/text/poetry-generator.html', name:'Poetry Generator'},
+    {icon:'✍️', href:'/text/handwriting.html', name:'Handwriting'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

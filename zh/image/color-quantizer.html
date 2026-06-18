@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片色彩量化与色调分离工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="减少图片中的颜色数量。支持自定义调色板量化、色调分离、灰度或抖动 — 私密、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/color-quantizer.html">
+  <meta property="og:title" content="图片色彩量化与色调分离工具">
+  <meta property="og:description" content="减少图片中的颜色数量。支持自定义调色板量化、色调分离、灰度或抖动 — 私密、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/color-quantizer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片色彩量化与色调分离工具">
+<meta name="twitter:description" content="减少图片中的颜色数量。支持自定义调色板量化、色调分离、灰度或抖动 — 私密、浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260617a"></script>
+<style>
+.cq-wrap{max-width:1100px;margin:0 auto}
+.cq-drop{border:2px dashed var(--border);border-radius:14px;padding:26px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.cq-drop.drag{border-color:var(--gz-accent);background:rgba(78,205,196,.07)}
+.cq-drop p{margin:6px 0;color:var(--text2);font-size:.9rem}
+.cq-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:760px){.cq-grid{grid-template-columns:1fr}}
+.cq-canvas-wrap{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:8px;text-align:center;min-height:200px;display:flex;align-items:center;justify-content:center}
+.cq-canvas-wrap canvas{max-width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+.cq-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:10px 0}
+.cq-controls label{font-size:.82rem;color:var(--text2);display:flex;flex-direction:column;gap:4px}
+.cq-controls input[type=range]{width:160px;accent-color:var(--gz-accent)}
+.cq-controls input[type=number]{width:90px;background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:6px;color:inherit;font:inherit}
+.cq-palette{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.cq-sw{width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,.18)}
+.cq-stats{font-size:.8rem;color:var(--text2);margin-top:8px}
+.cq-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Color Quantizer & Posterize Tool","description":"Reduce the number of colors in any image. Posterize, retro palettes and dithering. Free, private, browser-only.","url": "https://tools.gamezipper.com/zh/image/color-quantizer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does color quantization do?","acceptedAnswer":{"@type":"Answer","text":"Color quantization reduces the number of distinct colors in an image to a fixed palette size (for example 8, 16 or 256 colors). Each pixel is remapped to the nearest palette color. The result looks like a posterized or retro image and the file size usually drops."}},{"@type":"Question","name":"Is my image uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. The image is loaded directly into your browser memory and processed on a local canvas using JavaScript. Nothing is ever uploaded."}},{"@type":"Question","name":"What is dithering and when should I use it?","acceptedAnswer":{"@type":"Answer","text":"Dithering (Floyd-Steinberg) spreads the color error to neighboring pixels, which creates a dotted/grainy pattern that tricks the eye into seeing more colors than the palette actually has. Use it when you want a small palette (2-32 colors) to still look smooth instead of banded."}},{"@type":"Question","name":"What is the difference between quantize and posterize?","acceptedAnswer":{"@type":"Answer","text":"Posterize reduces color depth per channel (for example each RGB channel to 4 levels), giving up to 64 fixed colors. Quantize picks a custom palette of N best-fit colors from the actual image. This tool offers both modes."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/color-quantizer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/color-quantizer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/color-quantizer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="cq-wrap">
+      <div class="cq-drop" id="cq-drop">
+        <p>📁 <span id-lang="dropText"></span></p>
+        <p style="font-size:.78rem"><span id-lang="dropHint"></span></p>
+        <input type="file" id="cq-file" accept="image/*" hidden>
+      </div>
+      <div class="cq-controls">
+        <label><span id-lang="lbMode"></span>
+          <select id="cq-mode" class="gz-select">
+            <option value="quantize" id-lang="optQuant"></option>
+            <option value="posterize" id-lang="optPoster"></option>
+            <option value="grayscale" id-lang="optGray"></option>
+          </select>
+        </label>
+        <label><span id-lang="lbColors"></span> <span id="cq-colors-val" style="font-weight:700;color:var(--gz-accent)"></span>
+          <input type="range" id="cq-colors" min="2" max="256" value="16" step="1">
+        </label>
+        <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="cq-dither"> <span id-lang="lbDither"></span></label>
+        <button class="gz-btn" id-lang="btnApply" onclick="applyEffect()"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnReset" onclick="resetOriginal()"></button>
+      </div>
+      <div class="cq-grid">
+        <div>
+          <div style="font-size:.82rem;color:var(--text2);margin-bottom:4px" id-lang="lbOriginal"></div>
+          <div class="cq-canvas-wrap"><canvas id="cq-canvas-orig"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:.82rem;color:var(--text2);margin-bottom:4px" id-lang="lbResult"></div>
+          <div class="cq-canvas-wrap"><canvas id="cq-canvas-out"></canvas></div>
+        </div>
+      </div>
+      <div class="cq-stats" id="cq-stats"></div>
+      <div class="cq-palette" id="cq-palette"></div>
+      <div class="cq-btns">
+        <button class="gz-btn" id-lang="btnDownload" onclick="downloadPNG()"></button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Color Quantizer & Posterize',
+    toolDesc: 'Reduce the number of colors in any image. Quantize to a custom palette, posterize, grayscale or dither — private and browser-only.',
+    dropText: 'Click to upload or drag & drop an image',
+    dropHint: 'PNG, JPG, WebP, GIF — processed locally, never uploaded',
+    lbMode: 'Mode', lbColors: 'Colors', lbDither: 'Floyd–Steinberg dithering',
+    optQuant: 'Quantize (custom palette)', optPoster: 'Posterize (per channel)', optGray: 'Grayscale',
+    lbOriginal: 'Original', lbResult: 'Result',
+    btnApply: 'Apply', btnReset: 'Reset', btnDownload: 'Download PNG',
+    noImage: 'Please upload an image first.',
+    statsColors: 'Unique colors: {o} → {n}',
+    statsReduced: 'Color reduction: {p}%',
+    palette: 'Palette ({n} colors):',
+    step1: 'Upload an image by clicking the drop zone or dragging a file onto it',
+    step2: 'Choose a mode: Quantize, Posterize or Grayscale',
+    step3: 'Set the target color count and optionally enable dithering',
+    step4: 'Click Apply, then Download PNG when happy',
+  },
+  zh: {
+    toolTitle: '图片色彩量化与色调分离工具',
+    toolDesc: '减少图片中的颜色数量。支持自定义调色板量化、色调分离、灰度或抖动 — 私密、浏览器本地运行。',
+    dropText: '点击上传或将图片拖拽到此处',
+    dropHint: '支持 PNG、JPG、WebP、GIF — 完全本地处理，绝不上传',
+    lbMode: '模式', lbColors: '颜色数', lbDither: 'Floyd–Steinberg 抖动',
+    optQuant: '量化（自定义调色板）', optPoster: '色调分离（每通道）', optGray: '灰度',
+    lbOriginal: '原图', lbResult: '结果',
+    btnApply: '应用', btnReset: '还原', btnDownload: '下载 PNG',
+    noImage: '请先上传一张图片。',
+    statsColors: '唯一颜色数：{o} → {n}',
+    statsReduced: '颜色减少：{p}%',
+    palette: '调色板（{n} 种颜色）：',
+    step1: '点击上传区或将图片拖拽到此处上传',
+    step2: '选择模式：量化、色调分离或灰度',
+    step3: '设置目标颜色数，可选开启抖动',
+    step4: '点击「应用」，满意后「下载 PNG」',
+  }
+});
+
+const { $, t } = GZ;
+const origCanvas = $('#cq-canvas-orig');
+const outCanvas = $('#cq-canvas-out');
+let origImageData = null;
+let lastOutputBlob = null;
+
+const drop = $('#cq-drop');
+drop.addEventListener('click', () => $('#cq-file').click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+$('#cq-file').addEventListener('change', e => { if(e.target.files.length) handleFile(e.target.files[0]); });
+
+$('#cq-mode').addEventListener('change', () => {
+  const m = $('#cq-mode').value;
+  const colorInput = $('#cq-colors');
+  if(m === 'grayscale'){ colorInput.disabled = true; }
+  else { colorInput.disabled = false; }
+  updateColorsLabel();
+});
+$('#cq-colors').addEventListener('input', updateColorsLabel);
+
+function updateColorsLabel(){
+  const m = $('#cq-mode').value;
+  let v = $('#cq-colors').value;
+  if(m === 'posterize'){
+    // posterize uses per-channel levels
+    const levels = +v;
+    const total = levels*levels*levels;
+    $('#cq-colors-val').textContent = `${levels}³ ≈ ${total}`;
+  } else {
+    $('#cq-colors-val').textContent = v;
+  }
+}
+
+function handleFile(file){
+  if(!file.type.startsWith('image/')){ alert(t('noImage')); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      // limit size for performance
+      const maxW = 1400;
+      let w = img.width, h = img.height;
+      if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
+      origCanvas.width = w; origCanvas.height = h;
+      outCanvas.width = w; outCanvas.height = h;
+      const ctx = origCanvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      origImageData = ctx.getImageData(0, 0, w, h);
+      outCanvas.getContext('2d').drawImage(origCanvas, 0, 0);
+      $('#cq-stats').textContent = '';
+      $('#cq-palette').innerHTML = '';
+      applyEffect();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function countUniqueColors(data){
+  const set = new Set();
+  for(let i = 0; i < data.length; i += 4){
+    set.add((data[i]<<16) | (data[i+1]<<8) | data[i+2]);
+  }
+  return set.size;
+}
+
+// Median-cut quantization
+function medianCut(pixels, depth, maxDepth){
+  // pixels: array of [r,g,b,count-ish] — we pass unique rgb triples
+  if(pixels.length === 0) return [];
+  if(depth >= maxDepth || pixels.length <= 1){
+    // average
+    let r=0,g=0,b=0,n=0;
+    pixels.forEach(p => { r+=p[0]*p[3]; g+=p[1]*p[3]; b+=p[2]*p[3]; n+=p[3]; });
+    if(n===0){ const p=pixels[0]; return [[p[0],p[1],p[2]]]; }
+    return [[Math.round(r/n), Math.round(g/n), Math.round(b/n)]];
+  }
+  // find channel with greatest range
+  let minR=255,maxR=0,minG=255,maxG=0,minB=255,maxB=0;
+  pixels.forEach(p => {
+    if(p[0]<minR)minR=p[0]; if(p[0]>maxR)maxR=p[0];
+    if(p[1]<minG)minG=p[1]; if(p[1]>maxG)maxG=p[1];
+    if(p[2]<minB)minB=p[2]; if(p[2]>maxB)maxB=p[2];
+  });
+  const rR=maxR-minR, rG=maxG-minG, rB=maxB-minB;
+  let ch = rR>=rG && rR>=rB ? 0 : (rG>=rB ? 1 : 2);
+  pixels.sort((a,b) => a[ch]-b[ch]);
+  const mid = Math.floor(pixels.length/2);
+  return [
+    ...medianCut(pixels.slice(0,mid), depth+1, maxDepth),
+    ...medianCut(pixels.slice(mid), depth+1, maxDepth)
+  ];
+}
+
+function nearestColor(r,g,b,palette){
+  let best = palette[0], bestD = Infinity;
+  for(let i = 0; i < palette.length; i++){
+    const p = palette[i];
+    const dr = r-p[0], dg = g-p[1], db = b-p[2];
+    // weighted
+    const d = dr*dr*0.3 + dg*dg*0.59 + db*db*0.11;
+    if(d < bestD){ bestD = d; best = p; }
+  }
+  return best;
+}
+
+function applyEffect(){
+  if(!origImageData){ return; }
+  const mode = $('#cq-mode').value;
+  const targetColors = +$('#cq-colors').value;
+  const dither = $('#cq-dither').checked;
+  const w = origImageData.width, h = origImageData.height;
+  const src = origImageData.data;
+  const out = new Uint8ClampedArray(src);
+
+  if(mode === 'grayscale'){
+    for(let i = 0; i < out.length; i += 4){
+      const gray = Math.round(out[i]*0.299 + out[i+1]*0.587 + out[i+2]*0.114);
+      out[i]=out[i+1]=out[i+2]=gray;
+    }
+    renderResult(out, w, h, null);
+    return;
+  }
+
+  if(mode === 'posterize'){
+    const levels = Math.max(2, targetColors);
+    for(let i = 0; i < out.length; i += 4){
+      out[i]   = Math.round(out[i]   / 255 * (levels-1)) / (levels-1) * 255;
+      out[i+1] = Math.round(out[i+1] / 255 * (levels-1)) / (levels-1) * 255;
+      out[i+2] = Math.round(out[i+2] / 255 * (levels-1)) / (levels-1) * 255;
+    }
+    renderResult(out, w, h, null);
+    return;
+  }
+
+  // quantize: build palette via median cut
+  // gather unique colors with counts (cap for perf)
+  const hist = new Map();
+  const step = w*h > 500000 ? 4 : 1; // sample every Nth pixel for huge images
+  for(let i = 0; i < src.length; i += 4*step){
+    const key = (src[i]<<16) | (src[i+1]<<8) | src[i+2];
+    hist.set(key, (hist.get(key)||0)+1);
+  }
+  const pixels = [];
+  for(const [key, count] of hist){
+    pixels.push([ (key>>16)&255, (key>>8)&255, key&255, count ]);
+  }
+  // depth = log2(targetColors)
+  const depth = Math.max(1, Math.ceil(Math.log2(Math.min(targetColors, pixels.length))));
+  let palette = medianCut(pixels, 0, depth);
+  // cap
+  palette = palette.slice(0, targetColors);
+
+  if(dither){
+    // Floyd-Steinberg
+    for(let y = 0; y < h; y++){
+      for(let x = 0; x < w; x++){
+        const idx = (y*w + x)*4;
+        const oldR = out[idx], oldG = out[idx+1], oldB = out[idx+2];
+        const np = nearestColor(oldR, oldG, oldB, palette);
+        out[idx]=np[0]; out[idx+1]=np[1]; out[idx+2]=np[2];
+        const errR = oldR-np[0], errG = oldG-np[1], errB = oldB-np[2];
+        distribute(out, w, h, x+1, y,   errR, errG, errB, 7/16);
+        distribute(out, w, h, x-1, y+1, errR, errG, errB, 3/16);
+        distribute(out, w, h, x,   y+1, errR, errG, errB, 5/16);
+        distribute(out, w, h, x+1, y+1, errR, errG, errB, 1/16);
+      }
+    }
+  } else {
+    for(let i = 0; i < out.length; i += 4){
+      const np = nearestColor(out[i], out[i+1], out[i+2], palette);
+      out[i]=np[0]; out[i+1]=np[1]; out[i+2]=np[2];
+    }
+  }
+  renderResult(out, w, h, palette);
+}
+
+function distribute(data, w, h, x, y, er, eg, eb, f){
+  if(x<0||y<0||x>=w||y>=h) return;
+  const idx = (y*w+x)*4;
+  data[idx]   = clamp255(data[idx]   + er*f);
+  data[idx+1] = clamp255(data[idx+1] + eg*f);
+  data[idx+2] = clamp255(data[idx+2] + eb*f);
+}
+function clamp255(v){ return v<0?0:v>255?255:v; }
+
+function renderResult(data, w, h, palette){
+  const ctx = outCanvas.getContext('2d');
+  const imgData = new ImageData(data, w, h);
+  ctx.putImageData(imgData, 0, 0);
+  const origColors = origImageData ? countUniqueColors(origImageData.data) : 0;
+  const newColors = countUniqueColors(data);
+  const reduced = origColors>0 ? Math.round((1 - newColors/origColors)*100) : 0;
+  const lang = GZI18n.getLang();
+  $('#cq-stats').innerHTML = t('statsColors').replace('{o}', origColors).replace('{n}', newColors)
+    + ` · ${t('statsReduced').replace('{p}', reduced)}`;
+  if(palette){
+    const swatchHtml = palette.slice(0,64).map(c => {
+      const hex = '#' + [c[0],c[1],c[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+      return `<div class="cq-sw" style="background:${hex}" title="${hex}"></div>`;
+    }).join('');
+    $('#cq-palette').innerHTML = `<span style="width:100%;font-size:.78rem;color:var(--text2);margin-bottom:4px">${t('palette').replace('{n}', palette.length)}</span>${swatchHtml}`;
+  } else {
+    $('#cq-palette').innerHTML = '';
+  }
+}
+
+function resetOriginal(){
+  if(!origImageData) return;
+  const ctx = outCanvas.getContext('2d');
+  ctx.putImageData(origImageData, 0, 0);
+  $('#cq-stats').textContent = '';
+  $('#cq-palette').innerHTML = '';
+}
+
+function downloadPNG(){
+  if(!origImageData){ alert(t('noImage')); return; }
+  outCanvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'quantized.png'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }, 'image/png');
+}
+
+function setLangAttrs(){
+  document.querySelectorAll('[id-lang]').forEach(el => {
+    const key = el.getAttribute('id-lang');
+    const txt = t(key);
+    if(!txt) return;
+    if(el.tagName === 'OPTION') el.textContent = txt;
+    else if(el.tagName === 'INPUT' && el.type === 'file') return;
+    else el.textContent = txt;
+  });
+  updateColorsLabel();
+}
+setLangAttrs();
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/pixel-art-editor.html', name:'Pixel Art Editor'},
+    {icon:'💧', href:'/image/color-extractor.html', name:'Color Extractor'},
+    {icon:'🎨', href:'/image/palette-from-image.html', name:'Palette from Image'},
+    {icon:'🔄', href:'/image/filters.html', name:'Image Filters'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

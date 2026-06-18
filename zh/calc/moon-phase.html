@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>月相计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查询任意日期的月相 — 月亮可见率、月龄、月相名称、下一次满月和朔月，以及整月月相日历。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/moon-phase.html">
+  <meta property="og:title" content="月相计算器">
+  <meta property="og:description" content="查询任意日期的月相 — 月亮可见率、月龄、月相名称、下一次满月和朔月，以及整月月相日历。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/moon-phase.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="月相计算器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606163c"></script>
+<style>
+.gz-input-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.gz-input-row label{font-size:.85em;color:var(--text2)}
+.gz-input-row input{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:.95em}
+.moon-wrap{display:flex;gap:24px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.moon-vis{flex:0 0 auto;text-align:center}
+.moon-svg{filter:drop-shadow(0 0 24px rgba(255,255,200,.25))}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;flex:1;min-width:240px}
+.stat-cell{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.stat-cell .num{font-size:1.4rem;font-weight:800;color:var(--accent2)}
+.stat-cell .lbl{font-size:.75em;color:var(--text2);margin-top:3px}
+.phase-name{font-size:1.6rem;font-weight:900;color:var(--accent);margin-bottom:4px}
+.month-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:8px}
+.month-cell{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;transition:transform .12s}
+.month-cell:hover{transform:translateY(-2px);border-color:var(--accent)}
+.month-cell.active{border-color:var(--accent);background:var(--glass2)}
+.month-cell .d{font-size:.75em;color:var(--text2)}
+.month-cell svg{display:block;margin:2px auto}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Moon Phase Calculator","description":"Find the moon phase for any date — illumination percentage, moon age, phase name, next full moon and new moon, plus a monthly moon calendar.","url": "https://tools.gamezipper.com/zh/calc/moon-phase.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How is the moon phase calculated?","acceptedAnswer":{"@type":"Answer","text":"The calculator uses the synodic month (about 29.53 days) measured from a known new moon reference on 6 January 2000. It finds the fractional position within the current cycle, which gives the phase, illumination percentage and moon age."}},{"@type":"Question","name":"What is moon illumination percentage?","acceptedAnswer":{"@type":"Answer","text":"Illumination is the fraction of the moon's visible face lit by the Sun, from 0% (new moon) to 100% (full moon). It equals (1 − cos(angle)) / 2 where the angle is the phase position."}},{"@type":"Question","name":"How often is there a full moon?","acceptedAnswer":{"@type":"Answer","text":"A full moon happens roughly every 29.53 days, about once per calendar month. The calculator shows the exact date of the next full moon and new moon from your chosen date."}},{"@type":"Question","name":"Does this work for past and future dates?","acceptedAnswer":{"@type":"Answer","text":"Yes. Pick any date from the year 1 to 9999 and the calculator shows the moon phase, illumination and the next key phases. All math runs locally in your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/moon-phase.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/moon-phase.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/moon-phase.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-input-row" id="input-row"></div>
+    <div id="output"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Moon Phase Calculator',
+    toolDesc: 'Find the moon phase for any date — illumination percentage, moon age, phase name, next full moon and new moon, plus a monthly moon calendar.',
+    pickDate: 'Pick a date',
+    illumination: 'Illumination',
+    moonAge: 'Moon age',
+    phase: 'Phase',
+    nextFull: 'Next full moon',
+    nextNew: 'Next new moon',
+    days: 'days',
+    errDate: 'Please pick a valid date',
+    monthCalendar: 'Moon calendar — click a day',
+    ph_newMoon: 'New Moon',
+    ph_waxingCrescent: 'Waxing Crescent',
+    ph_firstQuarter: 'First Quarter',
+    ph_waxingGibbous: 'Waxing Gibbous',
+    ph_fullMoon: 'Full Moon',
+    ph_waningGibbous: 'Waning Gibbous',
+    ph_lastQuarter: 'Last Quarter',
+    ph_waningCrescent: 'Waning Crescent',
+    step1: 'Use the date picker to choose any date, or click Today',
+    step2: 'See the moon visual, phase name and illumination percentage',
+    step3: 'Check the moon age and the next full / new moon dates',
+    step4: 'Browse the monthly moon calendar and click any day',
+  },
+  zh: {
+    toolTitle: '月相计算器',
+    toolDesc: '查询任意日期的月相 — 月亮可见率、月龄、月相名称、下一次满月和朔月，以及整月月相日历。',
+    pickDate: '选择日期',
+    illumination: '可见率',
+    moonAge: '月龄',
+    phase: '月相',
+    nextFull: '下一次满月',
+    nextNew: '下一次朔月（新月）',
+    days: '天',
+    errDate: '请选择有效日期',
+    monthCalendar: '月相日历 — 点击任一天',
+    ph_newMoon: '朔（新月）',
+    ph_waxingCrescent: '蛾眉月',
+    ph_firstQuarter: '上弦月',
+    ph_waxingGibbous: '盈凸月',
+    ph_fullMoon: '满月（望）',
+    ph_waningGibbous: '亏凸月',
+    ph_lastQuarter: '下弦月',
+    ph_waningCrescent: '残月',
+    step1: '使用日期选择器选择任意日期，或点击「今天」',
+    step2: '查看月相图、月相名称和可见率',
+    step3: '查看月龄以及下一次满月、朔月日期',
+    step4: '浏览整月月相日历，点击任意一天查看',
+  }
+});
+
+const { $, t } = GZ;
+
+const SYNODIC = 29.53058867; // synodic month in days
+// Reference new moon: 2000-01-06 18:14 UTC (Julian Date 2451550.1)
+const REF_NEW_MOON_MS = Date.UTC(2000, 0, 6, 18, 14, 0);
+
+function phaseOf(date) {
+  const daysSince = (date.getTime() - REF_NEW_MOON_MS) / 86400000;
+  let phase = (daysSince % SYNODIC) / SYNODIC;
+  if (phase < 0) phase += 1;
+  return phase; // 0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter
+}
+
+function phaseName(phase) {
+  const p = phase;
+  if (p < 0.0333 || p > 0.9667) return t('ph_newMoon');
+  if (p < 0.2167) return t('ph_waxingCrescent');
+  if (p < 0.3) return t('ph_firstQuarter');
+  if (p < 0.4667) return t('ph_waxingGibbous');
+  if (p < 0.5333) return t('ph_fullMoon');
+  if (p < 0.7) return t('ph_waningGibbous');
+  if (p < 0.7833) return t('ph_lastQuarter');
+  return t('ph_waningCrescent');
+}
+
+function illumination(phase) {
+  return (1 - Math.cos(2 * Math.PI * phase)) / 2;
+}
+
+function findNextPhase(date, target) {
+  // search day by day for the date closest to `target` phase (0..1)
+  let best = null, bestDist = 2;
+  for (let i = 0; i <= 32; i++) {
+    const d = new Date(date.getTime() + i * 86400000);
+    const ph = phaseOf(d);
+    let dist = Math.abs(ph - target);
+    dist = Math.min(dist, 1 - dist);
+    if (dist < bestDist) { bestDist = dist; best = d; }
+  }
+  return best;
+}
+
+// SVG path for the LIT portion of the moon, terminator-correct.
+function moonLitPath(cx, cy, r, phase) {
+  const safeR = Math.max(1, r);
+  const ang = phase * 2 * Math.PI;
+  const rx = safeR * Math.cos(ang);
+  const waxing = phase < 0.5;
+  const outerSweep = waxing ? 1 : 0;
+  const termSweep = waxing ? (rx > 0 ? 0 : 1) : (rx > 0 ? 1 : 0);
+  return `M ${cx} ${cy - safeR} A ${safeR} ${safeR} 0 0 ${outerSweep} ${cx} ${cy + safeR} A ${Math.abs(rx)} ${safeR} 0 0 ${termSweep} ${cx} ${cy - safeR} Z`;
+}
+
+function moonSVG(phase, size) {
+  const cx = size / 2, cy = size / 2, r = size / 2 - 6;
+  const illum = illumination(phase);
+  // if nearly full, just draw a full lit disc; if nearly new, empty
+  return `<svg class="moon-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+    <defs><radialGradient id="mg-${size}" cx="35%" cy="35%"><stop offset="0%" stop-color="#fffdf0"/><stop offset="100%" stop-color="#d9d2a5"/></radialGradient></defs>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="#15151f" stroke="#2a2a3a" stroke-width="1"/>
+    ${illum > 0.001 ? `<path d="${moonLitPath(cx, cy, r, phase)}" fill="url(#mg-${size})"/>` : ''}
+  </svg>`;
+}
+
+function fmtDate(date) {
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${m[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+function render() {
+  const raw = $('#date').value;
+  if (!raw) { $('#output').innerHTML = ''; return; }
+  const parts = raw.split('-');
+  if (parts.length !== 3) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('errDate')}</span>`; return; }
+  const date = new Date(+parts[0], +parts[1] - 1, +parts[2], 12, 0, 0);
+  if (isNaN(date.getTime())) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('errDate')}</span>`; return; }
+  $('#status').innerHTML = '';
+
+  const phase = phaseOf(date);
+  const illum = illumination(phase);
+  const age = phase * SYNODIC;
+  const name = phaseName(phase);
+  const nextFull = findNextPhase(date, 0.5);
+  const nextNew = findNextPhase(date, 0);
+  const fullDays = Math.round((nextFull - date) / 86400000);
+  const newDays = Math.round((nextNew - date) / 86400000);
+
+  // monthly calendar
+  const y = date.getFullYear(), m = date.getMonth();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  let cal = `<div class="month-grid">`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cd = new Date(y, m, d, 12, 0, 0);
+    const cp = phaseOf(cd);
+    const isActive = d === date.getDate();
+    cal += `<div class="month-cell ${isActive ? 'active' : ''}" onclick="pickDay(${d})">
+      <div class="d">${d}</div>${moonSVG(cp, 36)}</div>`;
+  }
+  cal += `</div>`;
+
+  $('#output').innerHTML = `
+    <div class="moon-wrap">
+      <div class="moon-vis">${moonSVG(phase, 180)}
+        <div class="phase-name">${name}</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-cell"><div class="num">${(illum * 100).toFixed(1)}%</div><div class="lbl">${t('illumination')}</div></div>
+        <div class="stat-cell"><div class="num">${age.toFixed(1)}</div><div class="lbl">${t('moonAge')} (${t('days')})</div></div>
+        <div class="stat-cell"><div class="num" style="font-size:1.05em">${fmtDate(nextFull)}</div><div class="lbl">${t('nextFull')} · ${fullDays} ${t('days')}</div></div>
+        <div class="stat-cell"><div class="num" style="font-size:1.05em">${fmtDate(nextNew)}</div><div class="lbl">${t('nextNew')} · ${newDays} ${t('days')}</div></div>
+      </div>
+    </div>
+    <h3 style="margin:1.4rem 0 .3rem;font-size:1.05em;color:var(--text2)">${t('monthCalendar')}</h3>
+    ${cal}`;
+}
+
+window.pickDay = function(d) {
+  const [y, m] = $('#date').value.split('-').map(Number);
+  $('#date').value = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  render();
+};
+
+function loadToday() {
+  const now = new Date();
+  $('#date').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  render();
+}
+
+$('#input-row').innerHTML = `
+  <label><b>${t('pickDate')}:</b></label>
+  <input id="date" type="date" min="0001-01-01" max="9999-12-31">`;
+
+$('#date').addEventListener('input', render);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="render()">${t('pickDate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadToday()">Today</button>`;
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌅', href:'/calc/sunrise-sunset.html', name:'Sunrise & Sunset'},
+    {icon:'📅', href:'/calc/date-calculator.html', name:'Date Calculator'},
+    {icon:'📆', href:'/calc/day-of-week.html', name:'Day of Week'},
+    {icon:'🎂', href:'/calc/age-calculator.html', name:'Age Calculator'},
+  ]
+});
+
+loadToday();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

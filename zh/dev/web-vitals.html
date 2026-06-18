@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Core Web Vitals 检测器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用浏览器 Performance API 实时测量 Google Core Web Vitals（LCP、INP、CLS、FCP、TTFB），含通过/待改进/较差阈值。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/web-vitals.html">
+  <meta property="og:title" content="Core Web Vitals 检测器">
+  <meta property="og:description" content="使用浏览器 Performance API 实时测量 Google Core Web Vitals（LCP、INP、CLS、FCP、TTFB），含通过/待改进/较差阈值。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/web-vitals.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Core Web Vitals 检测器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606163c"></script>
+<style>
+.vitals-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+.vital-card{padding:18px;background:var(--glass2);border:1px solid var(--border);border-radius:16px;text-align:center;position:relative;overflow:hidden}
+.vital-card .acro{font-size:.8rem;font-weight:700;color:var(--text2);letter-spacing:.05em}
+.vital-card .name{font-size:.7rem;color:var(--text3);margin-top:2px;min-height:1.4em}
+.vital-card .value{font-size:2.2rem;font-weight:900;margin:8px 0 2px;font-variant-numeric:tabular-nums}
+.vital-card .unit{font-size:.85rem;color:var(--text3)}
+.vital-card .verdict{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:6px}
+.v-good{color:#16a34a}.v-good .verdict{background:rgba(22,163,74,.18);color:#4ade80}
+.v-needs{color:#d97706}.v-needs .verdict{background:rgba(217,119,6,.18);color:#fbbf24}
+.v-poor{color:#dc2626}.v-poor .verdict{background:rgba(220,38,38,.18);color:#f87171}
+.v-pending{opacity:.55}
+.v-pending .value{color:var(--text3)}
+.score-bar{padding:16px 20px;background:linear-gradient(90deg,rgba(220,38,38,.12),rgba(217,119,6,.12),rgba(22,163,74,.12));border:1px solid var(--border);border-radius:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.score-bar .label{font-weight:700}
+.tip{font-size:.82em;color:var(--text2);padding:10px 14px;background:var(--glass);border:1px solid var(--border);border-radius:10px;margin-top:6px;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Core Web Vitals Checker","description":"Measure Core Web Vitals (LCP, INP, CLS, FCP, TTFB) live in your browser with Google pass/fail thresholds.","url": "https://tools.gamezipper.com/zh/dev/web-vitals.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What are Core Web Vitals?","acceptedAnswer":{"@type":"Answer","text":"Core Web Vitals are Google's key page-experience metrics: LCP (Largest Contentful Paint) measures loading, INP (Interaction to Next Paint) measures responsiveness, and CLS (Cumulative Layout Shift) measures visual stability. They directly influence search ranking."}},{"@type":"Question","name":"What are the good thresholds?","acceptedAnswer":{"@type":"Answer","text":"Good: LCP under 2.5s, INP under 200ms, CLS under 0.1, FCP under 1.8s, TTFB under 800ms. Needs improvement: LCP up to 4s, INP up to 500ms, CLS up to 0.25. Anything above is rated poor."}},{"@type":"Question","name":"What does this tool measure?","acceptedAnswer":{"@type":"Answer","text":"It measures the Core Web Vitals of THIS page in your browser using the standard Performance APIs (PerformanceObserver). To test your own site, open it in another tab and use a library like web-vitals, or run Lighthouse in Chrome DevTools."}},{"@type":"Question","name":"Why is INP shown as pending?","acceptedAnswer":{"@type":"Answer","text":"INP requires real user interaction. Click, tap or type anywhere on the page and the metric will populate based on the slowest interaction during the visit."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/web-vitals.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/web-vitals.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/web-vitals.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="scoreboard"></div>
+    <div class="vitals-grid" id="vitals"></div>
+    <div id="tips"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Core Web Vitals Checker',
+    toolDesc: 'Measure Google Core Web Vitals (LCP, INP, CLS, FCP, TTFB) live in your browser using the Performance APIs, with pass/fail thresholds.',
+    refresh: 'Reload page',
+    interact: 'Click anywhere to measure INP',
+    overall: 'Overall score',
+    good: 'Good',
+    needs: 'Needs work',
+    poor: 'Poor',
+    pending: 'Waiting…',
+    lcpName: 'Largest Contentful Paint',
+    inpName: 'Interaction to Next Paint',
+    clsName: 'Cumulative Layout Shift',
+    fcpName: 'First Contentful Paint',
+    ttfbName: 'Time to First Byte',
+    lcpTip: 'LCP measures when the largest visible element finishes rendering. Optimize by preloading hero images, reducing server response time and removing render-blocking resources.',
+    inpTip: 'INP measures responsiveness to user input. Reduce long JavaScript tasks, break up heavy work, and avoid blocking the main thread.',
+    clsTip: 'CLS measures unexpected layout shifts. Always set width/height on images and ads, and avoid inserting content above existing elements.',
+    step1: 'Open the page — LCP, FCP and TTFB measure automatically',
+    step2: 'Click or tap anywhere on the page to populate INP',
+    step3: 'Watch CLS update as the page settles',
+    step4: 'Compare each value against the Good / Needs work / Poor thresholds',
+  },
+  zh: {
+    toolTitle: 'Core Web Vitals 检测器',
+    toolDesc: '使用浏览器 Performance API 实时测量 Google Core Web Vitals（LCP、INP、CLS、FCP、TTFB），含通过/待改进/较差阈值。',
+    refresh: '刷新页面',
+    interact: '点击页面任意位置以测量 INP',
+    overall: '综合评分',
+    good: '良好',
+    needs: '待改进',
+    poor: '较差',
+    pending: '等待中…',
+    lcpName: '最大内容绘制时间',
+    inpName: '下次绘制交互',
+    clsName: '累计布局偏移',
+    fcpName: '首次内容绘制',
+    ttfbName: '首字节时间',
+    lcpTip: 'LCP 测量最大可见元素完成渲染的时间。可通过预加载主图、降低服务器响应时间、移除阻塞渲染的资源来优化。',
+    inpTip: 'INP 测量对用户输入的响应速度。请减少长 JavaScript 任务、拆分重负载工作、避免阻塞主线程。',
+    clsTip: 'CLS 测量意外的布局偏移。请始终为图片和广告设置宽高，避免在已有内容上方插入新元素。',
+    step1: '打开页面 — LCP、FCP 和 TTFB 会自动测量',
+    step2: '点击或触碰页面任意位置以触发 INP',
+    step3: '观察页面稳定过程中 CLS 的更新',
+    step4: '将每个数值与「良好/待改进/较差」阈值对比',
+  }
+});
+
+const { $, t } = GZ;
+
+const metrics = {
+  lcp: { value: null, acro: 'LCP', unit: 's', nameKey: 'lcpName', tipKey: 'lcpTip', good: 2.5, poor: 4, kind: 'lower' },
+  inp: { value: null, acro: 'INP', unit: 'ms', nameKey: 'inpName', tipKey: 'inpTip', good: 200, poor: 500, kind: 'lower' },
+  cls: { value: null, acro: 'CLS', unit: '', nameKey: 'clsName', tipKey: 'clsTip', good: 0.1, poor: 0.25, kind: 'lower' },
+  fcp: { value: null, acro: 'FCP', unit: 's', nameKey: 'fcpName', tipKey: null, good: 1.8, poor: 3, kind: 'lower' },
+  ttfb: { value: null, acro: 'TTFB', unit: 'ms', nameKey: 'ttfbName', tipKey: null, good: 800, poor: 1800, kind: 'lower' },
+};
+
+function rate(metric) {
+  if (metric.value === null) return 'pending';
+  let v = metric.value;
+  // values for unit 's' metrics (LCP, FCP) arrive in milliseconds; thresholds are in seconds.
+  if (metric.unit === 's') v = v / 1000;
+  if (v <= metric.good) return 'good';
+  if (v <= metric.poor) return 'needs';
+  return 'poor';
+}
+
+function fmtVal(metric) {
+  if (metric.value === null) return '—';
+  if (metric.acro === 'CLS') return metric.value.toFixed(3);
+  if (metric.unit === 's') return (metric.value / 1000).toFixed(2);
+  return Math.round(metric.value).toString();
+}
+
+function render() {
+  const html = Object.keys(metrics).map(k => {
+    const m = metrics[k];
+    const r = rate(m);
+    const verdict = r === 'pending' ? t('pending') : (r === 'good' ? '✓ ' + t('good') : r === 'needs' ? t('needs') : '✗ ' + t('poor'));
+    return `<div class="vital-card v-${r}">
+      <div class="acro">${m.acro}</div>
+      <div class="name">${t(m.nameKey)}</div>
+      <div class="value">${fmtVal(m)}</div>
+      <div class="unit">${m.unit}</div>
+      <div class="verdict">${verdict}</div>
+    </div>`;
+  }).join('');
+  $('#vitals').innerHTML = html;
+
+  // tips
+  const tipRows = ['lcpTip','inpTip','clsTip'].map(k => metrics[k.slice(0,3)] ? `<div class="tip">${t(k)}</div>` : '').join('');
+  $('#tips').innerHTML = tipRows;
+
+  // overall
+  const rated = Object.keys(metrics).filter(k => rate(metrics[k]) !== 'pending');
+  const score = rated.length ? Math.round(rated.filter(k => rate(metrics[k]) === 'good').length / rated.length * 100) : 0;
+  const cls = score >= 67 ? 'v-good' : score >= 34 ? 'v-needs' : 'v-poor';
+  $('#scoreboard').innerHTML = `<div class="score-bar">
+    <div><span class="label">${t('overall')}:</span> <span class="${cls}" style="font-size:1.4rem;font-weight:900">${score}%</span></div>
+    <div style="font-size:.82em;color:var(--text2)">${t('interact')}</div>
+  </div>`;
+}
+
+// --- Collect metrics ---
+// LCP
+try {
+  new PerformanceObserver(list => {
+    const entries = list.getEntries();
+    const last = entries[entries.length - 1];
+    if (last) metrics.lcp.value = last.startTime;
+    render();
+  }).observe({ type: 'largest-contentful-paint', buffered: true });
+} catch(e) {}
+
+// FCP
+try {
+  new PerformanceObserver(list => {
+    for (const e of list.getEntries()) {
+      if (e.name === 'first-contentful-paint') { metrics.fcp.value = e.startTime; break; }
+    }
+    render();
+  }).observe({ type: 'paint', buffered: true });
+} catch(e) {}
+
+// TTFB (navigation entry responseStart)
+try {
+  const nav = performance.getEntriesByType('navigation')[0];
+  if (nav) metrics.ttfb.value = nav.responseStart;
+} catch(e) {}
+
+// CLS
+let clsValue = 0, sessionValue = 0, lastEntryTime = 0;
+try {
+  new PerformanceObserver(list => {
+    for (const e of list.getEntries()) {
+      if (e.hadRecentInput) continue;
+      if (e.startTime - lastEntryTime > 1000 || e.startTime - lastEntryTime < 0) sessionValue = 0;
+      lastEntryTime = e.startTime;
+      sessionValue += e.value;
+      clsValue = Math.max(clsValue, sessionValue);
+    }
+    metrics.cls.value = clsValue;
+    render();
+  }).observe({ type: 'layout-shift', buffered: true });
+} catch(e) {}
+
+// INP — track worst interaction over the session
+let worstInp = 0;
+try {
+  new PerformanceObserver(list => {
+    for (const e of list.getEntries()) {
+      const dur = e.duration;
+      if (dur > worstInp) worstInp = dur;
+    }
+    if (worstInp > 0) { metrics.inp.value = worstInp; render(); }
+  }).observe({ type: 'event', buffered: true });
+} catch(e) {}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="location.reload()">🔄 ${t('refresh')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⚡', href:'/dev/speed-test.html', name:'Speed Test'},
+    {icon:'🌐', href:'/dev/http-headers-checker.html', name:'HTTP Headers'},
+    {icon:'📄', href:'/seo/meta-tag-extractor.html', name:'Meta Tag Extractor'},
+    {icon:'🔍', href:'/dev/google-serp-preview.html', name:'SERP Preview'},
+  ]
+});
+
+// initial paint after a tick so LCP can settle
+setTimeout(render, 300);
+setTimeout(render, 2000);
+setTimeout(render, 5000);
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

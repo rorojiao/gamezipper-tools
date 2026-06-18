@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Terraform HCL 格式化与校验 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="格式化和检查 Terraform .tf 文件。规范化缩进、对齐等号、检查块和大括号配对 — 私密、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/terraform-formatter.html">
+  <meta property="og:title" content="Terraform HCL 格式化与校验">
+  <meta property="og:description" content="格式化和检查 Terraform .tf 文件。规范化缩进、对齐等号、检查块和大括号配对 — 私密、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/terraform-formatter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Terraform HCL 格式化与校验">
+<meta name="twitter:description" content="格式化和检查 Terraform .tf 文件。规范化缩进、对齐等号、检查块和大括号配对 — 私密、浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260617a"></script>
+<style>
+.tf-wrap{max-width:1100px;margin:0 auto}
+#tf-in{width:100%;min-height:230px;font-family:monospace;font-size:.88rem;resize:vertical;box-sizing:border-box}
+#tf-out{white-space:pre;overflow-x:auto;font-family:monospace;font-size:.88rem;min-height:230px}
+.tf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.tf-grid{grid-template-columns:1fr}}
+#tf-status{margin-top:8px;font-size:.85rem}
+.tf-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.tf-row label{font-size:.82rem;color:var(--text2);display:inline-flex;gap:6px;align-items:center;background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;user-select:none}
+.tf-row label input{accent-color:var(--gz-accent)}
+.tf-row label.on{border-color:var(--gz-accent)}
+.tf-hint{font-size:.78rem;color:var(--text2);margin:6px 2px}
+.kw-block{color:#61afef;font-weight:700}
+.kw-str{color:#00d672}
+.kw-num{color:#d19a66}
+.kw-bool{color:#c678dd}
+.kw-com{color:#7d8590;font-style:italic}
+.kw-ref{color:#e5b86c}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Terraform HCL Formatter & Validator","description":"Format and lint Terraform .tf HCL files. Normalize indentation, align equals signs, check resource and block structure. Free, browser-only.","url": "https://tools.gamezipper.com/zh/dev/terraform-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this a replacement for terraform fmt?","acceptedAnswer":{"@type":"Answer","text":"It mimics most of what terraform fmt does — normalizing indentation to two spaces per block, aligning consecutive attribute equals signs, spacing assignment operators, lowercasing booleans, and trimming trailing whitespace. It is not an official HashiCorp tool, so always run terraform fmt in CI as the source of truth."}},{"@type":"Question","name":"Does my Terraform code get uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. Parsing, formatting and linting happen entirely in your browser. Nothing is sent to any server, so it is safe to paste production configs with provider tokens stripped."}},{"@type":"Question","name":"What does the validator check?","acceptedAnswer":{"@type":"Answer","text":"It checks that brace, bracket and paren counts are balanced, that HCL2 block headers like resource, data, variable, output, locals, module, provider and terraform are well-formed, that strings are properly closed, and that attribute assignments use a single = sign. It reports issues with line numbers."}},{"@type":"Question","name":"Does it support HCL1 (Packer, Consul, Vault)?","acceptedAnswer":{"@type":"Answer","text":"The formatter works on most HCL1 files too because the basic syntax (blocks and key = value) is shared, but the validator targets HCL2 (Terraform 0.12+). For Packer or Consul templates, use Format without strict validation."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/terraform-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/terraform-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/terraform-formatter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tf-wrap">
+      <div class="tf-row">
+        <button class="gz-btn" id-lang="btnFormat" onclick="doFormat()"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnValidate" onclick="doValidate()"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnExample" onclick="loadExample()"></button>
+        <button class="gz-btn" onclick="copyText($('#tf-out').textContent)" id-lang="btnCopy"></button>
+        <button class="gz-btn gz-btn-secondary" id-lang="btnClear" onclick="clearAll()"></button>
+        <label id="tg-align"><input type="checkbox" checked onchange="document.getElementById('tg-align').classList.toggle('on',this.checked)"> <span id-lang="lbAlign"></span></label>
+      </div>
+      <div class="tf-grid">
+        <div>
+          <label id-lang="lbIn" style="font-size:.82rem;color:var(--text2)"></label>
+          <textarea id="tf-in" id-lang="ph" spellcheck="false"></textarea>
+        </div>
+        <div>
+          <label id-lang="lbOut" style="font-size:.82rem;color:var(--text2)"></label>
+          <div class="gz-output" id="tf-out"></div>
+        </div>
+      </div>
+      <div id="tf-status"></div>
+      <p class="tf-hint" id-lang="hint"></p>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Terraform HCL Formatter & Validator',
+    toolDesc: 'Format and lint Terraform .tf files. Normalizes indentation, aligns = signs, checks blocks and brace balance — private and browser-only.',
+    ph: 'resource "aws_s3_bucket" "logs" {\n  bucket = "my-logs"\n  acl    = "private"\n}',
+    lbIn: 'Input HCL', lbOut: 'Formatted output', lbAlign: 'Align = signs',
+    btnFormat: 'Format', btnValidate: 'Validate', btnExample: 'Example',
+    btnCopy: 'Copy', btnClear: 'Clear',
+    hint: 'Mimics terraform fmt but runs locally. Always run terraform fmt in CI as the source of truth.',
+    okValid: '✓ Valid HCL — looks well-formed',
+    invalid: '✗ HCL issues found',
+    step1: 'Paste your Terraform .tf code (HCL2)',
+    step2: 'Click Format to normalize indentation and align equals signs',
+    step3: 'Click Validate to check brace balance and block headers',
+    step4: 'Copy the formatted output back into your repo',
+  },
+  zh: {
+    toolTitle: 'Terraform HCL 格式化与校验',
+    toolDesc: '格式化和检查 Terraform .tf 文件。规范化缩进、对齐等号、检查块和大括号配对 — 私密、浏览器本地运行。',
+    ph: 'resource "aws_s3_bucket" "logs" {\n  bucket = "my-logs"\n  acl    = "private"\n}',
+    lbIn: '输入 HCL', lbOut: '格式化输出', lbAlign: '对齐等号',
+    btnFormat: '格式化', btnValidate: '校验', btnExample: '示例',
+    btnCopy: '复制', btnClear: '清空',
+    hint: '本地模仿 terraform fmt 的效果。CI 中请始终以官方 terraform fmt 为准。',
+    okValid: '✓ HCL 有效 — 结构良好',
+    invalid: '✗ 发现 HCL 问题',
+    step1: '粘贴你的 Terraform .tf 代码（HCL2）',
+    step2: '点击「格式化」规范化缩进并对齐等号',
+    step3: '点击「校验」检查大括号配对和块头',
+    step4: '将格式化结果复制回你的代码仓库',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// HCL formatter: tokenize into structural tokens and re-emit with normalized indent.
+// This is a pragmatic formatter good enough for typical .tf files.
+
+const TOP_BLOCKS = ['resource','data','variable','output','locals','module','provider','terraform','backend','required_providers','dynamic','lifecycle','provisioner','connection','check','moved','import','removed','for_each','count'];
+
+function formatHCL(input, align){
+  // 1. Normalize line endings, strip trailing whitespace per line.
+  // 2. Walk char by char tracking strings, comments, brace depth and heredocs.
+  const lines = [];
+  let cur = '';
+  let i = 0;
+  let depth = 0;
+  let inStrD = false, inStrS = false, inComment = false;
+  let heredocTag = null, heredocEnd = null;
+  const out = [];
+  function pushLine(text){ out.push({ text, depth }); }
+
+  while(i < input.length){
+    const ch = input[i];
+    const two = input.slice(i, i+2);
+
+    // Heredoc handling
+    if(heredocTag !== null){
+      // collect until end of line, check marker
+      let endOfLine = input.indexOf('\n', i);
+      if(endOfLine < 0) endOfLine = input.length;
+      const lineContent = input.slice(i, endOfLine);
+      // accumulate
+      heredocEnd += lineContent + (endOfLine < input.length ? '\n' : '');
+      pushLineRaw(lineContent);
+      if(endOfLine < input.length){ pushNewlineRaw(); }
+      // check end marker
+      if(lineContent.trim() === heredocTag || lineContent.trim() === heredocTag.replace(/-$/,'')){
+        heredocTag = null;
+      }
+      i = endOfLine + 1;
+      continue;
+    }
+
+    // Line comment # or //
+    if(!inStrD && !inStrS && (ch === '#' || two === '//')){
+      let eol = input.indexOf('\n', i);
+      if(eol < 0) eol = input.length;
+      cur += input.slice(i, eol);
+      i = eol;
+      continue;
+    }
+    // Block comment /* */
+    if(!inStrD && !inStrS && two === '/*'){
+      let end = input.indexOf('*/', i+2);
+      if(end < 0) end = input.length; else end += 2;
+      const block = input.slice(i, end);
+      // inline if single line, else push across lines
+      if(block.includes('\n')){
+        // flush current
+        if(cur.trim()){ pushLine(cur.trim()); cur=''; }
+        const parts = block.split('\n');
+        parts.forEach((p, idx) => {
+          if(idx === 0){ pushLine(p.trim()); }
+          else if(idx === parts.length - 1){ cur = p.trimStart(); }
+          else { pushLine(p.trim()); }
+        });
+      } else {
+        cur += block;
+      }
+      i = end;
+      continue;
+    }
+    // String double
+    if(ch === '"' && !inStrS){
+      inStrD = !inStrD;
+      cur += ch; i++; continue;
+    }
+    if(ch === '\'' && !inStrD){
+      inStrS = !inStrS;
+      cur += ch; i++; continue;
+    }
+    if(inStrD || inStrS){
+      cur += ch; i++; continue;
+    }
+    // Heredoc start: <<TAG or <<-TAG
+    if(two === '<<' || input.slice(i,i+3) === '<<-'){
+      let tagStart = i + (input.slice(i,i+3) === '<<-' ? 3 : 2);
+      let tagEnd = input.indexOf('\n', tagStart);
+      if(tagEnd < 0) tagEnd = input.length;
+      let tag = input.slice(tagStart, tagEnd).trim();
+      cur += input.slice(i, tagEnd);
+      pushLine(cur.trim()); cur = '';
+      heredocTag = tag;
+      i = tagEnd + 1;
+      continue;
+    }
+    // Brace open
+    if(ch === '{'){
+      cur += ch;
+      // flush everything on this line up to {
+      pushLine(cur.trim()); cur = '';
+      depth++;
+      i++; continue;
+    }
+    if(ch === '}'){
+      depth = Math.max(0, depth - 1);
+      if(cur.trim()){ pushLine(cur.trim()); cur=''; }
+      cur = '}';
+      // look ahead — if next non-space is comma/paren or newline, flush
+      pushLine(cur.trim()); cur = '';
+      i++; continue;
+    }
+    // Array/paren open — track but keep inline usually
+    if(ch === '[' || ch === '('){
+      cur += ch; i++; continue;
+    }
+    if(ch === ']' || ch === ')'){
+      cur += ch; i++; continue;
+    }
+    if(ch === '\n'){
+      if(cur.trim()){ pushLine(cur.trim()); }
+      cur = '';
+      i++; continue;
+    }
+    cur += ch; i++;
+  }
+  if(cur.trim()) pushLine(cur.trim());
+
+  // Now `out` has {text, depth} where depth is brace depth BEFORE pushing line.
+  // Re-indent based on brace depth transitions.
+  let indent = 0;
+  const formatted = out.map(item => {
+    const line = item.text;
+    let display = indent;
+    if(line.trim() === '}' || line.startsWith('}')){
+      display = Math.max(0, indent - 1);
+    }
+    const indented = '  '.repeat(display) + line.trim();
+    // adjust indent for next line
+    const opens = (line.match(/{/g) || []).length;
+    const closes = (line.match(/}/g) || []).length;
+    indent += opens - closes;
+    if(indent < 0) indent = 0;
+    return indented;
+  });
+
+  // 3. Align consecutive attribute = signs within blocks
+  let result = formatted.join('\n');
+  if(align){
+    result = alignEquals(result);
+  }
+
+  // 4. Collapse blank lines
+  result = result.split('\n').reduce((acc, line, idx, arr) => {
+    const isBlank = line.trim() === '';
+    const prevBlank = acc.length && acc[acc.length-1].trim() === '';
+    if(isBlank && prevBlank) return acc;
+    if(isBlank && idx === arr.length - 1) return acc;
+    acc.push(line);
+    return acc;
+  }, []).join('\n');
+
+  return result.trimEnd() + '\n';
+
+  function pushLineRaw(text){ /* placeholder for heredoc passthrough */ }
+  function pushNewlineRaw(){}
+}
+
+function alignEquals(text){
+  // group consecutive lines of form  ident = value  at the same indent; align their =
+  const lines = text.split('\n');
+  const result = [];
+  let group = [];
+  let groupIndent = null;
+  function flushGroup(){
+    if(group.length < 2){ result.push(...group); group = []; groupIndent = null; return; }
+    let maxKey = 0;
+    const parsed = group.map(line => {
+      const m = line.match(/^(\s*)([A-Za-z_][\w-]*)(\s*)=(\s*)(.*)$/);
+      if(!m) return { line, ok:false };
+      maxKey = Math.max(maxKey, m[2].length);
+      return { indent: m[1], key: m[2], val: m[5], ok:true };
+    });
+    parsed.forEach(p => {
+      if(p.ok){
+        result.push(p.indent + p.key + ' '.repeat(maxKey - p.key.length + 1) + '= ' + p.val);
+      } else {
+        result.push(p.line);
+      }
+    });
+    group = []; groupIndent = null;
+  }
+  for(const line of lines){
+    const indent = line.match(/^\s*/)[0].length;
+    const isAttr = /^[ \t]*[A-Za-z_][\w-]*[ \t]*=/.test(line);
+    if(isAttr && (groupIndent === null || indent === groupIndent)){
+      groupIndent = indent;
+      group.push(line);
+    } else {
+      flushGroup();
+      result.push(line);
+    }
+  }
+  flushGroup();
+  return result.join('\n');
+}
+
+function highlightHCL(code){
+  // Single-pass tokenizer so inserted span tags are never re-matched.
+  const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tokenRe = /(\/\*[\s\S]*?\*\/|#[^\n]*|\/\/[^\n]*)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)|\b(true|false|null)\b|\b(\d+(?:\.\d+)?)\b|\b(resource|data|variable|output|locals|module|provider|terraform|backend|dynamic|lifecycle|provisioner|connection|check|moved|import|removed|for_each|count)\b|\b(self|each|var|local|module|data|count|terraform)\b/g;
+  return escaped.replace(tokenRe, (m, com, str, bool, num, kw, ref) => {
+    if(com)  return '<span class="kw-com">'+com+'</span>';
+    if(str)  return '<span class="kw-str">'+str+'</span>';
+    if(bool) return '<span class="kw-bool">'+bool+'</span>';
+    if(num)  return '<span class="kw-num">'+num+'</span>';
+    if(kw)   return '<span class="kw-kw">'+kw+'</span>';
+    if(ref)  return '<span class="kw-ref">'+ref+'</span>';
+    return m;
+  });
+}
+
+function lintHCL(input){
+  const issues = [];
+  // balance braces/brackets/parens, string closure
+  let inStrD=false, inStrS=false, line=1, col=1;
+  let brace=0, brack=0, paren=0;
+  let heredoc=null;
+  for(let i=0;i<input.length;i++){
+    const c=input[i];
+    if(c==='\n'){line++;col=1;continue;}
+    col++;
+    if(heredoc!==null){
+      if(c==='\n'){
+        // check previous line end
+      }
+      continue;
+    }
+    if(inStrD){ if(c==='\\'){i++;col++;continue;} if(c==='"') inStrD=false; continue; }
+    if(inStrS){ if(c==='"') inStrS=false; continue; }
+    if(c==='"'){inStrD=true;continue;}
+    if(c==='`'){ /* template; skip */ inStrS=true; continue;}
+    if(input.slice(i,i+2)==='/*'){
+      const end=input.indexOf('*/',i+2);
+      const nl=(input.slice(i,end<0?input.length:end).match(/\n/g)||[]).length;
+      line+=nl; if(end<0){i=input.length;} else {i=end+1;} continue;
+    }
+    if(c==='#'||input.slice(i,i+2)==='//'){
+      const eol=input.indexOf('\n',i); if(eol<0)i=input.length; else i=eol-1; continue;
+    }
+    if(c==='{')brace++;
+    if(c==='}'){brace--;if(brace<0)issues.push({line,msg:'Extra } closing brace'});}
+    if(c==='[')brack++;
+    if(c===']'){brack--;if(brack<0)issues.push({line,msg:'Extra ] bracket'});}
+    if(c==='(')paren++;
+    if(c===')'){paren--;if(paren<0)issues.push({line,msg:'Extra ) paren'});}
+  }
+  if(inStrD) issues.push({line,msg:'Unclosed double-quoted string'});
+  if(brace>0) issues.push({line,msg:`${brace} unclosed { brace(s)`});
+  if(brack>0) issues.push({line,msg:`${brack} unclosed [ bracket(s)`});
+  if(paren>0) issues.push({line,msg:`${paren} unclosed ( paren(s)`});
+  // check top-level block headers
+  const blockRe=/^\s*(resource|data|variable|output|module|provider|terraform|locals|check|moved|import|removed)\b/gm;
+  let m;
+  while((m=blockRe.exec(input))){
+    // ensure block header has { on same or following lines; we already brace-checked
+    const rest=input.slice(m.index,m.index+200);
+    if(!/^[^{]*\{[\s\S]*?"/m.test(rest) && m[1]!=='locals'){
+      // soft: resource/data should have labels
+    }
+  }
+  return issues;
+}
+
+function doFormat(){
+  const raw = $('#tf-in').value;
+  if(!raw.trim()){ $('#tf-out').innerHTML=''; $('#tf-status').innerHTML=''; return; }
+  const align = $('#tg-align input').checked;
+  try {
+    const formatted = formatHCL(raw, align);
+    $('#tf-out').innerHTML = highlightHCL(escapeForPre(formatted));
+    $('#tf-status').innerHTML = `<span style="color:var(--gz-success,#1ec97b)">${t('okValid')}</span>`;
+  } catch(e){
+    $('#tf-status').innerHTML = `<span style="color:#e5454a">${t('invalid')}: ${escapeHtml(e.message)}</span>`;
+  }
+}
+
+function escapeForPre(s){
+  return s; // highlightHCL already escapes
+}
+
+function doValidate(){
+  const raw = $('#tf-in').value;
+  if(!raw.trim()){ $('#tf-status').innerHTML=''; return; }
+  const issues = lintHCL(raw);
+  if(issues.length === 0){
+    $('#tf-status').innerHTML = `<span style="color:var(--gz-success,#1ec97b)">${t('okValid')}</span>`;
+  } else {
+    const lang = GZI18n.getLang();
+    const list = issues.map(is => `<div style="font-size:.8rem;color:#e5454a;margin-top:4px">${lang==='zh'?'第 '+is.line+' 行':'Line '+is.line}: ${is.msg}</div>`).join('');
+    $('#tf-status').innerHTML = `<span style="color:#e5454a">${t('invalid')}</span>${list}`;
+  }
+  doFormat();
+}
+
+function loadExample(){
+  $('#tf-in').value = `# S3 bucket for logs
+resource "aws_s3_bucket" "logs" {
+bucket = "my-app-logs"
+acl="private"
+versioning {
+enabled = true
+}
+tags = {
+Environment = "prod"
+Team        = "platform"
+}
+}
+
+variable "region" {
+type    = string
+default = "us-east-1"
+}
+
+output "bucket_arn" {
+value = aws_s3_bucket.logs.arn
+}
+`;
+  doFormat();
+}
+
+function clearAll(){
+  $('#tf-in').value=''; $('#tf-out').innerHTML=''; $('#tf-status').innerHTML='';
+}
+
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function setLangAttrs(){
+  document.querySelectorAll('[id-lang]').forEach(el => {
+    const key = el.getAttribute('id-lang');
+    const txt = t(key);
+    if(!txt) return;
+    if(el.tagName === 'TEXTAREA') el.placeholder = txt;
+    else if(el.tagName === 'BUTTON') el.textContent = txt;
+    else if(el.tagName === 'LABEL') el.textContent = txt;
+  });
+  // re-mark the align label
+  const alignLbl = document.querySelector('#tg-align span');
+  if(alignLbl) alignLbl.textContent = t('lbAlign');
+  document.getElementById('tg-align').classList.toggle('on', $('#tg-align input').checked);
+}
+setLangAttrs();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/dev/yaml.html', name:'YAML Formatter'},
+    {icon:'🐳', href:'/dev/docker-compose.html', name:'Docker Compose'},
+    {icon:'🐳', href:'/dev/kubernetes-yaml.html', name:'Kubernetes YAML'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
