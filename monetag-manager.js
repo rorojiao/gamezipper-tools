@@ -102,7 +102,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.5.1-tools-vidsid',  // 2026-06-14: vid/sid inline tracker (parity with adsense-auto.js v5.4.2)
+    VERSION: '5.5.2-tools-preconnect-killswitch',  // 2026-06-18: a.magsrv.com preconnect + primary zone kill switch (fixes 530 Origin DNS Error)
     // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
     //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
     //   streak 2 → 60min (was 30): same logic
@@ -112,6 +112,17 @@
       storageKey: 'gzt4_zone_backoff_v1',
       backoffs: [30 * 60 * 1000, 60 * 60 * 1000, 24 * 60 * 60 * 1000],
       minRecordIntervalMs: 60 * 1000,
+    },
+    // v5.5.2: Primary zone kill switch — manually disable a specific primary zone
+    //   when its CDN edge is failing (e.g. 530 Origin DNS Error from a.magsrv.com).
+    //   Set the zone's flag to false to skip loadZone() immediately. Falls back
+    //   to the legacy zone (if legacyEnabled) or AdSense. Mirrors legacyEnabled
+    //   pattern but for primary zones (inpagePush, vignette, popunder).
+    //   Reset window state via: gzToolsAdsResetKillswitch() or just reload page.
+    ZONE_KILLSWITCH: {
+      inpagePush: true,  // 11012010 (Superior primary, 0% fill 14d, mostly 530 errors)
+      vignette:   true,  // 11012011 (Superior primary, intermittent)
+      popunder:   true,  // 11012009 (click-triggered only, never broke user-side)
     },
   };
 
@@ -190,6 +201,45 @@
     }
   }
   window.gzAdEvents = adEvents;
+
+  // v5.5.2: expose kill switch helper on window for ops console access.
+  //   Usage in DevTools:
+  //     gzToolsAdsKillswitch({inpagePush: false})  // disable primary inpagePush
+  //     gzToolsAdsKillswitch({inpagePush: true})   // re-enable
+  //   Persists to localStorage, takes effect immediately + on next page load.
+  window.gzToolsAdsKillswitch = function(patch) {
+    try {
+      var KEY = 'gzt4_zone_killswitch_v1';
+      var cur = {};
+      try { cur = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e) {}
+      for (var slot in patch) {
+        if (Object.prototype.hasOwnProperty.call(patch, slot)) {
+          cur[slot] = !!patch[slot];
+        }
+      }
+      localStorage.setItem(KEY, JSON.stringify(cur));
+      // Apply to live CONFIG (takes effect on next loadZone call)
+      for (var s2 in cur) {
+        if (Object.prototype.hasOwnProperty.call(CONFIG.ZONE_KILLSWITCH, s2)) {
+          CONFIG.ZONE_KILLSWITCH[s2] = cur[s2];
+        }
+      }
+      console.log('[gz-ad] killswitch updated', JSON.stringify(CONFIG.ZONE_KILLSWITCH));
+      return CONFIG.ZONE_KILLSWITCH;
+    } catch(e) {
+      console.error('[gz-ad] killswitch update failed', e);
+      return null;
+    }
+  };
+  // Load persisted killswitch on startup so it survives page reloads.
+  try {
+    var PERSIST = JSON.parse(localStorage.getItem('gzt4_zone_killswitch_v1') || '{}') || {};
+    for (var slot3 in PERSIST) {
+      if (Object.prototype.hasOwnProperty.call(CONFIG.ZONE_KILLSWITCH, slot3)) {
+        CONFIG.ZONE_KILLSWITCH[slot3] = !!PERSIST[slot3];
+      }
+    }
+  } catch(e) {}
 
   var state = {
     adTimestamps: [],
@@ -299,6 +349,24 @@
   //       全程 trackAdEvent() 上报 fill/script_loaded/no_fill/load_error
   function loadZone(zoneId, targetEl) {
     return new Promise(function(resolve, reject) {
+      // v5.5.2: primary zone kill switch — manually disable a zone when its
+      // CDN edge is failing (e.g. 530 Origin DNS Error from a.magsrv.com).
+      // Look up which primary slot this zone corresponds to.
+      if (zoneId === ZONES.inpagePush && CONFIG.ZONE_KILLSWITCH.inpagePush === false) {
+        trackAdEvent('zone_killswitch_skip', { zoneId: zoneId, slot: 'inpagePush' });
+        reject(new Error('killswitch_inpagePush'));
+        return;
+      }
+      if (zoneId === ZONES.vignette && CONFIG.ZONE_KILLSWITCH.vignette === false) {
+        trackAdEvent('zone_killswitch_skip', { zoneId: zoneId, slot: 'vignette' });
+        reject(new Error('killswitch_vignette'));
+        return;
+      }
+      if (zoneId === ZONES.popunder && CONFIG.ZONE_KILLSWITCH.popunder === false) {
+        trackAdEvent('zone_killswitch_skip', { zoneId: zoneId, slot: 'popunder' });
+        reject(new Error('killswitch_popunder'));
+        return;
+      }
       // v5.3: skip disabled legacy zones
       if (!ZONES.legacyEnabled && (zoneId === ZONES.inpagePushLegacy || zoneId === ZONES.vignetteLegacy)) {
         trackAdEvent('zone_legacy_disabled_skip', { zoneId: zoneId });
