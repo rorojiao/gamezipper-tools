@@ -171,6 +171,25 @@ const GZ = (function(){
     }
 
     renderFooter();
+
+    // Auto-apply data-i18n attributes
+    $$('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translated = t(key);
+      if (translated && translated !== key) {
+        // Preserve child elements (like inputs inside labels)
+        const children = [...el.childNodes];
+        const hasChildElements = children.some(c => c.nodeType === 1);
+        if (hasChildElements) {
+          // Only replace text nodes
+          children.forEach(c => {
+            if (c.nodeType === 3 && c.textContent.trim()) c.textContent = translated + ' ';
+          });
+        } else {
+          el.textContent = translated;
+        }
+      }
+    });
   }
 
   function updateLangBtn() {
