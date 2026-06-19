@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>求导计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="对任意函数求导 d/dx，附逐步符号微分过程。支持幂法则、乘法法则、除法法则和链式法则 — 完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/derivative-calculator.html">
+  <meta property="og:title" content="求导计算器">
+  <meta property="og:description" content="对任意函数求导 d/dx，附逐步符号微分过程。支持幂法则、乘法法则、除法法则和链式法则 — 完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/derivative-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="求导计算器">
+<meta name="twitter:description" content="对任意函数求导 d/dx，附逐步符号微分过程。支持幂法则、乘法法则、除法法则和链式法则 — 完全在浏览器中运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606163c"></script>
+<style>
+.func-input{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.func-input input[type=text]{flex:1;min-width:220px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-family:monospace;font-size:1em}
+.var-sel{padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.95em}
+.result-box{margin-top:12px;padding:14px 16px;border-radius:12px;background:var(--glass);border:1px solid var(--border)}
+.result-box .label{font-size:.8em;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.result-box .expr{font-family:monospace;font-size:1.25em;color:var(--accent);margin-top:4px;word-break:break-word}
+.steps{margin-top:14px}
+.steps .stitle{font-weight:700;margin-bottom:6px}
+.steps ol{margin:0;padding-left:22px}
+.steps li{margin:5px 0;font-family:monospace;font-size:.92em}
+.steps li .rule{font-family:inherit;color:var(--text2);font-size:.85em}
+.err-msg{color:var(--gz-accent);margin-top:8px;font-size:.9em}
+.eval-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:.9em}
+.eval-row input{width:90px;padding:7px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text)}
+.examples{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.examples button{padding:5px 10px;border-radius:16px;border:1px solid var(--border);background:var(--glass);color:var(--text);cursor:pointer;font-family:monospace;font-size:.82em}
+.examples button:hover{background:var(--glass2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Derivative Calculator","description":"Free online derivative calculator. Find d/dx of any function with step-by-step symbolic differentiation. Supports power, product, quotient and chain rules, plus sin, cos, exp, ln and more.","url": "https://tools.gamezipper.com/zh/calc/derivative-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the derivative calculator work?", "acceptedAnswer": {"@type": "Answer", "text": "Type your function using x as the variable, then press Differentiate. The tool parses your expression into a math tree and applies the differentiation rules (power rule, product rule, quotient rule and chain rule) symbolically, then simplifies the result."}}, {"@type": "Question", "name": "What rules of differentiation are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The calculator supports the power rule, sum and difference, product rule, quotient rule, chain rule, and derivatives of sin, cos, tan, exp, ln, log, sqrt, asin, acos, atan and more."}}, {"@type": "Question", "name": "Can I evaluate the derivative at a point?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. After computing the derivative, enter a value of x to instantly evaluate both the original function and its derivative at that point."}}, {"@type": "Question", "name": "Does the tool send my function to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing, differentiation and simplification happens locally in your browser. Nothing is uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/derivative-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/derivative-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/derivative-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="status"></div>
+    <div class="func-input">
+      <span style="font-size:1.2em;font-family:monospace">d/d</span>
+      <select class="var-sel" id="varsel"><option value="x">x</option></select>
+      <span style="font-size:1.2em;font-family:monospace">[</span>
+      <input type="text" id="expr" spellcheck="false" placeholder="e.g. x^3 + sin(x^2)">
+      <span style="font-size:1.2em;font-family:monospace">]</span>
+    </div>
+    <div class="examples" id="examples"></div>
+    <div id="result"></div>
+    <div id="steps"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Derivative Calculator',
+    toolDesc: 'Find the derivative d/dx of any function with step-by-step symbolic differentiation. Supports power, product, quotient and chain rules — all in your browser.',
+    go: 'Differentiate', clear: 'Clear', result: 'Derivative',
+    evalAt: 'Evaluate at x =', orig: 'f(x)', deriv: "f'(x)",
+    invalidExpr: 'Could not parse the expression. Check the syntax and try again.',
+    steps: 'How it was computed',
+    rulePower:'power rule', ruleSum:'sum rule', ruleProduct:'product rule', ruleQuotient:'quotient rule', ruleChain:'chain rule',
+    step1:'Enter a function of x (e.g. x^3, sin(x), exp(x), x*sin(x))',
+    step2:'Click Differentiate to compute the symbolic derivative',
+    step3:'Read the simplified result and the step-by-step rules used',
+    step4:'Optionally evaluate the derivative at a specific value of x',
+  },
+  zh: {
+    toolTitle: '求导计算器',
+    toolDesc: '对任意函数求导 d/dx，附逐步符号微分过程。支持幂法则、乘法法则、除法法则和链式法则 — 完全在浏览器中运行。',
+    go: '求导', clear: '清除', result: '导数',
+    evalAt: '在 x =', orig: 'f(x)', deriv: "f'(x)",
+    invalidExpr: '无法解析表达式，请检查语法后重试。',
+    steps: '计算过程',
+    rulePower:'幂法则', ruleSum:'加法法则', ruleProduct:'乘法法则', ruleQuotient:'除法法则', ruleChain:'链式法则',
+    step1:'输入一个 x 的函数（如 x^3、sin(x)、exp(x)、x*sin(x)）',
+    step2:'点击「求导」计算符号导数',
+    step3:'查看化简后的结果和使用的法则步骤',
+    step4:'可选：在指定 x 值处求导数值',
+  }
+});
+
+const { $, t, copyText } = GZ;
+
+/* ---------- Math expression engine ---------- */
+const MFNS = { sin:Math.sin, cos:Math.cos, tan:Math.tan, asin:Math.asin, acos:Math.acos, atan:Math.atan,
+  sinh:Math.sinh, cosh:Math.cosh, tanh:Math.tanh, exp:Math.exp, ln:Math.log, log:Math.log,
+  log2:Math.log2, log10:(x)=>Math.log(x)/Math.LN10, sqrt:Math.sqrt, cbrt:Math.cbrt, abs:Math.abs,
+  sign:Math.sign, sec:x=>1/Math.cos(x), csc:x=>1/Math.sin(x), cot:x=>1/Math.tan(x) };
+const MCONST = { pi:Math.PI, e:Math.E, tau:Math.PI*2 };
+function tokenize(s){
+  s=s.replace(/\s+/g,''); const toks=[]; let i=0;
+  while(i<s.length){ const ch=s[i];
+    if((ch>='0'&&ch<='9')||ch==='.'){ let j=i+1; while(j<s.length&&/[0-9.]/.test(s[j]))j++;
+      if(j<s.length&&(s[j]=='e'||s[j]=='E')&&j+1<s.length&&/[0-9+\-]/.test(s[j+1])){ let k=j+1; if(s[k]=='+'||s[k]=='-')k++; if(k<s.length&&/[0-9]/.test(s[k])){while(k<s.length&&/[0-9]/.test(s[k]))k++;j=k;} }
+      toks.push({t:'num',v:parseFloat(s.slice(i,j))}); i=j; continue; }
+    if(/[a-zA-Z_]/.test(ch)){ let j=i+1; while(j<s.length&&/[a-zA-Z0-9_]/.test(s[j]))j++; const nm=s.slice(i,j).toLowerCase();
+      if(MFNS[nm])toks.push({t:'fn',v:nm}); else if(nm==='x')toks.push({t:'var'}); else if(MCONST[nm]!==undefined)toks.push({t:'num',v:MCONST[nm]}); else throw new Error('Unknown name: '+nm); i=j; continue; }
+    if(ch=='π'){toks.push({t:'num',v:Math.PI});i++;continue;}
+    if('+-*/^()'.indexOf(ch)>=0){toks.push({t:ch});i++;continue;}
+    if(ch=='×'||ch=='·'){toks.push({t:'*'});i++;continue;} if(ch=='÷'){toks.push({t:'/'});i++;continue;}
+    if(ch=='−'||ch=='–'){toks.push({t:'-'});i++;continue;}
+    throw new Error('Unexpected character: '+ch);
+  }
+  const out=[]; for(let k=0;k<toks.length;k++){ const a=toks[k],b=toks[k+1]; out.push(a); if(!b)continue;
+    const aE=(a.t==='num'||a.t==='var'||a.t===')'), bS=(b.t==='num'||b.t==='var'||b.t==='fn'||b.t==='(');
+    if(aE&&bS&&!(a.t==='num'&&b.t==='num'))out.push({t:'*'}); }
+  return out;
+}
+function parseExpr(s){ const toks=tokenize(s); let p=0; const peek=()=>toks[p], next=()=>toks[p++];
+  function E(){let n=T();while(peek()&&(peek().t==='+'||peek().t==='-')){const c=next().t;n={op:'bop',c,l:n,r:T()};}return n;}
+  function T(){let n=U();while(peek()&&(peek().t==='*'||peek().t==='/')){const c=next().t;n={op:'bop',c,l:n,r:U()};}return n;}
+  function U(){if(peek()&&peek().t==='-'){next();return{op:'neg',a:U()};}if(peek()&&peek().t==='+'){next();return U();}return P();}
+  function P(){const b=A();if(peek()&&peek().t==='^'){next();return{op:'bop',c:'^',l:b,r:U()};}return b;}
+  function A(){const tk=peek();if(!tk)throw new Error('Unexpected end');
+    if(tk.t==='num'){next();return{op:'num',v:tk.v};} if(tk.t==='var'){next();return{op:'var'};}
+    if(tk.t==='('){next();const e=E();if(!peek()||peek().t!==')')throw new Error('Missing )');next();return e;}
+    if(tk.t==='fn'){next();if(!peek()||peek().t!=='(')throw new Error('Function needs (');next();const a=E();if(!peek()||peek().t!==')')throw new Error('Missing )');next();return{op:'call',fn:tk.v,a};}
+    throw new Error('Unexpected token'); }
+  const ast=E(); if(p<toks.length)throw new Error('Unexpected trailing input'); return ast;
+}
+function evalNode(n,x){ switch(n.op){
+  case 'num':return n.v; case 'var':return x; case 'neg':return -evalNode(n.a,x);
+  case 'call':{const v=evalNode(n.a,x);const f=MFNS[n.fn];return f?f(v):NaN;}
+  case 'bop':{const l=evalNode(n.l,x),r=evalNode(n.r,x);switch(n.c){case '+':return l+r;case '-':return l-r;case '*':return l*r;case '/':return l/r;case '^':return Math.pow(l,r);}}} }
+
+/* AST helpers */
+const num=v=>({op:'num',v}), VAR=()=>({op:'var'}), neg=a=>({op:'neg',a}), call=(fn,a)=>({op:'call',fn,a});
+const bop=(c,l,r)=>({op:'bop',c,l,r}), add=(l,r)=>bop('+',l,r), sub=(l,r)=>bop('-',l,r),
+  mul=(l,r)=>bop('*',l,r), div=(l,r)=>bop('/',l,r), pw=(l,r)=>bop('^',l,r);
+const isC=(n,v)=>n&&n.op==='num'&&Math.abs(n.v-v)<1e-12;
+const rnd=v=>Math.round(v*1e12)/1e12;
+
+/* Differentiate */
+function diff(n){
+  switch(n.op){
+    case 'num': return num(0);
+    case 'var': return num(1);
+    case 'neg': return neg(diff(n.a));
+    case 'bop': switch(n.c){
+      case '+': return add(diff(n.l),diff(n.r));
+      case '-': return sub(diff(n.l),diff(n.r));
+      case '*': return add(mul(diff(n.l),n.r),mul(n.l,diff(n.r)));
+      case '/': return div(sub(mul(diff(n.l),n.r),mul(n.l,diff(n.r))),pw(n.r,num(2)));
+      case '^':
+        if(n.r.op==='num'){ const c=n.r.v; return mul(num(c),pw(n.l,num(c-1))); }
+        if(n.l.op==='num'){ if(Math.abs(n.l.v-Math.E)<1e-9){ return mul(call('exp', n.r), diff(n.r)); } return mul(n, call('ln', n.l)); }
+        return mul(n, add(mul(diff(n.r),call('ln',n.l)), div(mul(n.r,diff(n.l)),n.l)));
+    }
+    case 'call': { const u=n.a, du=diff(u); let d;
+      switch(n.fn){
+        case 'sin': d=call('cos',u); break;
+        case 'cos': d=neg(call('sin',u)); break;
+        case 'tan': d=div(num(1),pw(call('cos',u),num(2))); break;
+        case 'exp': d=call('exp',u); break;
+        case 'ln': case 'log': d=div(num(1),u); break;
+        case 'log2': d=div(num(1),mul(u,call('ln',num(2)))); break;
+        case 'log10': d=div(num(1),mul(u,call('ln',num(10)))); break;
+        case 'sqrt': d=div(num(1),mul(num(2),call('sqrt',u))); break;
+        case 'cbrt': d=div(num(1),mul(num(3),pw(call('cbrt',u),num(2)))); break;
+        case 'asin': d=div(num(1),call('sqrt',sub(num(1),pw(u,num(2))))); break;
+        case 'acos': d=neg(div(num(1),call('sqrt',sub(num(1),pw(u,num(2)))))); break;
+        case 'atan': d=div(num(1),add(num(1),pw(u,num(2)))); break;
+        case 'sinh': d=call('cosh',u); break;
+        case 'cosh': d=call('sinh',u); break;
+        case 'tanh': d=sub(num(1),pw(call('tanh',u),num(2))); break;
+        case 'abs': d=call('sign',u); break;
+        case 'sec': d=mul(call('sec',u),call('tan',u)); break;
+        case 'csc': d=neg(mul(call('csc',u),call('cot',u))); break;
+        case 'cot': d=neg(pw(call('csc',u),num(2))); break;
+        default: throw new Error('Cannot differentiate '+n.fn);
+      }
+      if(isC(du,1)) return d;
+      if(isC(du,0)) return num(0);
+      return mul(d, du);
+    }
+  }
+}
+
+/* Simplify */
+function simplify(n){
+  if(n.op==='num'||n.op==='var') return n;
+  if(n.op==='neg'){ const a=simplify(n.a); if(a.op==='num')return num(-a.v); if(a.op==='neg')return a.a; return neg(a); }
+  if(n.op==='call') return call(n.fn, simplify(n.a));
+  if(n.op==='bop'){
+    let l=simplify(n.l), r=simplify(n.r); const ln=l.op==='num', rn=r.op==='num';
+    if(ln&&rn){ try{const v=evalNode(bop(n.c,l,r),0); if(isFinite(v))return num(rnd(v));}catch(e){} }
+    switch(n.c){
+      case '+': if(isC(l,0))return r; if(isC(r,0))return l; break;
+      case '-': if(isC(r,0))return l; if(isC(l,0))return simplify(neg(n.r)); break;
+      case '*': if(isC(l,0)||isC(r,0))return num(0); if(isC(l,1))return r; if(isC(r,1))return l; if(isC(l,-1))return simplify(neg(n.r)); if(isC(r,-1))return simplify(neg(n.l)); break;
+      case '/': if(isC(l,0))return num(0); if(isC(r,1))return l; break;
+      case '^': if(isC(r,0))return num(1); if(isC(r,1))return l; if(isC(l,0))return num(0); if(isC(l,1))return num(1); break;
+    }
+    return bop(n.c,l,r);
+  }
+  return n;
+}
+
+/* Render to string */
+const PREC={'+':1,'-':1,'*':2,'/':2,'^':3};
+function render(n, minPrec=0){
+  let s, prec;
+  if(n.op==='num'){ const v=n.v; if(Math.abs(v-Math.E)<1e-9){s='e';prec=10;} else { s=Number.isInteger(v)?String(v):String(rnd(v)); prec=10; } }
+  else if(n.op==='var'){ s='x'; prec=10; }
+  else if(n.op==='call'){ s=n.fn+'('+render(n.a,0)+')'; prec=10; }
+  else if(n.op==='neg'){ s='-'+render(n.a,3); prec=3; }
+  else { prec=PREC[n.c];
+    if(n.c==='^'){ s=render(n.l,4)+'^'+render(n.r,3); }
+    else if(n.c==='*'&&n.l.op==='num'&&(n.r.op==='var'||n.r.op==='call'||n.r.op==='neg'||n.r.op==='bop'&&n.r.c==='^')){
+      s=render(n.l,prec)+render(n.r,prec+1);
+    } else { s=render(n.l,prec)+n.c+render(n.r, prec+(n.c==='-'||n.c==='/'?1:0)); }
+  }
+  return prec<minPrec?'('+s+')':s;
+}
+
+/* ---------- UI ---------- */
+let lastAst=null, lastDerivAst=null;
+
+function compute(){
+  $('#status').innerHTML='';
+  const raw=$('#expr').value.trim();
+  if(!raw){ $('#result').innerHTML=''; $('#steps').innerHTML=''; return; }
+  try{
+    const ast=parseExpr(raw);
+    const dRaw=diff(ast);
+    const dSimp=simplify(dRaw);
+    lastAst=ast; lastDerivAst=dSimp;
+    const origStr=render(simplify(ast),0);
+    const dStr=render(dSimp,0);
+    $('#result').innerHTML=`
+      <div class="result-box">
+        <div class="label">${t('result')} <span style="opacity:.6">f'(x) = d/dx [ f(x) ]</span></div>
+        <div class="expr">f'(x) = ${escapeHtml(dStr)}</div>
+        <button class="gz-btn gz-btn-secondary" style="margin-top:8px" onclick="copyText('${dStr.replace(/'/g,"\\'")}')">${t('clear')===''?'':'📋 '}${GZI18n.getLang()==='zh'?'复制':'Copy'}</button>
+      </div>
+      <div class="eval-row">
+        <span>${t('evalAt')}</span>
+        <input id="evalx" type="number" step="any" placeholder="0">
+        <span>→</span>
+        <span id="evalout" style="opacity:.8"></span>
+      </div>`;
+    document.getElementById('evalx').addEventListener('input', doEval);
+    showSteps(ast, dRaw, dSimp, origStr, dStr);
+    doEval();
+  }catch(e){
+    $('#result').innerHTML=`<div class="err-msg">⚠️ ${t('invalidExpr')}<br><code>${escapeHtml(e.message)}</code></div>`;
+    $('#steps').innerHTML='';
+    lastAst=null; lastDerivAst=null;
+  }
+}
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function doEval(){
+  if(!lastAst) return;
+  const inp=document.getElementById('evalx');
+  if(!inp) return;
+  const xv=parseFloat(inp.value);
+  const out=document.getElementById('evalout');
+  if(!isFinite(xv)){ out.innerHTML=''; return; }
+  try{
+    const f=evalNode(lastAst,xv), fp=evalNode(lastDerivAst,xv);
+    out.innerHTML = `<code>${t('orig')}</code>=${fmt(f)} &nbsp; <code>${t('deriv')}</code>=${fmt(fp)}`;
+  }catch(e){ out.innerHTML='—'; }
+}
+function fmt(v){ if(!isFinite(v)) return '—'; if(Math.abs(v)>=1e6||Math.abs(v)<1e-4&&v!==0) return v.toExponential(4); return (Math.round(v*1e10)/1e10).toString(); }
+
+function showSteps(ast, dRaw, dSimp, origStr, dStr){
+  // heuristic rule labels based on top structure
+  const rules=[];
+  if(ast.op==='bop'&&(ast.c==='+'||ast.c==='-')) rules.push(t('ruleSum'));
+  else if(ast.op==='bop'&&ast.c==='*') rules.push(t('ruleProduct'));
+  else if(ast.op==='bop'&&ast.c==='/') rules.push(t('ruleQuotient'));
+  else if(ast.op==='bop'&&ast.c==='^'&&ast.r.op==='num') rules.push(t('rulePower'));
+  if(ast.op==='call'||(ast.op==='bop'&&ast.c==='^'&&!(ast.r.op==='num'))||(containsCall(ast)&&ast.op==='bop'&&ast.c==='^')) rules.push(t('ruleChain'));
+  const hasChain = (function ch(n){ if(!n)return false; if(n.op==='call')return true; if(n.op==='neg')return ch(n.a); if(n.op==='bop')return ch(n.l)||ch(n.r); return false; })(ast);
+  if(hasChain && ast.op!=='call') rules.push(t('ruleChain'));
+  $('#steps').innerHTML=`
+    <div class="steps">
+      <div class="stitle">${t('steps')}${rules.length?' · <span style="opacity:.7">'+[...new Set(rules)].join(' + ')+'</span>':''}</div>
+      <ol>
+        <li>Input: &nbsp; f(x) = ${escapeHtml(origStr)}</li>
+        <li>Apply differentiation rules to each term</li>
+        <li>Unsimplified result: &nbsp; ${escapeHtml(render(dRaw,0))}</li>
+        <li>Simplify algebraically</li>
+        <li><b>f'(x) = ${escapeHtml(dStr)}</b></li>
+      </ol>
+    </div>`;
+}
+function containsCall(n){ if(!n)return false; if(n.op==='call')return true; if(n.op==='neg')return containsCall(n.a); if(n.op==='bop')return containsCall(n.l)||containsCall(n.r); return false; }
+
+$('#examples').innerHTML=['x^3-2*x^2+5*x','sin(x^2)','x*exp(x)','ln(x^2+1)','tan(x)','sqrt(x^3+1)','1/(x+1)','x^2*sin(x)']
+  .map(ex=>`<button data-ex="${ex}">${ex}</button>`).join('');
+$('#examples').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{$('#expr').value=b.dataset.ex;compute();}));
+$('#expr').addEventListener('keydown',e=>{ if(e.key==='Enter') compute(); });
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="compute()">${t('go')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadEx()">${GZI18n.getLang()==='zh'?'示例':'Example'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+function loadEx(){ $('#expr').value='x^3 + sin(x^2)'; compute(); }
+function doClear(){ $('#expr').value=''; $('#result').innerHTML=''; $('#steps').innerHTML=''; $('#status').innerHTML=''; }
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📈', href:'/calc/graphing-calculator.html', name:'Graphing'},
+    {icon:'∫', href:'/calc/integral-calculator.html', name:'Integral'},
+    {icon:'🧮', href:'/calc/scientific-calculator.html', name:'Scientific'},
+    {icon:'📐', href:'/calc/triangle-calculator.html', name:'Triangle'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
