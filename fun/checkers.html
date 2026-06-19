@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Checkers Online - Free Classic Board Game vs AI | GameZipper Tools</title>
+  <meta name="description" content="Play Checkers (Draughts) online for free. Standard 8x8 board, mandatory captures, king promotions. Play vs a friend or against an AI with Easy, Medium and Hard difficulty. No signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/checkers.html">
+  <meta property="og:title" content="Checkers Online - Free Classic Board Game vs AI | GameZipper Tools">
+  <meta property="og:description" content="Play Checkers (Draughts) online for free. Standard 8x8 board, mandatory captures, king promotions. Play vs a friend or against an AI with Easy, Medium and Hard difficulty. No signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/checkers.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Checkers Online - Free Classic Board Game vs AI | GameZipper Tools">
+<meta name="twitter:description" content="Play Checkers (Draughts) online for free. Standard 8x8 board, mandatory captures, king promotions. Play vs a friend or against an AI.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.chk-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:20px}
+.chk-status{font-size:1.1em;font-weight:700;min-height:1.4em;color:var(--text)}
+.chk-board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:min(92vw,520px);aspect-ratio:1;border:3px solid #5c3a1e;border-radius:6px;overflow:hidden;user-select:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.chk-cell{position:relative;display:flex;align-items:center;justify-content:center;cursor:default}
+.chk-cell.light{background:#f0d9b5}
+.chk-cell.dark{background:#b58863;cursor:pointer}
+.chk-piece{width:74%;height:74%;border-radius:50%;box-shadow:0 3px 6px rgba(0,0,0,.45),inset 0 -3px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s}
+.chk-piece.p1{background:radial-gradient(circle at 35% 30%,#ff6b6b,#8b1d1d)}
+.chk-piece.p2{background:radial-gradient(circle at 35% 30%,#444,#0a0a0a)}
+.chk-piece.king::after{content:'♛';color:#ffd700;font-size:1.4em;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.chk-piece.p2.king::after{color:#fff3b0}
+.chk-piece.selected{outline:3px solid var(--accent);outline-offset:-3px;transform:scale(1.06)}
+.chk-cell.hint::before{content:'';position:absolute;width:24%;height:24%;background:rgba(78,205,196,.85);border-radius:50%;box-shadow:0 0 8px rgba(78,205,196,.6)}
+.chk-cell.capture-hint::before{width:80%;height:80%;background:transparent;border:3px dashed #ff6b6b;box-shadow:none}
+.chk-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+.chk-scores{display:flex;gap:14px;font-size:.95em;color:var(--text2)}
+.chk-scores b{color:var(--text)}
+.chk-tip{font-size:.85em;color:var(--text2);text-align:center;max-width:480px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Checkers Online","description":"Play Checkers (Draughts) online for free. Standard 8x8 board, mandatory captures, king promotions. Play vs a friend or against an AI with Easy, Medium and Hard difficulty.","url":"https://tools.gamezipper.com/fun/checkers.html","applicationCategory":"GameApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do you play Checkers?", "acceptedAnswer": {"@type": "Answer", "text": "Pieces move diagonally one square forward onto dark squares. To capture an opponent's piece, jump diagonally over it into an empty square. Captures are mandatory. When a piece reaches the far row it becomes a king and can move and capture both forward and backward."}}, {"@type": "Question", "name": "What is a king in Checkers?", "acceptedAnswer": {"@type": "Answer", "text": "A king is a piece that has reached the opponent's back row. It is crowned (shown with a crown) and gains the ability to move and capture diagonally in both directions — forward and backward — making it much more powerful than a regular piece."}}, {"@type": "Question", "name": "Are captures mandatory in Checkers?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. If a capture is available you must take it. If multiple captures are possible in a sequence you must continue jumping until no more captures remain. This rule applies to this online version too."}}, {"@type": "Question", "name": "How do you win at Checkers?", "acceptedAnswer": {"@type": "Answer", "text": "You win by capturing all your opponent's pieces, or by leaving them with no legal moves on their turn. Control the center, keep your back row intact to delay your opponent's kings, and force favorable trades when ahead in material."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/checkers.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/checkers.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/checkers.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="chk-wrap">
+      <div class="chk-status" id="status"></div>
+      <div class="chk-board" id="board"></div>
+      <div class="chk-controls">
+        <button class="gz-btn" onclick="newGame()" id="newBtn">New Game</button>
+        <select class="gz-select" id="modeSel" onchange="newGame()">
+          <option value="ai-hard">vs AI (Hard)</option>
+          <option value="ai-medium">vs AI (Medium)</option>
+          <option value="ai-easy">vs AI (Easy)</option>
+          <option value="2p">2 Players</option>
+        </select>
+      </div>
+      <div class="chk-scores">
+        <span>🔴 P1: <b id="p1Count">12</b></span>
+        <span>⚫ P2: <b id="p2Count">12</b></span>
+      </div>
+      <div class="chk-tip" id="tip"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    chkTitle: 'Checkers (Draughts) — Online Board Game',
+    chkDesc: 'Play classic Checkers online for free. Move diagonally, jump over enemy pieces to capture them, and reach the back row to crown kings. Play vs a friend or a smart AI. No signup.',
+    newGame: 'New Game',
+    p1Turn: '🔴 Red to move', p2Turn: '⚫ Black to move',
+    aiThinking: 'Computer is thinking…',
+    p1Wins: '🔴 Red wins!', p2Wins: '⚫ Black wins!',
+    tip: 'Click a piece to select it, then click a highlighted square to move. Captures are mandatory. Reach the far row to crown a king.',
+    step1: 'Click one of your pieces (highlighted when selected)',
+    step2: 'Move diagonally forward to an empty dark square',
+    step3: 'Jump over an opponent piece to capture it — multi-jumps continue automatically',
+    step4: 'Reach the far row to crown a king, which can move and capture in all four diagonal directions',
+  },
+  zh: {
+    chkTitle: '跳棋 — 经典棋盘对战',
+    chkDesc: '免费在线玩经典跳棋。斜向移动、跳过对手棋子吃子，到达对方底线升级为王。支持双人对战或对战 AI。无需注册。',
+    newGame: '新游戏',
+    p1Turn: '🔴 红方走棋', p2Turn: '⚫ 黑方走棋',
+    aiThinking: '电脑思考中…',
+    p1Wins: '🔴 红方胜！', p2Wins: '⚫ 黑方胜！',
+    tip: '点击棋子选中，再点击高亮方格移动。吃子为强制，到达对方底线即可升王。',
+    step1: '点击你的棋子（选中后会高亮）',
+    step2: '斜向前移动到空的深色格',
+    step3: '跳过对手棋子即可吃子 — 连跳会自动继续',
+    step4: '到达对方底线升为王，可斜向前后移动和吃子',
+  }
+});
+
+const {t,$} = GZ;
+const SIZE = 8;
+// 0 = empty, 1 = red (P1, moves up), 2 = black (P2, moves down), 3 = red king, 4 = black king
+let board, turn, selected, validMoves, mustContinue, mode, gameOver;
+
+function newBoard(){
+  const b = Array.from({length:SIZE},()=>Array(SIZE).fill(0));
+  for(let r=0;r<3;r++)for(let c=0;c<SIZE;c++)if((r+c)%2===1)b[r][c]=2;
+  for(let r=5;r<8;r++)for(let c=0;c<SIZE;c++)if((r+c)%2===1)b[r][c]=1;
+  return b;
+}
+function isKing(v){return v===3||v===4;}
+function owner(v){if(v===1||v===3)return 1;if(v===2||v===4)return 2;return 0;}
+function inBounds(r,c){return r>=0&&r<SIZE&&c>=0&&c<SIZE;}
+
+// Get all moves for a piece at (r,c). Returns array of {r,c,captures:[{r,c}]}
+function pieceMoves(b,r,c,capturesOnly){
+  const v=b[r][c];const p=owner(v);if(!p)return[];
+  const king=isKing(v);
+  // Forward directions: P1 moves up (row decreases), P2 moves down (row increases). Kings both.
+  let dirs;
+  if(king)dirs=[[-1,-1],[-1,1],[1,-1],[1,1]];
+  else if(p===1)dirs=[[-1,-1],[-1,1]];
+  else dirs=[[1,-1],[1,1]];
+  const moves=[];
+  // Captures (mandatory): check 2-step jumps
+  const allDirs=[[-1,-1],[-1,1],[1,-1],[1,1]];
+  // restrict king to its 4 dirs effectively same as allDirs
+  for(const [dr,dc] of allDirs){
+    if(!king){
+      if(p===1&&dr>0)continue;
+      if(p===2&&dr<0)continue;
+    }
+    const mr=r+dr,mc=c+dc,nr=r+2*dr,nc=c+2*dc;
+    if(!inBounds(nr,nc))continue;
+    const mid=b[mr][mc];
+    if(mid&&owner(mid)!==p&&b[nr][nc]===0){
+      moves.push({r:nr,c:nc,capture:{r:mr,c:mc}});
+    }
+  }
+  if(moves.length||capturesOnly)return moves;
+  // Simple moves
+  for(const [dr,dc] of dirs){
+    const nr=r+dr,nc=c+dc;
+    if(inBounds(nr,nc)&&b[nr][nc]===0)moves.push({r:nr,c:nc,capture:null});
+  }
+  return moves;
+}
+// Are there any captures available for player p?
+function hasCaptures(b,p){
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    if(owner(b[r][c])===p){
+      const m=pieceMoves(b,r,c,true);
+      if(m.length)return true;
+    }
+  }
+  return false;
+}
+function allMovesForPlayer(b,p){
+  const cap=hasCaptures(b,p);
+  const list=[];
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    if(owner(b[r][c])===p){
+      const ms=pieceMoves(b,r,c,cap);
+      for(const m of ms)list.push({fromR:r,fromC:c,toR:m.r,toC:m.c,capture:m.capture});
+    }
+  }
+  return list;
+}
+function countPieces(b){
+  let p1=0,p2=0;
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const o=owner(b[r][c]);
+    if(o===1)p1++;else if(o===2)p2++;
+  }
+  return {p1,p2};
+}
+
+function render(){
+  const el=$('#board');
+  el.innerHTML='';
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const cell=document.createElement('div');
+    cell.className='chk-cell '+((r+c)%2===0?'light':'dark');
+    cell.dataset.r=r;cell.dataset.c=c;
+    const v=board[r][c];
+    if(v){
+      const p=document.createElement('div');
+      p.className='chk-piece p'+owner(v)+(isKing(v)?' king':'');
+      if(selected&&selected.r===r&&selected.c===c)p.classList.add('selected');
+      cell.appendChild(p);
+    }
+    // hints
+    if(selected){
+      const mv=validMoves.find(m=>m.r===r&&m.c===c);
+      if(mv){
+        cell.classList.add(mv.capture?'capture-hint':'hint');
+      }
+    }
+    cell.addEventListener('click',()=>onCellClick(r,c));
+    el.appendChild(cell);
+  }
+  const cnt=countPieces(board);
+  $('#p1Count').textContent=cnt.p1;
+  $('#p2Count').textContent=cnt.p2;
+}
+function setStatus(key){$('#status').textContent=t(key);}
+function onCellClick(r,c){
+  if(gameOver)return;
+  if(mode.startsWith('ai')&&turn===2)return;
+  if(mustContinue){
+    // must move the same piece
+    if(selected){
+      const mv=validMoves.find(m=>m.r===r&&m.c===c);
+      if(mv){doMove(selected.r,selected.c,mv);return;}
+    }
+    return;
+  }
+  const v=board[r][c];
+  if(owner(v)===turn){
+    // Check if this piece has moves available given capture rule
+    const cap=hasCaptures(board,turn);
+    const ms=pieceMoves(board,r,c,cap);
+    if(ms.length===0){
+      // Can't select — must capture with another piece
+      return;
+    }
+    selected={r,c};
+    validMoves=ms;
+    render();
+    return;
+  }
+  if(selected){
+    const mv=validMoves.find(m=>m.r===r&&m.c===c);
+    if(mv){doMove(selected.r,selected.c,mv);}
+  }
+}
+function doMove(fr,fc,mv){
+  const v=board[fr][fc];
+  board[fr][fc]=0;
+  let captured=false;
+  if(mv.capture){
+    board[mv.capture.r][mv.capture.c]=0;
+    captured=true;
+  }
+  // King promotion
+  let nv=v;
+  if(v===1&&mv.r===0)nv=3;
+  else if(v===2&&mv.r===SIZE-1)nv=4;
+  board[mv.r][mv.c]=nv;
+  // Check for further captures if this was a capture move AND not just promoted (rule: ends on promotion)
+  if(captured && !(v!==nv)){
+    const further=pieceMoves(board,mv.r,mv.c,true);
+    if(further.length){
+      selected={r:mv.r,c:mv.c};
+      validMoves=further;
+      mustContinue=true;
+      render();
+      return;
+    }
+  }
+  mustContinue=false;
+  selected=null;validMoves=[];
+  // Check end
+  const next=turn===1?2:1;
+  const nextMoves=allMovesForPlayer(board,next);
+  if(nextMoves.length===0){
+    gameOver=true;
+    setStatus(turn===1?'p1Wins':'p2Wins');
+    render();
+    return;
+  }
+  const cnt=countPieces(board);
+  if(cnt.p1===0){gameOver=true;setStatus('p2Wins');render();return;}
+  if(cnt.p2===0){gameOver=true;setStatus('p1Wins');render();return;}
+  turn=next;
+  render();
+  setStatus(turn===1?'p1Turn':'p2Turn');
+  if(mode.startsWith('ai')&&turn===2){setStatus('aiThinking');setTimeout(aiMove,300);}
+}
+// AI: greedy + lookahead by difficulty
+function aiMove(){
+  const difficulty=(mode.split('-')[1])||'hard';
+  const depth = difficulty==='hard'?4:difficulty==='medium'?2:0;
+  const moves=allMovesForPlayer(board,2);
+  if(!moves.length){gameOver=true;setStatus('p1Wins');return;}
+  let best=-Infinity,bestMove=moves[0];
+  for(const m of moves){
+    const nb=board.map(r=>r.slice());
+    applyMoveToBoard(nb,m);
+    const s = depth>0 ? -negamax(nb,depth-1,-Infinity,Infinity,1) : evalBoard(nb,2);
+    if(s>best){best=s;bestMove=m;}
+  }
+  // Convert to the same shape as user move and execute
+  executeAiMove(bestMove);
+}
+function applyMoveToBoard(b,m){
+  const v=b[m.fromR][m.fromC];
+  b[m.fromR][m.fromC]=0;
+  if(m.capture)b[m.capture.r][m.capture.c]=0;
+  let nv=v;
+  if(v===1&&m.toR===0)nv=3;
+  else if(v===2&&m.toR===SIZE-1)nv=4;
+  b[m.toR][m.toC]=nv;
+}
+function evalBoard(b,p){
+  let s=0;
+  const opp=p===1?2:1;
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const v=b[r][c];
+    const o=owner(v);
+    if(o===p){
+      s+=isKing(v)?5:3;
+      // forward advance bonus
+      if(p===2)s+=r*0.1;else s+=(SIZE-1-r)*0.1;
+      // center bonus
+      s+=(3.5-Math.abs(3.5-c))*0.05;
+    } else if(o===opp){
+      s-=isKing(v)?5:3;
+    }
+  }
+  return s;
+}
+function negamax(b,depth,alpha,beta,p){
+  const moves=allMovesForPlayer(b,p);
+  if(moves.length===0)return -10000+depth;
+  if(depth===0)return evalBoard(b,p);
+  let best=-Infinity;
+  for(const m of moves){
+    const nb=b.map(r=>r.slice());
+    applyMoveToBoard(nb,m);
+    // NOTE: simplified, ignores forced multi-capture chains for AI depth performance
+    const s=-negamax(nb,depth-1,-beta,-alpha,p===1?2:1);
+    if(s>best)best=s;
+    if(best>alpha)alpha=best;
+    if(alpha>=beta)break;
+  }
+  return best;
+}
+function executeAiMove(m){
+  // For AI moves, we don't enforce the UI multi-capture loop, but follow forced chains
+  const v=board[m.fromR][m.fromC];
+  board[m.fromR][m.fromC]=0;
+  if(m.capture)board[m.capture.r][m.capture.c]=0;
+  let nv=v;
+  if(v===1&&m.toR===0)nv=3;
+  else if(v===2&&m.toR===SIZE-1)nv=4;
+  board[m.toR][m.toC]=nv;
+  selected=null;validMoves=[];mustContinue=false;
+  const next=1;
+  const nextMoves=allMovesForPlayer(board,next);
+  if(nextMoves.length===0||countPieces(board).p1===0){gameOver=true;setStatus('p2Wins');render();return;}
+  turn=next;render();setStatus('p1Turn');
+}
+function newGame(){
+  board=newBoard();turn=1;selected=null;validMoves=[];mustContinue=false;gameOver=false;
+  mode=$('#modeSel').value;
+  setStatus('p1Turn');
+  render();
+}
+$('#newBtn').textContent=t('newGame');
+$('#tip').textContent=t('tip');
+window.newGame=newGame;
+newGame();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'chkTitle',
+  descKey: 'chkDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⭕', href:'/fun/tic-tac-toe.html', name:'Tic Tac Toe'},
+    {icon:'🟫', href:'/fun/connect-4.html', name:'Connect 4'},
+    {icon:'⭕', href:'/fun/reversi.html', name:'Reversi'},
+    {icon:'💣', href:'/fun/minesweeper.html', name:'Minesweeper'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

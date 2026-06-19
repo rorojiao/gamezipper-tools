@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Pong Game Online - Free Classic Arcade Game | GameZipper Tools</title>
+  <meta name="description" content="Play Pong online for free. The classic arcade paddle game — move your paddle to bounce the ball past the AI opponent. Score points, increase speed, beat your best. Keyboard and mouse controls.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/pong.html">
+  <meta property="og:title" content="Pong Game Online - Free Classic Arcade Game | GameZipper Tools">
+  <meta property="og:description" content="Play Pong online for free. The classic arcade paddle game — move your paddle to bounce the ball past the AI opponent. Score points, increase speed, beat your best.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/pong.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Pong Game Online - Free Classic Arcade Game | GameZipper Tools">
+<meta name="twitter:description" content="Play Pong online for free. The classic arcade paddle game — move your paddle to bounce the ball past the AI opponent.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.pong-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:20px}
+.pong-scores{display:flex;gap:30px;align-items:center;font-size:1.1em}
+.pong-scores .side{text-align:center}
+.pong-scores .lbl{font-size:.75em;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.pong-scores .val{font-size:2.4em;font-weight:900;color:var(--accent);line-height:1}
+.pong-scores .vs{color:var(--text2);font-size:1em}
+canvas.pong{background:#0a0a1a;border:2px solid var(--border);border-radius:8px;display:block;width:min(92vw,720px);aspect-ratio:16/9;touch-action:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.pong-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+.pong-overlay{position:absolute;inset:0;background:rgba(0,0,0,.78);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:5;color:#fff;text-align:center;padding:14px}
+.pong-overlay.hidden{display:none}
+.pong-stage{position:relative}
+.pong-tip{font-size:.85em;color:var(--text2);text-align:center;max-width:480px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pong Game Online","description":"Play Pong online for free. The classic arcade paddle game — move your paddle to bounce the ball past the AI opponent. Score points, increase speed, beat your best.","url":"https://tools.gamezipper.com/fun/pong.html","applicationCategory":"GameApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do you play Pong?", "acceptedAnswer": {"@type": "Answer", "text": "Move your paddle up and down with the mouse, touch, or the W and S keys (or up/down arrows). The ball bounces off paddles and the top and bottom walls. If the ball passes your paddle on the right, the AI scores; if it passes the AI's paddle on the left, you score. First to 11 wins."}}, {"@type": "Question", "name": "Who invented Pong?", "acceptedAnswer": {"@type": "Answer", "text": "Pong was created by Allan Alcorn and released by Atari in 1972 as one of the first commercially successful arcade video games. It was inspired by table tennis and helped launch the video game industry."}}, {"@type": "Question", "name": "Does the ball get faster in Pong?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each time the ball hits a paddle it speeds up slightly, and the angle depends on where it strikes the paddle — hit near the edges for steeper angles. This makes rallies harder the longer they go."}}, {"@type": "Question", "name": "How do you win at Pong against the AI?", "acceptedAnswer": {"@type": "Answer", "text": "Hit the ball with the edges of your paddle to send it back at sharp angles the AI struggles to reach. Anticipate where the ball will arrive instead of chasing it, and use quick defensive taps to reset before going on offense."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/pong.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/pong.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/pong.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="pong-wrap">
+      <div class="pong-scores">
+        <div class="side"><div class="lbl" id="lblYou">You</div><div class="val" id="p1">0</div></div>
+        <div class="vs" id="vsLabel">vs</div>
+        <div class="side"><div class="lbl" id="lblAi">Computer</div><div class="val" id="p2">0</div></div>
+      </div>
+      <div class="pong-stage">
+        <canvas class="pong" id="game" width="800" height="450"></canvas>
+        <div class="pong-overlay" id="overlay">
+          <div id="overlayText" style="font-size:1.6em;font-weight:800"></div>
+          <button class="gz-btn" onclick="startGame()" id="overlayBtn">Start</button>
+        </div>
+      </div>
+      <div class="pong-controls">
+        <button class="gz-btn" onclick="startGame()" id="startBtn">New Game</button>
+        <button class="gz-btn gz-btn-secondary" onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+        <select class="gz-select" id="diffSel" onchange="applyDifficulty()">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div class="pong-tip" id="tip"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    pongTitle: 'Pong — Classic Arcade Game Online',
+    pongDesc: 'Play the timeless Pong game in your browser. Bounce the ball past the AI paddle to score. Adjustable difficulty, mouse/keyboard/touch controls, first to 11 wins. Free, no signup.',
+    you: 'You', ai: 'Computer', vs: 'vs', start: 'Start',
+    newGame: 'New Game', pause: '⏸ Pause', resume: '▶ Resume',
+    ready: 'Ready to play?', youWin: 'You win! 🎉', aiWins: 'Computer wins!',
+    tip: 'Move with mouse, touch or W/S (or ↑/↓). The ball speeds up with each paddle hit. First to 11 wins!',
+    step1: 'Move your right paddle with the mouse, touch or arrow keys',
+    step2: 'Bounce the ball back — it speeds up with every paddle hit',
+    step3: 'Hit with paddle edges for sharper angles',
+    step4: 'Score by getting the ball past the AI paddle — first to 11 wins',
+  },
+  zh: {
+    pongTitle: 'Pong 弹球 — 经典街机游戏',
+    pongDesc: '在浏览器中玩经典 Pong 弹球。把球弹过 AI 球拍得分。可调难度，支持鼠标、键盘和触屏。先得 11 分者获胜。免费、无需注册。',
+    you: '玩家', ai: '电脑', vs: '对战', start: '开始',
+    newGame: '新游戏', pause: '⏸ 暂停', resume: '▶ 继续',
+    ready: '准备开始！', youWin: '你赢了！🎉', aiWins: '电脑获胜！',
+    tip: '使用鼠标、触屏或 W/S（或 ↑/↓）移动球拍。每次击球都会加速。先得 11 分者获胜！',
+    step1: '使用鼠标、触屏或方向键移动右侧球拍',
+    step2: '把球弹回去 — 每次击中球拍都会加速',
+    step3: '用球拍边缘击球可获得更大角度',
+    step4: '把球弹过对方球拍即可得分 — 先得 11 分者获胜',
+  }
+});
+
+const {t,$} = GZ;
+const canvas=$('#game');
+const ctx=canvas.getContext('2d');
+const W=canvas.width, H=canvas.height;
+const PADDLE_W=12, PADDLE_H=88;
+const BALL_R=8;
+const WIN_SCORE=11;
+
+let p1Y, p2Y, ballX, ballY, ballVX, ballVY, score1, score2, paused, gameOver, started, aiSpeed, running;
+let keys={up:false,down:false};
+
+function reset(){
+  p1Y=H/2-PADDLE_H/2;
+  p2Y=H/2-PADDLE_H/2;
+  serveBall(Math.random()<.5?1:-1);
+  score1=0;score2=0;gameOver=false;paused=false;
+  updateScores();
+}
+function serveBall(dir){
+  ballX=W/2;ballY=H/2;
+  const speed=5.5;
+  const angle=(Math.random()*0.6-0.3); // -0.3 to 0.3 rad
+  ballVX=Math.cos(angle)*speed*dir;
+  ballVY=Math.sin(angle)*speed;
+}
+function updateScores(){
+  $('#p1').textContent=score1;
+  $('#p2').textContent=score2;
+}
+function applyDifficulty(){
+  const d=$('#diffSel').value;
+  aiSpeed = d==='hard'?7:d==='medium'?5.2:3.8;
+}
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h);}
+function draw(){
+  // background
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  // center dashed line
+  ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=3;
+  ctx.setLineDash([14,18]);ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
+  // paddles
+  rect(20,p1Y,PADDLE_W,PADDLE_H,'#ff6b6b');
+  rect(W-20-PADDLE_W,p2Y,PADDLE_W,PADDLE_H,'#4ecdc4');
+  // ball
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(ballX,ballY,BALL_R,0,Math.PI*2);ctx.fill();
+  // ball glow
+  ctx.shadowColor='#fff';ctx.shadowBlur=12;
+  ctx.beginPath();ctx.arc(ballX,ballY,BALL_R,0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;
+}
+function update(){
+  // player paddle via keys
+  if(keys.up)p1Y-=7;
+  if(keys.down)p1Y+=7;
+  p1Y=Math.max(0,Math.min(H-PADDLE_H,p1Y));
+  // AI paddle: track ball with capped speed
+  const target = ballY - PADDLE_H/2;
+  const diff = target - p2Y;
+  // Add slight lag/imperfection on easy/medium
+  const move = Math.max(-aiSpeed,Math.min(aiSpeed,diff));
+  p2Y += move;
+  p2Y=Math.max(0,Math.min(H-PADDLE_H,p2Y));
+  // ball
+  ballX+=ballVX;ballY+=ballVY;
+  // top/bottom walls
+  if(ballY-BALL_R<0){ballY=BALL_R;ballVY=-ballVY;}
+  if(ballY+BALL_R>H){ballY=H-BALL_R;ballVY=-ballVY;}
+  // left paddle (AI) collision
+  if(ballVX<0 && ballX-BALL_R<20+PADDLE_W && ballX-BALL_R>20-PADDLE_W && ballY>p1Y && ballY<p1Y+PADDLE_H){
+    bouncePaddle(20+PADDLE_W, p1Y);
+  }
+  // right paddle (player) collision
+  if(ballVX>0 && ballX+BALL_R>W-20-PADDLE_W && ballX+BALL_R<W-20+PADDLE_W && ballY>p2Y && ballY<p2Y+PADDLE_H){
+    bouncePaddle(W-20-PADDLE_W, p2Y);
+  }
+  // score
+  if(ballX<0){score2++;updateScores();checkWin();if(!gameOver)serveBall(-1);}
+  else if(ballX>W){score1++;updateScores();checkWin();if(!gameOver)serveBall(1);}
+}
+function bouncePaddle(paddleX, paddleY){
+  // angle based on hit position on paddle
+  const rel = (ballY - (paddleY + PADDLE_H/2)) / (PADDLE_H/2); // -1..1
+  const speed = Math.min(14, Math.hypot(ballVX, ballVY) * 1.06);
+  const angle = rel * 0.9; // up to ~50 degrees
+  const dir = ballVX > 0 ? -1 : 1;
+  ballVX = Math.cos(angle) * speed * dir;
+  ballVY = Math.sin(angle) * speed;
+  // push ball out of paddle
+  if(dir<0) ballX = paddleX - BALL_R - 1;
+  else ballX = paddleX + PADDLE_W + BALL_R + 1;
+}
+function checkWin(){
+  if(score1>=WIN_SCORE){gameOver=true;showOverlay('youWin');}
+  else if(score2>=WIN_SCORE){gameOver=true;showOverlay('aiWins');}
+}
+function showOverlay(key){
+  $('#overlayText').textContent=t(key);
+  $('#overlayBtn').textContent=t('newGame');
+  $('#overlay').classList.remove('hidden');
+  paused=true;
+}
+function loop(){
+  if(!paused && !gameOver){update();}
+  draw();
+  if(running)requestAnimationFrame(loop);
+}
+function startGame(){
+  reset();applyDifficulty();
+  $('#overlay').classList.add('hidden');
+  paused=false;running=true;
+  $('#pauseBtn').textContent=t('pause');
+  if(!loopStarted){loopStarted=true;loop();}
+}
+function togglePause(){
+  if(gameOver)return;
+  paused=!paused;
+  $('#pauseBtn').textContent=t(paused?'resume':'pause');
+  if(paused){
+    $('#overlayText').textContent=t('ready');
+    $('#overlayBtn').textContent=t('resume');
+    $('#overlay').classList.remove('hidden');
+  } else {
+    $('#overlay').classList.add('hidden');
+  }
+}
+let loopStarted=false;
+
+// Player controls RIGHT paddle (p2Y). AI controls LEFT paddle (p1Y).
+// `keys` already declared above.
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='arrowup'||k==='w'){keys.up=true;e.preventDefault();}
+  else if(k==='arrowdown'||k==='s'){keys.down=true;e.preventDefault();}
+  else if(k===' '||k==='p'){togglePause();e.preventDefault();}
+});
+document.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='arrowup'||k==='w')keys.up=false;
+  else if(k==='arrowdown'||k==='s')keys.down=false;
+});
+// Mouse / touch control — track pointer Y over the canvas
+function pointerToPaddle(clientY){
+  const rect=canvas.getBoundingClientRect();
+  const scaleY=canvas.height/rect.height;
+  const y=(clientY-rect.top)*scaleY;
+  p2Y = Math.max(0,Math.min(H-PADDLE_H, y-PADDLE_H/2));
+}
+canvas.addEventListener('mousemove',e=>pointerToPaddle(e.clientY));
+canvas.addEventListener('touchmove',e=>{e.preventDefault();pointerToPaddle(e.touches[0].clientY);},{passive:false});
+// Apply key state each frame to player paddle (replaces duplicate keydown listener)
+function applyPlayerKeys(){
+  if(keys.up)p2Y=Math.max(0,p2Y-9);
+  if(keys.down)p2Y=Math.min(H-PADDLE_H,p2Y+9);
+}
+// Patch update() to also apply player keys
+const _origUpdate = update;
+update = function(){ applyPlayerKeys(); _origUpdate(); };
+
+$('#lblYou').textContent=t('you');
+$('#lblAi').textContent=t('ai');
+$('#vsLabel').textContent=t('vs');
+$('#startBtn').textContent=t('newGame');
+$('#pauseBtn').textContent=t('pause');
+$('#tip').textContent=t('tip');
+$('#overlayText').textContent=t('ready');
+$('#overlayBtn').textContent=t('start');
+
+window.startGame=startGame;window.togglePause=togglePause;window.applyDifficulty=applyDifficulty;
+
+// Initial state: AI on left, player on right
+applyDifficulty();
+reset();
+paused=true;
+running=true;
+loop();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'pongTitle',
+  descKey: 'pongDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🟫', href:'/fun/tetris.html', name:'Tetris'},
+    {icon:'⌨️', href:'/fun/typing-test.html', name:'Typing Test'},
+    {icon:'🐍', href:'/fun/snake.html', name:'Snake'},
+    {icon:'⚡', href:'/fun/reaction-time.html', name:'Reaction Time'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Connect 4 Online - Free Classic Strategy Game | GameZipper Tools</title>
+  <meta name="description" content="Play Connect 4 online for free. Drop red and yellow discs into a 7x6 grid, get four in a row to win. Play vs a friend or against an unbeatable AI. No signup, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/connect-4.html">
+  <meta property="og:title" content="Connect 4 Online - Free Classic Strategy Game | GameZipper Tools">
+  <meta property="og:description" content="Play Connect 4 online for free. Drop red and yellow discs into a 7x6 grid, get four in a row to win. Play vs a friend or against an unbeatable AI. No signup, browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/connect-4.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Connect 4 Online - Free Classic Strategy Game | GameZipper Tools">
+<meta name="twitter:description" content="Play Connect 4 online for free. Drop red and yellow discs into a 7x6 grid, get four in a row to win. Play vs a friend or against an unbeatable AI.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.c4-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:20px}
+.c4-status{font-size:1.1em;font-weight:700;color:var(--text);min-height:1.4em}
+.c4-status .chip{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:middle;margin:0 6px;border:1px solid rgba(255,255,255,.2)}
+.c4-board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:linear-gradient(135deg,#1e6fd0,#0d4a99);padding:10px;border-radius:12px;width:min(92vw,460px);aspect-ratio:7/6;touch-action:manipulation;user-select:none;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.c4-cell{position:relative;background:#0a1628;border-radius:50%;cursor:pointer;overflow:hidden;transition:transform .08s}
+.c4-cell:hover{transform:scale(0.96)}
+.c4-disc{position:absolute;inset:0;border-radius:50%}
+.c4-disc.p1{background:radial-gradient(circle at 30% 30%,#ff6b6b,#c92a2a)}
+.c4-disc.p2{background:radial-gradient(circle at 30% 30%,#ffe066,#f59f00)}
+.c4-disc.placed{animation:c4drop .35s cubic-bezier(.45,.05,.55,1.0)}
+.c4-disc.win{animation:c4win 1s ease-in-out infinite;outline:3px solid #fff;outline-offset:-3px;z-index:2}
+@keyframes c4drop{0%{transform:translateY(-440%)}70%{transform:translateY(8%)}100%{transform:translateY(0)}}
+@keyframes c4win{0%,100%{filter:brightness(1)}50%{filter:brightness(1.6)}}
+.c4-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+.c4-scores{display:flex;gap:14px;font-size:.95em;color:var(--text2)}
+.c4-scores b{color:var(--text)}
+.c4-tip{font-size:.85em;color:var(--text2);text-align:center}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Connect 4 Online","description":"Play Connect 4 online for free. Drop red and yellow discs into a 7x6 grid, get four in a row to win. Play vs a friend or against an unbeatable AI.","url":"https://tools.gamezipper.com/fun/connect-4.html","applicationCategory":"GameApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do you play Connect 4?", "acceptedAnswer": {"@type": "Answer", "text": "Click any column to drop a disc. The disc falls to the lowest empty slot. Red and Yellow take turns. The first player to line up four of their discs — horizontally, vertically, or diagonally — wins the game."}}, {"@type": "Question", "name": "Can I play Connect 4 against the computer?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Choose Single Player from the mode menu and pick Easy, Medium or Hard. Hard uses a minimax algorithm that is extremely difficult to beat."}}, {"@type": "Question", "name": "How do you always win at Connect 4?", "acceptedAnswer": {"@type": "Answer", "text": "The first player has a guaranteed winning strategy with perfect play. Key tactics: control the center column, set up double threats (two ways to win at once), and block your opponent's three-in-a-row before extending your own."}}, {"@type": "Question", "name": "Is Connect 4 a solved game?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Connect 4 was mathematically solved in 1988 — the first player can force a win by playing the center column first with perfect play. Against a perfect AI you can only draw or lose as the second player."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/connect-4.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/connect-4.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/connect-4.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="c4-wrap">
+      <div class="c4-status" id="status"></div>
+      <div class="c4-board" id="board"></div>
+      <div class="c4-controls">
+        <button class="gz-btn" onclick="newGame()" id="newBtn">New Game</button>
+        <button class="gz-btn gz-btn-secondary" onclick="undo()" id="undoBtn">↶ Undo</button>
+        <select class="gz-select" id="modeSel" onchange="newGame()">
+          <option value="ai-hard">vs AI (Hard)</option>
+          <option value="ai-medium">vs AI (Medium)</option>
+          <option value="ai-easy">vs AI (Easy)</option>
+          <option value="2p">2 Players</option>
+        </select>
+      </div>
+      <div class="c4-scores">
+        <span>🔴 <b id="p1Wins">0</b></span>
+        <span>🟡 <b id="p2Wins">0</b></span>
+        <span>🤝 <b id="draws">0</b></span>
+      </div>
+      <div class="c4-tip" id="tip"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    c4Title: 'Connect 4 — Online Strategy Game',
+    c4Desc: 'Play the classic Connect Four game in your browser. Drop discs into a 7×6 grid and line up four in a row to win. Play vs a friend or an unbeatable AI. Free, no signup.',
+    newGame: 'New Game', undo: '↶ Undo',
+    p1Turn: 'Red to move', p2Turn: 'Yellow to move',
+    p1Wins: 'Red wins! 🔴', p2Wins: 'Yellow wins! 🟡', draw: "It's a draw! 🤝",
+    aiThinking: 'Computer is thinking…',
+    tip: 'Click any column to drop a disc. Get four in a row — horizontal, vertical or diagonal — to win.',
+    step1: 'Click a column to drop your colored disc to the lowest empty slot',
+    step2: 'Take turns with your opponent (or the AI)',
+    step3: 'Line up four discs in a row — horizontally, vertically or diagonally',
+    step4: 'Block your opponent while building your own winning threats',
+  },
+  zh: {
+    c4Title: '四子棋 — 经典策略对战',
+    c4Desc: '在浏览器中玩经典四子棋。把棋子投入 7×6 网格，连成四子即可获胜。支持双人对战或挑战 AI。免费、无需注册。',
+    newGame: '新游戏', undo: '↶ 撤销',
+    p1Turn: '红方下子', p2Turn: '黄方下子',
+    p1Wins: '红方胜！🔴', p2Wins: '黄方胜！🟡', draw: '平局！🤝',
+    aiThinking: '电脑思考中…',
+    tip: '点击任意列即可投入棋子。横向、纵向或斜向连成四子即获胜。',
+    step1: '点击任意一列，将彩色棋子落到最底部的空位',
+    step2: '与对手（或 AI）轮流下子',
+    step3: '横向、纵向或斜向连成四子即获胜',
+    step4: '在组建自己进攻的同时阻挡对手',
+  }
+});
+
+const {t,$} = GZ;
+const COLS = 7, ROWS = 6;
+let grid, turn, history, gameOver, mode;
+const stats = JSON.parse(localStorage.getItem('c4-stats')||'{"p1":0,"p2":0,"d":0}');
+
+$('#newBtn').textContent=t('newGame');
+$('#undoBtn').textContent=t('undo');
+$('#tip').textContent=t('tip');
+$('#p1Wins').textContent=stats.p1;
+$('#p2Wins').textContent=stats.p2;
+$('#draws').textContent=stats.d;
+
+function emptyGrid(){return Array.from({length:ROWS},()=>Array(COLS).fill(0));}
+function lowestRow(g,col){for(let r=ROWS-1;r>=0;r--)if(!g[r][col])return r;return -1;}
+function validCols(g){const c=[];for(let i=0;i<COLS;i++)if(lowestRow(g,i)>=0)c.push(i);return c;}
+function checkWin(g,r,c,p){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const [dr,dc] of dirs){
+    const cells=[[r,c]];
+    let i=1;while(r+dr*i>=0&&r+dr*i<ROWS&&c+dc*i>=0&&c+dc*i<COLS&&g[r+dr*i][c+dc*i]===p){cells.push([r+dr*i,c+dc*i]);i++;}
+    i=1;while(r-dr*i>=0&&r-dr*i<ROWS&&c-dc*i>=0&&c-dc*i<COLS&&g[r-dr*i][c-dc*i]===p){cells.push([r-dr*i,c-dc*i]);i++;}
+    if(cells.length>=4)return cells;
+  }
+  return null;
+}
+
+function render(winCells){
+  const el=$('#board');
+  el.innerHTML='';
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const cell=document.createElement('div');
+    cell.className='c4-cell';
+    const v=grid[r][c];
+    if(v){
+      const disc=document.createElement('div');
+      disc.className='c4-disc '+(v===1?'p1':'p2')+' placed';
+      if(winCells&&winCells.some(wr=>wr[0]===r&&wr[1]===c))disc.classList.add('win');
+      cell.appendChild(disc);
+    }
+    cell.addEventListener('click',()=>play(c));
+    el.appendChild(cell);
+  }
+}
+function updateStatus(key){
+  const colors={p1Turn:'#ff6b6b',p2Wins:'#f59f00'};
+  $('#status').innerHTML=key==='p1Turn'||key==='p2Turn'?t(key):t(key);
+}
+function play(col){
+  if(gameOver)return;
+  if(mode.startsWith('ai') && turn===2)return;
+  const r=lowestRow(grid,col);
+  if(r<0)return;
+  grid[r][col]=turn;
+  history.push({r,c,p:turn});
+  const win=checkWin(grid,r,col,turn);
+  if(win){endGame(turn,win);return;}
+  if(validCols(grid).length===0){endGame(0,null);return;}
+  turn=turn===1?2:1;
+  updateStatus(turn===1?'p1Turn':'p2Turn');
+  render();
+  if(mode.startsWith('ai')&&turn===2&&!gameOver){
+    updateStatus('aiThinking');
+    setTimeout(()=>aiMove(),250);
+  }
+}
+function endGame(winner,winCells){
+  gameOver=true;
+  if(winner===1){stats.p1++;updateStatus('p1Wins');}
+  else if(winner===2){stats.p2++;updateStatus('p2Wins');}
+  else{stats.d++;updateStatus('draw');}
+  localStorage.setItem('c4-stats',JSON.stringify(stats));
+  $('#p1Wins').textContent=stats.p1;
+  $('#p2Wins').textContent=stats.p2;
+  $('#draws').textContent=stats.d;
+  render(winCells);
+}
+function undo(){
+  if(gameOver||history.length===0)return;
+  // In AI mode, undo two moves
+  const steps = mode.startsWith('ai')&&history.length>=2 ? 2 : 1;
+  for(let i=0;i<steps&&history.length;i++){
+    const h=history.pop();
+    grid[h.r][h.c]=0;
+    turn=h.p;
+  }
+  updateStatus(turn===1?'p1Turn':'p2Turn');
+  render();
+}
+// AI: minimax with depth based on difficulty
+function aiMove(){
+  const difficulty=mode.split('-')[1]||'hard';
+  const depth = difficulty==='hard'?5:difficulty==='medium'?3:1;
+  const rand = difficulty==='easy';
+  let col;
+  if(rand&&Math.random()<0.5){
+    const v=validCols(grid);
+    col=v[Math.floor(Math.random()*v.length)];
+  } else {
+    col = bestColumn(grid,depth);
+  }
+  play(col);
+}
+function bestColumn(g,depth){
+  let best=-Infinity, bestCol=3;
+  const cols=validCols(g);
+  // center-first preference
+  cols.sort((a,b)=>Math.abs(3-a)-Math.abs(3-b));
+  for(const col of cols){
+    const r=lowestRow(g,col);
+    g[r][col]=2;
+    let s=minimax(g,depth-1,false,-Infinity,Infinity);
+    g[r][col]=0;
+    // Slight center bonus
+    if(col===3)s+=0.1;
+    if(s>best){best=s;bestCol=col;}
+  }
+  return bestCol;
+}
+function minimax(g,depth,maximizing,alpha,beta){
+  // Terminal checks
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(g[r][c]){
+      const w=checkWin(g,r,c,g[r][c]);
+      if(w) return g[r][c]===2 ? 100000+depth : -100000-depth;
+    }
+  }
+  if(depth===0)return scorePosition(g,2)-scorePosition(g,1);
+  const cols=validCols(g);
+  if(cols.length===0)return 0;
+  cols.sort((a,b)=>Math.abs(3-a)-Math.abs(3-b));
+  if(maximizing){
+    let v=-Infinity;
+    for(const col of cols){
+      const r=lowestRow(g,col);g[r][col]=2;
+      v=Math.max(v,minimax(g,depth-1,false,alpha,beta));
+      g[r][col]=0;
+      alpha=Math.max(alpha,v);if(alpha>=beta)break;
+    }
+    return v;
+  } else {
+    let v=Infinity;
+    for(const col of cols){
+      const r=lowestRow(g,col);g[r][col]=1;
+      v=Math.min(v,minimax(g,depth-1,true,alpha,beta));
+      g[r][col]=0;
+      beta=Math.min(beta,v);if(alpha>=beta)break;
+    }
+    return v;
+  }
+}
+function scorePosition(g,p){
+  let s=0;
+  // Center bonus
+  for(let r=0;r<ROWS;r++)if(g[r][3]===p)s+=3;
+  // Count windows of 4
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    for(const [dr,dc] of dirs){
+      const cells=[];
+      let ok=true;
+      for(let i=0;i<4;i++){
+        const rr=r+dr*i,cc=c+dc*i;
+        if(rr<0||rr>=ROWS||cc<0||cc>=COLS){ok=false;break;}
+        cells.push(g[rr][cc]);
+      }
+      if(!ok)continue;
+      const own=cells.filter(v=>v===p).length;
+      const opp=cells.filter(v=>v&&v!==p).length;
+      if(opp===0){
+        if(own===4)s+=100;else if(own===3)s+=10;else if(own===2)s+=2;
+      }
+      if(own===0){
+        if(opp===3)s-=80;
+      }
+    }
+  }
+  return s;
+}
+function newGame(){
+  grid=emptyGrid();turn=1;history=[];gameOver=false;
+  mode=$('#modeSel').value;
+  updateStatus('p1Turn');
+  render();
+}
+
+window.newGame=newGame;window.undo=undo;
+
+newGame();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'c4Title',
+  descKey: 'c4Desc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⭕', href:'/fun/tic-tac-toe.html', name:'Tic Tac Toe'},
+    {icon:'🔢', href:'/fun/2048.html', name:'2048'},
+    {icon:'🧩', href:'/fun/memory-game.html', name:'Memory Game'},
+    {icon:'🟫', href:'/fun/tetris.html', name:'Tetris'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
