@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CRC32 Hash Calculator - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Calculate CRC32 checksum and hash of any text or file. Supports CRC-32 (IEEE 802.3), hex and decimal output, uppercase/lowercase. Free online CRC32 generator — runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/crc32.html">
+  <meta property="og:title" content="CRC32 Hash Calculator - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Calculate CRC32 checksum and hash of any text or file. Supports CRC-32 (IEEE 802.3), hex and decimal output, uppercase/lowercase. Free online CRC32 generator — runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/crc32.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CRC32 Hash Calculator - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Calculate CRC32 checksum and hash of any text or file. Supports CRC-32 (IEEE 802.3), hex and decimal output, uppercase/lowercase. Free online CRC32 generator — runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{font-family:monospace;font-size:.9em;word-break:break-all;background:var(--glass2);padding:14px;border-radius:10px;line-height:1.7;margin:12px 0;min-height:48px}
+.drop-zone{border:2px dashed var(--border);border-radius:14px;padding:26px;text-align:center;cursor:pointer;transition:all .2s;margin:10px 0}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass)}
+.hash-row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+.hash-row label{min-width:90px;color:var(--text2);font-size:.85em}
+.hash-row .val{font-family:monospace;font-weight:700;color:var(--accent);flex:1;word-break:break-all;min-width:200px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CRC32 Hash Calculator","description":"Calculate CRC32 checksum and hash of any text or file. Supports CRC-32 (IEEE 802.3), hex and decimal output, uppercase/lowercase. Free online CRC32 generator — runs in your browser.","url":"https://tools.gamezipper.com/dev/crc32.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is CRC32?","acceptedAnswer":{"@type":"Answer","text":"CRC32 (Cyclic Redundancy Check, 32-bit) is a checksum algorithm using the IEEE 802.3 polynomial 0x04C11DB7. It produces a 32-bit hash widely used in ZIP, PNG, Ethernet and TCP to detect accidental data corruption."}},{"@type":"Question","name":"Is CRC32 a cryptographic hash?","acceptedAnswer":{"@type":"Answer","text":"No. CRC32 is designed only to detect accidental changes — it is fast and small but trivial to collide or forge. For security use SHA-256 or stronger; never use CRC32 for passwords or signatures."}},{"@type":"Question","name":"What inputs can I hash?","acceptedAnswer":{"@type":"Answer","text":"You can hash any text (UTF-8 encoded) or any file by dragging it onto the drop zone. The result is shown in both 8-digit hex and unsigned decimal form."}},{"@type":"Question","name":"Why are there multiple CRC32 variants?","acceptedAnswer":{"@type":"Answer","text":"Common variants differ in initial value and bit reflection. This tool implements CRC-32/ISO-HDLC (the ZIP/PNG/Ethernet standard, also called CRC-32B), which is by far the most widely used."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/crc32.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/crc32.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/crc32.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" rows="5" spellcheck="false" style="width:100%;font-family:monospace;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);resize:vertical" placeholder="Type or paste text here..."></textarea>
+    <div class="drop-zone" id="dropZone">
+      <div style="font-size:2.4em">📄</div>
+      <p id="lbl-drop" style="margin:6px 0 0;color:var(--text2)"></p>
+      <input type="file" id="fileInput" style="display:none">
+    </div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CRC32 Hash Calculator',
+    toolDesc: 'Compute the CRC-32 (IEEE 802.3 / ZIP / PNG) checksum of any text or file — hex and decimal output, instant results.',
+    lblDrop: 'Drop a file here or click to upload (file CRC32)',
+    copy: 'Copy',
+    clear: 'Clear',
+    example: 'Example',
+    hex: 'CRC32 (hex)',
+    dec: 'CRC32 (decimal)',
+    bin: 'CRC32 (binary)',
+    bytes: 'Input bytes',
+    step1: 'Type text above or drop a file onto the drop zone',
+    step2: 'The CRC-32 checksum updates instantly as you type',
+    step3: 'Copy the hex value for use in code, configs or links',
+    step4: 'For security use SHA-256 instead — CRC32 is only for error detection',
+  },
+  zh: {
+    toolTitle: 'CRC32 哈希计算器',
+    toolDesc: '计算任意文本或文件的 CRC-32（IEEE 802.3 / ZIP / PNG）校验和 — 输出十六进制和十进制，即时计算。',
+    lblDrop: '拖拽文件到此处或点击上传（计算文件 CRC32）',
+    copy: '复制',
+    clear: '清除',
+    example: '示例',
+    hex: 'CRC32（十六进制）',
+    dec: 'CRC32（十进制）',
+    bin: 'CRC32（二进制）',
+    bytes: '输入字节数',
+    step1: '在上方输入文本，或将文件拖到上传区',
+    step2: '输入时即时更新 CRC-32 校验和',
+    step3: '复制十六进制值用于代码、配置或链接',
+    step4: '安全场景请改用 SHA-256 — CRC32 仅用于错误检测',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Build CRC-32 (IEEE 802.3, reflected) lookup table
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[i] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(bytes) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function fmtResult(bytes) {
+  const v = crc32(bytes);
+  const hex = v.toString(16).padStart(8, '0').toUpperCase();
+  const dec = v.toString(10);
+  const bin = v.toString(2).padStart(32, '0');
+  return `
+    <div class="hash-row"><label>${t('hex')}</label><span class="val">${hex}</span>
+      <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText('${hex}')">${t('copy')}</button></div>
+    <div class="hash-row"><label>${t('dec')}</label><span class="val">${dec}</span>
+      <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText('${dec}')">${t('copy')}</button></div>
+    <div class="hash-row"><label>${t('bin')}</label><span class="val" style="font-size:.8em">${bin}</span></div>
+    <div class="hash-row"><label>${t('bytes')}</label><span class="val">${bytes.length}</span></div>`;
+}
+
+function calcText() {
+  const txt = $('#input').value;
+  if (!txt) { $('#output').innerHTML = ''; return; }
+  const bytes = new TextEncoder().encode(txt);
+  $('#output').innerHTML = fmtResult(bytes);
+}
+
+$('#input').addEventListener('input', calcText);
+
+const dz = $('#dropZone');
+dz.addEventListener('click', () => $('#fileInput').click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0]; if (f) readFile(f);
+});
+$('#fileInput').addEventListener('change', e => { const f = e.target.files[0]; if (f) readFile(f); });
+
+function readFile(f) {
+  if (f.size > 50 * 1024 * 1024) { alert('File too large (>50MB).'); return; }
+  const r = new FileReader();
+  r.onload = () => { $('#output').innerHTML = fmtResult(new Uint8Array(r.result)); };
+  r.readAsArrayBuffer(f);
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='Hello, GameZipper!';calcText()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').innerHTML='';$('#fileInput').value=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔐', href:'/dev/sha256-checksum.html', name:'SHA-256'},
+    {icon:'🔐', href:'/dev/hmac.html', name:'HMAC'},
+    {icon:'🔑', href:'/dev/base64.html', name:'Base64'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

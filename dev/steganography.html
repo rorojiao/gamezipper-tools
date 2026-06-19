@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Image Steganography - Hide Text in Image | Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Hide secret messages inside images using LSB steganography. Encrypt text into PNG photos and extract it back — 100% in your browser, nothing uploaded. Free image steganography tool.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/steganography.html">
+  <meta property="og:title" content="Image Steganography - Hide Text in Image | Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Hide secret messages inside images using LSB steganography. Encrypt text into PNG photos and extract it back — 100% in your browser, nothing uploaded. Free image steganography tool.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/steganography.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Image Steganography - Hide Text in Image | Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Hide secret messages inside images using LSB steganography. Encrypt text into PNG photos and extract it back — 100% in your browser, nothing uploaded. Free image steganography tool.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{padding:10px 18px;border-radius:10px 10px 0 0;background:var(--glass2);border:1px solid var(--border);cursor:pointer;font-weight:600;font-size:.9em}
+.tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.panel{display:none}
+.panel.active{display:block}
+.drop-zone{border:2px dashed var(--border);border-radius:14px;padding:30px;text-align:center;cursor:pointer;transition:all .2s;margin:10px 0}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--glass)}
+.drop-zone img{max-width:240px;max-height:240px;border-radius:10px;margin-top:10px}
+textarea{width:100%;font-family:monospace;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);resize:vertical;font-size:.95em;box-sizing:border-box}
+.stat{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.85em;color:var(--text2);margin:8px 0}
+.stat b{color:var(--accent)}
+.cap{font-size:.8em;color:var(--text2);margin-top:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Steganography Tool","description":"Hide secret messages inside images using LSB steganography. Encrypt text into PNG photos and extract it back — 100% in your browser, nothing uploaded. Free image steganography tool.","url":"https://tools.gamezipper.com/dev/steganography.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is image steganography?","acceptedAnswer":{"@type":"Answer","text":"Steganography is the practice of hiding a secret message inside an ordinary-looking file. This tool uses LSB (least significant bit) encoding to embed your text into the pixel data of a PNG image without visibly changing it."}},{"@type":"Question","name":"Will the hidden message change how the image looks?","acceptedAnswer":{"@type":"Answer","text":"No. Only the least significant bit of each color channel is modified, which is invisible to the human eye. The encoded image looks identical to the original."}},{"@type":"Question","name":"Is my data uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All encoding and decoding happens entirely in your browser using the Canvas API. Your image and message never leave your device."}},{"@type":"Question","name":"Why must I save the encoded image as PNG?","acceptedAnswer":{"@type":"Answer","text":"LSB steganography requires lossless storage. JPEG and WebP use lossy compression that destroys the hidden bits. Always download or share the encoded image as PNG."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/steganography.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/steganography.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/steganography.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tabs">
+      <div class="tab active" id="tab-encode" onclick="switchTab('encode')"></div>
+      <div class="tab" id="tab-decode" onclick="switchTab('decode')"></div>
+    </div>
+
+    <!-- ENCODE -->
+    <div class="panel active" id="panel-encode">
+      <div class="drop-zone" id="dropEnc">
+        <div style="font-size:2.6em">🖼️</div>
+        <p id="lbl-drop-enc" style="margin:6px 0 0;color:var(--text2)"></p>
+        <input type="file" id="fileEnc" accept="image/png,image/bmp" style="display:none">
+        <div id="prevEnc"></div>
+      </div>
+      <label style="display:block;margin:10px 0 4px;font-weight:600" id="lbl-msg"></label>
+      <textarea id="msg" rows="4" placeholder="Type your secret message here..."></textarea>
+      <div class="cap" id="cap-cap"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="gz-btn" id="btnEnc" onclick="encode()"></button>
+        <button class="gz-btn gz-btn-secondary" id="btnDl" onclick="downloadEncoded()" style="display:none"></button>
+        <button class="gz-btn gz-btn-secondary" onclick="clearEncode()" id="btnClr1"></button>
+      </div>
+      <div id="encStatus" style="margin-top:10px"></div>
+      <canvas id="canvasEnc" style="display:none"></canvas>
+    </div>
+
+    <!-- DECODE -->
+    <div class="panel" id="panel-decode">
+      <div class="drop-zone" id="dropDec">
+        <div style="font-size:2.6em">🔍</div>
+        <p id="lbl-drop-dec" style="margin:6px 0 0;color:var(--text2)"></p>
+        <input type="file" id="fileDec" accept="image/png,image/bmp" style="display:none">
+        <div id="prevDec"></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="gz-btn" id="btnDec" onclick="decode()"></button>
+        <button class="gz-btn gz-btn-secondary" id="btnCopy" onclick="GZ.copyText(document.getElementById('decoded').value)" style="display:none"></button>
+      </div>
+      <div id="decStatus" style="margin-top:10px"></div>
+      <label style="display:block;margin:12px 0 4px;font-weight:600" id="lbl-out"></label>
+      <textarea id="decoded" rows="5" readonly style="background:var(--glass2)"></textarea>
+      <canvas id="canvasDec" style="display:none"></canvas>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Steganography — Hide Text in Image',
+    toolDesc: 'Embed and extract secret text messages inside PNG images using LSB steganography. 100% in-browser, nothing uploaded.',
+    tabEncode: '🔒 Encode (hide text)',
+    tabDecode: '🔍 Decode (extract text)',
+    lblDropEnc: 'Drop a PNG image here or click to upload',
+    lblDropDec: 'Drop an encoded PNG here or click to upload',
+    lblMsg: 'Secret message',
+    capCap: 'Tip: larger images can hide more text. About 3 bits per pixel.',
+    btnEnc: 'Hide text in image',
+    btnDl: '⬇️ Download encoded PNG',
+    btnClr1: 'Clear',
+    btnDec: 'Extract hidden text',
+    btnCopy: 'Copy text',
+    lblOut: 'Extracted message',
+    encOk: (n) => `✓ Hidden ${n} characters in the image. Click "Download encoded PNG" to save.`,
+    encErr: 'Image too small for the message. Use a larger image or shorter text.',
+    decEmpty: 'No hidden message found in this image.',
+    decOk: (n) => `✓ Extracted ${n} characters.`,
+    errImg: 'Please load a PNG image first.',
+    step1: 'Switch to the Encode tab and drop a PNG image',
+    step2: 'Type your secret message into the text area',
+    step3: 'Click "Hide text in image" then download the encoded PNG',
+    step4: 'To read it back, switch to Decode, drop the PNG and click Extract',
+  },
+  zh: {
+    toolTitle: '图片隐写 — 在图片中隐藏文字',
+    toolDesc: '使用 LSB 隐写术在 PNG 图片中嵌入和提取秘密文字。完全在浏览器中运行，无需上传。',
+    tabEncode: '🔒 编码（隐藏文字）',
+    tabDecode: '🔍 解码（提取文字）',
+    lblDropEnc: '拖拽 PNG 图片到此处或点击上传',
+    lblDropDec: '拖拽已编码的 PNG 到此处或点击上传',
+    lblMsg: '秘密消息',
+    capCap: '提示：图片越大可隐藏的文字越多，每个像素约可藏 3 比特。',
+    btnEnc: '将文字隐藏到图片',
+    btnDl: '⬇️ 下载编码后的 PNG',
+    btnClr1: '清除',
+    btnDec: '提取隐藏文字',
+    btnCopy: '复制文字',
+    lblOut: '提取的消息',
+    encOk: (n) => `✓ 已在图片中隐藏 ${n} 个字符。点击「下载编码后的 PNG」保存。`,
+    encErr: '图片太小，无法容纳该消息。请使用更大的图片或更短的文字。',
+    decEmpty: '此图片中未找到隐藏消息。',
+    decOk: (n) => `✓ 已提取 ${n} 个字符。`,
+    errImg: '请先加载一张 PNG 图片。',
+    step1: '切换到「编码」选项卡，拖入一张 PNG 图片',
+    step2: '在文本框中输入要隐藏的秘密消息',
+    step3: '点击「将文字隐藏到图片」，然后下载编码后的 PNG',
+    step4: '要读取时，切换到「解码」，拖入 PNG 并点击「提取」',
+  }
+});
+
+const { $, t } = GZ;
+
+let encImg = null, decImg = null, encDataUrl = null;
+const MAGIC = 'GZSTG1'; // 6-byte signature
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+  $('#tab-' + name).classList.add('active');
+  $('#panel-' + name).classList.add('active');
+}
+
+function setupDrop(zoneId, inputId, handler) {
+  const dz = $('#' + zoneId);
+  dz.addEventListener('click', () => $('#' + inputId).click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    const f = e.dataTransfer.files[0]; if (f) handler(f);
+  });
+  $('#' + inputId).addEventListener('change', e => { const f = e.target.files[0]; if (f) handler(f); });
+}
+
+function loadImg(f, cb) {
+  const url = URL.createObjectURL(f);
+  const img = new Image();
+  img.onload = () => { cb(img, url); };
+  img.src = url;
+}
+
+setupDrop('dropEnc', 'fileEnc', f => {
+  if (f.size > 20 * 1024 * 1024) { alert('Image too large (>20MB).'); return; }
+  loadImg(f, (img) => {
+    encImg = img;
+    $('#prevEnc').innerHTML = `<img src="${img.src}" alt="">`;
+    $('#encStatus').innerHTML = `<div class="stat">${img.width}×${img.height} pixels · max capacity ≈ <b>${Math.floor((img.width*img.height*3 - (MAGIC.length+4)*8)/8)}</b> chars</div>`;
+  });
+});
+
+setupDrop('dropDec', 'fileDec', f => {
+  if (f.size > 20 * 1024 * 1024) { alert('Image too large (>20MB).'); return; }
+  loadImg(f, (img) => {
+    decImg = img;
+    $('#prevDec').innerHTML = `<img src="${img.src}" alt="">`;
+    $('#decStatus').innerHTML = '';
+  });
+});
+
+function encode() {
+  if (!encImg) { $('#encStatus').innerHTML = `<div class="stat" style="color:var(--accent)">${t('errImg')}</div>`; return; }
+  const msg = $('#msg').value;
+  const cv = $('#canvasEnc');
+  cv.width = encImg.width; cv.height = encImg.height;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(encImg, 0, 0);
+  const imgData = ctx.getImageData(0, 0, cv.width, cv.height);
+  const data = imgData.data;
+
+  // Payload = MAGIC + 4-byte length (big-endian) + UTF-8 message bytes
+  const enc = new TextEncoder();
+  const msgBytes = enc.encode(msg);
+  const payload = new Uint8Array(MAGIC.length + 4 + msgBytes.length);
+  for (let i = 0; i < MAGIC.length; i++) payload[i] = MAGIC.charCodeAt(i);
+  const len = msgBytes.length;
+  payload[MAGIC.length] = (len >>> 24) & 0xFF;
+  payload[MAGIC.length + 1] = (len >>> 16) & 0xFF;
+  payload[MAGIC.length + 2] = (len >>> 8) & 0xFF;
+  payload[MAGIC.length + 3] = len & 0xFF;
+  payload.set(msgBytes, MAGIC.length + 4);
+
+  const bitsNeeded = payload.length * 8;
+  // Only RGB channels (skip alpha) → 3 bits per pixel
+  const bitsAvailable = Math.floor(data.length / 4) * 3;
+  if (bitsNeeded > bitsAvailable) {
+    $('#encStatus').innerHTML = `<div class="stat" style="color:var(--accent)">${t('encErr')}</div>`;
+    return;
+  }
+
+  let bitIdx = 0;
+  for (let p = 0; p < data.length && bitIdx < bitsNeeded; p += 4) {
+    for (let c = 0; c < 3 && bitIdx < bitsNeeded; c++) {
+      const byteIdx = bitIdx >> 3;
+      const bitInByte = 7 - (bitIdx & 7);
+      const bit = (payload[byteIdx] >> bitInByte) & 1;
+      data[p + c] = (data[p + c] & 0xFE) | bit;
+      bitIdx++;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  encDataUrl = cv.toDataURL('image/png');
+  $('#btnDl').style.display = '';
+  $('#encStatus').innerHTML = `<div class="stat" style="color:var(--success)">${t('encOk')(msg.length)}</div>`;
+}
+
+function downloadEncoded() {
+  if (!encDataUrl) return;
+  const a = document.createElement('a');
+  a.href = encDataUrl;
+  a.download = 'steganography-encoded.png';
+  a.click();
+}
+
+function clearEncode() {
+  encImg = null; encDataUrl = null;
+  $('#msg').value = ''; $('#prevEnc').innerHTML = ''; $('#encStatus').innerHTML = '';
+  $('#btnDl').style.display = 'none';
+}
+
+function decode() {
+  if (!decImg) { $('#decStatus').innerHTML = `<div class="stat" style="color:var(--accent)">${t('errImg')}</div>`; return; }
+  const cv = $('#canvasDec');
+  cv.width = decImg.width; cv.height = decImg.height;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(decImg, 0, 0);
+  const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+
+  // Read enough bits for MAGIC + length first
+  const needHeader = (MAGIC.length + 4) * 8;
+  const headerBytes = new Uint8Array(MAGIC.length + 4);
+  let bitIdx = 0;
+  let p = 0, c = 0;
+  for (let i = 0; i < headerBytes.length; i++) {
+    let byte = 0;
+    for (let b = 7; b >= 0; b--) {
+      // advance to next channel
+      while (true) {
+        if (p >= data.length) { $('#decoded').value = ''; $('#decStatus').innerHTML = `<div class="stat" style="color:var(--accent)">${t('decEmpty')}</div>`; return; }
+        const bit = data[p + c] & 1;
+        byte |= bit << b;
+        c++; bitIdx++;
+        if (c >= 3) { c = 0; p += 4; }
+        break;
+      }
+    }
+    headerBytes[i] = byte;
+  }
+  let magic = '';
+  for (let i = 0; i < MAGIC.length; i++) magic += String.fromCharCode(headerBytes[i]);
+  if (magic !== MAGIC) {
+    $('#decoded').value = ''; $('#decStatus').innerHTML = `<div class="stat" style="color:var(--accent)">${t('decEmpty')}</div>`; return;
+  }
+  const msgLen = (headerBytes[MAGIC.length] << 24) | (headerBytes[MAGIC.length+1] << 16) | (headerBytes[MAGIC.length+2] << 8) | headerBytes[MAGIC.length+3];
+  if (msgLen < 0 || msgLen > 5_000_000) { $('#decoded').value = ''; $('#decStatus').innerHTML = `<div class="stat" style="color:var(--accent)">${t('decEmpty')}</div>`; return; }
+
+  const msgBytes = new Uint8Array(msgLen);
+  for (let i = 0; i < msgLen; i++) {
+    let byte = 0;
+    for (let b = 7; b >= 0; b--) {
+      while (true) {
+        if (p >= data.length) { $('#decoded').value = ''; $('#decStatus').innerHTML = `<div class="stat" style="color:var(--accent)">${t('decEmpty')}</div>`; return; }
+        const bit = data[p + c] & 1;
+        byte |= bit << b;
+        c++; bitIdx++;
+        if (c >= 3) { c = 0; p += 4; }
+        break;
+      }
+    }
+    msgBytes[i] = byte;
+  }
+  const text = new TextDecoder().decode(msgBytes);
+  $('#decoded').value = text;
+  $('#btnCopy').style.display = '';
+  $('#decStatus').innerHTML = `<div class="stat" style="color:var(--success)">${t('decOk')(text.length)}</div>`;
+}
+
+// Init tab labels
+$('#tab-encode').textContent = t('tabEncode');
+$('#tab-decode').textContent = t('tabDecode');
+$('#lbl-drop-enc').textContent = t('lblDropEnc');
+$('#lbl-drop-dec').textContent = t('lblDropDec');
+$('#lbl-msg').textContent = t('lblMsg');
+$('#cap-cap').textContent = t('capCap');
+$('#btnEnc').textContent = t('btnEnc');
+$('#btnClr1').textContent = t('btnClr1');
+$('#btnDec').textContent = t('btnDec');
+$('#btnCopy').textContent = t('btnCopy');
+$('#lbl-out').textContent = t('lblOut');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/aes.html', name:'AES Encrypt'},
+    {icon:'🖼️', href:'/image/image-to-base64.html', name:'Image to Base64'},
+    {icon:'🔗', href:'/dev/image-to-data-uri.html', name:'Image to Data URI'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
