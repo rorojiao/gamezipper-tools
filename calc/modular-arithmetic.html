@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Modular Arithmetic Calculator - mod, inverse, power mod n | GameZipper Tools</title>
+  <meta name="description" content="Free online modular arithmetic calculator. Compute a mod n, modular addition, subtraction, multiplication, modular exponentiation (power mod), modular inverse and GCD using BigInt. Browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/modular-arithmetic.html">
+  <meta property="og:title" content="Modular Arithmetic Calculator - mod, inverse, power mod n | GameZipper Tools">
+  <meta property="og:description" content="Free modular arithmetic calculator. Compute mod, modular add/subtract/multiply, power mod, modular inverse and GCD with BigInt precision. Browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/modular-arithmetic.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Modular Arithmetic Calculator - mod, inverse, power mod n | GameZipper Tools">
+<meta name="twitter:description" content="Free modular arithmetic calculator. mod, modular add/subtract/multiply, power mod, modular inverse, GCD with BigInt. Browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606163c"></script>
+<style>
+.field{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.field input{width:130px}
+.field label{font-size:.82em;color:var(--text2);min-width:60px}
+.op-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:14px 0}
+.op-grid button{padding:10px 6px;border:1px solid var(--border);background:var(--glass);color:var(--text);border-radius:10px;cursor:pointer;font-size:.88em;transition:.15s}
+.op-grid button:hover{border-color:var(--gz-accent,#e94560);color:var(--gz-accent,#e94560)}
+.op-grid button.active{background:var(--gz-accent,#e94560);color:#fff;border-color:var(--gz-accent,#e94560)}
+#result{margin-top:14px}
+.res-box{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px}
+.res-box .big{font-size:1.5em;font-weight:700;color:var(--text);margin:6px 0;word-break:break-all}
+.res-box .sub{font-size:.85em;color:var(--text2);margin-top:6px;line-height:1.7}
+.res-box code{background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:monospace;color:var(--text)}
+.steplist{margin-top:10px;font-size:.85em;color:var(--text2);line-height:1.8}
+.err{color:var(--gz-accent,#e94560)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Modular Arithmetic Calculator","description":"Free online modular arithmetic calculator. Compute a mod n, modular addition, subtraction, multiplication, modular exponentiation, modular inverse and GCD using BigInt. Runs entirely in your browser.","url":"https://tools.gamezipper.com/calc/modular-arithmetic.html","applicationCategory":"MathApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is modular arithmetic?", "acceptedAnswer": {"@type": "Answer", "text": "Modular arithmetic works with remainders after division. The expression a mod n (read 'a modulo n') is the remainder when a is divided by n. The result is always in the range 0 to n-1. Modular arithmetic underpins clocks, calendars and modern cryptography."}}, {"@type": "Question", "name": "What is a modular inverse?", "acceptedAnswer": {"@type": "Answer", "text": "The modular inverse of a modulo n is a number x such that (a * x) mod n = 1. An inverse exists only when a and n are coprime, that is gcd(a, n) = 1. This calculator uses the extended Euclidean algorithm to find it."}}, {"@type": "Question", "name": "How is modular exponentiation computed?", "acceptedAnswer": {"@type": "Answer", "text": "Computing a^b mod n directly would create astronomically large numbers, so we use the fast square-and-multiply algorithm. It processes the exponent bit by bit, squaring and reducing mod n at each step, which is how RSA encryption stays efficient."}}, {"@type": "Question", "name": "Can this handle very large numbers?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The calculator uses JavaScript BigInt, so it works with integers of hundreds or thousands of digits. This makes it suitable for cryptography homework and RSA-style computations without losing precision."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/modular-arithmetic.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/modular-arithmetic.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/modular-arithmetic.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="field">
+      <label>a =</label><input id="a" class="gz-input" type="text" inputmode="numeric" value="17">
+      <label id="lbl-b">b =</label><input id="b" class="gz-input" type="text" inputmode="numeric" value="5">
+      <label>mod n =</label><input id="n" class="gz-input" type="text" inputmode="numeric" value="13">
+    </div>
+    <div class="op-grid" id="opgrid"></div>
+    <div id="result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Modular Arithmetic Calculator',
+    toolDesc: 'Compute a mod n, modular addition, subtraction, multiplication, modular exponentiation, modular inverse and GCD with BigInt precision. Perfect for number theory and cryptography — free, browser-based.',
+    mod: 'a mod n',
+    add: '(a + b) mod n',
+    sub: '(a − b) mod n',
+    mul: '(a · b) mod n',
+    pow: 'a^b mod n',
+    inv: 'a⁻¹ mod n',
+    gcd: 'gcd(a, n)',
+    needPositive: 'Modulus n must be a positive integer.',
+    needInt: 'Please enter valid integers.',
+    noInverse: 'No inverse exists: a and n must be coprime (gcd = 1). Here gcd(a, n) = ',
+    coprime: 'a and n are coprime, so the inverse exists.',
+    result: 'Result',
+    steps: 'Steps',
+    euclid: 'Extended Euclidean algorithm:',
+    squareMul: 'Square-and-multiply (fast exponentiation):',
+    step1: 'Enter integers a, b (for two-number operations) and a positive modulus n',
+    step2: 'Pick an operation — unary operations (mod, inverse, gcd) use only a and n',
+    step3: 'For power, b is the exponent; for add/sub/mul, b is the second operand',
+    step4: 'Read the reduced result and the step-by-step explanation',
+  },
+  zh: {
+    toolTitle: '模运算计算器',
+    toolDesc: '计算 a mod n、模加、模减、模乘、模幂、模逆元和最大公约数，使用 BigInt 精度。适合数论和密码学 — 免费、浏览器本地运行。',
+    mod: 'a mod n',
+    add: '(a + b) mod n',
+    sub: '(a − b) mod n',
+    mul: '(a · b) mod n',
+    pow: 'a^b mod n',
+    inv: 'a⁻¹ mod n',
+    gcd: 'gcd(a, n)',
+    needPositive: '模数 n 必须为正整数。',
+    needInt: '请输入有效的整数。',
+    noInverse: '不存在逆元：a 和 n 必须互质（gcd = 1）。当前 gcd(a, n) = ',
+    coprime: 'a 和 n 互质，因此存在逆元。',
+    result: '结果',
+    steps: '步骤',
+    euclid: '扩展欧几里得算法：',
+    squareMul: '平方-乘法（快速幂）：',
+    step1: '输入整数 a、b（双数运算）和正模数 n',
+    step2: '选择运算 — 一元运算（取模、逆元、gcd）仅使用 a 和 n',
+    step3: '幂运算时 b 为指数；加减乘时 b 为第二个操作数',
+    step4: '查看约简后的结果和分步解释',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let currentOp = 'mod';
+
+function parse(s){ s = String(s).trim().replace(/[,\s]/g,''); if(s===''||!/^-?\d+$/.test(s)) return null; return BigInt(s); }
+function modPos(x, n){ // always return non-negative
+  let r = x % n;
+  if(r < 0n) r += n;
+  return r;
+}
+
+function gcd(a, b){
+  a = a<0n?-a:a; b = b<0n?-b:b;
+  while(b){ [a,b] = [b, a%b]; }
+  return a;
+}
+// extended euclid: returns [g, x, y] with a*x + b*y = g
+function egcd(a, b){
+  if(b === 0n) return [a, 1n, 0n];
+  const [g, x1, y1] = egcd(b, a%b);
+  return [g, y1, x1 - (a/b)*y1];
+}
+function modInverse(a, n){
+  const [g, x] = egcd(((a%n)+n)%n, n);
+  if(g !== 1n) return null;
+  return modPos(x, n);
+}
+function modPow(base, exp, n){
+  base = modPos(base, n);
+  let result = 1n;
+  let b = base;
+  let e = exp;
+  while(e > 0n){
+    if(e & 1n) result = (result*b) % n;
+    e >>= 1n;
+    b = (b*b) % n;
+  }
+  return result;
+}
+
+function render(value, expr, steps){
+  $('#result').innerHTML = `<div class="res-box">
+    <div style="font-size:.8em;color:var(--text2)">${expr}</div>
+    <div class="big">${value}</div>
+    ${steps ? `<div class="steplist"><strong>${t('steps')}:</strong><br>${steps}</div>` : ''}
+  </div>`;
+}
+
+function compute(op){
+  currentOp = op;
+  document.querySelectorAll('#opgrid button').forEach(b=>b.classList.toggle('active', b.dataset.op===op));
+  const a = parse($('#a').value); const b = parse($('#b').value); const n = parse($('#n').value);
+  if(a===null||n===null){ $('#result').innerHTML=`<div class="err">${t('needInt')}</div>`; return; }
+  if(n <= 0n){ $('#result').innerHTML=`<div class="err">${t('needPositive')}</div>`; return; }
+
+  if(op==='mod'){
+    const r = modPos(a,n);
+    render(r.toString(), `a mod n`, `${a} ÷ ${n} = ${a/n} remainder ${a%n}<br>⇒ <strong>${a} mod ${n} = ${r}</strong>`);
+  } else if(op==='add'){
+    if(b===null){ $('#result').innerHTML=`<div class="err">${t('needInt')}</div>`; return; }
+    const r = modPos(a+b, n);
+    render(r.toString(), `(a + b) mod n`, `(${a} + ${b}) mod ${n} = ${a+b} mod ${n} = <strong>${r}</strong>`);
+  } else if(op==='sub'){
+    if(b===null){ $('#result').innerHTML=`<div class="err">${t('needInt')}</div>`; return; }
+    const r = modPos(a-b, n);
+    render(r.toString(), `(a − b) mod n`, `(${a} − ${b}) mod ${n} = ${a-b} mod ${n} = <strong>${r}</strong>`);
+  } else if(op==='mul'){
+    if(b===null){ $('#result').innerHTML=`<div class="err">${t('needInt')}</div>`; return; }
+    const r = modPos(a*b, n);
+    render(r.toString(), `(a · b) mod n`, `(${a} · ${b}) mod ${n} = ${a*b} mod ${n} = <strong>${r}</strong>`);
+  } else if(op==='pow'){
+    if(b===null||b<0n){ $('#result').innerHTML=`<div class="err">${t('needInt')}</div>`; return; }
+    const r = modPow(a, b, n);
+    render(r.toString(), `a^b mod n`, `${t('squareMul')}<br>${a}<sup>${b}</sup> mod ${n} = <strong>${r}</strong>`);
+  } else if(op==='inv'){
+    const g = gcd(((a%n)+n)%n, n);
+    const inv = modInverse(a, n);
+    if(inv===null){
+      render('—', `a⁻¹ mod n`, `${t('noInverse')}${g}.<br>${t('euclid')} gcd(${a}, ${n}) = ${g} ≠ 1`);
+    } else {
+      // verify
+      render(inv.toString(), `a⁻¹ mod n`, `${t('coprime')}<br>${t('euclid')} ${a} · ${inv} = ${a*inv}; ${a*inv} mod ${n} = <strong>${modPos(a*inv,n)}</strong> ✓`);
+    }
+  } else if(op==='gcd'){
+    const g = gcd(a, n);
+    const coprime = g===1n;
+    render(g.toString(), `gcd(a, n)`, `${t('euclid')} gcd(${a}, ${n}) = <strong>${g}</strong>${coprime?' · '+t('coprime'):''}`);
+  }
+}
+
+const ops = [['mod','a mod n'],['add','+'],['sub','−'],['mul','×'],['pow','a^b'],['inv','a⁻¹'],['gcd','gcd']];
+$('#opgrid').innerHTML = ops.map(([k,_])=>`<button data-op="${k}" onclick="compute('${k}')">${t(k)}</button>`).join('');
+['a','b','n'].forEach(id=>$('#'+id).addEventListener('input', ()=>compute(currentOp)));
+compute('mod');
+</script>
+<script>GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔢', href:'/calc/binary-calculator.html', name:'Binary Calculator'},
+    {icon:'🧮', href:'/calc/scientific-calculator.html', name:'Scientific Calculator'},
+    {icon:'🔐', href:'/dev/aes.html', name:'AES Encrypt'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
