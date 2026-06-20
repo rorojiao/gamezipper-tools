@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>CPF 验证器 & 生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线验证和生成巴西 CPF 号码。校验校验位、格式化掩码并生成有效 CPF 用于测试 — 免费、即时、完全浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/cpf-validator.html">
+  <meta property="og:title" content="CPF 验证器 & 生成器">
+  <meta property="og:description" content="在线验证和生成巴西 CPF 号码。校验校验位、格式化掩码并生成有效 CPF 用于测试 — 免费、即时、完全浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/cpf-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CPF 验证器 & 生成器">
+<meta name="twitter:description" content="在线验证和生成巴西 CPF 号码。校验校验位、格式化掩码并生成有效 CPF 用于测试 — 免费、即时、完全浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{margin-top:14px;min-height:80px}
+.res-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.res-card.ok{border-left:4px solid var(--gz-success,#00d672)}
+.res-card.bad{border-left:4px solid var(--gz-accent,#e94560)}
+.res-head{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05em;margin-bottom:8px}
+.res-row{display:flex;gap:8px;flex-wrap:wrap;font-size:.88em;color:var(--text2);margin-top:4px;align-items:center}
+.res-row code{background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:monospace;color:var(--text)}
+.res-row button{font-size:.78em;padding:3px 9px;border-radius:6px;border:1px solid var(--border);background:var(--glass2);color:var(--text2);cursor:pointer}
+.res-row button:hover{color:var(--text)}
+#status{margin-top:8px;font-size:.85em}
+.field{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.field input[type=number]{width:90px}
+.hint{font-size:.78em;color:var(--text2);margin-top:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CPF Validator & Generator","description":"Validate and generate Brazilian CPF numbers online for free. Verify check digits, format with mask, detect invalid CPFs and generate valid ones for testing. Browser-only, no upload.","url": "https://tools.gamezipper.com/zh/dev/cpf-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a CPF number?", "acceptedAnswer": {"@type": "Answer", "text": "CPF (Cadastro de Pessoas Fisicas) is the Brazilian individual taxpayer identification number. It has 11 digits: the first 9 are the base number and the last 2 are check digits calculated with a modulus-11 algorithm."}}, {"@type": "Question", "name": "How are the CPF check digits calculated?", "acceptedAnswer": {"@type": "Answer", "text": "For the first check digit, multiply the first 9 digits by weights 10 down to 2, sum them and take mod 11. If the remainder is less than 2 the digit is 0, otherwise it is 11 minus the remainder. The second check digit repeats this using all 10 digits with weights 11 down to 2."}}, {"@type": "Question", "name": "Is it safe to enter my real CPF here?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All validation and generation happens entirely in your browser. No CPF number is ever sent to any server. That said, you should still avoid sharing sensitive identifiers on untrusted devices."}}, {"@type": "Question", "name": "Why is a CPF with all identical digits invalid?", "acceptedAnswer": {"@type": "Answer", "text": "Numbers like 111.111.111-11 pass the check-digit math by coincidence but are blocked by the Receita Federal because they are not real registrations. This tool rejects all 10 known equal-digit patterns as invalid."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/cpf-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/cpf-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/cpf-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div><label id="lbl-in" style="display:block;margin-bottom:6px;font-size:.85em;color:var(--text2)"></label>
+      <textarea id="input" rows="4" placeholder="529.982.247-25&#10;11111111111&#10;52998224725" spellcheck="false" style="width:100%;box-sizing:border-box"></textarea>
+    </div>
+    <div id="status"></div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CPF Validator & Generator',
+    toolDesc: 'Validate and generate Brazilian CPF numbers online. Verify check digits, format with a mask and create valid CPFs for testing — free, instant and entirely browser-based.',
+    validate: 'Validate',
+    generate: 'Generate',
+    genCount: 'How many',
+    formatMask: 'Format (. -)',
+    example: 'Example',
+    clear: 'Clear',
+    lblIn: 'Enter one CPF per line (digits, . and - allowed)',
+    valid: '✓ Valid CPF',
+    invalid: '✗ Invalid CPF',
+    checkOk: 'Both check digits correct',
+    checkBad: 'Check digit mismatch (expected %1)',
+    badLen: 'Wrong length — CPF must have 11 digits',
+    badChar: 'Illegal character found',
+    equalDigits: 'Rejected — all digits identical (not a real CPF)',
+    raw: 'Digits',
+    masked: 'Formatted',
+    region: 'Tax region',
+    step1: 'Paste one or more CPF numbers (dots, dashes and spaces are ignored)',
+    step2: 'Click Validate to check each number and its two check digits',
+    step3: 'Use Generate to create valid random CPFs for testing and mock data',
+    step4: 'Toggle Format to add or remove the 000.000.000-00 mask',
+  },
+  zh: {
+    toolTitle: 'CPF 验证器 & 生成器',
+    toolDesc: '在线验证和生成巴西 CPF 号码。校验校验位、格式化掩码并生成有效 CPF 用于测试 — 免费、即时、完全浏览器本地运行。',
+    validate: '验证',
+    generate: '生成',
+    genCount: '生成数量',
+    formatMask: '格式化 (. -)',
+    example: '示例',
+    clear: '清除',
+    lblIn: '每行输入一个 CPF（允许数字、点和连字符）',
+    valid: '✓ 有效的 CPF',
+    invalid: '✗ 无效的 CPF',
+    checkOk: '两个校验位均正确',
+    checkBad: '校验位不匹配（应为 %1）',
+    badLen: '长度错误 — CPF 必须为 11 位',
+    badChar: '存在非法字符',
+    equalDigits: '已拒绝 — 所有数字相同（非真实 CPF）',
+    raw: '纯数字',
+    masked: '格式化',
+    region: '税务大区',
+    step1: '粘贴一个或多个 CPF（点、连字符和空格会被忽略）',
+    step2: '点击「验证」检查每个号码及其两个校验位',
+    step3: '使用「生成」创建有效的随机 CPF，用于测试和模拟数据',
+    step4: '切换「格式化」以添加或移除 000.000.000-00 掩码',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let useMask = true;
+const REGIONS = ['RS','DF/GO/MT/MS/TO','AM/PA/AC/RO/RR/AP','CE/MA/PI','PB/PE/AL/RN','BA/SE','MG','RJ/ES','SP','PR/SC'];
+
+function strip(s){ return s.replace(/[^0-9]/g,''); }
+
+function calcDigit(base){
+  // base: string of digits, weights start at base.length+1 down to 2
+  const n = base.length;
+  let sum = 0;
+  for(let i=0;i<n;i++){ sum += (+base[i]) * (n + 1 - i); }
+  const r = sum % 11;
+  return r < 2 ? 0 : 11 - r;
+}
+
+function isValid(digits){
+  if(!/^\d{11}$/.test(digits)) return null;
+  // reject all-equal
+  if(/^(\d)\1{10}$/.test(digits)) return false;
+  const d1 = calcDigit(digits.slice(0,9));
+  const d2 = calcDigit(digits.slice(0,10));
+  return +digits[9]===d1 && +digits[10]===d2;
+}
+
+function expectedDigits(first9){
+  const d1 = calcDigit(first9);
+  const d2 = calcDigit(first9 + d1);
+  return [d1, d2];
+}
+
+function maskCPF(digits){
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+function regionOf(digits){
+  const code = +digits[8];
+  return REGIONS[code] || '';
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function analyze(raw){
+  const clean = raw.replace(/[\s.-]/g,'');
+  const digits = strip(raw);
+  if(!digits){ return {raw, valid:false, msg:t('badLen')}; }
+  if(clean !== digits) return {raw, valid:false, msg:t('badChar')};
+  if(digits.length !== 11) return {raw, valid:false, msg:t('badLen')};
+  if(/^(\d)\1{10}$/.test(digits)) return {raw, digits, valid:false, msg:t('equalDigits')};
+  const [d1, d2] = expectedDigits(digits.slice(0,9));
+  const ok = (+digits[9]===d1 && +digits[10]===d2);
+  return {
+    raw, digits, valid: ok,
+    msg: ok ? t('checkOk') : t('checkBad').replace('%1', d1 + '' + d2),
+    region: regionOf(digits)
+  };
+}
+
+function doValidate(){
+  const lines = $('#input').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){ $('#output').innerHTML=''; $('#status').textContent=''; return; }
+  const cards = lines.map(line=>{
+    const r = analyze(line);
+    const cls = r.valid ? 'ok' : 'bad';
+    const icon = r.valid ? '✅' : '❌';
+    let rows = '';
+    if(r.digits){
+      rows += `<div class="res-row"><span>${t('raw')}:</span><code>${esc(r.digits)}</code></div>`;
+      if(r.valid){
+        const shown = useMask ? maskCPF(r.digits) : r.digits;
+        rows += `<div class="res-row"><span>${t('masked')}:</span><code>${esc(shown)}</code><button onclick="copyText('${shown}')">⧉</button></div>`;
+        rows += `<div class="res-row"><span>${t('region')}:</span><code>${esc(r.region)}</code></div>`;
+      }
+    }
+    return `<div class="res-card ${cls}"><div class="res-head">${icon} ${r.valid?t('valid'):t('invalid')}</div><div class="res-row" style="color:var(--text2)">${esc(r.msg)}</div>${rows}</div>`;
+  });
+  $('#output').innerHTML = cards.join('');
+  const valid = lines.map(analyze).filter(r=>r.valid).length;
+  $('#status').innerHTML = `<span style="color:var(--text2)">✓ ${valid}/${lines.length} ${t('valid')}</span>`;
+}
+
+function randDigits(n){
+  let s = '';
+  for(let i=0;i<n;i++) s += Math.floor(Math.random()*10);
+  return s;
+}
+
+function generateCPF(){
+  const count = Math.max(1, Math.min(50, +$('#gcount').value || 5));
+  const out = [];
+  for(let i=0;i<count;i++){
+    let base, d1, d2;
+    // avoid all-equal by ensuring variety
+    do {
+      base = randDigits(9);
+      [d1, d2] = expectedDigits(base);
+    } while(/^(\d)\1{8}$/.test(base));
+    out.push(base + d1 + d2);
+  }
+  $('#input').value = out.join('\n');
+  doValidate();
+}
+
+function toggleMask(){
+  useMask = $('#maskChk').checked;
+  doValidate();
+}
+
+function loadExample(){
+  $('#input').value = '529.982.247-25\n111.444.777-35\n12345678909\n00000000000\n11111111111\n52998224725';
+  doValidate();
+}
+function doClear(){ $('#input').value=''; $('#output').innerHTML=''; $('#status').textContent=''; }
+
+$('#lbl-in').textContent = t('lblIn');
+$('#input').addEventListener('input', doValidate);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doValidate()">${t('validate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="generateCPF()">${t('generate')}</button>
+  <span class="field" style="display:inline-flex;margin:0 4px">
+    <input id="gcount" class="gz-input" type="number" min="1" max="50" value="5" style="width:70px">
+  </span>
+  <label style="display:inline-flex;align-items:center;gap:5px;font-size:.82em;color:var(--text2);cursor:pointer">
+    <input id="maskChk" type="checkbox" checked onchange="toggleMask()"> ${t('formatMask')}
+  </label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📚', href:'/dev/isbn-validator.html', name:'ISBN Validator'},
+    {icon:'💳', href:'/dev/luhn-validator.html', name:'Luhn Validator'},
+    {icon:'📧', href:'/dev/email-validator.html', name:'Email Validator'},
+    {icon:'🎭', href:'/dev/mock-data-generator.html', name:'Mock Data Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

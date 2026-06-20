@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片滤镜 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线为图片应用滤镜 — 黑白、复古棕、暖色、冷色、鲜艳等预设，并可调整亮度、对比度、饱和度、模糊和色相。导出 PNG/JPG，浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/image-filter.html">
+  <meta property="og:title" content="图片滤镜">
+  <meta property="og:description" content="在线为图片应用滤镜 — 黑白、复古棕、暖色、冷色、鲜艳等预设，并可调整亮度、对比度、饱和度、模糊和色相。导出 PNG/JPG，浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/image-filter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片滤镜">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#dropzone{border:2px dashed var(--gz-border,#444);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:16px}
+#dropzone:hover,#dropzone.dragover{border-color:var(--gz-accent,#e94560);background:rgba(233,69,96,.06)}
+#dropzone p{margin:8px 0;opacity:.7}
+#dropzone .drop-icon{font-size:2.5em;margin-bottom:8px}
+#file-input{display:none}
+#controls{display:none}
+#canvas-wrap{margin:16px 0;text-align:center;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px;overflow:auto;max-height:60vh}
+#canvas{max-width:100%;height:auto;border-radius:6px;display:inline-block}
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px;margin:14px 0}
+.preset{padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);text-align:center;cursor:pointer;font-size:.78em;transition:all .2s}
+.preset:hover{border-color:var(--gz-accent,#e94560);transform:translateY(-1px)}
+.preset.active{border-color:var(--gz-accent,#e94560);background:rgba(233,69,96,.12)}
+.preset .em{font-size:1.4em;display:block;margin-bottom:2px}
+.slider-group{margin:10px 0}
+.slider-group label{display:flex;justify-content:space-between;font-size:.85em;font-weight:600;margin-bottom:4px}
+.slider-group input[type="range"]{width:100%}
+.slider-group .val{opacity:.7;font-weight:400}
+.gz-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Filter","description":"Apply photo filters online for free — grayscale, sepia, invert, vintage, warm, cool, blur, brightness, contrast, saturation and hue. Adjust sliders and download PNG/JPG in your browser.","url": "https://tools.gamezipper.com/zh/image/image-filter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What image filters can I apply?", "acceptedAnswer": {"@type": "Answer", "text": "You get one-click presets: None, Grayscale (B&W), Sepia, Invert, Vintage, Warm, Cool, Vivid, Noir, and Cold. You can also fine-tune brightness, contrast, saturation, blur and hue-rotate sliders."}}, {"@type": "Question", "name": "Can I combine multiple filters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Pick a preset, then adjust any sliders on top. The browser composites every active filter in one render pass for fast previews."}}, {"@type": "Question", "name": "Does the tool keep the original quality?", "acceptedAnswer": {"@type": "Answer", "text": "Filters use the native canvas filter pipeline with high-quality resampling. Exporting to PNG preserves full resolution; JPG applies a 92% quality setting for a small file size."}}, {"@type": "Question", "name": "Are my photos uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every filter runs locally in your browser. Your photos never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/image-filter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/image-filter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/image-filter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="dropzone">
+      <div class="drop-icon">🎨</div>
+      <p id="dropzone-text"></p>
+      <button class="gz-btn" id="select-btn"></button>
+      <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp">
+    </div>
+    <div id="controls">
+      <div class="preset-grid" id="presets"></div>
+      <div id="sliders"></div>
+      <div id="canvas-wrap"><canvas id="canvas"></canvas></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Filter',
+    toolDesc: 'Apply free photo filters online — B&W, sepia, vintage, warm, cool, vivid, plus brightness, contrast, saturation, blur and hue sliders. PNG/JPG export, all in your browser.',
+    selectBtn: 'Select Image',
+    dropzone: 'Drop an image here or click to upload',
+    downloadPng: 'Download PNG',
+    downloadJpg: 'Download JPG',
+    reset: 'Reset',
+    newImage: 'New Image',
+    presetTitle: 'Presets',
+    brightness: 'Brightness', contrast: 'Contrast', saturate: 'Saturation',
+    blur: 'Blur', hue: 'Hue Rotate', grayscale: 'Grayscale', sepia: 'Sepia', invert: 'Invert',
+    step1: 'Upload or drag and drop an image',
+    step2: 'Click a preset (B&W, Sepia, Vintage, Warm, Cool, etc.)',
+    step3: 'Fine-tune brightness, contrast, saturation, blur or hue',
+    step4: 'Download the filtered image as PNG or JPG',
+  },
+  zh: {
+    toolTitle: '图片滤镜',
+    toolDesc: '在线为图片应用滤镜 — 黑白、复古棕、暖色、冷色、鲜艳等预设，并可调整亮度、对比度、饱和度、模糊和色相。导出 PNG/JPG，浏览器本地处理。',
+    selectBtn: '选择图片',
+    dropzone: '拖拽图片到此处或点击上传',
+    downloadPng: '下载 PNG',
+    downloadJpg: '下载 JPG',
+    reset: '重置',
+    newImage: '换张图片',
+    presetTitle: '预设',
+    brightness: '亮度', contrast: '对比度', saturate: '饱和度',
+    blur: '模糊', hue: '色相旋转', grayscale: '灰度', sepia: '复古棕', invert: '反相',
+    step1: '上传或拖拽图片到页面',
+    step2: '点击预设（黑白、复古、暖色、冷色等）',
+    step3: '微调亮度、对比度、饱和度、模糊或色相',
+    step4: '下载滤镜后的图片为 PNG 或 JPG',
+  }
+});
+
+const { $, t } = GZ;
+let origImg = null;
+let filters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, hue: 0, grayscale: 0, sepia: 0, invert: 0 };
+let activePreset = 'none';
+
+const PRESETS = {
+  none:    { brightness: 100, contrast: 100, saturate: 100, blur: 0, hue: 0, grayscale: 0, sepia: 0, invert: 0, em: '🚫' },
+  bw:      { brightness: 105, contrast: 110, saturate: 100, blur: 0, hue: 0, grayscale: 100, sepia: 0, invert: 0, em: '⚫' },
+  sepia:   { brightness: 105, contrast: 105, saturate: 100, blur: 0, hue: 0, grayscale: 0, sepia: 80, invert: 0, em: '🟤' },
+  invert:  { brightness: 100, contrast: 100, saturate: 100, blur: 0, hue: 0, grayscale: 0, sepia: 0, invert: 100, em: '🔄' },
+  vintage: { brightness: 110, contrast: 90,  saturate: 75,  blur: 0, hue: 350, grayscale: 0, sepia: 40, invert: 0, em: '📷' },
+  warm:    { brightness: 105, contrast: 105, saturate: 120, blur: 0, hue: 350, grayscale: 0, sepia: 20, invert: 0, em: '🔥' },
+  cool:    { brightness: 100, contrast: 105, saturate: 115, blur: 0, hue: 200, grayscale: 0, sepia: 0, invert: 0, em: '❄️' },
+  vivid:   { brightness: 105, contrast: 120, saturate: 160, blur: 0, hue: 0, grayscale: 0, sepia: 0, invert: 0, em: '🌈' },
+  noir:    { brightness: 95,  contrast: 135, saturate: 100, blur: 0, hue: 0, grayscale: 100, sepia: 0, invert: 0, em: '🎬' },
+  cold:    { brightness: 100, contrast: 110, saturate: 70,  blur: 0, hue: 210, grayscale: 0, sepia: 15, invert: 0, em: '💧' },
+  dream:   { brightness: 115, contrast: 90,  saturate: 110, blur: 1, hue: 320, grayscale: 0, sepia: 10, invert: 0, em: '💭' },
+};
+
+const SLIDERS = [
+  { id: 'brightness', min: 0, max: 200, step: 1, unit: '%' },
+  { id: 'contrast',   min: 0, max: 200, step: 1, unit: '%' },
+  { id: 'saturate',   min: 0, max: 200, step: 1, unit: '%' },
+  { id: 'blur',       min: 0, max: 20,  step: 0.1, unit: 'px' },
+  { id: 'hue',        min: 0, max: 360, step: 1, unit: '°' },
+  { id: 'grayscale',  min: 0, max: 100, step: 1, unit: '%' },
+  { id: 'sepia',      min: 0, max: 100, step: 1, unit: '%' },
+  { id: 'invert',     min: 0, max: 100, step: 1, unit: '%' },
+];
+
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    origImg = new Image();
+    origImg.onload = () => {
+      applyPreset('none');
+      $('#controls').style.display = 'block';
+      $('#dropzone').style.display = 'none';
+      render();
+    };
+    origImg.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function buildPresets() {
+  const labels = {
+    none: 'None', bw: 'B&W', sepia: 'Sepia', invert: 'Invert', vintage: 'Vintage',
+    warm: 'Warm', cool: 'Cool', vivid: 'Vivid', noir: 'Noir', cold: 'Cold', dream: 'Dream',
+  };
+  let html = '';
+  Object.keys(PSETS_ORDER).forEach(k => {
+    const p = PRESETS[k];
+    html += `<div class="preset${activePreset===k?' active':''}" data-preset="${k}"><span class="em">${p.em}</span>${labels[k]||k}</div>`;
+  });
+  $('#presets').innerHTML = html;
+  document.querySelectorAll('.preset').forEach(el => {
+    el.onclick = () => { applyPreset(el.dataset.preset); buildPresets(); buildSliders(); render(); };
+  });
+}
+const PSETS_ORDER = { none:1, bw:1, sepia:1, invert:1, vintage:1, warm:1, cool:1, vivid:1, noir:1, cold:1, dream:1 };
+
+function applyPreset(k) {
+  const p = PRESETS[k];
+  if (!p) return;
+  activePreset = k;
+  filters = { brightness: p.brightness, contrast: p.contrast, saturate: p.saturate, blur: p.blur, hue: p.hue, grayscale: p.grayscale, sepia: p.sepia, invert: p.invert };
+}
+
+function buildSliders() {
+  let html = '';
+  SLIDERS.forEach(s => {
+    html += `<div class="slider-group">
+      <label>${t(s.id)} <span class="val">${filters[s.id]}${s.unit}</span></label>
+      <input type="range" id="sl-${s.id}" min="${s.min}" max="${s.max}" step="${s.step}" value="${filters[s.id]}">
+    </div>`;
+  });
+  $('#sliders').innerHTML = html;
+  SLIDERS.forEach(s => {
+    $('#sl-' + s.id).oninput = (e) => {
+      filters[s.id] = parseFloat(e.target.value);
+      activePreset = 'custom';
+      buildPresets();
+      e.target.previousElementSibling.querySelector('.val').textContent = filters[s.id] + s.unit;
+      render();
+    };
+  });
+}
+
+function filterStr() {
+  return `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturate}%) blur(${filters.blur}px) hue-rotate(${filters.hue}deg) grayscale(${filters.grayscale}%) sepia(${filters.sepia}%) invert(${filters.invert}%)`;
+}
+
+function render() {
+  if (!origImg) return;
+  const maxW = 1200;
+  let w = origImg.width, h = origImg.height;
+  if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+  canvas.width = w; canvas.height = h;
+  ctx.filter = 'none';
+  ctx.clearRect(0, 0, w, h);
+  ctx.filter = filterStr();
+  ctx.drawImage(origImg, 0, 0, w, h);
+  ctx.filter = 'none';
+}
+
+function download(type) {
+  if (!origImg) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL(type === 'jpg' ? 'image/jpeg' : 'image/png', 0.92);
+  a.download = 'filtered-image.' + (type === 'jpg' ? 'jpg' : 'png');
+  a.click();
+}
+
+$('#select-btn').textContent = t('selectBtn');
+$('#dropzone-text').textContent = t('dropzone');
+
+$('#dropzone').onclick = () => $('#file-input').click();
+$('#file-input').onchange = e => { if (e.target.files[0]) loadImage(e.target.files[0]); };
+['dragover'].forEach(ev => $('#dropzone').addEventListener(ev, e => { e.preventDefault(); $('#dropzone').classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => $('#dropzone').addEventListener(ev, e => { e.preventDefault(); $('#dropzone').classList.remove('dragover'); }));
+$('#dropzone').addEventListener('drop', e => { if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]); });
+
+buildPresets();
+buildSliders();
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download('png')">${t('downloadPng')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="download('jpg')">${t('downloadJpg')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="applyPreset('none');buildPresets();buildSliders();render()">${t('reset')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('dropzone').style.display='block';document.getElementById('controls').style.display='none';">${t('newImage')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/image/image-rotator.html', name:'Image Rotator'},
+    {icon:'🔀', href:'/image/image-flipper.html', name:'Image Flipper'},
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'📐', href:'/image/resizer.html', name:'Image Resizer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

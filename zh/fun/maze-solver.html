@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>迷宫求解器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="生成随机迷宫或自行绘制墙壁，设置起点和终点，观看 BFS 广度优先搜索以动画方式寻找最短路径。完全浏览器本地运行，无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/maze-solver.html">
+  <meta property="og:title" content="迷宫求解器">
+  <meta property="og:description" content="生成随机迷宫或自行绘制墙壁，设置起点和终点，观看 BFS 广度优先搜索以动画方式寻找最短路径。完全浏览器本地运行，无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/maze-solver.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="迷宫求解器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.mz-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.mz-controls select,.mz-controls input{background:rgba(0,0,0,.25);border:1px solid var(--gz-border);color:var(--gz-text);border-radius:6px;padding:6px 9px;font-size:.88em}
+.mz-canvas-wrap{display:flex;justify-content:center;background:rgba(0,0,0,.25);border:1px solid var(--gz-border);border-radius:10px;padding:14px;overflow:auto}
+#maze{display:block;cursor:crosshair;image-rendering:pixelated;max-width:100%}
+.mz-stats{display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;font-size:.88em}
+.mz-stats div{background:rgba(255,255,255,.04);border:1px solid var(--gz-border);border-radius:8px;padding:7px 14px}
+.mz-stats b{color:var(--gz-accent);font-family:monospace;font-size:1.1em}
+.mz-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78em;margin-top:8px;opacity:.85}
+.mz-legend span{display:inline-flex;align-items:center;gap:5px}
+.mz-legend i{width:13px;height:13px;border-radius:2px;display:inline-block}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Maze Solver","description":"Free online maze solver. Generate a random maze or draw your own walls, place start and end, then watch BFS find the shortest path with animated step-by-step visualization. Pure browser, no signup.","url": "https://tools.gamezipper.com/zh/fun/maze-solver.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the maze solver find the shortest path?", "acceptedAnswer": {"@type": "Answer", "text": "It uses Breadth-First Search (BFS), a classic pathfinding algorithm that explores all cells at the current distance before moving further out. BFS guarantees the shortest path on an unweighted grid like a maze."}}, {"@type": "Question", "name": "Can I draw my own maze?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click and drag to paint walls, right-click (or shift-click) to erase, then use the Start and End tools to set the start and finish cells. You can also click Generate to get a random maze and then edit it."}}, {"@type": "Question", "name": "What is the animated visualization showing?", "acceptedAnswer": {"@type": "Answer", "text": "Yellow cells show the cells BFS has already visited (the search frontier expanding outward). Once the end is reached, the green line traces back the shortest path from start to end."}}, {"@type": "Question", "name": "How big can the maze be?", "acceptedAnswer": {"@type": "Answer", "text": "You can choose grid sizes from 15×15 up to 41×41. Larger mazes take slightly longer to animate but BFS still runs in milliseconds because everything happens locally in your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/maze-solver.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/maze-solver.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/maze-solver.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mz-controls" id="ctl"></div>
+    <div class="mz-canvas-wrap"><canvas id="maze" width="600" height="600"></canvas></div>
+    <div class="mz-stats" id="stats"></div>
+    <div class="mz-legend" id="legend"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Maze Solver',
+    toolDesc: 'Generate a random maze or draw your own walls, set start and end, then watch BFS find the shortest path with an animated step-by-step search visualization. Pure browser, no signup.',
+    solve: '▶ Solve',
+    step: 'Step',
+    reset: 'Reset',
+    generate: '🎲 Generate',
+    clear: 'Clear Walls',
+    tool: 'Tool',
+    wallTool: 'Wall',
+    eraseTool: 'Erase',
+    startTool: 'Start',
+    endTool: 'End',
+    speed: 'Speed',
+    size: 'Size',
+    fast: 'Fast', medium: 'Medium', slow: 'Slow', instant: 'Instant',
+    statPath: 'Path length',
+    statVisited: 'Cells visited',
+    statTime: 'Compute time',
+    legendWall: 'Wall', legendStart: 'Start', legendEnd: 'End',
+    legendVisited: 'Visited', legendPath: 'Shortest path',
+    noPath: '⚠ No path found. Try removing some walls.',
+    solved: '✓ Solved in',
+    ms: 'ms',
+    steps: 'steps',
+    step1: 'Pick a tool (Wall, Erase, Start, End) and click-drag on the grid to draw your maze',
+    step2: 'Or click Generate to create a random maze instantly',
+    step3: 'Choose animation speed, then click Solve to watch BFS explore the grid',
+    step4: 'The green trail shows the shortest path from start to end',
+  },
+  zh: {
+    toolTitle: '迷宫求解器',
+    toolDesc: '生成随机迷宫或自行绘制墙壁，设置起点和终点，观看 BFS 广度优先搜索以动画方式寻找最短路径。完全浏览器本地运行，无需注册。',
+    solve: '▶ 求解',
+    step: '单步',
+    reset: '重置',
+    generate: '🎲 生成',
+    clear: '清空墙壁',
+    tool: '工具',
+    wallTool: '墙壁',
+    eraseTool: '擦除',
+    startTool: '起点',
+    endTool: '终点',
+    speed: '速度',
+    size: '尺寸',
+    fast: '快', medium: '中', slow: '慢', instant: '即时',
+    statPath: '路径长度',
+    statVisited: '已访问',
+    statTime: '计算耗时',
+    legendWall: '墙壁', legendStart: '起点', legendEnd: '终点',
+    legendVisited: '已搜索', legendPath: '最短路径',
+    noPath: '⚠ 未找到路径。请尝试移除部分墙壁。',
+    solved: '✓ 求解完成，用时',
+    ms: '毫秒',
+    steps: '步',
+    step1: '选择工具（墙壁、擦除、起点、终点）并在网格上点击拖动绘制迷宫',
+    step2: '或点击「生成」即时生成随机迷宫',
+    step3: '选择动画速度，点击「求解」观看 BFS 探索网格',
+    step4: '绿色轨迹显示从起点到终点的最短路径',
+  }
+});
+
+const { $, t } = GZ;
+const COLS = 41, ROWS = 41, CELL = 14;
+const canvas = $('#maze');
+canvas.width = COLS * CELL; canvas.height = ROWS * CELL;
+const ctx = canvas.getContext('2d');
+
+const WALL = 1, EMPTY = 0;
+let grid = [];
+let start = [1, 1], end = [COLS-2, ROWS-2];
+let tool = 'wall';
+let drawing = false, drawVal = null;
+let visited = new Set(), pathArr = [];
+let animTimer = null, animQueue = [];
+
+function initGrid() {
+  grid = Array.from({length: ROWS}, () => Array(COLS).fill(EMPTY));
+  visited = new Set(); pathArr = [];
+  start = [1, 1]; end = [COLS-2, ROWS-2];
+}
+
+// Recursive backtracker maze generator
+function generateMaze() {
+  initGrid();
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) grid[y][x] = WALL;
+  const stack = [[1, 1]];
+  grid[1][1] = EMPTY;
+  while (stack.length) {
+    const [cx, cy] = stack[stack.length - 1];
+    const dirs = [[0,-2],[2,0],[0,2],[-2,0]].sort(() => Math.random() - .5);
+    let moved = false;
+    for (const [dx, dy] of dirs) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx > 0 && nx < COLS-1 && ny > 0 && ny < ROWS-1 && grid[ny][nx] === WALL) {
+        grid[cy + dy/2][cx + dx/2] = EMPTY;
+        grid[ny][nx] = EMPTY;
+        stack.push([nx, ny]);
+        moved = true; break;
+      }
+    }
+    if (!moved) stack.pop();
+  }
+  start = [1, 1]; end = [COLS-2, ROWS-2];
+  grid[start[1]][start[0]] = EMPTY;
+  grid[end[1]][end[0]] = EMPTY;
+  visited = new Set(); pathArr = [];
+  render();
+  updateStats(0, 0, 0);
+}
+
+function clearWalls() {
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) grid[y][x] = EMPTY;
+  visited = new Set(); pathArr = [];
+  render(); updateStats(0, 0, 0);
+}
+
+function resetSearch() {
+  if (animTimer) { clearInterval(animTimer); animTimer = null; }
+  visited = new Set(); pathArr = [];
+  render(); updateStats(0, 0, 0);
+  $('#status').innerHTML = '';
+}
+
+function key(x, y) { return y * COLS + x; }
+
+// BFS — returns the path AND the order of exploration
+function bfs() {
+  const sx = start[0], sy = start[1], ex = end[0], ey = end[1];
+  const q = [[sx, sy]];
+  const seen = new Set([key(sx, sy)]);
+  const parent = new Map();
+  const order = [];
+  while (q.length) {
+    const [x, y] = q.shift();
+    order.push([x, y]);
+    if (x === ex && y === ey) {
+      const path = [];
+      let cur = key(x, y);
+      while (cur !== undefined) {
+        const cx = cur % COLS, cy = Math.floor(cur / COLS);
+        path.unshift([cx, cy]);
+        cur = parent.get(cur);
+      }
+      return { path, order };
+    }
+    for (const [dx, dy] of [[0,-1],[1,0],[0,1],[-1,0]]) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+      if (grid[ny][nx] === WALL) continue;
+      const k = key(nx, ny);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      parent.set(k, key(x, y));
+      q.push([nx, ny]);
+    }
+  }
+  return { path: null, order };
+}
+
+function solve() {
+  if (animTimer) clearInterval(animTimer);
+  visited = new Set(); pathArr = [];
+  $('#status').innerHTML = '';
+  const t0 = performance.now();
+  const { path, order } = bfs();
+  const computeTime = (performance.now() - t0).toFixed(2);
+
+  if (!path) {
+    // animate the failed exploration anyway
+    animateOrder(order, () => {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noPath')}</span>`;
+      updateStats(0, order.length, computeTime);
+    });
+    return;
+  }
+  animateOrder(order, () => {
+    animatePath(path, () => {
+      $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('solved')} ${computeTime} ${t('ms')}</span>`;
+      updateStats(path.length, order.length, computeTime);
+    });
+  });
+  updateStats(0, 0, computeTime);
+}
+
+function animateOrder(order, done) {
+  let i = 0;
+  const speed = parseInt($('#speed').value);
+  const step = speed === 0 ? order.length : (speed === 1 ? 12 : speed === 2 ? 4 : 1);
+  const interval = speed === 0 ? 0 : (speed === 1 ? 4 : speed === 2 ? 20 : 50);
+  if (speed === 0) { order.forEach(([x,y]) => visited.add(key(x,y))); render(); done(); return; }
+  animTimer = setInterval(() => {
+    for (let k = 0; k < step && i < order.length; k++, i++) visited.add(key(order[i][0], order[i][1]));
+    render();
+    if (i >= order.length) { clearInterval(animTimer); animTimer = null; done(); }
+  }, interval);
+}
+
+function animatePath(path, done) {
+  let i = 0;
+  const speed = parseInt($('#speed').value);
+  if (speed === 0) { pathArr = path.slice(); render(); done(); return; }
+  animTimer = setInterval(() => {
+    if (i < path.length) pathArr.push(path[i++]);
+    render();
+    if (i >= path.length) { clearInterval(animTimer); animTimer = null; done(); }
+  }, 18);
+}
+
+function render() {
+  ctx.fillStyle = '#1a1d24';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (grid[y][x] === WALL) {
+        ctx.fillStyle = '#3a3f4b';
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      } else {
+        ctx.fillStyle = '#11141a';
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+    }
+  }
+  // visited
+  ctx.fillStyle = 'rgba(245, 200, 66, 0.55)';
+  visited.forEach(k => {
+    const x = k % COLS, y = Math.floor(k / COLS);
+    ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+  });
+  // path
+  ctx.fillStyle = '#10b981';
+  pathArr.forEach(([x, y]) => ctx.fillRect(x * CELL, y * CELL, CELL, CELL));
+  // start
+  ctx.fillStyle = '#3b82f6';
+  ctx.fillRect(start[0] * CELL, start[1] * CELL, CELL, CELL);
+  // end
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(end[0] * CELL, end[1] * CELL, CELL, CELL);
+  // grid lines (subtle)
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(canvas.width, y * CELL); ctx.stroke();
+  }
+}
+
+function updateStats(pathLen, visitedN, timeN) {
+  $('#stats').innerHTML = `
+    <div>${t('statPath')}: <b>${pathLen || '—'}</b></div>
+    <div>${t('statVisited')}: <b>${visitedN}</b></div>
+    <div>${t('statTime')}: <b>${timeN} ${t('ms')}</b></div>`;
+}
+
+// Mouse interaction
+function cellFromEvent(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width;
+  const sy = canvas.height / rect.height;
+  const x = Math.floor((e.clientX - rect.left) * sx / CELL);
+  const y = Math.floor((e.clientY - rect.top) * sy / CELL);
+  return [Math.max(0, Math.min(COLS-1, x)), Math.max(0, Math.min(ROWS-1, y))];
+}
+
+function applyTool(x, y, e) {
+  if (tool === 'start') { start = [x, y]; grid[y][x] = EMPTY; }
+  else if (tool === 'end') { end = [x, y]; grid[y][x] = EMPTY; }
+  else {
+    if (x === start[0] && y === start[1]) return;
+    if (x === end[0] && y === end[1]) return;
+    if (tool === 'erase' || e.buttons === 2 || e.shiftKey) grid[y][x] = EMPTY;
+    else grid[y][x] = WALL;
+  }
+  visited = new Set(); pathArr = [];
+  if (animTimer) { clearInterval(animTimer); animTimer = null; }
+  render();
+}
+
+canvas.addEventListener('mousedown', e => {
+  e.preventDefault();
+  drawing = true;
+  const [x, y] = cellFromEvent(e);
+  applyTool(x, y, e);
+});
+canvas.addEventListener('mousemove', e => {
+  if (!drawing) return;
+  if (tool === 'start' || tool === 'end') return; // only place once per drag for these
+  const [x, y] = cellFromEvent(e);
+  applyTool(x, y, e);
+});
+['mouseup', 'mouseleave'].forEach(ev => canvas.addEventListener(ev, () => drawing = false));
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  drawing = true;
+  const t0 = e.touches[0];
+  const [x, y] = cellFromEvent(t0);
+  applyTool(x, y, { buttons: 1 });
+});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!drawing || tool === 'start' || tool === 'end') return;
+  const t0 = e.touches[0];
+  const [x, y] = cellFromEvent(t0);
+  applyTool(x, y, { buttons: 1 });
+});
+canvas.addEventListener('touchend', () => drawing = false);
+
+// Controls UI
+$('#ctl').innerHTML = `
+  <label>${t('tool')}:
+    <select id="toolSel">
+      <option value="wall">${t('wallTool')}</option>
+      <option value="erase">${t('eraseTool')}</option>
+      <option value="start">${t('startTool')}</option>
+      <option value="end">${t('endTool')}</option>
+    </select>
+  </label>
+  <label>${t('speed')}:
+    <select id="speed">
+      <option value="0">${t('instant')}</option>
+      <option value="1" selected>${t('fast')}</option>
+      <option value="2">${t('medium')}</option>
+      <option value="3">${t('slow')}</option>
+    </select>
+  </label>`;
+
+$('#toolSel').addEventListener('change', e => tool = e.target.value);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="solve()">${t('solve')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="generateMaze()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearWalls()">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="resetSearch()">${t('reset')}</button>`;
+
+$('#legend').innerHTML = `
+  <span><i style="background:#3b82f6"></i>${t('legendStart')}</span>
+  <span><i style="background:#ef4444"></i>${t('legendEnd')}</span>
+  <span><i style="background:#3a3f4b"></i>${t('legendWall')}</span>
+  <span><i style="background:rgba(245,200,66,0.7)"></i>${t('legendVisited')}</span>
+  <span><i style="background:#10b981"></i>${t('legendPath')}</span>`;
+
+generateMaze();
+updateStats(0, 0, 0);
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🧩', href:'/fun/maze-generator.html', name:'Maze Generator'},
+    {icon:'🎮', href:'/fun/sudoku-solver.html', name:'Sudoku Solver'},
+    {icon:'🟢', href:'/fun/simon-says.html', name:'Simon Says'},
+    {icon:'✊', href:'/fun/rock-paper-scissors.html', name:'Rock Paper Scissors'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

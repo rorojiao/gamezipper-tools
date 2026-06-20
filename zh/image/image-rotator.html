@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片旋转工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线旋转图片 — 支持 90°、180°、270° 或任意自定义角度。可裁剪去角、设置背景色，导出 PNG/JPG。免费，浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/image-rotator.html">
+  <meta property="og:title" content="图片旋转工具">
+  <meta property="og:description" content="在线旋转图片 — 支持 90°、180°、270° 或任意自定义角度。可裁剪去角、设置背景色，导出 PNG/JPG。免费，浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/image-rotator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片旋转工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#dropzone{border:2px dashed var(--gz-border,#444);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:16px}
+#dropzone:hover,#dropzone.dragover{border-color:var(--gz-accent,#e94560);background:rgba(233,69,96,.06)}
+#dropzone p{margin:8px 0;opacity:.7}
+#dropzone .drop-icon{font-size:2.5em;margin-bottom:8px}
+#file-input{display:none}
+#controls{display:none}
+#canvas-wrap{margin:16px 0;text-align:center;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px;overflow:auto;max-height:60vh}
+#canvas{max-width:100%;height:auto;border-radius:6px;display:inline-block}
+.btn-group{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.field-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.field-row label{font-size:.85em;font-weight:600}
+.field-row input[type="number"]{width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--glass2);color:inherit}
+.field-row input[type="color"]{width:46px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer}
+.chk{display:flex;align-items:center;gap:6px;font-size:.85em}
+.gz-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image Rotator","description":"Rotate images online for free. Turn a photo 90, 180 or 270 degrees, or by any custom angle. Crop-to-fit, background color and PNG/JPG export — all in your browser.","url": "https://tools.gamezipper.com/zh/image/image-rotator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I rotate an image 90 degrees online?", "acceptedAnswer": {"@type": "Answer", "text": "Upload your image, then click the Rotate Left 90 or Rotate Right 90 button. The image is rotated instantly in your browser and you can download the result as PNG or JPG."}}, {"@type": "Question", "name": "Can I rotate by a custom angle like 5 or 15 degrees?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enter any custom angle in degrees. Use the Crop-to-fit option to remove transparent corners, or pick a background color to fill the empty space."}}, {"@type": "Question", "name": "Does rotating reduce image quality?", "acceptedAnswer": {"@type": "Answer", "text": "Rotating by 90, 180 or 270 degrees is lossless. Rotating by an arbitrary angle uses high-quality bilinear resampling. Exporting to PNG keeps full quality; JPG applies light compression."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens locally in your browser. Your image never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/image-rotator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/image-rotator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/image-rotator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="dropzone">
+      <div class="drop-icon">🔄</div>
+      <p id="dropzone-text"></p>
+      <button class="gz-btn" id="select-btn"></button>
+      <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp">
+    </div>
+    <div id="controls">
+      <div class="btn-group">
+        <button class="gz-btn" id="rot-l">↺ 90°</button>
+        <button class="gz-btn" id="rot-r">↻ 90°</button>
+        <button class="gz-btn gz-btn-secondary" id="rot-180">↻↻ 180°</button>
+      </div>
+      <div class="field-row">
+        <label id="lbl-angle"></label>
+        <input type="number" id="custom-angle" value="0" step="1">
+        <span>°</span>
+        <button class="gz-btn gz-btn-secondary" id="apply-custom"></button>
+      </div>
+      <div class="field-row">
+        <div class="chk"><input type="checkbox" id="crop-fit"><label for="crop-fit" id="lbl-crop"></label></div>
+        <label id="lbl-bg"></label>
+        <input type="color" id="bg-color" value="#ffffff">
+      </div>
+      <div id="canvas-wrap"><canvas id="canvas"></canvas></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image Rotator',
+    toolDesc: 'Rotate images online — by 90, 180 or 270 degrees, or any custom angle. Crop-to-fit, background color and PNG/JPG export. Free and browser-based.',
+    selectBtn: 'Select Image',
+    dropzone: 'Drop an image here or click to upload',
+    rotLeft: 'Rotate Left 90°',
+    rotRight: 'Rotate Right 90°',
+    rot180: 'Rotate 180°',
+    angle: 'Custom Angle',
+    apply: 'Apply',
+    cropFit: 'Crop to fit (remove corners)',
+    bgColor: 'Background',
+    download: 'Download',
+    downloadPng: 'Download PNG',
+    downloadJpg: 'Download JPG',
+    reset: 'Reset',
+    newImage: 'New Image',
+    step1: 'Upload or drag and drop an image',
+    step2: 'Click 90°, 180° or enter a custom angle',
+    step3: 'Toggle Crop-to-fit or pick a background color',
+    step4: 'Download the rotated image as PNG or JPG',
+  },
+  zh: {
+    toolTitle: '图片旋转工具',
+    toolDesc: '在线旋转图片 — 支持 90°、180°、270° 或任意自定义角度。可裁剪去角、设置背景色，导出 PNG/JPG。免费，浏览器本地处理。',
+    selectBtn: '选择图片',
+    dropzone: '拖拽图片到此处或点击上传',
+    rotLeft: '向左旋转 90°',
+    rotRight: '向右旋转 90°',
+    rot180: '旋转 180°',
+    angle: '自定义角度',
+    apply: '应用',
+    cropFit: '裁剪适配（去除边角）',
+    bgColor: '背景色',
+    download: '下载',
+    downloadPng: '下载 PNG',
+    downloadJpg: '下载 JPG',
+    reset: '重置',
+    newImage: '换张图片',
+    step1: '上传或拖拽图片到页面',
+    step2: '点击 90°、180° 或输入自定义角度',
+    step3: '勾选裁剪适配或选择背景色',
+    step4: '下载旋转后的图片为 PNG 或 JPG',
+  }
+});
+
+const { $, t } = GZ;
+let origImg = null;
+let currentRot = 0;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    origImg = new Image();
+    origImg.onload = () => {
+      currentRot = 0;
+      $('#custom-angle').value = 0;
+      $('#crop-fit').checked = false;
+      $('#controls').style.display = 'block';
+      $('#dropzone').style.display = 'none';
+      render();
+    };
+    origImg.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function render() {
+  if (!origImg) return;
+  const angle = ((currentRot % 360) + 360) % 360;
+  const ortho = (angle === 90 || angle === 270); // dimensions swap
+  const crop = $('#crop-fit').checked;
+  const bg = $('#bg-color').value;
+
+  const srcW = origImg.width, srcH = origImg.height;
+  const maxSide = 1600;
+  let scale = 1;
+  if (Math.max(srcW, srcH) > maxSide) scale = maxSide / Math.max(srcW, srcH);
+  const w = Math.round(srcW * scale), h = Math.round(srcH * scale);
+
+  let outW, outH;
+  if (ortho) { outW = h; outH = w; }
+  else { outW = w; outH = h; }
+
+  // For arbitrary angle, compute bounding box
+  if (angle !== 0 && angle !== 90 && angle !== 180 && angle !== 270) {
+    const rad = angle * Math.PI / 180;
+    const cos = Math.abs(Math.cos(rad));
+    const sin = Math.abs(Math.sin(rad));
+    outW = Math.round(w * cos + h * sin);
+    outH = Math.round(w * sin + h * cos);
+  }
+
+  canvas.width = outW;
+  canvas.height = outH;
+
+  // Fill background
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, outW, outH);
+
+  ctx.save();
+  ctx.translate(outW / 2, outH / 2);
+  ctx.rotate(angle * Math.PI / 180);
+  ctx.drawImage(origImg, -w / 2, -h / 2, w, h);
+  ctx.restore();
+
+  if (crop && (ortho || angle !== 0)) {
+    cropToCircle(outW, outH, w, h, angle);
+  }
+}
+
+function cropToCircle(outW, outH, w, h, angle) {
+  // For arbitrary angles compute inscribed rectangle
+  const rad = angle * Math.PI / 180;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  let insW, insH;
+  if (angle === 90 || angle === 270) { insW = w; insH = h; }
+  else if (angle === 180) { insW = w; insH = h; }
+  else {
+    if (w * sin <= h * cos) { insW = w * cos - h * sin; insH = (w - insW / cos) / sin; }
+    else { insH = h * cos - w * sin; insW = (h - insH / cos) / sin; }
+  }
+  if (insW < 4 || insH < 4) return;
+  const off = document.createElement('canvas');
+  off.width = Math.round(insW); off.height = Math.round(insH);
+  const octx = off.getContext('2d');
+  octx.drawImage(canvas, (outW - insW) / 2, (outH - insH) / 2, insW, insH, 0, 0, insW, insH);
+  canvas.width = Math.round(insW); canvas.height = Math.round(insH);
+  ctx.drawImage(off, 0, 0);
+}
+
+function download(type) {
+  if (!origImg) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL(type === 'jpg' ? 'image/jpeg' : 'image/png', 0.92);
+  a.download = 'rotated-image.' + (type === 'jpg' ? 'jpg' : 'png');
+  a.click();
+}
+
+// Events
+$('#select-btn').textContent = t('selectBtn');
+$('#dropzone-text').textContent = t('dropzone');
+$('#dropzone').onclick = () => $('#file-input').click();
+$('#file-input').onchange = e => { if (e.target.files[0]) loadImage(e.target.files[0]); };
+['dragover'].forEach(ev => $('#dropzone').addEventListener(ev, e => { e.preventDefault(); $('#dropzone').classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => $('#dropzone').addEventListener(ev, e => { e.preventDefault(); $('#dropzone').classList.remove('dragover'); }));
+$('#dropzone').addEventListener('drop', e => { if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]); });
+
+$('#rot-l').onclick = () => { currentRot -= 90; $('#custom-angle').value = currentRot; render(); };
+$('#rot-r').onclick = () => { currentRot += 90; $('#custom-angle').value = currentRot; render(); };
+$('#rot-180').onclick = () => { currentRot += 180; $('#custom-angle').value = currentRot; render(); };
+$('#apply-custom').onclick = () => { currentRot = parseFloat($('#custom-angle').value) || 0; render(); };
+$('#crop-fit').onchange = render;
+$('#bg-color').onchange = render;
+
+$('#lbl-angle').textContent = t('angle');
+$('#apply-custom').textContent = t('apply');
+$('#lbl-crop').textContent = t('cropFit');
+$('#lbl-bg').textContent = t('bgColor');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download('png')">${t('downloadPng')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="download('jpg')">${t('downloadJpg')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="currentRot=0;document.getElementById('custom-angle').value=0;render()">${t('reset')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('dropzone').style.display='block';document.getElementById('controls').style.display='none';">${t('newImage')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/image/image-flipper.html', name:'Image Flipper'},
+    {icon:'📐', href:'/image/resizer.html', name:'Image Resizer'},
+    {icon:'✂️', href:'/image/cropper.html', name:'Image Cropper'},
+    {icon:'🎨', href:'/image/image-filter.html', name:'Image Filter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

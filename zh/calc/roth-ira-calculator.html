@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Roth IRA 计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="根据每年缴款、预期收益率和到退休年数，预测你的免税 Roth IRA 余额。免费年度图表和明细。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/roth-ira-calculator.html">
+  <meta property="og:title" content="Roth IRA 计算器">
+  <meta property="og:description" content="根据每年缴款、预期收益率和到退休年数，预测你的免税 Roth IRA 余额。免费年度图表和明细。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/roth-ira-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Roth IRA 计算器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.result-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin:16px 0}
+.rcard{padding:16px;border-radius:12px;background:var(--glass2);border:1px solid var(--border);text-align:center}
+.rcard .val{font-size:1.5em;font-weight:700;margin:4px 0}
+.rcard .lbl{font-size:.8em;opacity:.7}
+.rcard.final{border-color:#22c55e;background:rgba(34,197,94,.08)}
+.rcard.final .val{color:#22c55e}
+.form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.form-row .field{flex:1;min-width:160px}
+.form-row .field label{display:block;font-size:.85em;font-weight:600;margin-bottom:4px}
+.form-row .field input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:inherit;box-sizing:border-box}
+#chart{max-width:100%;margin:16px 0}
+.note{font-size:.8em;opacity:.7;margin-top:8px;line-height:1.4}
+.toggle-table{margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:.85em;margin-top:12px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--border)}
+th{background:var(--glass2);font-weight:600;text-align:right}
+th:first-child,td:first-child{text-align:left}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Roth IRA Calculator","description":"Free Roth IRA calculator. Project your tax-free retirement balance from annual contributions, expected return and years to retirement.","url": "https://tools.gamezipper.com/zh/calc/roth-ira-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a Roth IRA?", "acceptedAnswer": {"@type": "Answer", "text": "A Roth IRA is a US individual retirement account where you contribute after-tax dollars. Investment growth is tax-free and qualified withdrawals in retirement are also tax-free."}}, {"@type": "Question", "name": "What is the Roth IRA contribution limit?", "acceptedAnswer": {"@type": "Answer", "text": "For 2026 the contribution limit is $7,000 per year, or $8,000 if you are age 50 or older (catch-up). Limits are phased out at higher incomes — check the IRS site for current thresholds."}}, {"@type": "Question", "name": "How does the calculator estimate growth?", "acceptedAnswer": {"@type": "Answer", "text": "It compounds your annual contribution at the expected annual return rate for the number of years you specify, assuming contributions are made at the start of each year. Results are estimates, not financial advice."}}, {"@type": "Question", "name": "Is my financial data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All calculations happen in your browser. No data is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/roth-ira-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/roth-ira-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/roth-ira-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="form-area"></div>
+    <div id="results" class="hidden"></div>
+    <canvas id="chart" width="700" height="300" class="hidden"></canvas>
+    <button class="gz-btn gz-btn-secondary toggle-table hidden" id="toggle-table" onclick="toggleTable()"></button>
+    <div id="schedule-wrap" class="hidden" style="overflow-x:auto"></div>
+    <p class="note" id="disclaimer"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Roth IRA Calculator',
+    toolDesc: 'Project your tax-free Roth IRA balance from annual contributions, expected return and years to retirement. Free yearly chart and breakdown.',
+    starting: 'Starting Balance ($)', annual: 'Annual Contribution ($)', rate: 'Expected Annual Return (%)', years: 'Years to Retirement',
+    calculate: 'Calculate', clear: 'Clear',
+    finalBalance: 'Estimated Balance', totalContrib: 'Total Contributions', totalGrowth: 'Total Growth',
+    growthPct: 'Growth as % of Balance',
+    showSchedule: 'Show Yearly Breakdown', hideSchedule: 'Hide Yearly Breakdown',
+    year: 'Year', startBalance: 'Start Balance', contribution: 'Contribution', growth: 'Growth', endBalance: 'End Balance',
+    disclaimer: 'Estimates only, not financial advice. Roth IRAs are a US account type with IRS rules on contributions, income limits and withdrawals.',
+    step1: 'Enter your starting balance and annual contribution',
+    step2: 'Set an expected annual return (e.g. 7%) and years to retirement',
+    step3: 'Click Calculate to see your projected tax-free balance',
+    step4: 'Review the yearly breakdown chart and table',
+  },
+  zh: {
+    toolTitle: 'Roth IRA 计算器',
+    toolDesc: '根据每年缴款、预期收益率和到退休年数，预测你的免税 Roth IRA 余额。免费年度图表和明细。',
+    starting: '起始余额 ($)', annual: '每年缴款 ($)', rate: '预期年化收益率 (%)', years: '距退休年数',
+    calculate: '计算', clear: '清空',
+    finalBalance: '预估余额', totalContrib: '累计缴款', totalGrowth: '累计增长',
+    growthPct: '增长占比',
+    showSchedule: '显示逐年明细', hideSchedule: '隐藏逐年明细',
+    year: '年份', startBalance: '期初余额', contribution: '缴款', growth: '增长', endBalance: '期末余额',
+    disclaimer: '仅为估算，不构成投资建议。Roth IRA 是美国的一种退休账户，IRS 对缴款、收入门槛和提取有相关规定。',
+    step1: '输入起始余额和每年缴款',
+    step2: '设置预期年化收益率（如 7%）和距退休年数',
+    step3: '点击计算查看预估免税余额',
+    step4: '查看逐年图表和明细表',
+  }
+});
+
+const { $, t } = GZ;
+const fmt = n => '$' + Math.max(0, n).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+
+const fields = [
+  {id:'starting',placeholder:'0',type:'number'},
+  {id:'annual',placeholder:'7000',type:'number'},
+  {id:'rate',placeholder:'7',type:'number',step:'0.1'},
+  {id:'years',placeholder:'30',type:'number'},
+];
+let html = '<div class="form-row">';
+fields.forEach(f => {
+  html += `<div class="field"><label for="f-${f.id}">${t(f.id)}</label><input type="${f.type}" id="f-${f.id}" placeholder="${f.placeholder}"${f.step?` step="${f.step}"`:''}></div>`;
+});
+html += '</div>';
+$('#form-area').innerHTML = html;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="calculate()">${t('calculate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.querySelectorAll('.form-row input').forEach(i=>i.value='');$('#results').classList.add('hidden');$('#chart').classList.add('hidden');$('#toggle-table').classList.add('hidden');$('#schedule-wrap').classList.add('hidden')">${t('clear')}</button>`;
+
+$('#disclaimer').textContent = t('disclaimer');
+
+function calculate() {
+  const starting = parseFloat($('#f-starting').value) || 0;
+  const annual = parseFloat($('#f-annual').value) || 0;
+  const rate = parseFloat($('#f-rate').value) || 0;
+  const years = parseInt($('#f-years').value) || 0;
+  if (years <= 0 || annual < 0) return;
+
+  const r = rate / 100;
+  const rows = [];
+  let bal = starting;
+  let totalContrib = starting;
+  for (let y = 1; y <= years; y++) {
+    const startBal = bal;
+    bal += annual;            // contribute at start of year
+    totalContrib += annual;
+    const growth = bal * r;   // grow over the year
+    bal += growth;
+    rows.push({ year: y, startBalance: startBal, contribution: annual, growth, endBalance: bal });
+  }
+
+  const totalGrowth = bal - totalContrib;
+  const growthPct = bal > 0 ? (totalGrowth / bal * 100) : 0;
+
+  $('#results').classList.remove('hidden');
+  $('#results').innerHTML = `
+    <div class="result-cards">
+      <div class="rcard final"><div class="lbl">${t('finalBalance')}</div><div class="val">${fmt(bal)}</div></div>
+      <div class="rcard"><div class="lbl">${t('totalContrib')}</div><div class="val">${fmt(totalContrib)}</div></div>
+      <div class="rcard"><div class="lbl">${t('totalGrowth')}</div><div class="val">${fmt(totalGrowth)}</div></div>
+      <div class="rcard"><div class="lbl">${t('growthPct')}</div><div class="val">${growthPct.toFixed(1)}%</div></div>
+    </div>`;
+
+  drawChart(rows);
+  window._rows = rows;
+  $('#toggle-table').classList.remove('hidden');
+  $('#toggle-table').textContent = t('showSchedule');
+  $('#schedule-wrap').classList.add('hidden');
+}
+
+function drawChart(rows) {
+  const canvas = $('#chart');
+  canvas.classList.remove('hidden');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 700 * dpr; canvas.height = 300 * dpr;
+  canvas.style.width = '700px'; canvas.style.height = '300px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const maxBal = rows[rows.length - 1].endBalance;
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--gz-bg').trim() || '#0a0a0f';
+  ctx.fillRect(0, 0, 700, 300);
+
+  const pad = {l:70, r:20, t:20, b:40};
+  const w = 700 - pad.l - pad.r, h = 300 - pad.t - pad.b;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (h / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + w, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmt(maxBal - (maxBal / 4) * i), pad.l - 8, y + 4);
+  }
+
+  // Stacked: contributions area + growth area
+  // Compute cumulative contributions
+  const contribs = rows.map(r => r.startBalance + r.contribution);
+  const maxYear = rows.length;
+
+  function x(i) { return pad.l + (i / (maxYear - 1)) * w; }
+  function yVal(v) { return pad.t + (1 - v / maxBal) * h; }
+
+  // Growth area (top)
+  ctx.beginPath();
+  ctx.moveTo(x(0), yVal(rows[0].endBalance));
+  rows.forEach((r, i) => ctx.lineTo(x(i), yVal(r.endBalance)));
+  for (let i = rows.length - 1; i >= 0; i--) ctx.lineTo(x(i), yVal(contribs[i]));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(34,197,94,0.35)';
+  ctx.fill();
+
+  // Contribution area (bottom)
+  ctx.beginPath();
+  ctx.moveTo(x(0), yVal(contribs[0]));
+  contribs.forEach((c, i) => ctx.lineTo(x(i), yVal(c)));
+  ctx.lineTo(x(rows.length - 1), pad.t + h);
+  ctx.lineTo(x(0), pad.t + h);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(96,165,250,0.4)';
+  ctx.fill();
+
+  // Total line
+  ctx.beginPath();
+  ctx.strokeStyle = '#22c55e';
+  ctx.lineWidth = 2;
+  rows.forEach((r, i) => { const px = x(i), py = yVal(r.endBalance); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); });
+  ctx.stroke();
+
+  // Legend
+  ctx.font = '12px sans-serif';
+  ctx.fillStyle = 'rgba(96,165,250,0.9)'; ctx.fillRect(pad.l, 280, 12, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.textAlign = 'left'; ctx.fillText('Contributions', pad.l + 16, 291);
+  ctx.fillStyle = 'rgba(34,197,94,0.9)'; ctx.fillRect(pad.l + 130, 280, 12, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillText('Tax-free Growth', pad.l + 146, 291);
+}
+
+function toggleTable() {
+  const wrap = $('#schedule-wrap');
+  if (!wrap.classList.contains('hidden')) { wrap.classList.add('hidden'); $('#toggle-table').textContent = t('showSchedule'); return; }
+  const rows = window._rows || [];
+  let html = `<table><tr><th>${t('year')}</th><th>${t('startBalance')}</th><th>${t('contribution')}</th><th>${t('growth')}</th><th>${t('endBalance')}</th></tr>`;
+  rows.forEach((r, i) => {
+    if (i % 3 === 0 || i === rows.length - 1) {
+      html += `<tr><td>${r.year}</td><td>${fmt(r.startBalance)}</td><td>${fmt(r.contribution)}</td><td>${fmt(r.growth)}</td><td>${fmt(r.endBalance)}</td></tr>`;
+    }
+  });
+  html += '</table>';
+  wrap.innerHTML = html;
+  wrap.classList.remove('hidden');
+  $('#toggle-table').textContent = t('hideSchedule');
+}
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🏦', href:'/calc/early-mortgage-payoff.html', name:'Early Mortgage Payoff'},
+    {icon:'📈', href:'/calc/compound-interest-calculator.html', name:'Compound Interest'},
+    {icon:'💰', href:'/calc/retirement-calculator.html', name:'Retirement Calculator'},
+    {icon:'🎯', href:'/calc/savings-goal-calculator.html', name:'Savings Goal'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

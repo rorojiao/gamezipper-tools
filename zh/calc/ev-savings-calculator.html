@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>电动车省钱计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="对比电动车与燃油车的长期成本 — 年油费节省、CO2 减排和电动车回本周期。免费，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/ev-savings-calculator.html">
+  <meta property="og:title" content="电动车省钱计算器">
+  <meta property="og:description" content="对比电动车与燃油车的长期成本 — 年油费节省、CO2 减排和电动车回本周期。免费，浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/ev-savings-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="电动车省钱计算器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.result-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin:16px 0}
+.rcard{padding:16px;border-radius:12px;background:var(--glass2);border:1px solid var(--border);text-align:center}
+.rcard .val{font-size:1.4em;font-weight:700;margin:4px 0}
+.rcard .lbl{font-size:.8em;opacity:.7}
+.rcard.save{border-color:#22c55e;background:rgba(34,197,94,.08)}
+.rcard.save .val{color:#22c55e}
+.rcard.co2{border-color:#60a5fa;background:rgba(96,165,250,.08)}
+.rcard.co2 .val{color:#60a5fa}
+.form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.form-row .field{flex:1;min-width:150px}
+.form-row .field label{display:block;font-size:.85em;font-weight:600;margin-bottom:4px}
+.form-row .field input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:inherit;box-sizing:border-box}
+.form-row .field .hint{font-size:.7em;opacity:.6;margin-top:2px}
+#chart{max-width:100%;margin:16px 0}
+.note{font-size:.8em;opacity:.7;margin-top:8px;line-height:1.4}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"EV Savings Calculator","description":"Free EV savings calculator. Compare electric vs gas car cost over 5/10 years — fuel savings, CO2 reduction and payback period.","url": "https://tools.gamezipper.com/zh/calc/ev-savings-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How much money can I save driving an EV?", "acceptedAnswer": {"@type": "Answer", "text": "It depends on your mileage, local electricity and gas prices, and your car's efficiency. Typical US drivers save $800–$1,500 per year on fuel, but you should plug in your own numbers for an accurate estimate."}}, {"@type": "Question", "name": "How is the EV payback period calculated?", "acceptedAnswer": {"@type": "Answer", "text": "Payback period is the EV price premium divided by annual fuel savings. If an EV costs $6,000 more than a comparable gas car but saves $1,500/year on fuel, the payback period is 4 years."}}, {"@type": "Question", "name": "Does the calculator include maintenance or insurance?", "acceptedAnswer": {"@type": "Answer", "text": "This calculator focuses on fuel/energy cost and the up-front EV premium. EVs typically have lower maintenance costs, but insurance and other factors vary — include them in the EV premium if you want a fuller picture."}}, {"@type": "Question", "name": "How is CO2 reduction estimated?", "acceptedAnswer": {"@type": "Answer", "text": "We use average US grid emissions (~0.38 kg CO2 per kWh) and tailpipe gasoline emissions (~8.89 kg CO2 per gallon). Your local grid may be cleaner or dirtier, so this is an estimate."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/ev-savings-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/ev-savings-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/ev-savings-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="form-area"></div>
+    <div id="results" class="hidden"></div>
+    <canvas id="chart" width="700" height="300" class="hidden"></canvas>
+    <p class="note" id="disclaimer"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'EV Savings Calculator',
+    toolDesc: 'Compare electric vs gas car costs over time — annual fuel savings, CO2 reduction and EV payback period. Free, browser-based.',
+    miles: 'Annual Miles Driven', gasPrice: 'Gas Price ($/gal)', elecPrice: 'Electricity Price ($/kWh)',
+    mpg: 'Gas Car Efficiency (MPG)', mpkwh: 'EV Efficiency (mi/kWh)', evPremium: 'EV Price Premium ($)', years: 'Years of Ownership',
+    calculate: 'Calculate Savings', clear: 'Clear',
+    annualGasCost: 'Annual Gas Cost', annualElecCost: 'Annual Electricity Cost', annualFuelSave: 'Annual Fuel Savings',
+    totalSave: 'Total Savings (over period)', payback: 'EV Payback Period', annualCo2: 'Annual CO2 Reduction',
+    totalCo2: 'Total CO2 Reduction',
+    year: 'Year', gasTotal: 'Gas Car Cumulative', evTotal: 'EV Cumulative (incl. premium)',
+    disclaimer: 'Estimates only. Uses US-average grid emissions (~0.38 kg CO2/kWh) and gasoline tailpipe emissions (~8.89 kg CO2/gal). Local conditions vary.',
+    step1: 'Enter annual miles and your local gas and electricity prices',
+    step2: 'Set gas car MPG, EV mi/kWh and the EV price premium',
+    step3: 'Choose years of ownership and click Calculate',
+    step4: 'Review fuel savings, CO2 reduction and payback period',
+  },
+  zh: {
+    toolTitle: '电动车省钱计算器',
+    toolDesc: '对比电动车与燃油车的长期成本 — 年油费节省、CO2 减排和电动车回本周期。免费，浏览器本地运行。',
+    miles: '年行驶里程', gasPrice: '油价 ($/加仑)', elecPrice: '电价 ($/度)',
+    mpg: '燃油车效率 (MPG)', mpkwh: '电动车效率 (英里/度)', evPremium: '电动车溢价 ($)', years: '持有年限',
+    calculate: '计算节省', clear: '清空',
+    annualGasCost: '年度油费', annualElecCost: '年度电费', annualFuelSave: '年度燃料节省',
+    totalSave: '期间总节省', payback: '电动车回本周期', annualCo2: '年度 CO2 减排',
+    totalCo2: '总 CO2 减排',
+    year: '年份', gasTotal: '燃油车累计', evTotal: '电动车累计（含溢价）',
+    disclaimer: '仅为估算。采用美国电网平均排放（约 0.38 kg CO2/度）和汽油尾气排放（约 8.89 kg CO2/加仑）。实际情况以当地为准。',
+    step1: '输入年行驶里程和当地油价、电价',
+    step2: '设置燃油车 MPG、电动车每度里程和电动车溢价',
+    step3: '选择持有年限并点击计算',
+    step4: '查看油费节省、CO2 减排和回本周期',
+  }
+});
+
+const { $, t } = GZ;
+const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+const fmtKg = n => (n / 1000).toLocaleString('en-US', {maximumFractionDigits:1}) + ' t';
+
+const fields = [
+  {id:'miles', placeholder:'13000', type:'number'},
+  {id:'gasPrice', placeholder:'3.50', type:'number', step:'0.01'},
+  {id:'elecPrice', placeholder:'0.16', type:'number', step:'0.01'},
+  {id:'mpg', placeholder:'30', type:'number'},
+  {id:'mpkwh', placeholder:'3.5', type:'number', step:'0.1'},
+  {id:'evPremium', placeholder:'6000', type:'number'},
+  {id:'years', placeholder:'8', type:'number'},
+];
+let html = '<div class="form-row">';
+fields.forEach(f => {
+  html += `<div class="field"><label for="f-${f.id}">${t(f.id)}</label><input type="${f.type}" id="f-${f.id}" placeholder="${f.placeholder}"${f.step?` step="${f.step}"`:''}></div>`;
+});
+html += '</div>';
+$('#form-area').innerHTML = html;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="calculate()">${t('calculate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.querySelectorAll('.form-row input').forEach(i=>i.value='');$('#results').classList.add('hidden');$('#chart').classList.add('hidden')">${t('clear')}</button>`;
+
+$('#disclaimer').textContent = t('disclaimer');
+
+function calculate() {
+  const miles = parseFloat($('#f-miles').value) || 0;
+  const gasPrice = parseFloat($('#f-gasPrice').value) || 0;
+  const elecPrice = parseFloat($('#f-elecPrice').value) || 0;
+  const mpg = parseFloat($('#f-mpg').value) || 0;
+  const mpkwh = parseFloat($('#f-mpkwh').value) || 0;
+  const evPremium = parseFloat($('#f-evPremium').value) || 0;
+  const years = parseInt($('#f-years').value) || 0;
+  if (miles <= 0 || mpg <= 0 || mpkwh <= 0 || years <= 0) return;
+
+  const annualGas = (miles / mpg) * gasPrice;
+  const annualElec = (miles / mpkwh) * elecPrice;
+  const annualSave = annualGas - annualElec;
+  const totalSave = annualSave * years;
+  const payback = annualSave > 0 ? (evPremium / annualSave) : Infinity;
+
+  // CO2 (kg): gas tailpipe 8.89 kg/gal; grid ~0.38 kg/kWh (US average)
+  const gasCo2PerYear = (miles / mpg) * 8.89;
+  const elecCo2PerYear = (miles / mpkwh) * 0.38;
+  const annualCo2 = gasCo2PerYear - elecCo2PerYear;
+  const totalCo2 = annualCo2 * years;
+
+  const paybackText = isFinite(payback) ? (payback < 1 ? '< 1 yr' : payback.toFixed(1) + ' yrs') : '—';
+
+  $('#results').classList.remove('hidden');
+  $('#results').innerHTML = `
+    <div class="result-cards">
+      <div class="rcard"><div class="lbl">${t('annualGasCost')}</div><div class="val">${fmt(annualGas)}</div></div>
+      <div class="rcard"><div class="lbl">${t('annualElecCost')}</div><div class="val">${fmt(annualElec)}</div></div>
+      <div class="rcard save"><div class="lbl">${t('annualFuelSave')}</div><div class="val">${fmt(annualSave)}</div></div>
+      <div class="rcard save"><div class="lbl">${t('totalSave')}</div><div class="val">${fmt(totalSave)}</div></div>
+      <div class="rcard save"><div class="lbl">${t('payback')}</div><div class="val">${paybackText}</div></div>
+      <div class="rcard co2"><div class="lbl">${t('annualCo2')}</div><div class="val">${fmtKg(annualCo2)}</div></div>
+      <div class="rcard co2"><div class="lbl">${t('totalCo2')}</div><div class="val">${fmtKg(totalCo2)}</div></div>
+    </div>`;
+
+  drawChart(years, annualGas, annualElec, evPremium);
+}
+
+function drawChart(years, annualGas, annualElec, evPremium) {
+  const canvas = $('#chart');
+  canvas.classList.remove('hidden');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 700 * dpr; canvas.height = 300 * dpr;
+  canvas.style.width = '700px'; canvas.style.height = '300px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // cumulative
+  const gasCum = [], evCum = [];
+  for (let y = 1; y <= years; y++) {
+    gasCum.push(annualGas * y);
+    evCum.push(evPremium + annualElec * y);
+  }
+  const maxV = Math.max(gasCum[years-1], evCum[years-1], 1);
+
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--gz-bg').trim() || '#0a0a0f';
+  ctx.fillRect(0, 0, 700, 300);
+
+  const pad = {l:70, r:20, t:20, b:40};
+  const w = 700 - pad.l - pad.r, h = 300 - pad.t - pad.b;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (h / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + w, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(fmt(maxV - (maxV / 4) * i), pad.l - 8, y + 4);
+  }
+
+  function x(i) { return pad.l + (i / (years - 1 || 1)) * w; }
+  function yVal(v) { return pad.t + (1 - v / maxV) * h; }
+
+  // Gas line
+  ctx.beginPath(); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+  gasCum.forEach((v, i) => { const px = x(i), py = yVal(v); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); });
+  ctx.stroke();
+
+  // EV line
+  ctx.beginPath(); ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2;
+  evCum.forEach((v, i) => { const px = x(i), py = yVal(v); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); });
+  ctx.stroke();
+
+  // Legend
+  ctx.font = '12px sans-serif';
+  ctx.fillStyle = '#ef4444'; ctx.fillRect(pad.l, 280, 12, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.textAlign = 'left'; ctx.fillText('Gas Car', pad.l + 16, 291);
+  ctx.fillStyle = '#22c55e'; ctx.fillRect(pad.l + 90, 280, 12, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillText('EV (incl. premium)', pad.l + 106, 291);
+}
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⛽', href:'/calc/fuel-cost-calculator.html', name:'Fuel Cost Calculator'},
+    {icon:'🔋', href:'/calc/ev-charging-cost-calculator.html', name:'EV Charging Cost'},
+    {icon:'🌍', href:'/calc/carbon-footprint.html', name:'Carbon Footprint'},
+    {icon:'📊', href:'/calc/mpg-calculator.html', name:'MPG Calculator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>音频压缩工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="通过降低采样率、声道和位深来压缩 MP3、WAV、M4A、OGG 音频文件。下载前可预览 — 100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/audio-compressor.html">
+  <meta property="og:title" content="音频压缩工具">
+  <meta property="og:description" content="通过降低采样率、声道和位深来压缩 MP3、WAV、M4A、OGG 音频文件。下载前可预览 — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/audio-compressor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="音频压缩工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.gz-drop{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+.gz-drop:hover,.gz-drop.drag{border-color:var(--accent);background:var(--glass2)}
+.gz-drop .icon{font-size:2.5rem}
+.ac-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:18px}
+.ac-control{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.ac-control label{display:block;color:var(--text2);font-size:.8rem;font-weight:600;margin-bottom:8px}
+.ac-control select{width:100%;padding:6px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;color:var(--text)}
+audio{width:100%;margin-top:8px;border-radius:8px}
+.ac-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.ac-stat{background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;text-align:center}
+.ac-stat .num{font-size:1.15rem;font-weight:700;color:var(--accent)}
+.ac-stat .lbl{font-size:.7rem;color:var(--text2);margin-top:2px}
+.ac-saved{background:linear-gradient(135deg,rgba(16,185,129,.2),rgba(16,185,129,.05));border-color:rgba(16,185,129,.4)}
+.ac-saved .num{color:#10b981}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Compressor","description":"Compress audio files online for free. Reduce MP3, WAV, M4A, OGG file size by lowering sample rate, bit depth and channels. 100% in your browser — no upload.","url": "https://tools.gamezipper.com/zh/convert/audio-compressor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the audio compressor reduce file size?","acceptedAnswer":{"@type":"Answer","text":"It re-encodes your audio with a lower sample rate (e.g. 22050 Hz instead of 44100 Hz), reduced bit depth, optional mono downmix, and (for lossy output) a lower bitrate. Fewer samples per second means a much smaller file."}},{"@type":"Question","name":"Which audio formats can I compress?","acceptedAnswer":{"@type":"Answer","text":"Any format your browser can decode via the Web Audio API — MP3, WAV, OGG, M4A, AAC, FLAC and WebM. The compressed output is exported as WAV (lossless) or WebM/OGG (lossy) depending on the quality preset you choose."}},{"@type":"Question","name":"Is my audio uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All decoding, downsampling and re-encoding happen locally in your browser. Your audio never leaves your device."}},{"@type":"Question","name":"What sample rate should I choose?","acceptedAnswer":{"@type":"Answer","text":"44100 Hz is CD quality. 22050 Hz is fine for speech and saves about 50% in size. 16000 Hz and 8000 Hz are best for voice-only recordings and produce the smallest files, but lose music fidelity."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/audio-compressor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/audio-compressor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/audio-compressor.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-drop" id="drop">
+      <div class="icon">🎵</div>
+      <div id="dz-text"></div>
+      <input type="file" id="fileInput" accept="audio/*" style="display:none">
+    </div>
+    <div class="ac-controls" id="controls" style="display:none">
+      <div class="ac-control">
+        <label id="lbl-preset"></label>
+        <select id="preset">
+          <option value="high" id="opt-high"></option>
+          <option value="medium" id="opt-medium" selected></option>
+          <option value="voice" id="opt-voice"></option>
+          <option value="custom" id="opt-custom"></option>
+        </select>
+      </div>
+      <div class="ac-control">
+        <label id="lbl-rate"></label>
+        <select id="sampleRate">
+          <option value="44100">44100 Hz (CD)</option>
+          <option value="32000">32000 Hz</option>
+          <option value="22050">22050 Hz (FM)</option>
+          <option value="16000">16000 Hz (Voice)</option>
+          <option value="11025">11025 Hz</option>
+          <option value="8000">8000 Hz (Phone)</option>
+        </select>
+      </div>
+      <div class="ac-control">
+        <label id="lbl-channels"></label>
+        <select id="channels">
+          <option value="0" id="opt-auto"></option>
+          <option value="2" id="opt-stereo"></option>
+          <option value="1" id="opt-mono"></option>
+        </select>
+      </div>
+      <div class="ac-control">
+        <label id="lbl-format"></label>
+        <select id="format">
+          <option value="wav">WAV (lossless)</option>
+          <option value="webm">WebM / Opus (lossy)</option>
+          <option value="ogg">OGG (lossy)</option>
+        </select>
+      </div>
+    </div>
+    <div id="preview" style="display:none;margin-top:18px">
+      <div style="font-weight:600" id="fileName"></div>
+      <audio id="audioOrig" controls></audio>
+      <div class="ac-stats" id="origStats"></div>
+      <div style="margin-top:18px;font-weight:600;color:var(--accent);display:none" id="resultHead"></div>
+      <audio id="audioOut" controls style="display:none"></audio>
+      <div class="ac-stats" id="outStats"></div>
+      <div class="gz-toolbar" style="margin-top:14px">
+        <button class="gz-btn" id="processBtn"></button>
+        <button class="gz-btn gz-btn-secondary" id="downloadBtn" disabled></button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Compressor',
+    toolDesc: 'Reduce MP3, WAV, M4A and OGG audio file size by lowering sample rate, channels and bit depth. Preview before download — 100% in your browser.',
+    dzText: 'Click or drag an audio file (MP3, WAV, OGG, M4A)',
+    preset: 'Quality Preset',
+    rate: 'Sample Rate',
+    channels: 'Channels',
+    format: 'Output Format',
+    optHigh: 'High (44.1 kHz stereo)',
+    optMedium: 'Medium (22 kHz, smaller)',
+    optVoice: 'Voice (16 kHz mono, tiny)',
+    optCustom: 'Custom',
+    optAuto: 'Auto (keep source)',
+    optStereo: 'Stereo (2ch)',
+    optMono: 'Mono (1ch, 50% smaller)',
+    process: 'Compress',
+    download: 'Download',
+    noFile: 'Please select an audio file first',
+    resultHead: 'Compressed Output',
+    file: 'File',
+    duration: 'Duration',
+    size: 'Size',
+    rateLbl: 'Sample Rate',
+    chanLbl: 'Channels',
+    saved: 'Saved',
+    step1: 'Upload an audio file (MP3, WAV, OGG, M4A, FLAC)',
+    step2: 'Pick a preset or choose sample rate, channels and format',
+    step3: 'Click Compress — downsampling runs locally in your browser',
+    step4: 'Preview the result and download the smaller file',
+    sec: 's',
+  },
+  zh: {
+    toolTitle: '音频压缩工具',
+    toolDesc: '通过降低采样率、声道和位深来压缩 MP3、WAV、M4A、OGG 音频文件。下载前可预览 — 100% 浏览器本地运行。',
+    dzText: '点击或拖拽音频文件 (MP3, WAV, OGG, M4A)',
+    preset: '质量预设',
+    rate: '采样率',
+    channels: '声道',
+    format: '输出格式',
+    optHigh: '高 (44.1 kHz 立体声)',
+    optMedium: '中 (22 kHz，更小)',
+    optVoice: '语音 (16 kHz 单声道，最小)',
+    optCustom: '自定义',
+    optAuto: '自动 (保持源)',
+    optStereo: '立体声 (2 声道)',
+    optMono: '单声道 (1 声道，小 50%)',
+    process: '压缩',
+    download: '下载',
+    noFile: '请先选择音频文件',
+    resultHead: '压缩结果',
+    file: '文件',
+    duration: '时长',
+    size: '大小',
+    rateLbl: '采样率',
+    chanLbl: '声道',
+    saved: '节省',
+    step1: '上传音频文件 (MP3, WAV, OGG, M4A, FLAC)',
+    step2: '选择预设或自定义采样率、声道和格式',
+    step3: '点击「压缩」— 降采样在浏览器本地完成',
+    step4: '预览压缩结果并下载更小的文件',
+    sec: '秒',
+  }
+});
+
+const { $, t } = GZ;
+
+let originalBuffer = null;
+let originalFile = null;
+let originalURL = null;
+let processedBlob = null;
+
+const fileInput = $('#fileInput');
+const dropzone = $('#drop');
+const preset = $('#preset');
+const sampleRateSel = $('#sampleRate');
+const channelsSel = $('#channels');
+const formatSel = $('#format');
+const controls = $('#controls');
+const preview = $('#preview');
+const processBtn = $('#processBtn');
+const downloadBtn = $('#downloadBtn');
+const dzText = $('#dz-text');
+dzText.textContent = t('dzText');
+
+['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e => { if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]); });
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if (e.target.files.length) loadFile(e.target.files[0]); });
+
+function applyPreset() {
+  const p = preset.value;
+  if (p === 'high') { sampleRateSel.value = '44100'; channelsSel.value = '0'; formatSel.value = 'wav'; }
+  else if (p === 'medium') { sampleRateSel.value = '22050'; channelsSel.value = '0'; formatSel.value = 'wav'; }
+  else if (p === 'voice') { sampleRateSel.value = '16000'; channelsSel.value = '1'; formatSel.value = 'webm'; }
+}
+preset.addEventListener('change', () => { if (preset.value !== 'custom') applyPreset(); });
+[sampleRateSel, channelsSel, formatSel].forEach(s => s.addEventListener('change', () => { preset.value = 'custom'; }));
+
+async function loadFile(file) {
+  if (!file.type.startsWith('audio/') && !/\.(mp3|wav|ogg|m4a|aac|flac|webm)$/i.test(file.name)) { alert('Please select an audio file'); return; }
+  originalFile = file;
+  if (originalURL) URL.revokeObjectURL(originalURL);
+  originalURL = URL.createObjectURL(file);
+  $('#audioOrig').src = originalURL;
+  $('#fileName').textContent = file.name;
+  dzText.textContent = file.name;
+  controls.style.display = 'grid';
+  preview.style.display = 'block';
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const buf = await file.arrayBuffer();
+  originalBuffer = await ctx.decodeAudioData(buf);
+  await ctx.close();
+  renderOrigStats();
+  $('#resultHead').style.display = 'none';
+  $('#audioOut').style.display = 'none';
+  $('#audioOut').src = '';
+  $('#outStats').innerHTML = '';
+  downloadBtn.disabled = true;
+  applyPreset();
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(2) + ' MB';
+}
+
+function renderOrigStats() {
+  const b = originalBuffer;
+  $('#origStats').innerHTML = [
+    sCard(originalFile.name, t('file')),
+    sCard(b.duration.toFixed(1) + ' ' + t('sec'), t('duration')),
+    sCard(fmtSize(originalFile.size), t('size')),
+    sCard((b.sampleRate/1000).toFixed(1) + ' kHz', t('rateLbl')),
+    sCard(b.numberOfChannels === 1 ? 'Mono' : 'Stereo', t('chanLbl')),
+  ].join('');
+}
+function sCard(num, lbl, extra) { return `<div class="ac-stat ${extra||''}"><div class="num" style="${lbl===t('file')?'font-size:.8rem':''}">${num}</div><div class="lbl">${lbl}</div></div>`; }
+
+async function renderOffline(srcBuffer, targetRate, targetChannels) {
+  const outChannels = targetChannels === 0 ? srcBuffer.numberOfChannels : Math.min(targetChannels, srcBuffer.numberOfChannels);
+  const length = Math.ceil(srcBuffer.length * targetRate / srcBuffer.sampleRate);
+  const out = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(outChannels, length, targetRate);
+  const node = out.createBufferSource();
+  node.buffer = srcBuffer;
+  node.connect(out.destination);
+  node.start();
+  return await out.startRendering();
+}
+
+function bufferToWav(audioBuffer) {
+  const numCh = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const length = audioBuffer.length * numCh * 2 + 44;
+  const buffer = new ArrayBuffer(length);
+  const view = new DataView(buffer);
+  const channels = [];
+  for (let i = 0; i < numCh; i++) channels.push(audioBuffer.getChannelData(i));
+  let offset = 0;
+  const writeStr = s => { for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i)); };
+  writeStr('RIFF'); view.setUint32(offset, length - 8, true); offset += 4;
+  writeStr('WAVE'); writeStr('fmt '); view.setUint32(offset, 16, true); offset += 4;
+  view.setUint16(offset, 1, true); offset += 2;
+  view.setUint16(offset, numCh, true); offset += 2;
+  view.setUint32(offset, sampleRate, true); offset += 4;
+  view.setUint32(offset, sampleRate * numCh * 2, true); offset += 4;
+  view.setUint16(offset, numCh * 2, true); offset += 2;
+  view.setUint16(offset, 16, true); offset += 2;
+  writeStr('data'); view.setUint32(offset, length - 44, true); offset += 4;
+  for (let i = 0; i < audioBuffer.length; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, channels[c][i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+async function encodeLossy(audioBuffer, mimeType, ext) {
+  return new Promise((resolve, reject) => {
+    const arr = [];
+    const dest = new MediaStreamAudioDestinationNode(new (window.AudioContext || window.webkitAudioContext)({ sampleRate: audioBuffer.sampleRate }));
+    const src = dest.context.createBufferSource();
+    src.buffer = audioBuffer;
+    src.connect(dest);
+    let rec;
+    try { rec = new MediaRecorder(dest.stream, { mimeType, audioBitsPerSecond: 64000 }); }
+    catch (e) { return reject(new Error('unsupported')); }
+    rec.ondataavailable = e => { if (e.data.size) arr.push(e.data); };
+    rec.onstop = () => { dest.context.close(); resolve(new Blob(arr, { type: mimeType })); };
+    rec.onerror = e => { dest.context.close(); reject(e); };
+    src.start();
+    rec.start();
+    src.onended = () => setTimeout(() => rec.state !== 'inactive' && rec.stop(), 100);
+  });
+}
+
+processBtn.addEventListener('click', async () => {
+  if (!originalBuffer) { alert(t('noFile')); return; }
+  processBtn.disabled = true;
+  const targetRate = parseInt(sampleRateSel.value, 10);
+  const targetChannels = parseInt(channelsSel.value, 10);
+  const fmt = formatSel.value;
+  try {
+    const rendered = await renderOffline(originalBuffer, targetRate, targetChannels);
+    let blob, outName, ext;
+    if (fmt === 'wav') { blob = bufferToWav(rendered); ext = 'wav'; }
+    else if (fmt === 'webm') {
+      try { blob = await encodeLossy(rendered, 'audio/webm;codecs=opus', 'webm'); ext = 'webm'; }
+      catch (e) { blob = bufferToWav(rendered); ext = 'wav'; }
+    } else {
+      try { blob = await encodeLossy(rendered, 'audio/ogg;codecs=vorbis', 'ogg'); ext = 'ogg'; }
+      catch (e) {
+        try { blob = await encodeLossy(rendered, 'audio/webm;codecs=opus', 'webm'); ext = 'webm'; }
+        catch (e2) { blob = bufferToWav(rendered); ext = 'wav'; }
+      }
+    }
+    processedBlob = blob;
+    outName = originalFile.name.replace(/\.[^.]+$/, '') + '-' + (targetRate/1000) + 'kHz.' + ext;
+    const url = URL.createObjectURL(blob);
+    $('#audioOut').src = url;
+    $('#audioOut').style.display = 'block';
+    $('#resultHead').textContent = t('resultHead');
+    $('#resultHead').style.display = 'block';
+    const savedPct = originalFile.size > 0 ? Math.max(0, (1 - blob.size / originalFile.size) * 100) : 0;
+    $('#outStats').innerHTML = [
+      sCard(outName, t('file')),
+      sCard(fmtSize(blob.size), t('size')),
+      sCard((targetRate/1000).toFixed(1) + ' kHz', t('rateLbl')),
+      sCard(rendered.numberOfChannels === 1 ? 'Mono' : 'Stereo', t('chanLbl')),
+      sCard(savedPct.toFixed(0) + '%', t('saved'), 'ac-saved'),
+    ].join('');
+    downloadBtn.disabled = false;
+    downloadBtn._name = outName;
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    processBtn.disabled = false;
+  }
+});
+
+downloadBtn.addEventListener('click', () => {
+  if (!processedBlob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(processedBlob);
+  a.download = downloadBtn._name || 'compressed.wav';
+  a.click();
+});
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/convert/audio-converter.html', name:'Audio Converter'},
+    {icon:'🔊', href:'/convert/audio-volume.html', name:'Audio Volume'},
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🎵', href:'/convert/audio-reverse.html', name:'Audio Reverser'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

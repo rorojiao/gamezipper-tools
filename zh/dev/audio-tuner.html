@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>在线调音器（半音调音器） - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="用麦克风检测任意声音的音高，可为吉他、贝斯、尤克里里、小提琴、人声等调音。实时显示音符、频率和音分偏差 — 100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/audio-tuner.html">
+  <meta property="og:title" content="在线调音器（半音调音器）">
+  <meta property="og:description" content="用麦克风检测任意声音的音高，可为吉他、贝斯、尤克里里、小提琴、人声等调音。实时显示音符、频率和音分偏差 — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/audio-tuner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线调音器（半音调音器）">
+<meta name="twitter:description" content="用麦克风检测任意声音的音高，可为吉他、贝斯、尤克里里、小提琴、人声等调音。实时显示音符、频率和音分偏差 — 100% 浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.at-stage{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:1rem}
+@media(max-width:760px){.at-stage{grid-template-columns:1fr}}
+.at-card{background:linear-gradient(135deg,var(--glass),var(--glass2));border:1px solid var(--border);border-radius:16px;padding:18px;text-align:center}
+.at-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);font-weight:700;margin-bottom:8px;text-align:left}
+.at-note{font-size:5rem;font-weight:900;font-family:monospace;line-height:1;color:var(--accent);text-shadow:0 0 24px rgba(78,205,196,.35)}
+.at-note .oct{font-size:2rem;vertical-align:super;opacity:.7}
+.at-freq{font-size:1.4rem;font-family:monospace;color:var(--text2);margin-top:6px}
+.at-cents-num{font-size:1.6rem;font-family:monospace;font-weight:700;margin-top:10px}
+.at-meter-wrap{position:relative;height:60px;background:var(--glass2);border:1px solid var(--border);border-radius:30px;margin-top:14px;overflow:hidden}
+.at-meter{position:absolute;top:0;bottom:0;left:50%;width:0;background:linear-gradient(90deg,#ef4444,#f59e0b 30%,#10b981 50%,#f59e0b 70%,#ef4444);transition:width .05s linear,transform .05s linear;border-radius:30px}
+.at-meter-center{position:absolute;top:0;bottom:0;left:50%;width:2px;background:rgba(255,255,255,.7);transform:translateX(-50%);z-index:2}
+.at-meter-marks{display:flex;justify-content:space-between;margin-top:6px;font-size:.7rem;color:var(--text2);font-family:monospace}
+.at-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.at-status{padding:8px 14px;border-radius:8px;font-size:.85rem;margin-top:10px;display:none}
+.at-status.show{display:block}
+.at-ok{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.at-warn{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.at-err{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.at-pulse{width:12px;height:12px;border-radius:50%;background:#10b981;display:inline-block;box-shadow:0 0 0 0 rgba(16,185,129,.7)}
+.at-pulse.active{animation:atpulse 1.2s infinite}
+@keyframes atpulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{box-shadow:0 0 0 14px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+.at-in-tune{color:#10b981}
+.at-flat{color:#3b82f6}
+.at-sharp{color:#ef4444}
+.at-refs{font-size:.84rem;color:var(--text2);line-height:1.9;text-align:left}
+.at-refs b{color:var(--text)}
+.at-refs li{cursor:pointer;padding:4px 8px;border-radius:6px}
+.at-refs li:hover{background:var(--glass2)}
+select.at-select{padding:9px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.9rem;max-width:280px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Chromatic Tuner","description":"Free online chromatic tuner. Detect the pitch of any sound with your microphone and tune guitar, bass, ukulele, violin, voice and more. Real-time note, frequency and cents offset — no app, no upload.","url": "https://tools.gamezipper.com/zh/dev/audio-tuner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the online tuner detect pitch?", "acceptedAnswer": {"@type": "Answer", "text": "It records short bursts from your microphone and runs an autocorrelation algorithm on the time-domain audio. The lag that produces the strongest correlation corresponds to the period of the dominant pitch, which is converted to a frequency and mapped to the nearest musical note with a cents offset."}}, {"@type": "Question", "name": "Can I tune a guitar with this?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Standard guitar tuning is E2 A2 D3 G3 B3 E4 (low to high). Pluck a string, watch the detected note and the cents meter — when the meter is centered on 0 and the color is green, the string is in tune. Flat (negative cents) means loosen the string is needed? Actually: negative cents = too low, tighten; positive cents = too high, loosen."}}, {"@type": "Question", "name": "Why is the reading jumping around?", "acceptedAnswer": {"@type": "Answer", "text": "Pitch detection works best on a clear sustained single note. Background noise, chords, harmonics or very quiet sounds cause unstable readings. Move closer to the source, play one clean note, and let it ring."}}, {"@type": "Question", "name": "Is my audio uploaded?", "acceptedAnswer": {"@type": "Answer", "text": "No. All pitch analysis runs entirely in your browser. The microphone stream is analyzed locally and never recorded or sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/audio-tuner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/audio-tuner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/audio-tuner.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="at-row">
+      <span class="at-pulse" id="pulse"></span>
+      <strong id="statusText"></strong>
+    </div>
+    <div class="at-row">
+      <select id="deviceSelect" class="at-select"></select>
+      <button class="gz-btn" id="startBtn"></button>
+      <button class="gz-btn gz-btn-secondary" id="stopBtn" disabled></button>
+    </div>
+    <div class="at-status" id="status"></div>
+    <div class="at-stage">
+      <div class="at-card">
+        <div class="at-title">🎼 <span id="lblNote"></span></div>
+        <div class="at-note"><span id="noteName">—</span><span class="oct" id="noteOct"></span></div>
+        <div class="at-freq"><span id="freq">—</span> Hz</div>
+        <div class="at-cents-num" id="centsNum">0¢</div>
+        <div class="at-meter-wrap">
+          <div class="at-meter" id="meter"></div>
+          <div class="at-meter-center"></div>
+        </div>
+        <div class="at-meter-marks"><span>-50¢</span><span>flat</span><span>0</span><span>sharp</span><span>+50¢</span></div>
+      </div>
+      <div class="at-card">
+        <div class="at-title">🎯 <span id="lblRef"></span></div>
+        <ul class="at-refs" id="refList" style="list-style:none;padding:0;margin:0"></ul>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Chromatic Tuner',
+    toolDesc: 'Detect the pitch of any sound with your microphone and tune guitar, bass, ukulele, violin, voice and more. Real-time note, frequency and cents offset — 100% in your browser.',
+    note: 'Detected Note',
+    reference: 'Reference notes (click to highlight)',
+    start: 'Start Tuner',
+    stop: 'Stop',
+    statusReady: 'Click Start Tuner and play a note',
+    statusListening: 'Listening… play a clear, sustained note',
+    statusError: 'Microphone access was blocked or unavailable',
+    inTune: 'In tune',
+    flat: 'Too low (flat) — tighten the string',
+    sharp: 'Too high (sharp) — loosen the string',
+    step1: 'Click Start Tuner and allow microphone access',
+    step2: 'Play one clean sustained note close to the mic',
+    step3: 'Read the note name, frequency and cents offset',
+    step4: 'Adjust your instrument until the meter centers on 0 (green)',
+  },
+  zh: {
+    toolTitle: '在线调音器（半音调音器）',
+    toolDesc: '用麦克风检测任意声音的音高，可为吉他、贝斯、尤克里里、小提琴、人声等调音。实时显示音符、频率和音分偏差 — 100% 浏览器本地运行。',
+    note: '检测到的音符',
+    reference: '参考音符（点击高亮）',
+    start: '启动调音器',
+    stop: '停止',
+    statusReady: '点击「启动调音器」并演奏一个音符',
+    statusListening: '监听中… 请演奏清晰、持续的音符',
+    statusError: '麦克风被拒绝或不可用',
+    inTune: '音准',
+    flat: '偏低 — 请拧紧琴弦',
+    sharp: '偏高 — 请放松琴弦',
+    step1: '点击「启动调音器」并允许麦克风权限',
+    step2: '靠近麦克风演奏一个清晰、持续的音符',
+    step3: '读取音符名称、频率和音分偏差',
+    step4: '调整乐器，直到指针居中显示 0（绿色）',
+  }
+});
+
+const { $, t } = GZ;
+let stream = null, audioCtx = null, analyser = null, source = null, rafId = null;
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+// Common instrument reference notes (open strings / frets)
+const REFS = [
+  { label: 'Guitar E2 (low E)', freq: 82.41 },
+  { label: 'Guitar A2', freq: 110.00 },
+  { label: 'Guitar D3', freq: 146.83 },
+  { label: 'Guitar G3', freq: 196.00 },
+  { label: 'Guitar B3', freq: 246.94 },
+  { label: 'Guitar E4 (high E)', freq: 329.63 },
+  { label: 'Bass E1', freq: 41.20 },
+  { label: 'Bass A1', freq: 55.00 },
+  { label: 'Bass D2', freq: 73.42 },
+  { label: 'Bass G2', freq: 98.00 },
+  { label: 'Ukulele G4', freq: 392.00 },
+  { label: 'Ukulele C4', freq: 261.63 },
+  { label: 'Ukulele E4', freq: 329.63 },
+  { label: 'Ukulele A4', freq: 440.00 },
+  { label: 'Violin G3', freq: 196.00 },
+  { label: 'Violin D4', freq: 293.66 },
+  { label: 'Violin A4', freq: 440.00 },
+  { label: 'Violin E5', freq: 659.25 },
+];
+
+function freqToNote(freq) {
+  // A4 = 440 Hz is MIDI 69
+  const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+  const cents = Math.round((69 + 12 * Math.log2(freq / 440) - midi) * 100);
+  const name = NOTE_NAMES[((midi % 12) + 12) % 12];
+  const oct = Math.floor(midi / 12) - 1;
+  const ideal = 440 * Math.pow(2, (midi - 69) / 12);
+  return { name, oct, cents, ideal };
+}
+
+const startBtn = $('#startBtn');
+const stopBtn = $('#stopBtn');
+const statusEl = $('#status');
+const statusTextEl = $('#statusText');
+const pulseEl = $('#pulse');
+const deviceSelect = $('#deviceSelect');
+const meter = $('#meter');
+
+startBtn.textContent = t('start');
+stopBtn.textContent = t('stop');
+$('#lblNote').textContent = t('note');
+$('#lblRef').textContent = t('reference');
+
+// Reference list
+$('#refList').innerHTML = REFS.map((r, i) =>
+  `<li onclick="highlightRef(${i})" data-idx="${i}"><b>${r.label}</b> — ${r.freq.toFixed(2)} Hz</li>`
+).join('');
+
+window.highlightRef = function(idx) {
+  document.querySelectorAll('#refList li').forEach((li, i) => {
+    li.style.color = i === idx ? 'var(--accent)' : '';
+    li.style.fontWeight = i === idx ? '700' : '';
+  });
+};
+
+setStatus('statusReady', 'at-warn');
+
+function setStatus(key, cls) {
+  statusEl.className = 'at-status show ' + cls;
+  statusEl.textContent = t(key);
+  statusTextEl.textContent = t(key);
+}
+
+async function listDevices() {
+  try {
+    const list = await navigator.mediaDevices.enumerateDevices();
+    const mics = list.filter(d => d.kind === 'audioinput');
+    deviceSelect.innerHTML = mics.map((d, i) => `<option value="${d.deviceId}">${d.label || ('Mic ' + (i + 1))}</option>`).join('');
+  } catch (e) {}
+}
+
+async function start() {
+  try {
+    const constraints = {
+      audio: {
+        deviceId: deviceSelect.value ? { exact: deviceSelect.value } : undefined,
+        echoCancellation: false, noiseSuppression: false, autoGainControl: false
+      }
+    };
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    setStatus('statusListening', 'at-ok');
+    pulseEl.classList.add('active');
+    listDevices();
+    detectLoop();
+  } catch (e) {
+    setStatus('statusError', 'at-err');
+  }
+}
+
+// Autocorrelation pitch detection (ACF2+ — biased ACF with parabolic interpolation)
+function autoCorrelate(buf, sampleRate) {
+  const SIZE = buf.length;
+  let rms = 0;
+  for (let i = 0; i < SIZE; i++) { const v = (buf[i] - 128) / 128; rms += v * v; }
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.01) return -1; // too quiet
+
+  // Trim silence at the edges
+  let r1 = 0, r2 = SIZE - 1;
+  const thres = 0.2;
+  for (let i = 0; i < SIZE / 2; i++) {
+    if (Math.abs((buf[i] - 128) / 128) < thres) { r1 = i; break; }
+  }
+  for (let i = 1; i < SIZE / 2; i++) {
+    if (Math.abs((buf[SIZE - i] - 128) / 128) < thres) { r2 = SIZE - i; break; }
+  }
+  const buf2 = buf.slice(r1, r2);
+  const N = buf2.length;
+  if (N < 4) return -1;
+
+  const c = new Array(N).fill(0);
+  for (let lag = 0; lag < N; lag++) {
+    for (let i = 0; i < N - lag; i++) {
+      c[lag] += ((buf2[i] - 128) / 128) * ((buf2[i + lag] - 128) / 128);
+    }
+  }
+  // Walk back from the start to find the first valley, then the next peak
+  let d = 0;
+  while (d < N - 1 && c[d] > c[d + 1]) d++;
+  let maxval = -1, maxpos = -1;
+  for (let i = d; i < N; i++) {
+    if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+  }
+  let T0 = maxpos;
+  if (T0 <= 0) return -1;
+
+  // Parabolic interpolation for sub-sample accuracy
+  const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1] !== undefined ? c[T0 + 1] : c[T0];
+  const a = (x1 + x3 - 2 * x2) / 2;
+  const b = (x3 - x1) / 2;
+  if (a) T0 = T0 - b / (2 * a);
+
+  return sampleRate / T0;
+}
+
+function detectLoop() {
+  if (!analyser) return;
+  const buf = new Uint8Array(analyser.fftSize);
+  analyser.getByteTimeDomainData(buf);
+  const freq = autoCorrelate(buf, audioCtx.sampleRate);
+
+  if (freq > 30 && freq < 2000) {
+    const info = freqToNote(freq);
+    $('#noteName').textContent = info.name;
+    $('#noteOct').textContent = info.oct;
+    $('#freq').textContent = freq.toFixed(2);
+    const c = Math.max(-50, Math.min(50, info.cents));
+    $('#centsNum').textContent = (c >= 0 ? '+' : '') + c + '¢';
+    // meter: bar grows from center; negative extends left, positive extends right
+    const halfPct = Math.abs(c) / 50 * 50; // 0..50%
+    if (c < 0) {
+      meter.style.transform = `translateX(-${halfPct}%)`;
+      meter.style.width = halfPct + '%';
+      meter.classList.remove('at-in-tune');
+      meter.style.color = '#3b82f6';
+    } else if (c > 0) {
+      meter.style.transform = 'translateX(0)';
+      meter.style.width = halfPct + '%';
+      meter.style.color = '#ef4444';
+    } else {
+      meter.style.transform = 'translateX(0)';
+      meter.style.width = '2%';
+      meter.style.color = '#10b981';
+    }
+    const color = Math.abs(c) < 5 ? 'at-in-tune' : (c < 0 ? 'at-flat' : 'at-sharp');
+    $('#centsNum').className = 'at-cents-num ' + color;
+  }
+  rafId = requestAnimationFrame(detectLoop);
+}
+
+function stop() {
+  if (stream) stream.getTracks().forEach(tr => tr.stop());
+  stream = null;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  pulseEl.classList.remove('active');
+  meter.style.width = '0%';
+  setStatus('statusReady', 'at-warn');
+}
+
+startBtn.addEventListener('click', start);
+stopBtn.addEventListener('click', stop);
+deviceSelect.addEventListener('change', () => { if (stream) { stop(); start(); } });
+if (navigator.mediaDevices) listDevices();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎚️', href:'/dev/decibel-meter.html', name:'Decibel Meter'},
+    {icon:'📊', href:'/dev/spectrogram.html', name:'Spectrogram'},
+    {icon:'🎶', href:'/dev/bpm-detector.html', name:'BPM Detector'},
+    {icon:'🎸', href:'/fun/guitar-tuner.html', name:'Guitar Tuner'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
