@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Audio Spectrogram - Real-Time Frequency Spectrum Analyzer | GameZipper Tools</title>
+  <meta name="description" content="Free online audio spectrogram and spectrum analyzer. Visualize sound frequencies over time with your microphone. Real-time waterfall spectrogram, FFT spectrum and peak frequency — runs in your browser, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/spectrogram.html">
+  <meta property="og:title" content="Audio Spectrogram - Real-Time Frequency Spectrum Analyzer | GameZipper Tools">
+  <meta property="og:description" content="Free online audio spectrogram. Visualize sound frequencies over time with your microphone. Real-time waterfall spectrogram and FFT spectrum. Browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/spectrogram.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Audio Spectrogram - Real-Time Frequency Spectrum Analyzer | GameZipper Tools">
+<meta name="twitter:description" content="Free online audio spectrogram. Visualize sound frequencies over time. Real-time waterfall and FFT spectrum.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.sp-stage{display:grid;grid-template-columns:1fr;gap:16px;margin-top:1rem}
+.sp-card{background:linear-gradient(135deg,var(--glass),var(--glass2));border:1px solid var(--border);border-radius:16px;padding:18px}
+.sp-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.sp-canvas{width:100%;background:#0a0a1a;border-radius:10px;display:block}
+.sp-spec{height:280px}
+.sp-fft{height:140px}
+.sp-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.sp-status{padding:8px 14px;border-radius:8px;font-size:.85rem;margin-top:10px;display:none}
+.sp-status.show{display:block}
+.sp-ok{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.sp-warn{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.sp-err{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.sp-pulse{width:12px;height:12px;border-radius:50%;background:#10b981;display:inline-block}
+.sp-pulse.active{animation:sppulse 1.2s infinite}
+@keyframes sppulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{box-shadow:0 0 0 14px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+.sp-info{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--text2);margin-top:6px;font-family:monospace}
+.sp-info b{color:var(--accent);margin-left:4px}
+select.sp-select,select.sp-mode{padding:9px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.9rem}
+.sp-mode{max-width:160px}
+.sp-tip{background:var(--glass2);border-left:3px solid var(--accent);padding:12px 14px;border-radius:6px;font-size:.85em;margin-top:1rem;color:var(--text2);line-height:1.7}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Spectrogram","description":"Free online audio spectrogram and spectrum analyzer. Visualize sound frequencies over time with your microphone. Real-time waterfall spectrogram, FFT spectrum and peak frequency — runs in your browser, no upload.","url":"https://tools.gamezipper.com/dev/spectrogram.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a spectrogram?", "acceptedAnswer": {"@type": "Answer", "text": "A spectrogram is a visual representation of the spectrum of frequencies in a sound as they vary over time. Time runs along the horizontal axis, frequency along the vertical axis, and color/brightness indicates the strength (amplitude) of each frequency at that moment. It reveals the harmonic structure of voices, instruments and noise."}}, {"@type": "Question", "name": "What is the difference between a spectrogram and a spectrum?", "acceptedAnswer": {"@type": "Answer", "text": "An FFT spectrum shows the frequency content at a single instant in time as a bar chart. A spectrogram stacks many consecutive spectrums left-to-right, producing a 2D heat-map that shows how the frequencies change. This tool shows both: the scrolling spectrogram on top and the live FFT spectrum below."}}, {"@type": "Question", "name": "Why are higher frequencies at the top?", "acceptedAnswer": {"@type": "Answer", "text": "Conventionally low frequencies (bass) are at the bottom and high frequencies (treble) at the top, mirroring a piano keyboard. The default linear scale shows equal spacing per Hertz; switching to the log scale gives more resolution in the lower octaves where most musical notes live."}}, {"@type": "Question", "name": "Is my audio sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The microphone stream is analyzed entirely in your browser using the Web Audio API and Canvas. Nothing is recorded or uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/spectrogram.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/spectrogram.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/spectrogram.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="sp-row">
+      <span class="sp-pulse" id="pulse"></span>
+      <strong id="statusText"></strong>
+    </div>
+    <div class="sp-row">
+      <select id="deviceSelect" class="sp-select"></select>
+      <select id="scaleMode" class="sp-mode">
+        <option value="linear">Linear</option>
+        <option value="log">Log</option>
+      </select>
+      <button class="gz-btn" id="startBtn"></button>
+      <button class="gz-btn gz-btn-secondary" id="stopBtn" disabled></button>
+      <button class="gz-btn gz-btn-secondary" id="clearBtn"></button>
+    </div>
+    <div class="sp-status" id="status"></div>
+    <div class="sp-stage">
+      <div class="sp-card">
+        <div class="sp-title"><span>🌈 <span id="lblSpec"></span></span><span class="sp-info"><span id="peakInfo"></span></span></div>
+        <canvas id="spec" class="sp-canvas sp-spec"></canvas>
+      </div>
+      <div class="sp-card">
+        <div class="sp-title">📊 <span id="lblFft"></span></div>
+        <canvas id="fft" class="sp-canvas sp-fft"></canvas>
+      </div>
+    </div>
+    <div class="sp-tip" id="tip"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Spectrogram & Spectrum Analyzer',
+    toolDesc: 'Visualize sound frequencies over time with your microphone. Real-time scrolling spectrogram, FFT spectrum and peak frequency — 100% in your browser.',
+    spec: 'Spectrogram (time → frequency)',
+    fft: 'Live FFT Spectrum',
+    start: 'Start',
+    stop: 'Stop',
+    clear: 'Clear',
+    peak: 'Peak',
+    statusReady: 'Click Start to visualize sound',
+    statusListening: 'Listening… make some noise',
+    statusError: 'Microphone access was blocked or unavailable',
+    tip: 'Tip: Switch to Log scale for music (more detail in low octaves). Try whistling, speaking, or playing music — each sound has a unique spectral fingerprint.',
+    step1: 'Click Start and allow microphone access',
+    step2: 'Choose Linear or Log frequency scale',
+    step3: 'Make a sound — watch the scrolling spectrogram',
+    step4: 'Inspect the live FFT spectrum and peak frequency below',
+  },
+  zh: {
+    toolTitle: '音频频谱图（频谱分析仪）',
+    toolDesc: '用麦克风可视化声音频率随时间的变化。实时滚动频谱图、FFT 频谱和峰值频率 — 100% 浏览器本地运行。',
+    spec: '频谱图（时间 → 频率）',
+    fft: '实时 FFT 频谱',
+    start: '开始',
+    stop: '停止',
+    clear: '清除',
+    peak: '峰值',
+    statusReady: '点击「开始」可视化声音',
+    statusListening: '监听中… 请发出声音',
+    statusError: '麦克风被拒绝或不可用',
+    tip: '提示：分析音乐时请切换到对数刻度（低八度细节更丰富）。试试吹口哨、说话或播放音乐 — 每种声音都有独特的频谱指纹。',
+    step1: '点击「开始」并允许麦克风权限',
+    step2: '选择线性或对数频率刻度',
+    step3: '发出声音，观察滚动的频谱图',
+    step4: '查看下方的实时 FFT 频谱和峰值频率',
+  }
+});
+
+const { $, t } = GZ;
+let stream = null, audioCtx = null, analyser = null, source = null, rafId = null;
+let scaleMode = 'linear';
+
+const startBtn = $('#startBtn');
+const stopBtn = $('#stopBtn');
+const clearBtn = $('#clearBtn');
+const statusEl = $('#status');
+const statusTextEl = $('#statusText');
+const pulseEl = $('#pulse');
+const deviceSelect = $('#deviceSelect');
+const scaleSel = $('#scaleMode');
+const spec = $('#spec');
+const specCtx = spec.getContext('2d');
+const fft = $('#fft');
+const fftCtx = fft.getContext('2d');
+
+startBtn.textContent = t('start');
+stopBtn.textContent = t('stop');
+clearBtn.textContent = t('clear');
+$('#lblSpec').textContent = t('spec');
+$('#lblFft').textContent = t('fft');
+$('#peakInfo').textContent = '';
+$('#tip').innerHTML = '💡 ' + t('tip');
+
+setStatus('statusReady', 'sp-warn');
+
+function setStatus(key, cls) {
+  statusEl.className = 'sp-status show ' + cls;
+  statusEl.textContent = t(key);
+  statusTextEl.textContent = t(key);
+}
+
+function resizeAll() {
+  const dpr = window.devicePixelRatio || 1;
+  [['spec', spec], ['fft', fft]].forEach(([_, c]) => {
+    const r = c.getBoundingClientRect();
+    c.width = r.width * dpr;
+    c.height = r.height * dpr;
+    const cx = c.getContext('2d');
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  });
+}
+window.addEventListener('resize', resizeAll);
+
+async function listDevices() {
+  try {
+    const list = await navigator.mediaDevices.enumerateDevices();
+    const mics = list.filter(d => d.kind === 'audioinput');
+    deviceSelect.innerHTML = mics.map((d, i) => `<option value="${d.deviceId}">${d.label || ('Mic ' + (i + 1))}</option>`).join('');
+  } catch (e) {}
+}
+
+async function start() {
+  try {
+    const constraints = {
+      audio: {
+        deviceId: deviceSelect.value ? { exact: deviceSelect.value } : undefined,
+        echoCancellation: false, noiseSuppression: false, autoGainControl: false
+      }
+    };
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 4096;
+    analyser.smoothingTimeConstant = 0.6;
+    source.connect(analyser);
+
+    resizeAll();
+    clearCanvases();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    setStatus('statusListening', 'sp-ok');
+    pulseEl.classList.add('active');
+    listDevices();
+    draw();
+  } catch (e) {
+    setStatus('statusError', 'sp-err');
+  }
+}
+
+function clearCanvases() {
+  const w = spec.width / (window.devicePixelRatio || 1);
+  const h = spec.height / (window.devicePixelRatio || 1);
+  specCtx.fillStyle = '#0a0a1a';
+  specCtx.fillRect(0, 0, w, h);
+  const w2 = fft.width / (window.devicePixelRatio || 1);
+  const h2 = fft.height / (window.devicePixelRatio || 1);
+  fftCtx.fillStyle = '#0a0a1a';
+  fftCtx.fillRect(0, 0, w2, h2);
+}
+
+function freqToColor(v) {
+  // v: 0..1 -> blue/cyan/green/yellow/red heat-map
+  const hue = 260 - v * 260; // 260 (blue) -> 0 (red)
+  return `hsl(${hue}, 90%, ${10 + v * 45}%)`;
+}
+
+function draw() {
+  if (!analyser) return;
+  const freq = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(freq);
+  const sampleRate = audioCtx.sampleRate;
+  const binHz = (sampleRate / 2) / freq.length;
+
+  // ----- Spectrogram: scroll left, paint new column on the right -----
+  const w = spec.width / (window.devicePixelRatio || 1);
+  const h = spec.height / (window.devicePixelRatio || 1);
+  // Scroll 2px per frame
+  const step = 2;
+  specCtx.drawImage(spec, 0, 0, w * (window.devicePixelRatio || 1), h * (window.devicePixelRatio || 1), -step, 0, w, h);
+  // Clear the rightmost step columns
+  specCtx.fillStyle = '#0a0a1a';
+  specCtx.fillRect(w - step, 0, step, h);
+
+  // Draw the new column on the right edge (x = w - step .. w)
+  for (let y = 0; y < h; y++) {
+    // y from 0..h-1 maps to a frequency depending on scale
+    let idx;
+    if (scaleMode === 'log') {
+      // log scale: top = high freq, bottom = low freq
+      const f = 20 * Math.pow(20000 / 20, 1 - y / h);
+      idx = Math.round(f / binHz);
+    } else {
+      // linear: top = Nyquist, bottom = 0
+      const f = (sampleRate / 2) * (1 - y / h);
+      idx = Math.round(f / binHz);
+    }
+    idx = Math.max(0, Math.min(freq.length - 1, idx));
+    const v = freq[idx] / 255;
+    specCtx.fillStyle = freqToColor(v);
+    specCtx.fillRect(w - step, y, step, 1);
+  }
+
+  // Peak frequency
+  let maxIdx = 0, maxV = 0;
+  for (let i = 1; i < freq.length; i++) if (freq[i] > maxV) { maxV = freq[i]; maxIdx = i; }
+  const peakHz = maxIdx * binHz;
+  $('#peakInfo').innerHTML = t('peak') + ': <b>' + (peakHz < 1000 ? peakHz.toFixed(0) + ' Hz' : (peakHz / 1000).toFixed(2) + ' kHz') + '</b>';
+
+  // ----- FFT bar chart -----
+  const w2 = fft.width / (window.devicePixelRatio || 1);
+  const h2 = fft.height / (window.devicePixelRatio || 1);
+  fftCtx.fillStyle = '#0a0a1a';
+  fftCtx.fillRect(0, 0, w2, h2);
+  // Draw first ~half of bins (skip very high ultrasonic that's usually silent)
+  const usableBins = Math.min(freq.length, Math.floor(freq.length * 0.5));
+  const barCount = Math.min(120, usableBins);
+  const barW = w2 / barCount;
+  for (let i = 0; i < barCount; i++) {
+    // Sample bin on log or linear index
+    let binIdx;
+    if (scaleMode === 'log') {
+      const f = 20 * Math.pow((sampleRate / 4) / 20, i / barCount);
+      binIdx = Math.round(f / binHz);
+    } else {
+      binIdx = Math.round(i * usableBins / barCount);
+    }
+    binIdx = Math.max(0, Math.min(freq.length - 1, binIdx));
+    const v = freq[binIdx] / 255;
+    const bh = v * (h2 - 4);
+    fftCtx.fillStyle = freqToColor(v);
+    fftCtx.fillRect(i * barW, h2 - bh, Math.max(1, barW - 1), bh);
+  }
+
+  rafId = requestAnimationFrame(draw);
+}
+
+function stop() {
+  if (stream) stream.getTracks().forEach(tr => tr.stop());
+  stream = null;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  pulseEl.classList.remove('active');
+  setStatus('statusReady', 'sp-warn');
+}
+
+startBtn.addEventListener('click', start);
+stopBtn.addEventListener('click', stop);
+clearBtn.addEventListener('click', clearCanvases);
+scaleSel.addEventListener('change', e => { scaleMode = e.target.value; });
+deviceSelect.addEventListener('change', () => { if (stream) { stop(); start(); } });
+if (navigator.mediaDevices) listDevices();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎚️', href:'/dev/audio-tuner.html', name:'Audio Tuner'},
+    {icon:'🔊', href:'/dev/decibel-meter.html', name:'Decibel Meter'},
+    {icon:'🎶', href:'/dev/bpm-detector.html', name:'BPM Detector'},
+    {icon:'🎤', href:'/dev/microphone-test.html', name:'Microphone Test'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
