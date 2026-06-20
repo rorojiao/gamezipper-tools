@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>SVG Viewer & Inspector - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Free online SVG viewer and inspector. Paste, drop or upload any SVG to preview it, view clean XML source, inspect dimensions and viewBox, and export as PNG at 1x/2x/4x. Runs entirely in your browser — no upload, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/image/svg-viewer.html">
+  <meta property="og:title" content="SVG Viewer & Inspector - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Free online SVG viewer and inspector. Paste, drop or upload any SVG to preview it, view clean XML source, inspect dimensions and viewBox, and export as PNG at 1x/2x/4x. Runs entirely in your browser — no upload, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/image/svg-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SVG Viewer & Inspector - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.svg-drop{border:2px dashed var(--gz-border);border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02)}
+.svg-drop:hover,.svg-drop.drag{border-color:var(--gz-accent);background:rgba(255,255,255,.05)}
+.svg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:780px){.svg-grid{grid-template-columns:1fr}}
+.svg-preview{background:repeating-conic-gradient(#3332 0% 25%,#4441 0% 50%) 50%/16px 16px;border:1px solid var(--gz-border);border-radius:10px;padding:18px;min-height:220px;display:flex;align-items:center;justify-content:center}
+.svg-preview svg{max-width:100%;max-height:340px}
+.svg-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.svg-info .cell{background:rgba(255,255,255,.04);border:1px solid var(--gz-border);border-radius:8px;padding:8px 10px}
+.svg-info .cell small{display:block;opacity:.6;font-size:.7em;text-transform:uppercase;letter-spacing:.05em}
+.svg-info .cell b{font-family:monospace;font-size:1em}
+#xmlSrc{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.82em;line-height:1.5;max-height:340px;overflow:auto;background:#0003;padding:12px;border-radius:8px;border:1px solid var(--gz-border)}
+.svg-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.svg-tab{padding:6px 14px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--gz-border);cursor:pointer;font-size:.85em}
+.svg-tab.active{background:var(--gz-accent);border-color:var(--gz-accent);color:#fff}
+.gz-output pre{white-space:pre-wrap;word-break:break-all}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SVG Viewer & Inspector","description":"Free online SVG viewer and inspector. Paste, drop or upload any SVG to preview it, view clean XML source, inspect dimensions and viewBox, and export as PNG at 1x/2x/4x. Runs entirely in your browser — no upload, no signup.","url":"https://tools.gamezipper.com/image/svg-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I view an SVG file online?", "acceptedAnswer": {"@type": "Answer", "text": "Drag and drop your SVG file onto the upload area, click to browse, or paste the SVG markup directly into the source box. The viewer instantly renders a preview, shows the formatted XML, and reports width, height and viewBox."}}, {"@type": "Question", "name": "Can I convert SVG to PNG with this tool?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. After loading your SVG, click Export PNG and choose 1x, 2x or 4x scale. The conversion uses the browser's native canvas API — everything happens locally and no file is ever uploaded to a server."}}, {"@type": "Question", "name": "Is my SVG data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing, rendering and PNG export happen entirely in your browser using JavaScript. Your SVG markup and images never leave your device."}}, {"@type": "Question", "name": "Does the SVG Viewer prettify the source code?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The viewer automatically formats and indents the SVG XML with syntax highlighting so it is easy to read, copy and debug — even if your original file was minified onto a single line."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/svg-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/svg-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/svg-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="svg-drop" id="drop">
+      <div style="font-size:2em">📁</div>
+      <div id="dropLabel"></div>
+      <input type="file" id="file" accept=".svg,image/svg+xml" hidden>
+    </div>
+    <div class="svg-tabs" id="tabs" style="margin-top:14px"></div>
+    <div class="svg-grid" id="main">
+      <div>
+        <label id="lblPrev"></label>
+        <div class="svg-preview" id="preview"><span style="opacity:.5" id="emptyHint"></span></div>
+        <div class="svg-info" id="info"></div>
+      </div>
+      <div>
+        <label id="lblSrc"></label>
+        <div id="xmlSrc"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SVG Viewer & Inspector',
+    toolDesc: 'Paste, drop or upload any SVG file to instantly preview it, view clean formatted XML, inspect dimensions and viewBox, and export to PNG at 1x/2x/4x. 100% browser-side — no upload.',
+    upload: 'Upload SVG',
+    loadExample: 'Load Example',
+    clear: 'Clear',
+    copyXml: 'Copy XML',
+    png1: 'PNG 1x',
+    png2: 'PNG 2x',
+    png4: 'PNG 4x',
+    dropHint: 'Drop an .svg file here or click to browse',
+    prev: 'Preview',
+    src: 'XML Source',
+    info: 'SVG Info',
+    emptyHint: 'No SVG loaded — upload a file, paste markup, or click Load Example.',
+    noSvg: '⚠ Could not parse SVG. Make sure the markup starts with <svg>.',
+    copied: '✓ XML copied to clipboard',
+    width: 'Width',
+    height: 'Height',
+    viewBox: 'ViewBox',
+    elements: 'Elements',
+    bytes: 'Size',
+    step1: 'Drag & drop an SVG file, click to browse, or paste SVG markup into the source box',
+    step2: 'The viewer renders a live preview and shows the formatted XML',
+    step3: 'Inspect dimensions, viewBox, element count and byte size',
+    step4: 'Click Copy XML or export to PNG at 1x, 2x or 4x scale',
+  },
+  zh: {
+    toolTitle: 'SVG 查看器与检查器',
+    toolDesc: '粘贴、拖放或上传任意 SVG 文件，即时预览、查看格式化 XML 源码、检查尺寸和 viewBox，并导出 1x/2x/4x PNG。完全浏览器本地运行，无需上传。',
+    upload: '上传 SVG',
+    loadExample: '加载示例',
+    clear: '清空',
+    copyXml: '复制 XML',
+    png1: 'PNG 1x',
+    png2: 'PNG 2x',
+    png4: 'PNG 4x',
+    dropHint: '将 .svg 文件拖到这里，或点击浏览',
+    prev: '预览',
+    src: 'XML 源码',
+    info: 'SVG 信息',
+    emptyHint: '尚未加载 SVG — 上传文件、粘贴标记或点击「加载示例」。',
+    noSvg: '⚠ 无法解析 SVG。请确认标记以 <svg> 开头。',
+    copied: '✓ XML 已复制到剪贴板',
+    width: '宽度',
+    height: '高度',
+    viewBox: 'ViewBox',
+    elements: '元素数',
+    bytes: '大小',
+    step1: '拖放 SVG 文件、点击浏览，或将 SVG 标记粘贴到源码框',
+    step2: '查看器将实时渲染预览并显示格式化 XML',
+    step3: '检查尺寸、viewBox、元素数量和字节大小',
+    step4: '点击「复制 XML」或导出 1x、2x、4x PNG',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let currentSvg = '';
+
+function prettifyXml(xml) {
+  // Strip XML declaration for nicer display
+  xml = xml.replace(/<\?xml[^>]*\?>/g, '').trim();
+  let pad = 0, out = '';
+  xml.replace(/>\s*</g, '><').split(/(?=<)/).forEach(tok => {
+    tok = tok.trim();
+    if (!tok) return;
+    if (/^<\/[^>]+>$/.test(tok)) pad--;
+    out += '  '.repeat(Math.max(0, pad)) + tok + '\n';
+    if (/^<[^\/!?][^>]*[^\/]>$/.test(tok)) pad++;
+  });
+  return out.trim();
+}
+
+function parseSvg(raw) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(raw, 'image/svg+xml');
+  const err = doc.querySelector('parsererror');
+  const svg = doc.querySelector('svg');
+  if (err || !svg) return null;
+  return svg;
+}
+
+function renderInfo(svg) {
+  const w = svg.getAttribute('width') || svg.viewBox.baseVal.width || '?';
+  const h = svg.getAttribute('height') || svg.viewBox.baseVal.height || '?';
+  const vb = svg.getAttribute('viewBox') || '—';
+  const elems = svg.querySelectorAll('*').length;
+  const bytes = new Blob([currentSvg]).size;
+  const cells = [['width', w], ['height', h], ['viewBox', vb], ['elements', elems], ['bytes', formatBytes(bytes)]];
+  $('#info').innerHTML = cells.map(([k, v]) =>
+    `<div class="cell"><small>${t(k)}</small><b>${v}</b></div>`).join('');
+}
+
+function formatBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(2) + ' MB';
+}
+
+function load(raw) {
+  const svg = parseSvg(raw);
+  if (!svg) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noSvg')}</span>`; return; }
+  currentSvg = raw;
+  svg.removeAttribute('width');
+  svg.removeAttribute('height');
+  svg.style.maxWidth = '100%';
+  svg.style.maxHeight = '340px';
+  $('#preview').innerHTML = '';
+  $('#preview').appendChild(svg);
+  $('#xmlSrc').textContent = prettifyXml(raw);
+  renderInfo(parseSvg(raw));
+  $('#status').innerHTML = '';
+}
+
+function loadExample() {
+  const ex = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="54" fill="#6366f1"/><path d="M40 62l14 14 28-32" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  load(ex);
+}
+
+function doClear() { currentSvg = ''; $('#preview').innerHTML = `<span style="opacity:.5">${t('emptyHint')}</span>`; $('#xmlSrc').textContent = ''; $('#info').innerHTML = ''; $('#status').innerHTML = ''; $('#file').value = ''; }
+
+function exportPng(scale) {
+  if (!currentSvg) return;
+  const svg = parseSvg(currentSvg);
+  const vb = svg.viewBox.baseVal;
+  const w = vb && vb.width ? vb.width : (svg.getAttribute('width') || 300);
+  const h = vb && vb.height ? vb.height : (svg.getAttribute('height') || 150);
+  const canvas = document.createElement('canvas');
+  canvas.width = w * scale; canvas.height = h * scale;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  const blob = new Blob([currentSvg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(b => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = `svg-${scale}x.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+  };
+  img.src = url;
+}
+
+function copyXml() {
+  if (!currentSvg) return;
+  copyText($('#xmlSrc').textContent);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('copied')}</span>`;
+  setTimeout(() => $('#status').innerHTML = '', 1500);
+}
+
+// File input + drag&drop
+$('#file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => load(r.result);
+  r.readAsText(f);
+});
+const drop = $('#drop');
+drop.addEventListener('click', () => $('#file').click());
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+drop.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => load(r.result);
+  r.readAsText(f);
+});
+
+// Editable source: paste & re-render
+$('#xmlSrc').contentEditable = true;
+$('#xmlSrc').addEventListener('paste', e => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  setTimeout(() => load(text), 0);
+});
+
+$('#dropLabel').textContent = t('dropHint');
+$('#emptyHint').textContent = t('emptyHint');
+$('#lblPrev').textContent = t('prev');
+$('#lblSrc').textContent = t('src');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="$('#file').click()">${t('upload')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('loadExample')}</button>
+  <button class="gz-btn" onclick="copyXml()">${t('copyXml')}</button>
+  <span style="flex:1"></span>
+  <button class="gz-btn gz-btn-secondary" onclick="exportPng(1)">${t('png1')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportPng(2)">${t('png2')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="exportPng(4)">${t('png4')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/image/favicon-generator.html', name:'Favicon Generator'},
+    {icon:'🖼️', href:'/image/placeholder-image-generator.html', name:'Placeholder Image'},
+    {icon:'🌀', href:'/css-tools/gradient-mesh.html', name:'Mesh Gradient'},
+    {icon:'✨', href:'/image/image-converter.html', name:'Image Converter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
