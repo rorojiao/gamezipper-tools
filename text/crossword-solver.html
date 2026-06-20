@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Crossword Solver - Find Words by Pattern | GameZipper Tools</title>
+  <meta name="description" content="Free online crossword solver. Enter a word pattern with wildcards (e.g. c__ss_w_rd), filter by known letters and length, and instantly see every matching English word. 7,500+ offline dictionary, runs in your browser, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/crossword-solver.html">
+  <meta property="og:title" content="Crossword Solver - Find Words by Pattern | GameZipper Tools">
+  <meta property="og:description" content="Free online crossword solver. Enter a word pattern with wildcards (e.g. c__ss_w_rd), filter by known letters and length, and instantly see every matching English word. 7,500+ offline dictionary, runs in your browser, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/crossword-solver.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Crossword Solver - Find Words by Pattern | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<script src="/shared/words-en.js?v=20260620a"></script>
+<style>
+.cw-input{font-family:monospace;font-size:1.4em;letter-spacing:.4em;text-transform:lowercase;text-align:center;padding:14px}
+.cw-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.cw-row select,.cw-row input{background:rgba(0,0,0,.25);border:1px solid var(--gz-border);color:var(--gz-text);border-radius:6px;padding:8px 10px;font-size:.95em}
+.cw-words{margin-top:14px;max-height:480px;overflow:auto;background:#0003;padding:14px;border-radius:8px;border:1px solid var(--gz-border);display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.cw-word{display:inline-block;padding:5px 11px;background:rgba(99,102,241,.15);border:1px solid #6366f155;border-radius:5px;font-family:monospace;font-size:.95em;cursor:pointer}
+.cw-word:hover{background:rgba(99,102,241,.35)}
+.cw-empty{opacity:.5;text-align:center;padding:24px;width:100%}
+.cw-tip{font-size:.8em;opacity:.7;margin-top:6px}
+.cw-count{margin:8px 0;font-size:.85em;opacity:.85}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Crossword Solver","description":"Free online crossword solver. Enter a word pattern with wildcards (e.g. c__ss_w_rd), filter by known letters and length, and instantly see every matching English word. 7,500+ offline dictionary, runs in your browser, no signup.","url":"https://tools.gamezipper.com/text/crossword-solver.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I use the crossword solver?", "acceptedAnswer": {"@type": "Answer", "text": "Type the clue pattern using underscores, dots or question marks for unknown letters (e.g. c__ss or cr.ss). Optionally set an exact word length and require or exclude certain letters. The solver instantly lists every dictionary word that matches."}}, {"@type": "Question", "name": "What wildcard characters are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Use underscore (_), dot (.), question mark (?), or space — they all match any single letter. Use asterisk (*) for zero or more letters when you only know part of the word."}}, {"@type": "Question", "name": "How many words does the dictionary contain?", "acceptedAnswer": {"@type": "Answer", "text": "Over 7,500 common English words covering 3-12 letter lengths. The list is bundled with the page so the solver works offline and never sends your input anywhere."}}, {"@type": "Question", "name": "Can I filter by included and excluded letters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the Contains and Excludes boxes to require or forbid specific letters anywhere in the word — perfect for cross-checking answers across intersecting clues."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/crossword-solver.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/crossword-solver.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/crossword-solver.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label id="lblPattern"></label>
+    <input type="text" id="pattern" class="cw-input" autocomplete="off">
+    <div class="cw-tip" id="tipPattern"></div>
+    <div class="cw-row">
+      <label id="lblLen"></label>
+      <select id="length"><option value="0">—</option></select>
+      <label id="lblContains"></label>
+      <input type="text" id="contains" style="width:90px" maxlength="12" autocomplete="off">
+      <label id="lblExcludes"></label>
+      <input type="text" id="excludes" style="width:90px" maxlength="12" autocomplete="off">
+    </div>
+    <div class="cw-count" id="count"></div>
+    <div class="cw-words" id="words"><div class="cw-empty" id="empty"></div></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Crossword Solver',
+    toolDesc: 'Find every English word matching a crossword pattern. Type letters you know and use _ . or ? for unknown cells, optionally filter by length, included or excluded letters. 7,500+ offline dictionary, pure browser.',
+    pattern: 'Pattern (letters + _ . ? for blanks, * for any run)',
+    tipPattern: 'Example: c__ss_w_rd → 2 blanks, then s, etc. Use * as a flexible wildcard.',
+    len: 'Length',
+    contains: 'Contains',
+    excludes: 'Excludes',
+    solve: 'Find Words',
+    example: 'Example',
+    clear: 'Clear',
+    empty: 'Enter a pattern above to find matching words.',
+    noMatch: 'No words match your pattern. Try fewer known letters or check your input.',
+    results: 'results',
+    step1: 'Type the letters you know, using _ . or ? for unknown cells',
+    step2: 'Optionally pick an exact length or require/exclude certain letters',
+    step3: 'Click Find Words (it also runs live as you type)',
+    step4: 'Click any matching word to copy it to your clipboard',
+  },
+  zh: {
+    toolTitle: '填字游戏求解器',
+    toolDesc: '查找所有匹配填字游戏模式的英文单词。输入已知字母，用 _ . 或 ? 表示空白格，可选按长度、包含或排除字母筛选。7500+ 离线词典，纯浏览器本地运行。',
+    pattern: '模式（字母 + _ . ? 表示空白，* 表示任意连续字符）',
+    tipPattern: '示例：c__ss_w_rd → 两个空白后跟 s 等。* 为通配符。',
+    len: '长度',
+    contains: '包含',
+    excludes: '排除',
+    solve: '查找单词',
+    example: '示例',
+    clear: '清空',
+    empty: '在上方输入模式以查找匹配单词。',
+    noMatch: '没有匹配模式的单词，请减少已知字母或检查输入。',
+    results: '个结果',
+    step1: '输入已知字母，用 _ . 或 ? 表示未知格',
+    step2: '可选：指定精确长度或要求/排除某些字母',
+    step3: '点击「查找单词」（输入时也会实时搜索）',
+    step4: '点击任意匹配单词复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const WORDS = window.GZ_WORDS || [];
+
+// Populate length dropdown
+const lenSel = $('#length');
+for (let i = 3; i <= 12; i++) {
+  const o = document.createElement('option'); o.value = i; o.textContent = i; lenSel.appendChild(o);
+}
+
+function patternToRegex(p) {
+  // Convert pattern with _ . ? (single wildcard) and * (any run) to regex
+  let re = '^';
+  for (const ch of p) {
+    if (/[a-z]/i.test(ch)) re += ch.toLowerCase();
+    else if (ch === '*' || ch === '%') re += '[a-z]*';
+    else re += '[a-z]'; // _ . ? space
+  }
+  re += '$';
+  return new RegExp(re, 'i');
+}
+
+function solve() {
+  const p = ($('#pattern').value.toLowerCase().trim() || '').replace(/\s/g, '_');
+  const wantLen = parseInt($('#length').value);
+  const contain = $('#contains').value.toLowerCase().replace(/[^a-z]/g, '').split('').filter(Boolean);
+  const exclude = $('#excludes').value.toLowerCase().replace(/[^a-z]/g, '').split('').filter(Boolean);
+
+  const hasPattern = p.length > 0 && /[a-z]/.test(p);
+  if (!hasPattern && !wantLen && !contain.length) {
+    $('#words').innerHTML = `<div class="cw-empty">${t('empty')}</div>`;
+    $('#count').textContent = '';
+    return;
+  }
+
+  let re = null;
+  if (hasPattern) {
+    try { re = patternToRegex(p); } catch (e) { re = null; }
+  }
+
+  let matches = WORDS.filter(w => {
+    if (re && !re.test(w)) return false;
+    if (wantLen && w.length !== wantLen) return false;
+    if (contain.length && !contain.every(c => w.includes(c))) return false;
+    if (exclude.length && exclude.some(c => w.includes(c))) return false;
+    return true;
+  });
+
+  // Sort: shorter & alphabetical first for relevance
+  matches.sort((a, b) => a.length - b.length || a.localeCompare(b));
+
+  if (!matches.length) {
+    $('#words').innerHTML = `<div class="cw-empty">${t('noMatch')}</div>`;
+    $('#count').innerHTML = `<span style="color:var(--gz-accent)">0 ${t('results')}</span>`;
+    return;
+  }
+
+  $('#count').textContent = `${matches.length} ${t('results')}`;
+  const show = matches.slice(0, 500);
+  $('#words').innerHTML = (matches.length > 500 ? `<div class="cw-empty" style="width:100%;padding:8px;opacity:.7">Showing first 500 of ${matches.length}.</div>` : '') +
+    show.map(w => `<span class="cw-word" onclick="copyText('${w}')" title="${t('example')}">${w}</span>`).join('');
+}
+
+['pattern','length','contains','excludes'].forEach(id => $('#'+id).addEventListener('input', solve));
+
+function loadExample() {
+  $('#pattern').value = 'c__ss';
+  $('#length').value = '0';
+  $('#contains').value = '';
+  $('#excludes').value = '';
+  solve();
+}
+function doClear() {
+  $('#pattern').value=''; $('#length').value='0'; $('#contains').value=''; $('#excludes').value='';
+  $('#words').innerHTML = `<div class="cw-empty">${t('empty')}</div>`;
+  $('#count').textContent = '';
+}
+
+$('#lblPattern').textContent = t('pattern');
+$('#tipPattern').textContent = t('tipPattern');
+$('#lblLen').textContent = t('len') + ':';
+$('#lblContains').textContent = t('contains') + ':';
+$('#lblExcludes').textContent = t('excludes') + ':';
+$('#empty').textContent = t('empty');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="solve()">${t('solve')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎯', href:'/fun/hangman-solver.html', name:'Hangman Solver'},
+    {icon:'🔤', href:'/text/anagram-solver.html', name:'Anagram Solver'},
+    {icon:'🟩', href:'/fun/wordle-solver.html', name:'Wordle Solver'},
+    {icon:'🧩', href:'/fun/crossword-maker.html', name:'Crossword Maker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
