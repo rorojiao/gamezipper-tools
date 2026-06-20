@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>DMARC Record Lookup — Check DMARC for Any Domain | GameZipper Tools</title>
+  <meta name="description" content="Free DMARC record lookup. Check the DMARC policy (p=none/quarantine/reject), SPF alignment, DKIM alignment, RUA/RUF reporting endpoints and policy strength score for any domain. Browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/dmarc-lookup.html">
+  <meta property="og:title" content="DMARC Record Lookup — Check DMARC for Any Domain | GameZipper Tools">
+  <meta property="og:description" content="Free DMARC record lookup. Check the DMARC policy, SPF/DKIM alignment, RUA/RUF reporting endpoints and policy strength score.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/dmarc-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DMARC Record Lookup — Check DMARC for Any Domain | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.input-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.input-row input{flex:1;min-width:240px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1.05rem;font-family:monospace}
+.input-row input:focus{outline:none;border-color:var(--accent)}
+.dmarc-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.88rem}
+.dmarc-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;white-space:nowrap}
+.dmarc-table td{padding:10px 12px;border-bottom:1px solid var(--border);word-break:break-all;vertical-align:top}
+.dmarc-table td:first-child{font-weight:600;color:var(--text2);width:200px;white-space:nowrap}
+.dmarc-table tr:hover td{background:var(--glass2)}
+.dmarc-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:.78rem;font-weight:700;background:var(--accent);color:#000;margin-right:4px}
+.dmarc-badge.none{background:#888;color:#fff}
+.dmarc-badge.quarantine{background:#f0ad4e;color:#000}
+.dmarc-badge.reject{background:#00d672;color:#000}
+.dmarc-badge.warn{background:#ff6b6b;color:#fff}
+.score-card{margin-top:16px;padding:18px;border-radius:14px;background:var(--glass);border:1px solid var(--border)}
+.score-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.score-num{font-size:2.4rem;font-weight:900;line-height:1}
+.score-bar{flex:1;min-width:200px;height:10px;background:var(--glass2);border-radius:5px;overflow:hidden;border:1px solid var(--border)}
+.score-bar-fill{height:100%;background:linear-gradient(90deg,#ff6b6b,#f0ad4e,#00d672);border-radius:5px;transition:width .4s}
+.score-label{font-size:.85rem;color:var(--text2)}
+.raw-record{margin-top:16px;padding:14px;background:var(--glass);border:1px solid var(--border);border-radius:12px;font-family:monospace;font-size:.82rem;color:var(--text);word-break:break-all;white-space:pre-wrap;line-height:1.5}
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.loading{text-align:center;padding:30px;color:var(--text2)}
+.example-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.example-list button{padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text);cursor:pointer;font-size:.85rem}
+.example-list button:hover{border-color:var(--accent);background:var(--glass)}
+.preset-tag{display:inline-block;padding:2px 6px;border-radius:4px;background:var(--glass2);border:1px solid var(--border);font-size:.75rem;color:var(--text2);margin-left:6px}
+.preset-tag.good{background:rgba(0,214,114,.15);border-color:#00d672;color:#00d672}
+.preset-tag.bad{background:rgba(255,107,107,.15);border-color:#ff6b6b;color:#ff6b6b}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"DMARC Record Lookup","description":"Free DMARC record lookup. Check the DMARC policy, SPF/DKIM alignment, RUA/RUF reporting endpoints and policy strength score for any domain. Browser-only.","url":"https://tools.gamezipper.com/dev/dmarc-lookup.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a DMARC record?","acceptedAnswer":{"@type":"Answer","text":"DMARC (Domain-based Message Authentication, Reporting & Conformance) is a DNS TXT record published at _dmarc.yourdomain.com. It tells receiving mail servers what to do when an email fails SPF or DKIM authentication checks."}},{"@type":"Question","name":"What are the DMARC policy values p=none, p=quarantine, p=reject?","acceptedAnswer":{"@type":"Answer","text":"p=none means take no action (monitoring only). p=quarantine sends failing messages to the spam folder. p=reject blocks failing messages entirely. The safest production posture is p=reject with sp=reject for subdomains."}},{"@type":"Question","name":"How do I find my DMARC record?","acceptedAnswer":{"@type":"Answer","text":"Query the TXT record at _dmarc.yourdomain.com using this tool, the dig command, or any DNS resolver. A typical record looks like: v=DMARC1; p=quarantine; rua=mailto:dmarc@example.com; pct=100; adkim=s; aspf=s"}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/dmarc-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/dev/dmarc-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/dmarc-lookup.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="input-row">
+      <input id="domain" placeholder="example.com" autocomplete="off" spellcheck="false">
+      <button class="gz-btn" id="lookup-btn"></button>
+    </div>
+    <div class="example-list" id="examples"></div>
+    <div id="result">
+      <div class="empty" id="empty-msg"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'DMARC Record Lookup',
+    toolDesc: 'Check the DMARC record for any domain. See the policy (none/quarantine/reject), SPF/DKIM alignment, subdomain policy, RUA/RUF reporting endpoints and a security strength score. Free, browser-only.',
+    lookup: 'Lookup DMARC',
+    emptyMsg: 'Enter a domain above to look up its DMARC record. Try github.com, google.com or your own domain.',
+    loading: 'Querying DMARC record…',
+    notFound: 'No DMARC record found',
+    notFoundHint: 'This domain has no DMARC record published at _dmarc.{domain}. Without DMARC, attackers can spoof emails from this domain.',
+    rawRecord: 'Raw TXT record',
+    fieldVersion: 'Version',
+    fieldPolicy: 'Policy (p)',
+    fieldSubPolicy: 'Subdomain policy (sp)',
+    fieldAdkim: 'DKIM alignment (adkim)',
+    fieldAspf: 'SPF alignment (aspf)',
+    fieldPct: 'Apply to % (pct)',
+    fieldRua: 'Aggregate reports (rua)',
+    fieldRuf: 'Forensic reports (ruf)',
+    fieldFo: 'Failure options (fo)',
+    fieldRi: 'Report interval (ri)',
+    securityScore: 'Security score',
+    scoreGood: 'Strong',
+    scoreOk: 'Moderate',
+    scoreWeak: 'Weak',
+    scoreNone: 'None',
+    scoreHintGood: 'Strong DMARC posture — emails are protected against spoofing.',
+    scoreHintOk: 'DMARC is monitoring or partially enforced. Move to p=reject for full protection.',
+    scoreHintWeak: 'DMARC policy is set to none. Upgrade to quarantine then reject.',
+    scoreHintNone: 'No DMARC record. Publish one to protect your domain from spoofing.',
+    extraFields: 'Extra notes',
+    policyNone: 'p=none (monitor only)',
+    policyQuarantine: 'p=quarantine (spam folder)',
+    policyReject: 'p=reject (block)',
+    step1: 'Enter a domain (e.g. example.com) — no protocol or path',
+    step2: 'Click Lookup DMARC to query the _dmarc.<domain> TXT record',
+    step3: 'Review the policy, alignment, reporting endpoints and score',
+    step4: 'Use the related tools to generate or improve your own DMARC record',
+  },
+  zh: {
+    toolTitle: 'DMARC 记录查询',
+    toolDesc: '查询任意域名的 DMARC 记录。查看策略（none/quarantine/reject）、SPF/DKIM 对齐方式、子域策略、RUA/RUF 报告地址和安全强度评分。完全浏览器本地运行。',
+    lookup: '查询 DMARC',
+    emptyMsg: '在上方输入域名查询 DMARC 记录。试试 github.com、google.com 或你自己的域名。',
+    loading: '正在查询 DMARC 记录…',
+    notFound: '未找到 DMARC 记录',
+    notFoundHint: '此域名未在 _dmarc.{domain} 发布 DMARC 记录。没有 DMARC，攻击者可以伪造此域名的邮件。',
+    rawRecord: '原始 TXT 记录',
+    fieldVersion: '版本',
+    fieldPolicy: '策略 (p)',
+    fieldSubPolicy: '子域策略 (sp)',
+    fieldAdkim: 'DKIM 对齐 (adkim)',
+    fieldAspf: 'SPF 对齐 (aspf)',
+    fieldPct: '应用比例 (pct)',
+    fieldRua: '聚合报告 (rua)',
+    fieldRuf: '取证报告 (ruf)',
+    fieldFo: '失败选项 (fo)',
+    fieldRi: '报告间隔 (ri)',
+    securityScore: '安全评分',
+    scoreGood: '强',
+    scoreOk: '中等',
+    scoreWeak: '弱',
+    scoreNone: '无',
+    scoreHintGood: '强 DMARC 配置 — 邮件已受保护，防止伪造。',
+    scoreHintOk: 'DMARC 处于监控或部分强制。建议升级为 p=reject 以获得完整保护。',
+    scoreHintWeak: 'DMARC 策略为 none。建议升级为 quarantine 再到 reject。',
+    scoreHintNone: '无 DMARC 记录。建议发布一条以保护域名免受伪造。',
+    extraFields: '额外说明',
+    policyNone: 'p=none（仅监控）',
+    policyQuarantine: 'p=quarantine（送垃圾箱）',
+    policyReject: 'p=reject（拦截）',
+    step1: '输入域名（如 example.com）— 无需协议或路径',
+    step2: '点击「查询 DMARC」查询 _dmarc.<域名> 的 TXT 记录',
+    step3: '查看策略、对齐方式、报告地址和评分',
+    step4: '使用相关工具生成或改进你自己的 DMARC 记录',
+  }
+});
+
+const { $, t } = GZ;
+
+async function dohLookup(name, type='TXT') {
+  const url = `https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${type}`;
+  const res = await fetch(url, { headers: { 'accept': 'application/dns-json' } });
+  if (!res.ok) throw new Error('DoH HTTP ' + res.status);
+  return res.json();
+}
+
+function parseDmarc(record) {
+  // record like: "v=DMARC1; p=reject; rua=mailto:dmarc@example.com; pct=100; adkim=s; aspf=s"
+  const out = { raw: record, valid: false, v:null, p:null, sp:null, adkim:null, aspf:null, pct:null, rua:[], ruf:[], fo:null, ri:null, rf:null };
+  const parts = record.split(';').map(s => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    const eq = part.indexOf('=');
+    if (eq < 0) continue;
+    const key = part.slice(0, eq).trim().toLowerCase();
+    const val = part.slice(eq + 1).trim();
+    if (key === 'v') { out.v = val; out.valid = /^DMARC1$/i.test(val); }
+    else if (key === 'p') out.p = val.toLowerCase();
+    else if (key === 'sp') out.sp = val.toLowerCase();
+    else if (key === 'adkim') out.adkim = val.toLowerCase();
+    else if (key === 'aspf') out.aspf = val.toLowerCase();
+    else if (key === 'pct') { const n = parseInt(val, 10); if (!isNaN(n)) out.pct = n; }
+    else if (key === 'rua') out.rua = val.split(',').map(s=>s.trim());
+    else if (key === 'ruf') out.ruf = val.split(',').map(s=>s.trim());
+    else if (key === 'fo') out.fo = val;
+    else if (key === 'ri') out.ri = val;
+    else if (key === 'rf') out.rf = val;
+  }
+  return out;
+}
+
+function scorePolicy(d) {
+  // Returns 0-100 score and tier
+  if (!d || !d.valid) return { score: 0, tier: 'none' };
+  let score = 30; // base for publishing
+  if (d.p === 'none') score += 10;
+  else if (d.p === 'quarantine') score += 30;
+  else if (d.p === 'reject') score += 50;
+  if (d.sp === 'quarantine') score += 5;
+  else if (d.sp === 'reject') score += 10;
+  if (d.adkim === 's') score += 3;
+  if (d.aspf === 's') score += 3;
+  if (d.rua && d.rua.length) score += 4;
+  if ((d.pct ?? 0) >= 100) score += 5;
+  score = Math.min(100, score);
+  let tier;
+  if (score >= 80) tier = 'good';
+  else if (score >= 50) tier = 'ok';
+  else if (score >= 20) tier = 'weak';
+  else tier = 'none';
+  return { score, tier };
+}
+
+function tierLabel(tier) {
+  return ({ good: t('scoreGood'), ok: t('scoreOk'), weak: t('scoreWeak'), none: t('scoreNone') })[tier] || '';
+}
+function tierHint(tier) {
+  return ({ good: t('scoreHintGood'), ok: t('scoreHintOk'), weak: t('scoreHintWeak'), none: t('scoreHintNone') })[tier] || '';
+}
+
+function policyBadge(p) {
+  if (p === 'reject') return `<span class="dmarc-badge reject">${t('policyReject')}</span>`;
+  if (p === 'quarantine') return `<span class="dmarc-badge quarantine">${t('policyQuarantine')}</span>`;
+  if (p === 'none') return `<span class="dmarc-badge none">${t('policyNone')}</span>`;
+  return `<span class="dmarc-badge">—</span>`;
+}
+
+function renderResult(domain, data) {
+  const records = (data.Answer || []).filter(a => a.type === 16).map(a => a.data.replace(/^"|"$/g, '').replace(/"\s+"/g, ''));
+  const dmarcRecs = records.filter(r => /^v=DMARC1/i.test(r));
+  if (dmarcRecs.length === 0) {
+    $('#result').innerHTML = `
+      <div class="empty">
+        <div style="font-size:2.5rem;opacity:.5">🚫</div>
+        <h3 style="margin:8px 0">${t('notFound')}</h3>
+        <p style="color:var(--text2);max-width:500px;margin:0 auto">${t('notFoundHint').replace('{domain}', domain)}</p>
+      </div>`;
+    return;
+  }
+  const d = parseDmarc(dmarcRecs[0]);
+  const score = scorePolicy(d);
+  const lang = GZI18n.getLang();
+  const row = (label, val, cls='') => `<tr><td>${label}</td><td>${val ?? `<span style="color:var(--text2);opacity:.6">—</span>`}</td></tr>`;
+  const ruaTxt = d.rua.length ? d.rua.map(x=>`<code>${x}</code>`).join('<br>') : null;
+  const rufTxt = d.ruf.length ? d.ruf.map(x=>`<code>${x}</code>`).join('<br>') : null;
+  $('#result').innerHTML = `
+    <div class="score-card">
+      <div class="score-row">
+        <div>
+          <div class="score-num">${score.score}</div>
+          <div style="font-size:.78rem;color:var(--text2)">/ 100</div>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div class="score-bar"><div class="score-bar-fill" style="width:${score.score}%"></div></div>
+          <div style="margin-top:6px"><span class="preset-tag ${score.tier==='good'?'good':(score.tier==='none'?'bad':'')}">${tierLabel(score.tier)}</span></div>
+        </div>
+        <div style="flex:1;min-width:200px;font-size:.85rem;color:var(--text2);line-height:1.6">${tierHint(score.tier)}</div>
+      </div>
+    </div>
+    <table class="dmarc-table">
+      ${row(t('fieldVersion'), `<code>${d.v ?? '—'}</code>`)}
+      ${row(t('fieldPolicy'), policyBadge(d.p))}
+      ${row(t('fieldSubPolicy'), policyBadge(d.sp) || (d.sp ? `<span class="dmarc-badge">${d.sp}</span>` : null))}
+      ${row(t('fieldAdkim'), d.adkim ? `<code>${d.adkim}</code> <span class="preset-tag">${d.adkim==='s'?'strict':'relaxed'}</span>` : null)}
+      ${row(t('fieldAspf'), d.aspf ? `<code>${d.aspf}</code> <span class="preset-tag">${d.aspf==='s'?'strict':'relaxed'}</span>` : null)}
+      ${row(t('fieldPct'), d.pct!=null ? `<code>${d.pct}%</code>` : null)}
+      ${row(t('fieldRua'), ruaTxt)}
+      ${row(t('fieldRuf'), rufTxt)}
+      ${row(t('fieldFo'), d.fo ? `<code>${d.fo}</code>` : null)}
+      ${row(t('fieldRi'), d.ri ? `<code>${d.ri}</code> (${parseInt(d.ri,10)}s = ${parseInt(d.ri,10)/86400}d)` : null)}
+    </table>
+    <h3 style="margin-top:20px;font-size:1rem">${t('rawRecord')}</h3>
+    <div class="raw-record">${dmarcRecs[0]}</div>
+    <p style="margin-top:12px;font-size:.78rem;color:var(--text2)">↳ Queried <code>_dmarc.${domain}</code> TXT via Google Public DNS (DNS-over-HTTPS).</p>
+  `;
+}
+
+async function lookup() {
+  let domain = $('#domain').value.trim().toLowerCase();
+  if (!domain) return;
+  domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+  $('#domain').value = domain;
+  $('#result').innerHTML = `<div class="loading">${t('loading')}</div>`;
+  try {
+    const data = await dohLookup(`_dmarc.${domain}`, 'TXT');
+    renderResult(domain, data);
+  } catch (e) {
+    $('#result').innerHTML = `<div class="empty"><p>⚠️ ${e.message}</p><p style="color:var(--text2);font-size:.85rem">DNS-over-HTTPS may be blocked on your network.</p></div>`;
+  }
+}
+
+$('#lookup-btn').textContent = t('lookup');
+$('#lookup-btn').onclick = lookup;
+$('#domain').addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); });
+
+const examples = ['google.com', 'github.com', 'paypal.com', 'microsoft.com', 'apple.com', 'amazon.com'];
+$('#examples').innerHTML = examples.map(d => `<button data-d="${d}">${d}</button>`).join('');
+$('#examples').querySelectorAll('button').forEach(b => {
+  b.onclick = () => { $('#domain').value = b.dataset.d; lookup(); };
+});
+
+$('#empty-msg').textContent = t('emptyMsg');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🤖', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📧', href:'/dev/spf-generator.html', name:'SPF Generator'},
+    {icon:'✉️', href:'/dev/dkim-generator.html', name:'DKIM Generator'},
+    {icon:'📋', href:'/dev/dns-txt-generator.html', name:'TXT Record Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
