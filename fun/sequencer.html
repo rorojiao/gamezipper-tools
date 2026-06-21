@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Online Music Sequencer - Melodic Beat Maker Free | GameZipper Tools</title>
+  <meta name="description" content="Free online melodic music sequencer. Build melodies and loops on a 16-step grid with 8 instrument sounds, BPM control, scales and keyboard input. Make music in your browser — no install, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/fun/sequencer.html">
+  <meta property="og:title" content="Online Music Sequencer - Melodic Beat Maker Free | GameZipper Tools">
+  <meta property="og:description" content="Free online melodic music sequencer. Build melodies and loops on a 16-step grid with 8 instrument sounds, BPM control, scales and keyboard input. Make music in your browser — no install, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/fun/sequencer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Online Music Sequencer - Melodic Beat Maker Free | GameZipper Tools">
+<meta name="twitter:description" content="Free online melodic music sequencer. Build melodies and loops on a 16-step grid with 8 instrument sounds, BPM control, scales and keyboard input. Make music in your browser — no install, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.seq-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;justify-content:center}
+.seq-controls input[type=range]{width:160px;accent-color:var(--accent)}
+.bpm-val{font-size:1.2rem;font-weight:800;color:var(--accent);min-width:70px;text-align:center}
+.seq-grid-wrap{overflow-x:auto;margin:10px 0}
+#seq-grid{display:grid;grid-template-columns:120px repeat(16,1fr);gap:3px;min-width:680px;border-radius:8px}
+.row-label{padding:6px 10px;font-size:.8rem;font-weight:600;color:var(--text);background:var(--glass2);border-radius:6px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.row-label:hover{background:var(--border2)}
+.cell{aspect-ratio:1;border-radius:5px;background:var(--glass2);border:1px solid var(--border);cursor:pointer;transition:.1s;min-height:28px}
+.cell:hover{border-color:var(--accent)}
+.cell.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:var(--accent);box-shadow:0 0 8px var(--accent-glow)}
+.cell.beat-mark{background:var(--glass);border-color:var(--border2)}
+.cell.current{outline:2px solid #fff;outline-offset:-2px}
+.select-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin:8px 0;font-size:.85rem}
+select.mini{padding:4px 8px;border-radius:6px;background:var(--glass2);color:var(--text);border:1px solid var(--border)}
+.help-text{font-size:.8rem;color:var(--text2);text-align:center;margin-top:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Music Sequencer","description":"Free online melodic music sequencer. Build melodies and loops on a 16-step grid with 8 instrument sounds, BPM control, scales and keyboard input. Make music in your browser — no install, no signup.","url":"https://tools.gamezipper.com/fun/sequencer.html","applicationCategory":"Multimedia","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a music sequencer?", "acceptedAnswer": {"@type": "Answer", "text": "A music sequencer lets you program notes on a grid that plays back in time. Each column is a step in time and each row is a note. Click cells to toggle them on and off, then press Play to hear your loop."}}, {"@type": "Question", "name": "Can I change the musical scale?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Pick from Major, Minor, Pentatonic, Blues, Chromatic and more. The scale constrains the available notes so any pattern you build will sound musical."}}, {"@type": "Question", "name": "How do I use my keyboard?", "acceptedAnswer": {"@type": "Answer", "text": "Click a row label to select it (it highlights), then press number keys 1-9 and 0 to toggle steps 1-10 quickly. You can also just click cells directly with the mouse."}}, {"@type": "Question", "name": "Is this sequencer free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — completely free, no signup, no download. All sounds are synthesized in real time using the Web Audio API, so nothing is uploaded and your music stays on your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/sequencer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/fun/sequencer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/sequencer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="seq-controls">
+      <button class="gz-btn" id="play-btn">▶</button>
+      <button class="gz-btn gz-btn-secondary" id="stop-btn">■</button>
+      <button class="gz-btn gz-btn-secondary" id="clear-btn">🧹 Clear</button>
+      <button class="gz-btn gz-btn-secondary" id="random-btn">🎲 Random</button>
+      <input type="range" id="bpm-slider" min="60" max="200" step="1" value="120">
+      <span class="bpm-val" id="bpm-val">120</span>
+    </div>
+    <div class="select-row">
+      <label id="lbl-scale"></label>
+      <select class="mini" id="scale-select">
+        <option value="major">Major</option>
+        <option value="minor" selected>Minor</option>
+        <option value="pentaMinor">Pentatonic</option>
+        <option value="blues">Blues</option>
+        <option value="chromatic">Chromatic</option>
+      </select>
+      <label id="lbl-wave"></label>
+      <select class="mini" id="wave-select">
+        <option value="sine">Sine</option>
+        <option value="triangle" selected>Triangle</option>
+        <option value="square">Square</option>
+        <option value="sawtooth">Saw</option>
+      </select>
+    </div>
+    <div class="seq-grid-wrap">
+      <div id="seq-grid"></div>
+    </div>
+    <p class="help-text" id="help"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Music Sequencer',
+    toolDesc: 'Build melodies and loops on a 16-step grid. Pick a scale, click cells and press play.',
+    scale: 'Scale:',
+    wave: 'Sound:',
+    help: 'Tip: click cells to toggle notes on/off. Press Play to loop your pattern.',
+    step1: 'Pick a scale and sound waveform',
+    step2: 'Click grid cells to add notes — each row is a pitch',
+    step3: 'Set the BPM with the slider (60-200)',
+    step4: 'Press Play to hear your loop, Random for inspiration',
+  },
+  zh: {
+    toolTitle: '在线音乐序列器',
+    toolDesc: '在 16 步网格上制作旋律和循环。选择音阶、点击格子、按播放。',
+    scale: '音阶：',
+    wave: '音色：',
+    help: '提示：点击格子开关音符。按播放循环你的旋律，按随机获取灵感。',
+    step1: '选择音阶和音色',
+    step2: '点击网格格添加音符 — 每行一个音高',
+    step3: '用滑块设置 BPM（60-200）',
+    step4: '按播放试听循环，按随机获取灵感',
+  }
+});
+
+const { $, t } = GZ;
+
+// Pitch sets (MIDI offsets from a root)
+const SCALES = {
+  major: [0,2,4,5,7,9,11,12,14,16],
+  minor: [0,2,3,5,7,8,10,12,14,15],
+  pentaMinor: [0,3,5,7,10,12,15,17,19,22],
+  blues: [0,3,5,6,7,10,12,15,17,18],
+  chromatic: [0,1,2,3,4,5,6,7,8,9,10,11],
+};
+const ROWS = 10;
+const STEPS = 16;
+const ROOT_MIDI = 48; // C3
+
+let grid = Array.from({length: ROWS}, () => new Array(STEPS).fill(false));
+let playing = false;
+let currentStep = 0;
+let nextStepTime = 0;
+let timerId = null;
+let audioCtx = null;
+let selectedRow = 0;
+
+function noteFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+function getScalePitches() {
+  const sc = SCALES[$('#scale-select').value] || SCALES.minor;
+  // row 0 = top = highest pitch. Reverse so high notes are on top.
+  return sc.slice().reverse().map(off => ROOT_MIDI + 12 + off);
+}
+
+function buildGrid() {
+  const pitches = getScalePitches();
+  const g = $('#seq-grid');
+  g.innerHTML = '';
+  // header row spacer
+  g.style.gridTemplateColumns = `120px repeat(${STEPS}, 1fr)`;
+  // empty top-left cell
+  const corner = document.createElement('div');
+  corner.style.visibility = 'hidden';
+  g.appendChild(corner);
+  // step numbers
+  for (let s = 0; s < STEPS; s++) {
+    const lab = document.createElement('div');
+    lab.style.fontSize = '.7rem';
+    lab.style.textAlign = 'center';
+    lab.style.color = 'var(--text2)';
+    lab.style.padding = '4px 0';
+    lab.textContent = s % 4 === 0 ? (s/4 + 1) : '·';
+    g.appendChild(lab);
+  }
+  // rows
+  for (let r = 0; r < ROWS; r++) {
+    const lab = document.createElement('div');
+    lab.className = 'row-label';
+    const midi = pitches[r];
+    const noteName = NOTE_NAME(midi);
+    lab.innerHTML = `<span>${noteName}</span>`;
+    lab.dataset.row = r;
+    lab.addEventListener('click', () => {
+      selectedRow = r;
+      document.querySelectorAll('.row-label').forEach(l => l.style.outline = '');
+      lab.style.outline = '2px solid var(--accent)';
+      lab.style.outlineOffset = '-2px';
+      previewNote(r);
+    });
+    g.appendChild(lab);
+    for (let s = 0; s < STEPS; s++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (s % 4 === 0 ? ' beat-mark' : '');
+      cell.dataset.row = r;
+      cell.dataset.step = s;
+      if (grid[r][s]) cell.classList.add('on');
+      cell.addEventListener('click', () => {
+        grid[r][s] = !grid[r][s];
+        cell.classList.toggle('on', grid[r][s]);
+        if (grid[r][s]) previewNote(r);
+      });
+      g.appendChild(cell);
+    }
+  }
+}
+
+function NOTE_NAME(midi) {
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const oct = Math.floor(midi / 12) - 1;
+  return names[midi % 12] + oct;
+}
+
+function previewNote(row) {
+  if (!audioCtx) return;
+  const pitches = getScalePitches();
+  playNote(pitches[row], 0.2);
+}
+
+function playNote(midi, duration) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = $('#wave-select').value;
+  osc.frequency.value = noteFreq(midi);
+  const now = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.25, now + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + duration + 0.05);
+}
+
+function scheduler() {
+  while (nextStepTime < audioCtx.currentTime + 0.1) {
+    scheduleStep(currentStep, nextStepTime);
+    advanceStep();
+  }
+  timerId = setTimeout(scheduler, 25);
+}
+
+function scheduleStep(step, time) {
+  const pitches = getScalePitches();
+  for (let r = 0; r < ROWS; r++) {
+    if (grid[r][step]) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = $('#wave-select').value;
+      osc.frequency.value = noteFreq(pitches[r]);
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(0.25, time + 0.005);
+      const bpm = parseInt($('#bpm-slider').value, 10);
+      const stepDur = 60 / bpm / 4; // 16th note
+      gain.gain.exponentialRampToValueAtTime(0.001, time + stepDur * 0.9);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(time);
+      osc.stop(time + stepDur + 0.05);
+    }
+  }
+  // schedule visual highlight
+  const highlightDelay = (time - audioCtx.currentTime) * 1000;
+  setTimeout(() => highlightStep(step), Math.max(0, highlightDelay));
+}
+
+function advanceStep() {
+  const bpm = parseInt($('#bpm-slider').value, 10);
+  const stepDur = 60 / bpm / 4;
+  nextStepTime += stepDur;
+  currentStep = (currentStep + 1) % STEPS;
+}
+
+function highlightStep(step) {
+  document.querySelectorAll('.cell.current').forEach(c => c.classList.remove('current'));
+  document.querySelectorAll(`.cell[data-step="${step}"]`).forEach(c => c.classList.add('current'));
+}
+
+function play() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (playing) return;
+  playing = true;
+  currentStep = 0;
+  nextStepTime = audioCtx.currentTime + 0.05;
+  $('#play-btn').textContent = '⏸';
+  scheduler();
+}
+
+function pause() {
+  playing = false;
+  if (timerId) { clearTimeout(timerId); timerId = null; }
+  $('#play-btn').textContent = '▶';
+  document.querySelectorAll('.cell.current').forEach(c => c.classList.remove('current'));
+}
+
+function stop() {
+  pause();
+  currentStep = 0;
+}
+
+function clearAll() {
+  grid = Array.from({length: ROWS}, () => new Array(STEPS).fill(false));
+  document.querySelectorAll('.cell.on').forEach(c => c.classList.remove('on'));
+}
+
+function randomPattern() {
+  const pitches = getScalePitches();
+  for (let r = 0; r < ROWS; r++) {
+    for (let s = 0; s < STEPS; s++) {
+      // sparse random — denser for low notes (bass), sparser for high notes
+      const density = 0.18 - (r / ROWS) * 0.10;
+      grid[r][s] = Math.random() < density;
+    }
+  }
+  // ensure each beat has at least one note
+  for (let s = 0; s < STEPS; s += 4) {
+    if (!grid.some(row => row[s])) {
+      const r = Math.floor(Math.random() * 5);
+      grid[r][s] = true;
+    }
+  }
+  buildGrid();
+}
+
+$('#play-btn').addEventListener('click', () => playing ? pause() : play());
+$('#stop-btn').addEventListener('click', stop);
+$('#clear-btn').addEventListener('click', clearAll);
+$('#random-btn').addEventListener('click', randomPattern);
+$('#bpm-slider').addEventListener('input', e => $('#bpm-val').textContent = e.target.value);
+$('#scale-select').addEventListener('change', () => { buildGrid(); });
+$('#wave-select').addEventListener('change', () => {});
+
+// keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); return; }
+  // 1-9,0 toggle steps 0-9 for selected row
+  const map = {'1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6,'8':7,'9':8,'0':9};
+  if (e.key in map) {
+    const s = map[e.key];
+    grid[selectedRow][s] = !grid[selectedRow][s];
+    const cell = document.querySelector(`.cell[data-row="${selectedRow}"][data-step="${s}"]`);
+    if (cell) cell.classList.toggle('on', grid[selectedRow][s]);
+  }
+});
+
+$('#lbl-scale').textContent = t('scale');
+$('#lbl-wave').textContent = t('wave');
+$('#help').textContent = t('help');
+buildGrid();
+document.querySelector('.row-label').style.outline = '2px solid var(--accent)';
+document.querySelector('.row-label').style.outlineOffset = '-2px';
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🥁', href:'/fun/drum-machine.html', name:'Drum Machine'},
+    {icon:'🎹', href:'/fun/piano.html', name:'Virtual Piano'},
+    {icon:'🎸', href:'/fun/chord-generator.html', name:'Chord Generator'},
+    {icon:'🎵', href:'/fun/music-scale-finder.html', name:'Scale Finder'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
