@@ -240,6 +240,78 @@
     window.gzToolsAdSense.observer = obs;
   }
 
+  // ==================== v5.4.3 MID-CONTENT AD SLOTS ====================
+  // Inject 2 explicit <ins> slots between known high-engagement sections.
+  // Lazy-loaded via IntersectionObserver — only request when 200px from viewport.
+  // Auto-Ads will respect these slots AND continue scanning for additional placements.
+  function injectMidContentSlots() {
+    try {
+      // Skip on short pages (mobile single-page tools, no scrolling room)
+      var pageHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+      if (pageHeight < 768) return;
+
+      var slotSpecs = [
+        // After main tool list, before featured-traffic-tools (mid-content break)
+        { before: 'featured-traffic-tools', slotId: 'gz-mid-slot-1' },
+        // After tool-hub-seo-block, before tool-hub-faq (after SEO content)
+        { before: 'tool-hub-faq', slotId: 'gz-mid-slot-2' }
+      ];
+
+      var injected = 0;
+      for (var i = 0; i < slotSpecs.length; i++) {
+        var spec = slotSpecs[i];
+        var anchor = document.getElementById(spec.before);
+        if (!anchor || !anchor.parentNode) continue;
+        // Skip if AdSense auto-ads already placed an ad in the same parent (avoid stacking)
+        var parent = anchor.parentNode;
+        var existing = parent.querySelectorAll('ins.adsbygoogle[data-gz-mid-slot]');
+        if (existing.length > 0) continue;
+
+        var ins = document.createElement('ins');
+        ins.className = 'adsbygoogle';
+        ins.id = spec.slotId;
+        ins.setAttribute('data-gz-mid-slot', '1');
+        ins.style.cssText = 'display:block;text-align:center;margin:24px auto;min-height:120px;max-height:280px';
+        ins.setAttribute('data-ad-client', AD_CLIENT);
+        ins.setAttribute('data-ad-slot', 'auto');
+        ins.setAttribute('data-ad-format', 'auto');
+        ins.setAttribute('data-full-width-responsive', 'true');
+        // Wrap in a div so IntersectionObserver can lazy-init ad request
+        var wrapper = document.createElement('div');
+        wrapper.className = 'gz-ad-mid-wrapper';
+        wrapper.style.cssText = 'min-height:120px;margin:24px auto;max-width:970px';
+        wrapper.appendChild(ins);
+        parent.insertBefore(wrapper, anchor);
+        injected++;
+
+        // Lazy-load: only request ad when slot approaches viewport
+        (function(slotEl, slotIdStr) {
+          if (typeof IntersectionObserver === 'undefined') {
+            // Fallback: request immediately (older browsers, Safari <12)
+            try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+            return;
+          }
+          var observer = new IntersectionObserver(function(entries) {
+            for (var j = 0; j < entries.length; j++) {
+              if (entries[j].isIntersecting) {
+                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+                observer.unobserve(slotEl);
+                trackAdEvent('adsense_mid_slot_requested', { network: 'adsense', slotId: slotIdStr });
+              }
+            }
+          }, { rootMargin: '200px 0px' });
+          observer.observe(slotEl);
+        })(wrapper, spec.slotId);
+      }
+      if (injected > 0) {
+        window.gzToolsAdSense.midSlotsInjected = injected;
+        console.log('[GZToolsAdSense] Injected ' + injected + ' mid-content ad slots');
+      }
+    } catch(e) {
+      console.warn('[GZToolsAdSense] Mid-content slot injection failed:', e);
+    }
+  }
+
   function loadAdSense() {
     if (window.gzToolsAdSense.loaded) return;
     window.gzToolsAdSense.loaded = true;
@@ -256,18 +328,39 @@
       console.log('[GZToolsAdSense] AdSense auto ads loaded');
       // Set up fill observer after script load — auto-ads starts injecting after this
       setupAdObserver();
+      // v5.4.3: Inject explicit mid-content slots after the main script is ready.
+      // Wait for DOMContentLoaded so sections like #featured-traffic-tools exist.
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectMidContentSlots);
+      } else {
+        // Even if DOM is ready, defer slightly so it doesn't fight with auto-ads first scan
+        setTimeout(injectMidContentSlots, 100);
+      }
     };
     s.onerror = function() {
       // v5.4.2: Retry once on failure (handles transient network issues + race with
       // very fast page navigations where first request gets aborted)
       if (window.gzToolsAdSense.loadAttempts < 2) {
         window.gzToolsAdSense.loaded = false; // allow retry
-        trackAdEvent('adsense_load_retry', { network: 'adsense', attempt: 1, error: 'script_load_failed' });
+        trackAdEvent('adsense_load_retry', { network: 'adsense', attempt: 1, error: 'script_load_failed', online: navigator.onLine, vis: document.visibilityState });
         console.warn('[GZToolsAdSense] AdSense script failed, retrying once after 1s');
         setTimeout(function() { loadAdSense(); }, 1000);
         return;
       }
-      trackAdEvent('adsense_load_error', { network: 'adsense', error: 'script_load_failed', attempts: window.gzToolsAdSense.loadAttempts });
+      // v5.4.3: Enhanced error meta — distinguish AdBlocker (online=true) from real network (online=false).
+      // Common cause: pagead2.googlesyndication.com blocked by uBlock/AdBlock extension (which IS the case
+      // for ~50% of tools traffic per 7d data). Capture network + visibility state so BI can bucket errors.
+      var conType = '';
+      try { conType = (navigator.connection && navigator.connection.effectiveType) || ''; } catch(e) {}
+      trackAdEvent('adsense_load_error', {
+        network: 'adsense',
+        error: 'script_load_failed',
+        attempts: window.gzToolsAdSense.loadAttempts,
+        online: navigator.onLine,
+        vis: document.visibilityState,
+        conType: conType,
+        ref: document.referrer ? document.referrer.slice(0, 80) : ''
+      });
       console.warn('[GZToolsAdSense] AdSense script failed to load after ' + window.gzToolsAdSense.loadAttempts + ' attempts');
     };
     document.head.appendChild(s);
