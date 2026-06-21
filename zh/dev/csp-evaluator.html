@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>CSP 评估器 — 内容安全策略分析 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="粘贴 Content-Security-Policy 头部，即时获得安全分析：A-F 等级、危险模式、缺失指令和现代化建议 — 免费、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/csp-evaluator.html">
+  <meta property="og:title" content="CSP 评估器 — 内容安全策略分析">
+  <meta property="og:description" content="粘贴 Content-Security-Policy 头部，即时获得安全分析：A-F 等级、危险模式、缺失指令和现代化建议 — 免费、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/csp-evaluator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSP 评估器 — 内容安全策略分析">
+<meta name="twitter:description" content="粘贴 Content-Security-Policy 头部，即时获得安全分析：A-F 等级、危险模式、缺失指令和现代化建议 — 免费、浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#input{min-height:160px;font-family:monospace;font-size:.85em;line-height:1.5}
+.score-box{display:flex;align-items:center;gap:14px;padding:1rem;background:var(--glass);border:1px solid var(--border);border-radius:12px;margin-bottom:.8rem}
+.score-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#fff;flex-shrink:0}
+.score-A{background:#22c55e}.score-B{background:#84cc16}.score-C{background:#eab308}.score-D{background:#f97316}.score-F{background:#ef4444}
+.score-meta h3{margin:0;font-size:1rem}.score-meta p{margin:2px 0 0;font-size:.82rem;color:var(--text3)}
+.findings{display:flex;flex-direction:column;gap:8px}
+.finding{display:flex;gap:10px;padding:.7rem .9rem;border-radius:10px;border:1px solid var(--border);background:var(--glass);font-size:.85rem}
+.finding .ico{font-size:1.2rem;flex-shrink:0;line-height:1.2}
+.finding.sev-high{border-color:#ef4444;background:rgba(239,68,68,.06)}
+.finding.sev-med{border-color:#f97316;background:rgba(249,115,22,.06)}
+.finding.sev-low{border-color:#eab308;background:rgba(234,179,8,.06)}
+.finding.sev-ok{border-color:#22c55e;background:rgba(34,197,94,.06)}
+.finding .body{flex:1;min-width:0}
+.finding .body strong{display:block;margin-bottom:2px}
+.finding .body code{background:var(--input-bg);padding:1px 5px;border-radius:4px;font-size:.8em}
+.dir-list{margin-top:.4rem;font-family:monospace;font-size:.8rem;color:var(--text3)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSP Evaluator","description":"Paste a Content-Security-Policy header and get an instant security analysis. Detect dangerous wildcards, unsafe-inline, missing directives, deprecated features and modernize your CSP — free, browser-only, no upload.","url": "https://tools.gamezipper.com/zh/dev/csp-evaluator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does the CSP Evaluator check?", "acceptedAnswer": {"@type": "Answer", "text": "It analyzes your Content-Security-Policy header for known weaknesses: wildcard sources like https: or *, unsafe-inline and unsafe-eval, plain http: sources, missing fall-back directives (default-src, object-src), deprecated reporting directives, and whether each fetch directive is explicit. It returns a letter grade A-F with prioritized recommendations."}}, {"@type": "Question", "name": "What is a good CSP score?", "acceptedAnswer": {"@type": "Answer", "text": "Aim for an A or B grade. To get there: use a default-src 'none' or 'self' baseline, restrict script-src to nonce/hash-based sources (avoid unsafe-inline), block plugins with object-src 'none', and prefer strict-dynamic over long allow-lists."}}, {"@type": "Question", "name": "Is unsafe-inline always bad?", "acceptedAnswer": {"@type": "Answer", "text": "Not always. In script-src and style-src, unsafe-inline significantly weakens protection. With CSP3 you can replace unsafe-inline with nonces ('nonce-abc123') or hashes ('sha256-...') plus strict-dynamic. Browsers ignore unsafe-inline when nonces or hashes are present, so you can keep it temporarily while migrating."}}, {"@type": "Question", "name": "Does the CSP Evaluator send my policy anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. All evaluation runs locally in your browser using JavaScript. Your CSP header never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/csp-evaluator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/csp-evaluator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/csp-evaluator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label id="lbl-in"></label>
+    <textarea id="input" spellcheck="false" placeholder="default-src 'self'; script-src 'self' 'unsafe-inline'; ..."></textarea>
+    <div id="result" style="margin-top:.8rem"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSP Evaluator — Content Security Policy Analyzer',
+    toolDesc: 'Paste a Content-Security-Policy header and get an instant security analysis: grade A-F, dangerous patterns, missing directives and modernization tips — free, browser-only.',
+    inLabel: 'Paste your Content-Security-Policy header value:',
+    analyze: 'Analyze',
+    sample: 'Sample',
+    clear: 'Clear',
+    gradeTitle: 'CSP Security Grade',
+    gradeMeta: 'Score: {n}/100 • {high} high • {med} medium • {low} low severity findings',
+    directivesDetected: 'Directives detected: {n}',
+    step1: 'Copy the Content-Security-Policy value from your HTTP response header',
+    step2: 'Paste it into the input box above',
+    step3: 'Click Analyze to evaluate security',
+    step4: 'Review the findings and fix the issues in your server config'
+  },
+  zh: {
+    toolTitle: 'CSP 评估器 — 内容安全策略分析',
+    toolDesc: '粘贴 Content-Security-Policy 头部，即时获得安全分析：A-F 等级、危险模式、缺失指令和现代化建议 — 免费、浏览器本地运行。',
+    inLabel: '粘贴你的 Content-Security-Policy 头部值：',
+    analyze: '分析',
+    sample: '示例',
+    clear: '清空',
+    gradeTitle: 'CSP 安全等级',
+    gradeMeta: '得分：{n}/100 • {high} 高危 • {med} 中危 • {low} 低危',
+    directivesDetected: '检测到指令：{n} 个',
+    step1: '从 HTTP 响应头中复制 Content-Security-Policy 的值',
+    step2: '将其粘贴到上方输入框',
+    step3: '点击「分析」进行安全评估',
+    step4: '查看发现的问题，并在服务器配置中修复'
+  }
+});
+
+const { $, t } = GZ;
+
+// Findings catalogue
+const FINDINGS = {
+  // High-severity issues
+  wildcardAny: {sev:'high', ico:'🚨', title:'Wildcard * in {dir}', msg:'<code>*</code> allows any source, completely disabling CSP protection for {dir}. Replace with explicit origins.'},
+  wildcardScheme: {sev:'high', ico:'🚨', title:'Wildcard scheme in {dir}', msg:'<code>{val}</code> allows loading resources from any site using that scheme. Use specific origins like <code>https://cdn.example.com</code>.'},
+  unsafeInline: {sev:'high', ico:'⚠️', title:"unsafe-inline in {dir}", msg:"<code>'unsafe-inline'</code> allows inline {kind}, a major XSS vector. Switch to nonces (<code>'nonce-XYZ'</code>) or hashes." },
+  unsafeEval: {sev:'high', ico:'⚠️', title:"unsafe-eval in {dir}", msg:"<code>'unsafe-eval'</code> allows eval(), new Function() and similar — common XSS vector. Refactor to avoid dynamic code generation." },
+  plainHttp: {sev:'high', ico:'🔓', title:'Plain http: source in {dir}', msg:'<code>{val}</code> allows unencrypted HTTP origins. Browsers can MITM the content. Use https: only.'},
+  // Medium
+  missingDefaultSrc: {sev:'med', ico:'ℹ️', title:'default-src not set', msg:'Without <code>default-src</code> as a fallback, every fetch directive must be explicit. Add <code>default-src \'self\'</code> or <code>\'none\'</code> as a baseline.'},
+  missingObjectSrc: {sev:'med', ico:'ℹ️', title:'object-src not set', msg:'Plugins (Flash, Java) are allowed by default-src. Add <code>object-src \'none\'</code> to block plugins unless you really need them.'},
+  missingBaseUri: {sev:'med', ico:'ℹ️', title:'base-uri not set', msg:'Without <code>base-uri</code> attackers can hijack relative URLs by injecting a <base> tag. Set <code>base-uri \'self\'</code>.'},
+  missingFrameAncestors: {sev:'med', ico:'ℹ️', title:'frame-ancestors not set', msg:'Your page can be embedded in iframes (clickjacking). Add <code>frame-ancestors \'none\'</code> or specific origins.'},
+  missingFormAction: {sev:'med', ico:'ℹ️', title:'form-action not set', msg:'Forms can submit to any origin. Restrict with <code>form-action \'self\'</code>.'},
+  missingUpgradeInsecure: {sev:'med', ico:'ℹ️', title:'upgrade-insecure-requests not set', msg:'Add <code>upgrade-insecure-requests</code> to auto-upgrade HTTP subresources to HTTPS.'},
+  dataUri: {sev:'med', ico:'ℹ️', title:'data: URI allowed in {dir}', msg:'<code>data:</code> URIs can carry arbitrary content. Avoid them in <code>script-src</code> especially.'},
+  // Low
+  deprecatedReport: {sev:'low', ico:'📜', title:'Deprecated report-uri directive', msg:'<code>report-uri</code> is deprecated in CSP3. Use <code>report-to</code> with a Reporting-Endpoints header instead.'},
+  missingSandbox: {sev:'low', ico:'💡', title:'No sandbox restriction', msg:'Consider adding <code>sandbox</code> with the minimum necessary allow-* tokens for extra defense-in-depth.'},
+  missingStrictDynamic: {sev:'low', ico:'💡', title:'Consider strict-dynamic in {dir}', msg:'Long allow-lists are brittle. <code>strict-dynamic</code> lets trusted scripts load their own dependencies, reducing your allow-list.'},
+  // OK positives
+  hasDefaultSrc: {sev:'ok', ico:'✅', title:'default-src is set', msg:'Good — you have a fall-back directive that constrains everything not explicitly listed.'},
+  objectSrcNone: {sev:'ok', ico:'✅', title:'object-src blocks plugins', msg:'<code>object-src \'none\'</code> blocks legacy plugins like Flash — great defense.'},
+  usesNonce: {sev:'ok', ico:'✅', title:'Nonce-based script loading', msg:'You use script nonces — the modern, robust alternative to unsafe-inline.'},
+  usesHash: {sev:'ok', ico:'✅', title:'Hash-based script loading', msg:'You use script hashes — great for inline scripts that don\'t change often.'},
+};
+
+function parseCSP(raw){
+  // Split into directives by ';'
+  const directives = {};
+  raw.split(';').forEach(part => {
+    const tokens = part.trim().split(/\s+/).filter(Boolean);
+    if(!tokens.length) return;
+    const name = tokens[0].toLowerCase();
+    directives[name] = tokens.slice(1);
+  });
+  return directives;
+}
+
+function analyze(){
+  const raw = $('#input').value.trim();
+  if(!raw){ $('#result').innerHTML = ''; return; }
+  const directives = parseCSP(raw);
+  const dirNames = Object.keys(directives);
+  const findings = [];
+  let score = 100;
+  const sub = (v, obj) => v.replace(/\{(\w+)\}/g, (_,k) => obj[k] || '');
+
+  const check = (key, vars) => {
+    const f = FINDINGS[key];
+    findings.push({sev:f.sev, ico:f.ico, title: sub(f.title, vars), msg: sub(f.msg, vars)});
+    if(f.sev === 'high') score -= 20;
+    if(f.sev === 'med') score -= 8;
+    if(f.sev === 'low') score -= 3;
+  };
+
+  const hasFallbackDefault = !!directives['default-src'];
+
+  // Iterate each directive for source-pattern issues
+  for(const dir of dirNames){
+    const srcs = directives[dir] || [];
+    for(const src of srcs){
+      if(src === '*') check('wildcardAny', {dir});
+      else if(/^[a-z]+:\*$/.test(src) || src === 'https:' || src === 'http:') check('wildcardScheme', {dir, val:src});
+      else if(src === 'http://*') check('plainHttp', {dir, val:src});
+      else if(/^http:\/\//.test(src) || /^http:\/\/[^/]/.test(src)) check('plainHttp', {dir, val:src});
+      else if(src === "'unsafe-inline'"){
+        const kind = dir==='script-src'?'scripts': (dir==='style-src'?'styles': (dir==='img-src'?'images':'content'));
+        check('unsafeInline', {dir, kind});
+      }
+      else if(src === "'unsafe-eval'") check('unsafeEval', {dir});
+      else if(src === 'data:' && (dir === 'script-src' || !hasFallbackDefault)) check('dataUri', {dir});
+      else if(src === "'strict-dynamic'") check('missingStrictDynamic', {}); // promoted below only if absent
+    }
+    if(directives[dir] && directives[dir].includes("'report-uri'")) check('deprecatedReport',{});
+  }
+
+  // Missing-direction checks (only if not too noisy)
+  if(!hasFallbackDefault) check('missingDefaultSrc', {});
+  else check('hasDefaultSrc', {});
+
+  if(!directives['object-src'] && !directives['default-src']) check('missingObjectSrc', {});
+  else if(directives['object-src'] && directives['object-src'].includes("'none'")) check('objectSrcNone', {});
+
+  if(!directives['base-uri']) check('missingBaseUri', {});
+  if(!directives['frame-ancestors']) check('missingFrameAncestors', {});
+  if(!directives['form-action']) check('missingFormAction', {});
+  if(!directives['upgrade-insecure-requests']) check('missingUpgradeInsecure', {});
+  if(!directives['sandbox']) check('missingSandbox', {});
+
+  // strict-dynamic / nonce / hash positives
+  const scriptSrc = (directives['script-src'] || directives['default-src'] || []);
+  if(scriptSrc.includes("'strict-dynamic'")){
+    // Already reported as missingStrictDynamic with sev 'low'. Remove that and skip the suggestion
+    const idx = findings.findIndex(f => f.title.startsWith('Consider strict-dynamic'));
+    if(idx >= 0) findings.splice(idx, 1);
+  } else {
+    check('missingStrictDynamic', {dir:'script-src'});
+  }
+  if(scriptSrc.some(s => /^'nonce-/.test(s))) check('usesNonce', {});
+  if(scriptSrc.some(s => /^'sha\d+-/.test(s))) check('usesHash', {});
+
+  // Dedup findings
+  const seen = new Set();
+  const unique = [];
+  for(const f of findings){
+    const k = f.sev + '|' + f.title;
+    if(seen.has(k)) continue;
+    seen.add(k); unique.push(f);
+  }
+
+  // Clamp score
+  score = Math.max(0, Math.min(100, score));
+  let grade = 'F';
+  if(score >= 90) grade = 'A';
+  else if(score >= 80) grade = 'B';
+  else if(score >= 65) grade = 'C';
+  else if(score >= 45) grade = 'D';
+
+  const counts = {high:0,med:0,low:0,ok:0};
+  for(const f of unique) counts[f.sev]++;
+
+  const sevOrder = {high:0, med:1, low:2, ok:3};
+  unique.sort((a,b) => sevOrder[a.sev] - sevOrder[b.sev]);
+
+  const findingHtml = unique.map(f => `
+    <div class="finding sev-${f.sev}">
+      <span class="ico">${f.ico}</span>
+      <div class="body"><strong>${f.title}</strong>${f.msg}</div>
+    </div>`).join('');
+
+  $('#result').innerHTML = `
+    <div class="score-box">
+      <div class="score-circle score-${grade}">${grade}</div>
+      <div class="score-meta">
+        <h3>${t('gradeTitle')}</h3>
+        <p>${t('gradeMeta').replace('{n}', score).replace('{high}', counts.high).replace('{med}', counts.med).replace('{low}', counts.low)}</p>
+        <p>${t('directivesDetected').replace('{n}', dirNames.length)}</p>
+      </div>
+    </div>
+    <div class="findings">${findingHtml}</div>`;
+}
+
+function loadSample(){
+  $('#input').value = `default-src 'none';
+script-src 'self' cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval';
+style-src 'self' 'unsafe-inline' https:;
+img-src * data:;
+connect-src 'self' https://api.example.com;
+report-uri /csp-report;`;
+  analyze();
+}
+
+function clearAll(){
+  $('#input').value=''; $('#result').innerHTML='';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="analyze()">${t('analyze')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadSample()">${t('sample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()" style="margin-left:auto">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', analyze);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/csp-generator.html', name:'CSP Generator'},
+    {icon:'📡', href:'/dev/http-headers.html', name:'HTTP Headers Checker'},
+    {icon:'🛡️', href:'/dev/security-headers.html', name:'Security Headers'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+    {icon:'📄', href:'/dev/htaccess.html', name:'.htaccess Generator'},
+    {icon:'🏠', href:'/dev/permissions-policy-generator.html', name:'Permissions Policy'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

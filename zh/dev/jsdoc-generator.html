@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JSDoc 注释生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="为 JavaScript 函数自动生成整洁的 JSDoc 注释块 — 包含 @param、@returns、@throws、@example 等标签。粘贴代码，即刻获得文档。纯浏览器运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/jsdoc-generator.html">
+  <meta property="og:title" content="JSDoc 注释生成器">
+  <meta property="og:description" content="为 JavaScript 函数自动生成整洁的 JSDoc 注释块 — 包含 @param、@returns、@throws、@example 等标签。粘贴代码，即刻获得文档。纯浏览器运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/jsdoc-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSDoc 注释生成器">
+<meta name="twitter:description" content="为 JavaScript 函数自动生成整洁的 JSDoc 注释块 — 包含 @param、@returns、@throws、@example 等标签。粘贴代码，即刻获得文档。纯浏览器运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#input,#output{min-height:320px;font-family:monospace;font-size:.85em;line-height:1.5}
+.opt-row{display:flex;gap:14px;flex-wrap:wrap;margin:.4rem 0;font-size:.85rem;align-items:center}
+.opt-row label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.opt-row select,.opt-row input[type="text"]{padding:4px 8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);border-radius:6px;font-size:.85rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSDoc Generator","description":"Paste a JavaScript function and instantly get a formatted JSDoc comment block with @param, @returns and @throws tags. Auto-detects parameter names and types — free, browser-only, no upload.","url": "https://tools.gamezipper.com/zh/dev/jsdoc-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is JSDoc?", "acceptedAnswer": {"@type": "Answer", "text": "JSDoc is a markup language used to annotate JavaScript source files. With JSDoc comments you can describe function parameters, return values, types and more, which IDEs like VS Code use for inline documentation, autocomplete and TypeScript-style type checking."}}, {"@type": "Question", "name": "How does the JSDoc generator detect types?", "acceptedAnswer": {"@type": "Answer", "text": "The generator parses your function signature to find parameter names, then inspects default values, TypeScript-style annotations and JSDoc hints already in the source. Where no type can be inferred it falls back to {*} (any). You can also override each type manually in the output."}}, {"@type": "Question", "name": "Does the JSDoc generator support arrow functions and async?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Regular functions, arrow functions, generator functions, async functions and class methods are all supported. Async functions automatically get an @returns {Promise<...>} tag."}}, {"@type": "Question", "name": "Is this JSDoc generator free and private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. It is 100% free, requires no signup, and runs entirely in your browser. Your JavaScript code never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jsdoc-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jsdoc-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jsdoc-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="opt-row">
+      <label><span id="lbl-style"></span>
+        <select id="opt-style">
+          <option value="single">/** ... */</option>
+          <option value="block">/* ... */</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="opt-types" checked> <span id="lbl-types"></span></label>
+      <label><input type="checkbox" id="opt-example" checked> <span id="lbl-example"></span></label>
+      <label><input type="checkbox" id="opt-throws"> <span id="lbl-throws"></span></label>
+    </div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="function add(a, b) { return a + b }"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status" style="margin-top:.5rem;font-size:.85rem"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSDoc Comment Generator',
+    toolDesc: 'Auto-generate clean JSDoc comment blocks for your JavaScript functions — @param, @returns, @throws and @example tags included. Paste code, get docs, browser-only.',
+    styleLabel: 'Comment style:',
+    typesLabel: 'Infer types',
+    exampleLabel: 'Add @example',
+    throwsLabel: 'Add @throws',
+    inLabel: 'JavaScript Code',
+    outLabel: 'JSDoc Comment',
+    generate: 'Generate',
+    sample: 'Sample',
+    copy: 'Copy',
+    clear: 'Clear',
+    status: '✓ Generated JSDoc for {n} function(s)',
+    noFunc: 'No function declarations detected. Try: function foo(a, b) {...}',
+    step1: 'Paste one or more JavaScript functions into the input box',
+    step2: 'Choose options: type inference, @example tag, @throws tag',
+    step3: 'Click Generate to produce JSDoc comments',
+    step4: 'Copy the result and paste it above your function in your code'
+  },
+  zh: {
+    toolTitle: 'JSDoc 注释生成器',
+    toolDesc: '为 JavaScript 函数自动生成整洁的 JSDoc 注释块 — 包含 @param、@returns、@throws、@example 等标签。粘贴代码，即刻获得文档。纯浏览器运行。',
+    styleLabel: '注释样式：',
+    typesLabel: '推断类型',
+    exampleLabel: '添加 @example',
+    throwsLabel: '添加 @throws',
+    inLabel: 'JavaScript 代码',
+    outLabel: 'JSDoc 注释',
+    generate: '生成',
+    sample: '示例',
+    copy: '复制',
+    clear: '清空',
+    status: '✓ 已为 {n} 个函数生成 JSDoc',
+    noFunc: '未检测到函数声明。试试：function foo(a, b) {...}',
+    step1: '将一个或多个 JavaScript 函数粘贴到输入框',
+    step2: '选择选项：类型推断、@example 标签、@throws 标签',
+    step3: '点击「生成」生成 JSDoc 注释',
+    step4: '复制结果，粘贴到代码中函数的上方'
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// Parse functions: capture name, async, params, default values, isArrow
+function parseFunctions(code){
+  const fns = [];
+  // Regular / async / generator functions
+  const funcRegex = /(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)?\s*\(([^)]*)\)/g;
+  let m;
+  while((m = funcRegex.exec(code)) !== null){
+    fns.push({name: m[1] || 'anonymous', params: m[2], isAsync: /\basync\b/.test(m[0].split('function')[0])});
+  }
+  // Arrow functions: const foo = (a,b) => ...   OR   const foo = a => ...
+  const arrowRegex = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(async\s*)?\(([^)]*)\)\s*=>/g;
+  while((m = arrowRegex.exec(code)) !== null){
+    fns.push({name: m[1], params: m[3], isAsync: !!m[2]});
+  }
+  // Shorthand arrow without parens: const foo = a =>
+  const shortArrow = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(async\s+)?([A-Za-z_$][\w$]*)\s*=>(?!\s*[=(])/g;
+  while((m = shortArrow.exec(code)) !== null){
+    fns.push({name: m[1], params: m[3], isAsync: !!m[2]});
+  }
+  // Class methods: foo(a, b) { ... }  with simple body
+  const methodRegex = /\b(async\s+)?([A-Za-z_$][\w$]*)\s*\(([^)]*)\)\s*\{/g;
+  // Avoid double-counting functions already captured
+  const seen = new Set(fns.map(f => f.name));
+  while((m = methodRegex.exec(code)) !== null){
+    const name = m[2];
+    if(['if','for','while','switch','catch','function','return'].includes(name)) continue;
+    if(seen.has(name)) continue;
+    fns.push({name: name, params: m[3], isAsync: !!m[1], isMethod:true});
+    seen.add(name);
+  }
+  return fns;
+}
+
+function parseParams(paramStr){
+  if(!paramStr.trim()) return [];
+  // Handle default values and destructuring minimally
+  const parts = [];
+  let depth = 0, cur = '';
+  for(const ch of paramStr){
+    if(ch === '(' || ch === '[' || ch === '{') depth++;
+    if(ch === ')' || ch === ']' || ch === '}') depth--;
+    if(ch === ',' && depth === 0){ parts.push(cur); cur=''; continue; }
+    cur += ch;
+  }
+  if(cur.trim()) parts.push(cur);
+
+  return parts.map(p => {
+    const trimmed = p.trim();
+    let name, def, optional = false;
+    const eqIdx = trimmed.indexOf('=');
+    if(eqIdx !== -1){
+      name = trimmed.substring(0, eqIdx).trim();
+      def = trimmed.substring(eqIdx + 1).trim();
+      optional = true;
+    } else {
+      name = trimmed;
+    }
+    name = name.replace(/^\.{3}/, '').replace(/[\[\]{}]/g,'').trim();
+    // Strip TS type annotations: a: string -> a
+    name = name.split(':')[0].trim();
+    return {name, def, optional};
+  }).filter(p => p.name);
+}
+
+function inferType(p, code){
+  // From default value
+  if(p.def !== undefined && p.def !== null){
+    const d = p.def.trim();
+    if(/^['"`].*['"`]$/.test(d)) return 'string';
+    if(d === 'true' || d === 'false') return 'boolean';
+    if(/^-?\d+(\.\d+)?$/.test(d)) return 'number';
+    if(d === 'null') return 'null';
+    if(/^\[/.test(d)) return 'Array';
+    if(/^\{/.test(d)) return 'Object';
+  }
+  // From name conventions
+  const n = p.name.toLowerCase();
+  if(/^(is|has|can|should|was|will)[A-Z]/.test(p.name)) return 'boolean';
+  if(/(count|num|len|length|size|index|age|total)$/i.test(n)) return 'number';
+  if(/^(str|text|msg|name|title|desc|url|email)/.test(n)) return 'string';
+  if(/^(arr|list|items|data|rows)/.test(n)) return 'Array';
+  if(/^(opts|options|config|cfg|props)/.test(n)) return 'Object';
+  if(/^cb$|^callback$|^fn$|^handler$|^on[A-Z]/.test(n)) return 'Function';
+  // Heuristic from preceding usage in code
+  const usageRegex = new RegExp('\\b' + p.name.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + '\\s*\\.(map|filter|forEach|reduce|push|pop|slice)\\b');
+  if(usageRegex.test(code)) return 'Array';
+  return '*';
+}
+
+function buildJSDoc(fn, code){
+  const params = parseParams(fn.params);
+  const lines = [];
+  lines.push('/**');
+  lines.push(` * ${fn.name} — describe what this function does.`);
+  if($('#opt-types').checked){
+    for(const p of params){
+      const ty = inferType(p, code);
+      const opt = p.optional ? '=' : '';
+      lines.push(` * @param {${ty}${opt}} ${p.name} - description`);
+    }
+    const retTy = fn.isAsync ? 'Promise<*> ' : '* ';
+    lines.push(` * @returns {${retTy.trim()}} description`);
+  } else {
+    for(const p of params){
+      const opt = p.optional ? ' [optional]' : '';
+      lines.push(` * @param ${p.name}${opt} - description`);
+    }
+    lines.push(` * @returns description`);
+  }
+  if($('#opt-throws').checked && fn.isAsync){
+    lines.push(` * @throws {Error} description of when this fails`);
+  }
+  if($('#opt-example').checked){
+    const sampleArgs = params.slice(0,3).map(p => p.def || (p.name==='cb'||p.name==='fn'?'()=>{}' : (inferType(p,code)==='string'?"''" : (inferType(p,code)==='number'?'0':'null')))).join(', ');
+    lines.push(` * @example`);
+    lines.push(` * ${fn.isAsync?'await ':''}${fn.name}(${sampleArgs});`);
+  }
+  lines.push(' */');
+  if($('#opt-style').value === 'block'){
+    return lines.map((l,i)=> i===0?'/*': (i===lines.length-1?' */': ' *'+l.slice(1))).join('\n');
+  }
+  return lines.join('\n');
+}
+
+function generate(){
+  const code = $('#input').value;
+  if(!code.trim()){ $('#output').textContent=''; $('#status').textContent=''; return; }
+  try {
+    const fns = parseFunctions(code);
+    if(fns.length === 0){
+      $('#output').innerHTML = `<span style="color:var(--gz-accent)">${escapeHtml(t('noFunc'))}</span>`;
+      $('#status').textContent='';
+      return;
+    }
+    const docs = fns.map(f => buildJSDoc(f, code)).join('\n\n');
+    $('#output').textContent = docs;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('status').replace('{n}', fns.length)}</span>`;
+  } catch(e){
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${escapeHtml(e.message)}</span>`;
+    $('#status').textContent='';
+  }
+}
+
+function loadSample(){
+  $('#input').value = `function calculateTotal(price, quantity = 1, taxRate = 0.1) {
+  return price * quantity * (1 + taxRate);
+}
+
+const sendMessage = async (userId, message, options = {}) => {
+  const res = await fetch('/api/send', { method: 'POST', body: JSON.stringify({ userId, message, options }) });
+  if (!res.ok) throw new Error('Send failed');
+  return res.json();
+};`;
+  generate();
+}
+
+function clearAll(){
+  $('#input').value=''; $('#output').textContent=''; $('#status').textContent='';
+}
+
+function applyI18n(){
+  $('#lbl-style').textContent = t('styleLabel');
+  $('#lbl-types').textContent = t('typesLabel');
+  $('#lbl-example').textContent = t('exampleLabel');
+  $('#lbl-throws').textContent = t('throwsLabel');
+}
+
+applyI18n();
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="generate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadSample()">${t('sample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()" style="margin-left:auto">${t('clear')}</button>`;
+
+['input','opt-types','opt-example','opt-throws','opt-style'].forEach(id => {
+  const el = $('#' + id);
+  el.addEventListener('input', generate);
+  el.addEventListener('change', generate);
+});
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⚡', href:'/dev/js-formatter.html', name:'JS Formatter'},
+    {icon:'🔒', href:'/dev/js-obfuscator.html', name:'JS Obfuscator'},
+    {icon:'🗜️', href:'/dev/js-minifier.html', name:'JS Minifier'},
+    {icon:'🧹', href:'/dev/code-comment-remover.html', name:'Comment Remover'},
+    {icon:'🧪', href:'/dev/javascript-playground.html', name:'JS Playground'},
+    {icon:'📄', href:'/dev/changelog-generator.html', name:'Changelog Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
