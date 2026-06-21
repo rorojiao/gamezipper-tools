@@ -6,7 +6,7 @@
   window.GZ_COLLECT_ENDPOINT = 'https://fine-muscles-plays-structured.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260618P0fix';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=202606210b56monetag';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.2 (2026-06-14): cache buster bumped 20260612a → 20260614b for adsense-auto race-condition fix
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260617z2';s4.defer=true;document.head.appendChild(s4);
