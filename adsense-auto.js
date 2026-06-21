@@ -17,6 +17,20 @@
  *     that endpoint serves Metabase HTML (not JS), so vid/sid was always empty
  *     in ad events. Now we generate IDs inline using localStorage/sessionStorage.
  *
+ * v5.4.3-tools-mid-content-slots (2026-06-21):
+ *   - BI server data 7d (2026-06-15 ~ 2026-06-21): tools.gamezipper.com has only
+ *     1 explicit <ins class="adsbygoogle"> slot (at top of index.html) and 0
+ *     commercial_break_fill events despite 614 successful script loads.
+ *     gamezipper.com (with 3+ in-page banner injections + commercial break) has
+ *     789 AdSense commercial_break_fill in same period. Adding 2 mid-content
+ *     slots between tool-sections / featured-traffic-tools and tool-hub-seo-block /
+ *     tool-hub-faq gives Google AdSense more inventory hints and explicitly marks
+ *     high-engagement insertion points (after main tool list, after SEO block).
+ *   - Slots are lazy-loaded via IntersectionObserver — only fetch when 200px from
+ *     viewport (saves bandwidth on users who scroll fast or never reach footer).
+ *   - Skip on pages <768px tall (mobile single-page) — already saturated.
+ *   - Each slot fires adsense_commercial_break_fill / _no_fill via existing observer.
+ *
  * v5.4.2-tools-load-error-fix (2026-06-14):
  *   - Add self-contained vid/sid tracking (localStorage gz_vid / sessionStorage gz_sid)
  *   - Load AdSense script immediately on IIFE execution (was: 1.5s after click /
