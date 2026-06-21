@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>音频变调器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将任意音频升高或降低最多 ±12 个半音，不改变速度。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/audio-pitch.html">
+  <meta property="og:title" content="音频变调器">
+  <meta property="og:description" content="将任意音频升高或降低最多 ±12 个半音，不改变速度。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/audio-pitch.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="音频变调器">
+<meta name="twitter:description" content="将任意音频升高或降低最多 ±12 个半音，不改变速度。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#audio-drop{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+#audio-drop:hover,#audio-drop.dragover{border-color:var(--gz-accent);background:rgba(255,255,255,.03)}
+#audio-drop svg{width:48px;height:48px;fill:var(--gz-accent);margin-bottom:8px}
+input[type=range]{width:100%;max-width:500px;accent-color:var(--gz-accent)}
+.controls-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.pitch-val{font-size:1.6em;font-weight:800;color:var(--accent);min-width:120px;text-align:center}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.presets button{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--glass2);color:inherit;cursor:pointer;font-size:.85em;transition:.15s}
+.presets button:hover,.presets button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+#waveform-canvas{width:100%;height:80px;border-radius:8px;background:var(--glass2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Audio Pitch Shifter","description":"Change the pitch of any audio file online for free. Raise or lower pitch up to ±12 semitones without changing tempo. Supports MP3, WAV, OGG, WebM — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/convert/audio-pitch.html","applicationCategory":"Multimedia","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is the difference between pitch shift and speed change?", "acceptedAnswer": {"@type": "Answer", "text": "Changing speed alters both tempo and pitch together (like a tape recorder). A pitch shifter changes only the pitch (frequency) while keeping the original tempo. This tool preserves tempo so you can raise or lower notes without making the song faster or slower."}}, {"@type": "Question", "name": "How many semitones can I shift pitch?", "acceptedAnswer": {"@type": "Answer", "text": "You can shift pitch from -12 semitones (one octave down) to +12 semitones (one octave up). The slider uses 0.1-semitone steps for fine control. Common presets include -5 (drop tuning), -3, +2, +3 and +5."}}, {"@type": "Question", "name": "What audio formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Any audio format your browser can decode: MP3, WAV, OGG, WebM, AAC, FLAC, M4A and more. Output is saved as WAV for lossless quality and maximum compatibility."}}, {"@type": "Question", "name": "Is my audio uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All pitch shifting happens entirely in your browser using the Web Audio API. Your audio files never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/audio-pitch.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/audio-pitch.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/audio-pitch.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div id="audio-drop">
+      <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6zM10 19a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>
+      <div id="drop-text"></div>
+      <input type="file" id="file-input" accept="audio/*" style="display:none">
+    </div>
+    <div id="editor" style="display:none">
+      <canvas id="waveform-canvas"></canvas>
+      <div class="controls-bar">
+        <button class="gz-btn" id="play-btn">▶</button>
+        <button class="gz-btn gz-btn-secondary" id="stop-btn">■</button>
+        <span id="time-display">0:00 / 0:00</span>
+      </div>
+      <div style="margin:14px 0;text-align:center">
+        <label id="pitch-label" style="font-size:.85rem;color:var(--text2);font-weight:600"></label>
+        <div style="display:flex;align-items:center;gap:14px;justify-content:center;margin:8px 0">
+          <input type="range" id="pitch-slider" min="-12" max="12" step="0.1" value="0">
+          <span class="pitch-val" id="pitch-val">0 st</span>
+        </div>
+        <div class="presets" id="presets" style="justify-content:center"></div>
+      </div>
+      <div style="text-align:center;margin-top:14px">
+        <button class="gz-btn gz-btn-secondary" id="download-btn" style="display:none">⬇ Download WAV</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Audio Pitch Shifter',
+    toolDesc: 'Raise or lower the pitch of any audio up to ±12 semitones without changing the tempo.',
+    dropHere: 'Drop audio file here or click to upload',
+    pitchLabel: 'Pitch shift (semitones)',
+    step1: 'Drop or click to upload an audio file (MP3, WAV, OGG, WebM)',
+    step2: 'Drag the slider or pick a preset to shift pitch',
+    step3: 'Press Play to preview the shifted audio',
+    step4: 'Click Download to save the pitch-shifted WAV',
+  },
+  zh: {
+    toolTitle: '音频变调器',
+    toolDesc: '将任意音频升高或降低最多 ±12 个半音，不改变速度。',
+    dropHere: '拖入音频文件或点击上传',
+    pitchLabel: '变调（半音）',
+    step1: '拖入或点击上传音频文件（MP3、WAV、OGG、WebM）',
+    step2: '拖动滑块或选择预设来变调',
+    step3: '点击播放预览变调后的音频',
+    step4: '点击下载保存为 WAV 文件',
+  }
+});
+
+const { $, t } = GZ;
+let audioCtx = null;
+let buffer = null;
+let source = null;
+let isPlaying = false;
+let startTime = 0;
+let pauseOffset = 0;
+let pitchShift = 0;
+let renderedBuffer = null;
+
+const PRESETS = [
+  { label: '-12 (oct down)', val: -12 },
+  { label: '-5', val: -5 },
+  { label: '-3', val: -3 },
+  { label: '0', val: 0 },
+  { label: '+3', val: 3 },
+  { label: '+5', val: 5 },
+  { label: '+12 (oct up)', val: 12 },
+];
+
+$('#presets').innerHTML = PRESETS.map(p => `<button data-val="${p.val}">${p.label}</button>`).join('');
+$('#drop-text').textContent = t('dropHere');
+$('#pitch-label').textContent = t('pitchLabel');
+
+$('#audio-drop').addEventListener('click', () => $('#file-input').click());
+$('#audio-drop').addEventListener('dragover', e => { e.preventDefault(); $('#audio-drop').classList.add('dragover'); });
+$('#audio-drop').addEventListener('dragleave', () => $('#audio-drop').classList.remove('dragover'));
+$('#audio-drop').addEventListener('drop', e => {
+  e.preventDefault();
+  $('#audio-drop').classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+$('#file-input').addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+async function loadFile(file) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  $('#editor').style.display = 'block';
+  $('#download-btn').style.display = 'none';
+  renderedBuffer = null;
+  try {
+    const arr = await file.arrayBuffer();
+    buffer = await audioCtx.decodeAudioData(arr);
+    pauseOffset = 0;
+    drawWaveform();
+    updateTime();
+  } catch (e) {
+    alert('Could not decode this audio file: ' + e.message);
+  }
+}
+
+function drawWaveform() {
+  const canvas = $('#waveform-canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  if (!buffer) return;
+  const data = buffer.getChannelData(0);
+  const step = Math.max(1, Math.floor(data.length / w));
+  ctx.fillStyle = '#6c5ce7';
+  ctx.beginPath();
+  for (let x = 0; x < w; x++) {
+    let min = 1, max = -1;
+    for (let i = 0; i < step; i++) {
+      const v = data[x * step + i] || 0;
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+    const y1 = (1 - max) * h / 2;
+    const y2 = (1 - min) * h / 2;
+    ctx.rect(x, y1, 1, Math.max(1, y2 - y1));
+  }
+  ctx.fill();
+}
+
+function createPitchChain(offset) {
+  if (!buffer) return;
+  stopInternal();
+  source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.detune.value = pitchShift * 100; // 100 cents per semitone
+  source.connect(audioCtx.destination);
+  source.onended = () => {
+    if (isPlaying) {
+      isPlaying = false;
+      pauseOffset = 0;
+      $('#play-btn').textContent = '▶';
+      updateTime();
+    }
+  };
+  startTime = audioCtx.currentTime - offset;
+  source.start(0, offset);
+  isPlaying = true;
+  $('#play-btn').textContent = '⏸';
+}
+
+function stopInternal() {
+  if (source) { try { source.onended = null; source.stop(); } catch(e){} source = null; }
+}
+
+$('#play-btn').addEventListener('click', () => {
+  if (!buffer) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (isPlaying) {
+    pauseOffset = audioCtx.currentTime - startTime;
+    if (pauseOffset >= buffer.duration) pauseOffset = 0;
+    stopInternal();
+    isPlaying = false;
+    $('#play-btn').textContent = '▶';
+  } else {
+    createPitchChain(pauseOffset);
+    animateTime();
+  }
+});
+
+$('#stop-btn').addEventListener('click', () => {
+  if (!buffer) return;
+  stopInternal();
+  isPlaying = false;
+  pauseOffset = 0;
+  $('#play-btn').textContent = '▶';
+  updateTime();
+});
+
+function animateTime() {
+  if (!isPlaying) return;
+  updateTime();
+  requestAnimationFrame(animateTime);
+}
+
+function updateTime() {
+  const cur = isPlaying ? (audioCtx.currentTime - startTime) : pauseOffset;
+  const dur = buffer ? buffer.duration : 0;
+  $('#time-display').textContent = formatTime(cur) + ' / ' + formatTime(dur);
+}
+
+function formatTime(s) {
+  if (!isFinite(s) || s < 0) s = 0;
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+$('#pitch-slider').addEventListener('input', e => {
+  pitchShift = parseFloat(e.target.value);
+  const sign = pitchShift > 0 ? '+' : '';
+  $('#pitch-val').textContent = sign + pitchShift.toFixed(1) + ' st';
+  // update live source if playing
+  if (source) {
+    source.detune.value = pitchShift * 100;
+  }
+  // reset preset active
+  document.querySelectorAll('#presets button').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.dataset.val) === Math.round(pitchShift * 10) / 10);
+  });
+});
+
+document.querySelectorAll('#presets button').forEach(b => {
+  b.addEventListener('click', () => {
+    const v = parseFloat(b.dataset.val);
+    $('#pitch-slider').value = v;
+    $('#pitch-slider').dispatchEvent(new Event('input'));
+  });
+});
+
+// Offline render for download
+$('#download-btn').addEventListener('click', async () => {
+  if (!buffer) return;
+  if (!renderedBuffer) {
+    const offline = new OfflineAudioContext(buffer.numberOfChannels, Math.ceil(buffer.duration * buffer.sampleRate), buffer.sampleRate);
+    const s = offline.createBufferSource();
+    s.buffer = buffer;
+    s.detune.value = pitchShift * 100;
+    s.connect(offline.destination);
+    s.start();
+    renderedBuffer = await offline.startRendering();
+  }
+  const wav = audioBufferToWav(renderedBuffer);
+  const blob = new Blob([wav], { type: 'audio/wav' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'pitch-shifted.wav';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+// After any pitch change, show download (re-render on click)
+$('#pitch-slider').addEventListener('change', () => { renderedBuffer = null; $('#download-btn').style.display = 'inline-block'; });
+
+// 16-bit PCM WAV writer
+function audioBufferToWav(buf) {
+  const numCh = buf.numberOfChannels;
+  const sr = buf.sampleRate;
+  const len = buf.length * numCh * 2 + 44;
+  const out = new ArrayBuffer(len);
+  const view = new DataView(out);
+  const ws = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+  ws(0, 'RIFF'); view.setUint32(4, len - 8, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, numCh, true);
+  view.setUint32(24, sr, true); view.setUint32(28, sr * numCh * 2, true);
+  view.setUint16(32, numCh * 2, true); view.setUint16(34, 16, true); ws(36, 'data');
+  view.setUint32(40, len - 44, true);
+  let off = 44; const chans = [];
+  for (let i = 0; i < numCh; i++) chans.push(buf.getChannelData(i));
+  for (let i = 0; i < buf.length; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, chans[c][i]));
+      view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      off += 2;
+    }
+  }
+  return out;
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏩', href:'/convert/audio-speed.html', name:'Audio Speed'},
+    {icon:'🗜️', href:'/convert/audio-compressor.html', name:'Audio Compress'},
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🔊', href:'/convert/audio-volume.html', name:'Audio Volume'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

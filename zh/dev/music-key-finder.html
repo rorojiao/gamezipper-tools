@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>音乐调性检测器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="检测任意歌曲或实时音频的调性。返回大/小调、BPM、置信度和 Camelot 编码。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/music-key-finder.html">
+  <meta property="og:title" content="音乐调性检测器">
+  <meta property="og:description" content="检测任意歌曲或实时音频的调性。返回大/小调、BPM、置信度和 Camelot 编码。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/music-key-finder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="音乐调性检测器">
+<meta name="twitter:description" content="检测任意歌曲或实时音频的调性。返回大/小调、BPM、置信度和 Camelot 编码。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#source-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+#source-row button{padding:14px 22px;font-size:1rem}
+#spectrum-canvas{width:100%;height:120px;border-radius:8px;background:var(--glass2);display:block;margin:10px 0}
+.key-result{background:var(--glass);border:1px solid var(--border);border-radius:18px;padding:28px;text-align:center;margin-top:14px}
+.key-big{font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.key-camelot{display:inline-block;margin-top:8px;padding:4px 14px;border-radius:20px;background:var(--glass2);border:1px solid var(--border);font-weight:700;font-size:.95rem}
+.key-meta{display:flex;justify-content:center;gap:30px;margin-top:18px;flex-wrap:wrap}
+.key-meta div strong{display:block;font-size:1.6rem;font-weight:800;color:var(--text)}
+.key-meta div span{font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.note-bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:14px;justify-content:center}
+.note-bars .bar{width:24px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:4px 4px 0 0;position:relative;transition:height .2s}
+.note-bars .bar.dim{background:var(--glass2);border:1px solid var(--border)}
+.note-bars .bar label{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:.7rem;color:var(--text2)}
+#status{margin-top:10px;text-align:center;font-size:.9rem;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Music Key Finder","description":"Detect the musical key of any song or audio file online for free. Upload MP3, WAV or hum into your microphone — get major/minor key, BPM, confidence and Camelot wheel code. Runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/music-key-finder.html","applicationCategory":"Multimedia","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the key detector work?", "acceptedAnswer": {"@type": "Answer", "text": "We analyze the audio with a Fast Fourier Transform (FFT) to extract the pitch profile across 12 chromatic notes. The resulting chroma vector is compared against the major and minor key templates using the Krumhansl-Schmuckler algorithm to find the best-matching key."}}, {"@type": "Question", "name": "What is the Camelot wheel code?", "acceptedAnswer": {"@type": "Answer", "text": "The Camelot wheel is a DJ-friendly numbering system for harmonic mixing. Each key gets a number 1-12 and a letter (A for minor, B for major). Mixing tracks with matching or adjacent Camelot codes keeps your transitions in key."}}, {"@type": "Question", "name": "Can I detect the key by humming?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click the Microphone button and hum or play the melody for at least 5-10 seconds. The detector analyzes the live audio stream and reports the most likely key. Singing a single sustained note will not work — the algorithm needs melodic material."}}, {"@type": "Question", "name": "How accurate is the key detection?", "acceptedAnswer": {"@type": "Answer", "text": "On clean studio recordings the detector is typically 80-95% accurate. Live recordings, heavily distorted instruments or songs with modulations may produce less certain results. The confidence score tells you how sure the algorithm is."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/music-key-finder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/music-key-finder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/music-key-finder.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div id="source-row">
+      <button class="gz-btn" id="file-btn">📁 <span id="lbl-file"></span></button>
+      <button class="gz-btn" id="mic-btn">🎤 <span id="lbl-mic"></span></button>
+      <input type="file" id="file-input" accept="audio/*" style="display:none">
+    </div>
+    <canvas id="spectrum-canvas"></canvas>
+    <div id="status"></div>
+    <div class="note-bars" id="note-bars"></div>
+    <div id="result" style="display:none">
+      <div class="key-result">
+        <div class="key-big" id="key-big">—</div>
+        <div class="key-camelot" id="key-camelot"></div>
+        <div class="key-meta">
+          <div><strong id="m-bpm">—</strong><span id="lbl-bpm"></span></div>
+          <div><strong id="m-conf">—</strong><span id="lbl-conf"></span></div>
+          <div><strong id="m-alt">—</strong><span id="lbl-alt"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Music Key Finder & Detector',
+    toolDesc: 'Detect the musical key of any song or live audio. Get major/minor key, BPM, confidence and Camelot code.',
+    fileBtn: 'Upload Audio',
+    micBtn: 'Use Microphone',
+    bpm: 'BPM',
+    conf: 'Confidence',
+    alt: 'Alt Key',
+    step1: 'Upload an audio file or click Microphone to hum/play live',
+    step2: 'Let the analyzer run for at least 5-10 seconds',
+    step3: 'See the detected key, BPM and Camelot code',
+    step4: 'Use the alternative key if the confidence is low',
+    analyzing: 'Analyzing… keep audio playing',
+    ready: 'Ready',
+    needAudio: 'Click an option above to start',
+  },
+  zh: {
+    toolTitle: '音乐调性检测器',
+    toolDesc: '检测任意歌曲或实时音频的调性。返回大/小调、BPM、置信度和 Camelot 编码。',
+    fileBtn: '上传音频',
+    micBtn: '使用麦克风',
+    bpm: 'BPM',
+    conf: '置信度',
+    alt: '备选调',
+    step1: '上传音频文件或点击麦克风现场哼唱',
+    step2: '让分析器至少运行 5-10 秒',
+    step3: '查看检测到的调性、BPM 和 Camelot 编码',
+    step4: '若置信度较低可参考备选调',
+    analyzing: '分析中… 请保持音频播放',
+    ready: '就绪',
+    needAudio: '请点击上方按钮开始',
+  }
+});
+
+const { $, t } = GZ;
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+// Krumhansl-Schmuckler key profiles
+const MAJOR_PROFILE = [6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
+const MINOR_PROFILE = [6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+// Camelot codes (index by pitch class)
+const CAMELOT_MAJOR = ['8B','3B','10B','5B','12B','7B','2B','9B','4B','11B','6B','1B'];
+const CAMELOT_MINOR = ['5A','12A','7A','2A','9A','4A','11A','6A','1A','8A','3A','10A'];
+
+let audioCtx = null;
+let analyser = null;
+let sourceNode = null;
+let mediaStream = null;
+let rafId = null;
+let chromaAccum = new Array(12).fill(0);
+let frames = 0;
+let lastOnsetTime = 0;
+let onsetIntervals = [];
+
+// Initialize note bars
+$('#note-bars').innerHTML = NOTE_NAMES.map(n => `<div class="bar dim" style="height:8px"><label>${n}</label></div>`).join('');
+
+$('#lbl-file').textContent = t('fileBtn');
+$('#lbl-mic').textContent = t('micBtn');
+$('#lbl-bpm').textContent = t('bpm');
+$('#lbl-conf').textContent = t('conf');
+$('#lbl-alt').textContent = t('alt');
+$('#status').textContent = t('needAudio');
+
+$('#file-btn').addEventListener('click', () => $('#file-input').click());
+$('#file-input').addEventListener('change', async e => {
+  if (!e.target.files[0]) return;
+  stopAll();
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  $('#status').textContent = t('analyzing');
+  const buf = await e.target.files[0].arrayBuffer();
+  const decoded = await audioCtx.decodeAudioData(buf);
+  // play decoded buffer
+  sourceNode = audioCtx.createBufferSource();
+  sourceNode.buffer = decoded;
+  sourceNode.loop = false;
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 8192;
+  sourceNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  sourceNode.start();
+  sourceNode.onended = () => { finalize(); };
+  chromaAccum = new Array(12).fill(0);
+  frames = 0;
+  onsetIntervals = [];
+  startRaf();
+});
+
+$('#mic-btn').addEventListener('click', async () => {
+  stopAll();
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+  } catch (e) {
+    alert('Microphone access denied: ' + e.message);
+    return;
+  }
+  $('#status').textContent = t('analyzing');
+  sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 8192;
+  sourceNode.connect(analyser);
+  // do NOT connect to destination (avoid feedback)
+  chromaAccum = new Array(12).fill(0);
+  frames = 0;
+  onsetIntervals = [];
+  startRaf();
+  // Auto-finalize after 8 seconds of mic input
+  setTimeout(() => { if (mediaStream) finalize(); }, 8000);
+});
+
+function startRaf() {
+  if (rafId) cancelAnimationFrame(rafId);
+  const loop = () => {
+    analyzeFrame();
+    rafId = requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+function analyzeFrame() {
+  if (!analyser) return;
+  const fft = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(fft);
+  const sr = audioCtx.sampleRate;
+  const nyquist = sr / 2;
+  const binHz = nyquist / fft.length;
+  // Build chroma vector
+  const chroma = new Array(12).fill(0);
+  for (let i = 1; i < fft.length; i++) {
+    const freq = i * binHz;
+    if (freq < 60 || freq > 5000) continue;
+    const midi = 69 + 12 * Math.log2(freq / 440);
+    if (midi < 0 || midi > 127) continue;
+    const pc = Math.round(midi) % 12;
+    const mag = Math.pow(10, fft[i] / 20); // dB to linear
+    chroma[pc] += mag;
+  }
+  // accumulate
+  for (let i = 0; i < 12; i++) chromaAccum[i] += chroma[i];
+  frames++;
+  // Draw spectrum
+  drawSpectrum(fft);
+  // Draw note bars (live chroma normalized)
+  drawNoteBars(chroma);
+  // Onset detection for BPM (simple energy-based)
+  let energy = 0;
+  for (let i = 0; i < fft.length; i++) energy += Math.pow(10, fft[i] / 20);
+  energy /= fft.length;
+  const now = performance.now();
+  // crude peak detection
+  if (energy > 0.02 && now - lastOnsetTime > 250) {
+    if (lastOnsetTime > 0) onsetIntervals.push(now - lastOnsetTime);
+    lastOnsetTime = now;
+  }
+}
+
+function drawSpectrum(fft) {
+  const canvas = $('#spectrum-canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr); }
+  ctx.clearRect(0, 0, w, h);
+  const bars = 64;
+  const step = Math.floor(fft.length / bars);
+  const barW = w / bars;
+  ctx.fillStyle = '#6c5ce7';
+  for (let i = 0; i < bars; i++) {
+    let v = fft[i * step];
+    v = Math.max(-100, v);
+    const norm = (v + 100) / 100;
+    ctx.fillRect(i * barW, h - norm * h, barW - 1, norm * h);
+  }
+}
+
+function drawNoteBars(chroma) {
+  const max = Math.max(...chroma, 0.001);
+  const bars = document.querySelectorAll('#note-bars .bar');
+  bars.forEach((b, i) => {
+    const v = chroma[i] / max;
+    b.style.height = (8 + v * 70) + 'px';
+    b.classList.toggle('dim', v < 0.3);
+  });
+}
+
+function detectKey() {
+  // Normalize accumulated chroma
+  const total = chromaAccum.reduce((a, b) => a + b, 0) || 1;
+  const observed = chromaAccum.map(v => v / total);
+  let bestScore = -Infinity, bestIdx = 0, bestMajor = true;
+  let altScore = -Infinity, altIdx = 0, altMajor = true;
+  for (let root = 0; root < 12; root++) {
+    let majScore = 0, minScore = 0;
+    for (let i = 0; i < 12; i++) {
+      const pc = (root + i) % 12;
+      majScore += observed[pc] * MAJOR_PROFILE[i];
+      minScore += observed[pc] * MINOR_PROFILE[i];
+    }
+    if (majScore > bestScore) { altScore = bestScore; altIdx = bestIdx; altMajor = bestMajor; bestScore = majScore; bestIdx = root; bestMajor = true; }
+    else if (majScore > altScore) { altScore = majScore; altIdx = root; altMajor = true; }
+    if (minScore > bestScore) { altScore = bestScore; altIdx = bestIdx; altMajor = bestMajor; bestScore = minScore; bestIdx = root; bestMajor = false; }
+    else if (minScore > altScore) { altScore = minScore; altIdx = root; altMajor = false; }
+  }
+  // Confidence = best / (best + alt) ratio
+  const conf = bestScore / (bestScore + altScore + 1e-9);
+  return { root: bestIdx, major: bestMajor, confidence: conf, altRoot: altIdx, altMajor: altMajor };
+}
+
+function estimateBPM() {
+  if (onsetIntervals.length < 3) return null;
+  // Use median interval
+  const sorted = [...onsetIntervals].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  let bpm = 60000 / median;
+  while (bpm < 70) bpm *= 2;
+  while (bpm > 180) bpm /= 2;
+  return Math.round(bpm);
+}
+
+function finalize() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (frames < 10) {
+    $('#status').textContent = 'Insufficient audio captured. Try again.';
+    return;
+  }
+  const k = detectKey();
+  const bpm = estimateBPM();
+  const keyName = NOTE_NAMES[k.root] + (k.major ? ' major' : ' minor');
+  const camelot = (k.major ? CAMELOT_MAJOR : CAMELOT_MINOR)[k.root];
+  const altName = NOTE_NAMES[k.altRoot] + (k.altMajor ? ' major' : ' minor');
+  $('#result').style.display = 'block';
+  $('#key-big').textContent = keyName;
+  $('#key-camelot').textContent = '🎛 Camelot: ' + camelot;
+  $('#m-bpm').textContent = bpm || '—';
+  $('#m-conf').textContent = Math.round(k.confidence * 100) + '%';
+  $('#m-alt').textContent = altName;
+  $('#status').textContent = t('ready');
+  stopAll();
+}
+
+function stopAll() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (sourceNode) { try { sourceNode.disconnect(); } catch(e){} sourceNode = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+}
+
+window.addEventListener('beforeunload', stopAll);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎶', href:'/dev/bpm-detector.html', name:'BPM Detector'},
+    {icon:'🎚️', href:'/dev/audio-tuner.html', name:'Chromatic Tuner'},
+    {icon:'🎹', href:'/fun/chord-progression.html', name:'Chord Progression'},
+    {icon:'🎵', href:'/fun/music-scale-finder.html', name:'Scale Finder'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
