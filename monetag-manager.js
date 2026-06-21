@@ -1,9 +1,20 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.5-tools-pungent-kill (Poki-style)
- * ────────────────────────────────────────────────
+ * GameZipper Tools — Monetag Ad Manager v5.6-tools-monetag-cross-deploy (Poki-style)
+ * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
  *
- * v5.5-tools-pungent-kill Changes (2026-06-14):
+ * v5.6 Changes (2026-06-21 — Cross-Deploy Working Zone from gamezipper.com):
+ *   - gamezipper.com data (7d, 2026-06-14~06-21): zone 11012002 is the ONLY working
+ *     Monetag zone — 48 fills / 2748 loads = 1.75% fill rate.
+ *   - tools.gamezipper.com: 0% fill on ALL 3 primary zones (11012009/11012010/11012011)
+ *     over the same 7d period. Tools has no chance at Monetag revenue with current setup.
+ *   - Cross-deploy zone 11012002 to tools as Tier 2 fallback in BOTH containerAd() AND
+ *     commercial break. Primary inpagePush path unchanged — only adds the proven-working
+ *     zone as additional retry slot after primary zone fails.
+ *   - Kill switch via CONFIG.ZONE_KILLSWITCH.inpagePushGz (set false to disable).
+ *   - Version bumped 5.5.2 → 5.6 to track this on the BI server.
+ *
+ * v5.5 Changes (2026-06-14 — DISABLE Pungent):
  *   - DISABLE Pungent 10689345 (legacyEnabled=false). A/B test (6-12~6-14,
  *     2.5 days, 109 events) conclusively showed 0% fill: 0 fills, 24
  *     load_errors, 17 no_fills, 22 zone_backoff. Zone is dead — keeping
@@ -68,6 +79,14 @@
     popunder:   11012009,
     inpagePush: 11012010,
     vignette:   11012011,
+    // v5.6 (2026-06-21): Cross-deploy zone 11012002 from gamezipper.com.
+    //   gamezipper.com v5.5 data (7d, 2026-06-14~06-21): 48 fills / 2748 loads = 1.75% fill rate.
+    //   tools.gamezipper.com currently 0% fill on ALL 3 primary zones (11012009/11012010/11012011).
+    //   Mirroring the proven-working zone gives tools a chance at Monetag impressions instead of
+    //   relying solely on dead Superior zones + paused AdSense.
+    //   Tested as Tier 2 fallback in containerAd() — does NOT change primary inpagePush path.
+    //   Kill switch: ZONE_KILLSWITCH.inpagePushGz = false skips it. Revert by deleting this line.
+    inpagePushGz: 11012002,
     // pushNotif: 11012012  // DISABLED
     // v5.4 (2026-06-12): Pungent 10689345 re-enabled for 7-day A/B test
     //   - Was disabled in v5.3 because of 0% fill. Pungent zones had 3-4 imp/天 in March 2026, but
@@ -107,7 +126,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.5.2-tools-preconnect-killswitch',  // 2026-06-18: a.magsrv.com preconnect + primary zone kill switch (fixes 530 Origin DNS Error)
+    VERSION: '5.6-tools-monetag-cross-deploy',  // 2026-06-21: cross-deploy gz.com zone 11012002 (1.75% fill proven) to tools as Tier 2 fallback in containerAd() + commercial break
     // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
     //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
     //   streak 2 → 60min (was 30): same logic
@@ -128,6 +147,9 @@
       inpagePush: true,  // 11012010 (Superior primary, 0% fill 14d, mostly 530 errors)
       vignette:   true,  // 11012011 (Superior primary, intermittent)
       popunder:   true,  // 11012009 (click-triggered only, never broke user-side)
+      // v5.6: Cross-deployed zone from gz.com (11012002, 1.75% fill on games).
+      //   Enabled by default — if it shows 0% fill on tools over 7d, set false to skip.
+      inpagePushGz: true,
     },
     // v6.5 Adsterra config — fail-safe: zoneId=0 / enabled=false / no pub key → no script load
     // Branched off v5.5.2 (NOT v6): keeps gzt4_ STORAGE_PREFIX + ZONE_BACKOFF + ZONE_KILLSWITCH.
@@ -489,6 +511,12 @@
         reject(new Error('killswitch_popunder'));
         return;
       }
+      // v5.6: inpagePushGz killswitch (cross-deployed zone from gamezipper.com)
+      if (zoneId === ZONES.inpagePushGz && CONFIG.ZONE_KILLSWITCH.inpagePushGz === false) {
+        trackAdEvent('zone_killswitch_skip', { zoneId: zoneId, slot: 'inpagePushGz' });
+        reject(new Error('killswitch_inpagePushGz'));
+        return;
+      }
       // v5.3: skip disabled legacy zones
       if (!ZONES.legacyEnabled && (zoneId === ZONES.inpagePushLegacy || zoneId === ZONES.vignetteLegacy)) {
         trackAdEvent('zone_legacy_disabled_skip', { zoneId: zoneId });
@@ -581,16 +609,26 @@
         markShown();
       }).catch(function() {
         if (container.getAttribute('data-filled')) return;
-        loadZone(ZONES.inpagePushLegacy, container).then(function() {
+        // v5.6 Tier 2: Cross-deployed zone from gamezipper.com (11012002).
+        //   gz.com data (7d): 48 fills / 2748 loads = 1.75% fill — the only working Monetag zone.
+        //   Tools had 0% fill on its 3 primary zones; this gives a chance at impressions
+        //   before falling back to dead legacy zone + Adsterra no-op.
+        loadZone(ZONES.inpagePushGz, container).then(function() {
           container.setAttribute('data-filled', '1');
           markShown();
         }).catch(function() {
-          // v6.5 Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
           if (container.getAttribute('data-filled')) return;
-          loadAdsterraZone(ZONES.adsterraInpagePush, container, 'inpage').then(function() {
+          loadZone(ZONES.inpagePushLegacy, container).then(function() {
             container.setAttribute('data-filled', '1');
             markShown();
-          }).catch(function() {});
+          }).catch(function() {
+            // v6.5 Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
+            if (container.getAttribute('data-filled')) return;
+            loadAdsterraZone(ZONES.adsterraInpagePush, container, 'inpage').then(function() {
+              container.setAttribute('data-filled', '1');
+              markShown();
+            }).catch(function() {});
+          });
         });
       });
     }, CONFIG.TIMING.containerAdDelay);
@@ -731,20 +769,24 @@
         if (adFilled) return;
         loadZone(ZONES.vignette).then(function() { onAdFilled('monetag_vignette'); }).catch(function() {
           if (adFilled) return;
-          loadZone(ZONES.vignetteLegacy).then(function() { onAdFilled('monetag_vignette_legacy'); }).catch(function() {
-            // v6.5 Tier 4: Adsterra vignette — bypass Monetag 14-day 0% fill.
-            // Only fires when CONFIG.ADSTERRA.enabled + zoneId configured.
-            // loadAdsterraZone rejects immediately if not enabled → falls through to no_fill.
+          // v5.6: cross-deployed inpagePushGz (gz.com's only working zone) as commercial-break Tier 3
+          loadZone(ZONES.inpagePushGz).then(function() { onAdFilled('monetag_inpageGz'); }).catch(function() {
             if (adFilled) return;
-            loadAdsterraZone(ZONES.adsterraVignette, null, 'vignette').then(function() {
-              onAdFilled('adsterra_vignette');
-            }).catch(function() {
-              // v6.5 Tier 4b: Adsterra in-page push (last resort before user sees blank break)
+            loadZone(ZONES.vignetteLegacy).then(function() { onAdFilled('monetag_vignette_legacy'); }).catch(function() {
+              // v6.5 Tier 4: Adsterra vignette — bypass Monetag 14-day 0% fill.
+              // Only fires when CONFIG.ADSTERRA.enabled + zoneId configured.
+              // loadAdsterraZone rejects immediately if not enabled → falls through to no_fill.
               if (adFilled) return;
-              loadAdsterraZone(ZONES.adsterraInpagePush, null, 'inpage').then(function() {
-                onAdFilled('adsterra_inpage');
+              loadAdsterraZone(ZONES.adsterraVignette, null, 'vignette').then(function() {
+                onAdFilled('adsterra_vignette');
               }).catch(function() {
-                trackAdEvent('commercial_break_no_fill', {});
+                // v6.5 Tier 4b: Adsterra in-page push (last resort before user sees blank break)
+                if (adFilled) return;
+                loadAdsterraZone(ZONES.adsterraInpagePush, null, 'inpage').then(function() {
+                  onAdFilled('adsterra_inpage');
+                }).catch(function() {
+                  trackAdEvent('commercial_break_no_fill', {});
+                });
               });
             });
           });
