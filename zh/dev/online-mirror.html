@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>在线镜子 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="把你的摄像头变成免费在线镜子。实时查看自己，调整亮度、缩放和颜色，翻转、定格或截图保存 — 完全在浏览器中运行，不上传任何数据。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/online-mirror.html">
+  <meta property="og:title" content="在线镜子">
+  <meta property="og:description" content="把你的摄像头变成免费在线镜子。实时查看自己，调整亮度、缩放和颜色，翻转、定格或截图保存 — 完全在浏览器中运行，不上传任何数据。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/online-mirror.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线镜子">
+<meta name="twitter:description" content="把你的摄像头变成免费在线镜子。实时查看自己，调整亮度、缩放和颜色，翻转、定格或截图保存 — 完全在浏览器中运行，不上传任何数据。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.mirror-stage{position:relative;background:#000;border-radius:16px;overflow:hidden;aspect-ratio:3/4;max-width:480px;margin:0 auto 18px;border:2px solid var(--border);box-shadow:0 12px 40px rgba(0,0,0,.45)}
+.mirror-video{width:100%;height:100%;object-fit:cover;display:block;background:#000;transform:scaleX(-1);transition:filter .2s}
+.mirror-video.frozen{animation:none}
+.mirror-badge{position:absolute;top:14px;left:14px;background:rgba(0,0,0,.6);color:#fff;padding:6px 12px;border-radius:20px;font-size:.78rem;font-weight:600;backdrop-filter:blur(10px);display:flex;align-items:center;gap:6px;z-index:3}
+.mirror-dot{width:8px;height:8px;border-radius:50%;background:#ff4757}
+.mirror-dot.live{background:#2ed573;animation:mPulse 1.5s infinite}
+@keyframes mPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.mirror-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text2);text-align:center;padding:30px;gap:14px}
+.mirror-empty .ico{font-size:3.5rem;opacity:.55}
+.mirror-empty p{max-width:280px;font-size:.9rem;line-height:1.55;margin:0}
+.mirror-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:16px}
+.mirror-ctl{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.mirror-ctl label{display:block;font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.mirror-ctl input[type=range]{width:100%;accent-color:var(--accent)}
+.mirror-ctl .val{font-family:monospace;font-size:.85rem;color:var(--accent);float:right}
+.mirror-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px}
+.mirror-toggles{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.mirror-tog{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.85rem;color:var(--text);font-weight:600;transition:all .15s}
+.mirror-tog:hover{border-color:var(--accent)}
+.mirror-tog.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.mirror-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:12px 20px;border-radius:10px;z-index:100;font-weight:600;display:none;backdrop-filter:blur(10px)}
+.mirror-toast.show{display:block;animation:mFade .3s}
+@keyframes mFade{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+.mirror-error{background:rgba(255,71,87,.13);border:1px solid rgba(255,71,87,.4);border-radius:12px;padding:14px;color:#ff6b6b;font-size:.9rem;line-height:1.55;margin-bottom:16px;display:none}
+.mirror-error.show{display:block}
+.mirror-tip{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text2);font-size:.85rem;line-height:1.65}
+.mirror-tip strong{color:var(--text)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Mirror","description":"Free online mirror — turn your webcam into a mirror instantly. See yourself live, adjust brightness and zoom, flip, freeze the image and take snapshots. No app, no upload, 100% private.","url": "https://tools.gamezipper.com/zh/dev/online-mirror.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the online mirror work?", "acceptedAnswer": {"@type": "Answer", "text": "It uses your device's webcam through the browser's built-in getUserMedia API. When you click Start, the browser asks for camera permission and shows a live, horizontally flipped video feed — exactly like looking into a real mirror."}}, {"@type": "Question", "name": "Is the webcam video uploaded or recorded?", "acceptedAnswer": {"@type": "Answer", "text": "No. The video stream stays entirely inside your browser. It is never uploaded to any server, never recorded, and never stored. The snapshots you take are saved directly to your own device."}}, {"@type": "Question", "name": "Why is my mirror black or not showing anything?", "acceptedAnswer": {"@type": "Answer", "text": "The most common causes are: 1) camera permission was denied — click the camera icon in the address bar to allow it; 2) another app (Zoom, Teams, etc.) is using the camera — close it and retry; 3) no webcam is connected or it is disabled in your system settings."}}, {"@type": "Question", "name": "Does the online mirror work on my phone?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. On a smartphone it automatically uses the front-facing camera so you can use it as a pocket mirror for quick appearance checks, makeup touch-ups or contact lenses — no app install required."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/online-mirror.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/online-mirror.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/online-mirror.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mirror-stage" id="stage">
+      <div class="mirror-empty" id="empty">
+        <div class="ico">🪞</div>
+        <p id="empty-text"></p>
+      </div>
+      <video class="mirror-video" id="video" autoplay playsinline muted style="display:none"></video>
+      <div class="mirror-badge" id="badge" style="display:none"><span class="mirror-dot" id="dot"></span><span id="badge-text"></span></div>
+    </div>
+    <div class="mirror-error" id="error"></div>
+    <div class="mirror-toggles" id="toggles"></div>
+    <div class="mirror-controls" id="controls" style="display:none">
+      <div class="mirror-ctl"><label id="lbl-bright"></label><span class="val" id="v-bright">100%</span><input type="range" id="bright" min="50" max="200" value="100"></div>
+      <div class="mirror-ctl"><label id="lbl-zoom"></label><span class="val" id="v-zoom">1.0x</span><input type="range" id="zoom" min="100" max="300" value="100"></div>
+      <div class="mirror-ctl"><label id="lbl-contrast"></label><span class="val" id="v-contrast">100%</span><input type="range" id="contrast" min="50" max="200" value="100"></div>
+      <div class="mirror-ctl"><label id="lbl-saturate"></label><span class="val" id="v-saturate">100%</span><input type="range" id="saturate" min="0" max="200" value="100"></div>
+    </div>
+    <div class="mirror-actions" id="actions"></div>
+    <div class="mirror-tip" id="tip"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Mirror',
+    toolDesc: 'Turn your webcam into a free online mirror. See yourself live, adjust brightness, zoom and color, flip, freeze or take a snapshot — all in your browser, no upload.',
+    start: '▶ Start Mirror',
+    stop: '■ Stop',
+    snapshot: '📸 Snapshot',
+    freeze: '❄ Freeze',
+    unfreeze: '▶ Resume',
+    flipH: 'Flip H',
+    flipV: 'Flip V',
+    grayscale: 'Grayscale',
+    invert: 'Invert',
+    emptyText: 'Click "Start Mirror" and allow camera access to turn your screen into a mirror.',
+    live: 'LIVE',
+    off: 'OFF',
+    lblBright: 'Brightness',
+    lblZoom: 'Zoom',
+    lblContrast: 'Contrast',
+    lblSaturate: 'Saturation',
+    errDenied: 'Camera access was denied. Click the camera icon in your browser address bar, allow access, then click Start again.',
+    errNotFound: 'No camera was found on this device. Connect a webcam and try again.',
+    errInUse: 'The camera is already in use by another app (Zoom, Teams, Meet…). Close it and try again.',
+    errGeneric: 'Could not start the camera. Please try a different browser or device.',
+    tipText: '<strong>🔒 100% private.</strong> The video never leaves your device — nothing is uploaded, recorded or stored. Snapshots are saved straight to your computer.',
+    snapshotSaved: '✓ Snapshot saved',
+    needStart: 'Start the mirror first',
+    step1: 'Click "Start Mirror" and allow camera access when prompted',
+    step2: 'Adjust brightness, zoom, contrast and saturation with the sliders',
+    step3: 'Use Flip / Grayscale / Invert to fine-tune the view',
+    step4: 'Click "Freeze" to hold a frame, or "Snapshot" to save a photo',
+  },
+  zh: {
+    toolTitle: '在线镜子',
+    toolDesc: '把你的摄像头变成免费在线镜子。实时查看自己，调整亮度、缩放和颜色，翻转、定格或截图保存 — 完全在浏览器中运行，不上传任何数据。',
+    start: '▶ 开启镜子',
+    stop: '■ 停止',
+    snapshot: '📸 拍照',
+    freeze: '❄ 定格',
+    unfreeze: '▶ 继续',
+    flipH: '水平翻转',
+    flipV: '垂直翻转',
+    grayscale: '黑白',
+    invert: '反色',
+    emptyText: '点击「开启镜子」并允许摄像头访问，即可将屏幕变成一面镜子。',
+    live: '实时',
+    off: '关闭',
+    lblBright: '亮度',
+    lblZoom: '缩放',
+    lblContrast: '对比度',
+    lblSaturate: '饱和度',
+    errDenied: '已拒绝摄像头访问。请点击浏览器地址栏的相机图标，允许访问后再次点击「开启」。',
+    errNotFound: '此设备未检测到摄像头。请连接摄像头后重试。',
+    errInUse: '摄像头正被其他应用（Zoom、Teams、Meet…）占用。请关闭后重试。',
+    errGeneric: '无法启动摄像头。请尝试更换浏览器或设备。',
+    tipText: '<strong>🔒 100% 私密。</strong>视频完全不会离开你的设备 — 不上传、不录制、不保存。截图会直接保存到你的电脑。',
+    snapshotSaved: '✓ 已保存截图',
+    needStart: '请先开启镜子',
+    step1: '点击「开启镜子」，并在提示时允许摄像头访问',
+    step2: '通过滑块调整亮度、缩放、对比度和饱和度',
+    step3: '使用水平/垂直翻转、黑白、反色微调画面',
+    step4: '点击「定格」固定画面，或「拍照」保存一张照片',
+  }
+});
+
+const { $, t, showToast } = GZ;
+let stream = null, frozen = false, flipV = false, gray = false, invert = false;
+
+function toast(msg){ showToast(msg); }
+
+function showError(key){
+  const e = $('#error');
+  e.textContent = t(key);
+  e.classList.add('show');
+}
+function hideError(){ $('#error').classList.remove('show'); }
+
+function updateFilter(){
+  const v = $('#video');
+  const bright = +$('#bright').value, zoom = +$('#zoom').value, contrast = +$('#contrast').value, saturate = +$('#saturate').value;
+  $('#v-bright').textContent = bright + '%';
+  $('#v-zoom').textContent = (zoom/100).toFixed(1) + 'x';
+  $('#v-contrast').textContent = contrast + '%';
+  $('#v-saturate').textContent = saturate + '%';
+  const fx = flipV ? '-1' : '1';
+  v.style.filter = `brightness(${bright}%) contrast(${contrast}%) saturate(${saturate}%)${gray?' grayscale(100%)':''}${invert?' invert(100%)':''}`;
+  v.style.transform = `scaleX(-1) scaleY(${fx}) scale(${zoom/100})`;
+}
+
+async function start(){
+  hideError();
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showError('errGeneric'); return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    const v = $('#video');
+    v.srcObject = stream;
+    v.style.display = 'block';
+    $('#empty').style.display = 'none';
+    $('#badge').style.display = 'flex';
+    $('#dot').classList.add('live');
+    $('#badge-text').textContent = t('live');
+    $('#controls').style.display = 'grid';
+    $('#start-btn').textContent = t('stop');
+    updateFilter();
+  }catch(err){
+    if(err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') showError('errDenied');
+    else if(err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') showError('errNotFound');
+    else if(err.name === 'NotReadableError' || err.name === 'TrackStartError') showError('errInUse');
+    else showError('errGeneric');
+  }
+}
+
+function stop(){
+  if(stream){
+    stream.getTracks().forEach(tr => tr.stop());
+    stream = null;
+  }
+  $('#video').srcObject = null;
+  $('#video').style.display = 'none';
+  $('#empty').style.display = 'flex';
+  $('#badge').style.display = 'none';
+  $('#dot').classList.remove('live');
+  $('#controls').style.display = 'none';
+  $('#start-btn').textContent = t('start');
+}
+
+function snapshot(){
+  if(!stream){ toast(t('needStart')); return; }
+  const v = $('#video');
+  const c = document.createElement('canvas');
+  c.width = v.videoWidth || 640;
+  c.height = v.videoHeight || 480;
+  const ctx = c.getContext('2d');
+  // apply same filter & flip
+  const bright = +$('#bright').value, zoom = +$('#zoom').value, contrast = +$('#contrast').value, saturate = +$('#saturate').value;
+  ctx.filter = `brightness(${bright}%) contrast(${contrast}%) saturate(${saturate}%)${gray?' grayscale(100%)':''}${invert?' invert(100%)':''}`;
+  ctx.translate(c.width, 0);
+  ctx.scale(-1, 1);
+  if(flipV){ ctx.translate(0, c.height); ctx.scale(1, -1); }
+  const z = zoom/100;
+  const sw = c.width / z, sh = c.height / z, sx = (c.width - sw)/2, sy = (c.height - sh)/2;
+  ctx.drawImage(v, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  c.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'mirror-snapshot.png'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(t('snapshotSaved'));
+  });
+}
+
+function toggleFreeze(){
+  const v = $('#video');
+  frozen = !frozen;
+  if(frozen){ v.pause(); $('#freeze-btn').textContent = t('unfreeze'); }
+  else { v.play(); $('#freeze-btn').textContent = t('freeze'); }
+}
+
+function toggleFlipV(){ flipV = !flipV; $('#tog-flipv').classList.toggle('active', flipV); updateFilter(); }
+function toggleGray(){ gray = !gray; $('#tog-gray').classList.toggle('active', gray); updateFilter(); }
+function toggleInvert(){ invert = !invert; $('#tog-invert').classList.toggle('active', invert); updateFilter(); }
+
+// toolbar buttons
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" id="start-btn" onclick="start()">${t('start')}</button>
+  <button class="gz-btn gz-btn-secondary" id="snap-btn" onclick="snapshot()">${t('snapshot')}</button>
+  <button class="gz-btn gz-btn-secondary" id="freeze-btn" onclick="toggleFreeze()">${t('freeze')}</button>`;
+
+// toggles row
+$('#toggles').innerHTML = `
+  <button class="mirror-tog" id="tog-flipv" onclick="toggleFlipV()">${t('flipV')}</button>
+  <button class="mirror-tog" id="tog-gray" onclick="toggleGray()">${t('grayscale')}</button>
+  <button class="mirror-tog" id="tog-invert" onclick="toggleInvert()">${t('invert')}</button>`;
+
+$('#empty-text').textContent = t('emptyText');
+$('#lbl-bright').textContent = t('lblBright');
+$('#lbl-zoom').textContent = t('lblZoom');
+$('#lbl-contrast').textContent = t('lblContrast');
+$('#lbl-saturate').textContent = t('lblSaturate');
+$('#tip').innerHTML = t('tipText');
+
+['bright','zoom','contrast','saturate'].forEach(id => $('#'+id).addEventListener('input', updateFilter));
+
+window.addEventListener('beforeunload', () => { if(stream) stream.getTracks().forEach(tr => tr.stop()); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📷', href:'/dev/webcam-test.html', name:'Webcam Test'},
+    {icon:'📐', href:'/dev/screen-resolution-tester.html', name:'Screen Resolution'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP Address'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

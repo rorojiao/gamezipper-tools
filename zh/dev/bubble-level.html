@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>在线水平仪（气泡水平尺） - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="把手机变成免费水平仪。利用内置倾斜传感器检测任意表面是否水平 — 支持平放、竖直和 2D 平面模式。实时角度读数，无需安装应用。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/bubble-level.html">
+  <meta property="og:title" content="在线水平仪（气泡水平尺）">
+  <meta property="og:description" content="把手机变成免费水平仪。利用内置倾斜传感器检测任意表面是否水平 — 支持平放、竖直和 2D 平面模式。实时角度读数，无需安装应用。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/bubble-level.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线水平仪（气泡水平尺）">
+<meta name="twitter:description" content="把手机变成免费水平仪。利用内置倾斜传感器检测任意表面是否水平 — 支持平放、竖直和 2D 平面模式。实时角度读数，无需安装应用。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.lvl-stage{background:var(--glass);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:18px;text-align:center}
+.lvl-mode{display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+.lvl-mbtn{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px 18px;cursor:pointer;font-size:.9rem;color:var(--text);font-weight:700;transition:all .15s}
+.lvl-mbtn:hover{border-color:var(--accent)}
+.lvl-mbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.lvl-display{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;margin-bottom:20px}
+.lvl-readout{text-align:center}
+.lvl-readout .v{font-size:2.4rem;font-weight:900;font-family:monospace;color:var(--accent);line-height:1;display:block}
+.lvl-readout .l{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-top:6px}
+.lvl-flat{display:inline-block;margin-top:8px;padding:5px 14px;border-radius:20px;font-size:.8rem;font-weight:700}
+.lvl-flat.ok{background:rgba(46,213,115,.18);color:#2ed573;border:1px solid rgba(46,213,115,.45)}
+.lvl-flat.bad{background:rgba(255,165,2,.15);color:#ffa502;border:1px solid rgba(255,165,2,.4)}
+.lvl-vial{position:relative;width:280px;max-width:100%;height:90px;margin:0 auto;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.15));border:2px solid var(--border);border-radius:45px;overflow:hidden}
+.lvl-vial::before{content:'';position:absolute;top:50%;left:50%;width:2px;height:80%;background:repeating-linear-gradient(0deg,rgba(255,255,255,.5) 0 6px,transparent 6px 12px);transform:translate(-50%,-50%)}
+.lvl-bubble{position:absolute;top:50%;left:50%;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(255,255,255,.4) 60%,rgba(200,230,255,.3));border:1.5px solid rgba(255,255,255,.7);transform:translate(-50%,-50%);box-shadow:0 4px 14px rgba(0,0,0,.4);transition:left .08s linear,top .08s linear}
+.lvl-bubble::after{content:'';position:absolute;top:22%;left:25%;width:30%;height:30%;background:rgba(255,255,255,.85);border-radius:50%;filter:blur(1px)}
+.lvl-circle{position:relative;width:240px;height:240px;max-width:100%;margin:10px auto 0;border-radius:50%;background:radial-gradient(circle,rgba(0,0,0,.35),rgba(0,0,0,.15));border:2px solid var(--border)}
+.lvl-cross{position:absolute;top:50%;left:50%;width:100%;height:2px;background:rgba(255,255,255,.25);transform:translate(-50%,-50%)}
+.lvl-cross.v{width:2px;height:100%}
+.lvl-needle{position:absolute;top:50%;left:50%;width:6px;height:96px;background:linear-gradient(180deg,#ff4757,#c0392b);border-radius:3px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg);box-shadow:0 2px 6px rgba(0,0,0,.4);transition:transform .08s linear}
+.lvl-needle::before{content:'';position:absolute;top:-8px;left:50%;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:14px solid #ff4757;transform:translateX(-50%)}
+.lvl-center{position:absolute;top:50%;left:50%;width:14px;height:14px;background:var(--accent);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(0,0,0,.3)}
+.lvl-2d-dot{position:absolute;top:50%;left:50%;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,rgba(200,230,255,.3));border:1.5px solid rgba(255,255,255,.7);transform:translate(-50%,-50%);box-shadow:0 3px 10px rgba(0,0,0,.4);transition:top .08s linear,left .08s linear}
+.lvl-tol{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;color:var(--text2);font-size:.85rem}
+.lvl-tol input{width:80px;accent-color:var(--accent);padding:4px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;color:var(--text)}
+.lvl-notice{background:rgba(255,165,2,.12);border:1px solid rgba(255,165,2,.35);border-radius:12px;padding:14px;color:#ffd166;font-size:.88rem;line-height:1.55;display:none}
+.lvl-notice.show{display:block}
+.lvl-tip{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text2);font-size:.85rem;line-height:1.65}
+.lvl-tip strong{color:var(--text)}
+.lvl-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Bubble Level","description":"Free online bubble level and spirit level — use your phone's tilt sensors to check if any surface is perfectly flat. Live degree readout, 2D level vial, horizontal and vertical modes. No app install.","url": "https://tools.gamezipper.com/zh/dev/bubble-level.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the online bubble level work?", "acceptedAnswer": {"@type": "Answer", "text": "It reads your device's accelerometer and gravity sensor through the browser's DeviceMotion API. As you tilt your phone or laptop, the bubble moves and the degree readout updates in real time — just like a real spirit level."}}, {"@type": "Question", "name": "Why does the bubble level ask for permission on iPhone?", "acceptedAnswer": {"@type": "Answer", "text": "iOS Safari requires explicit user permission before any app can read motion sensors. Tap 'Allow' when prompted — the data stays on your device and is never uploaded."}}, {"@type": "Question", "name": "Can I use the bubble level on a desktop computer?", "acceptedAnswer": {"@type": "Answer", "text": "Desktop computers rarely have tilt sensors, so the tool works best on phones, tablets and some laptops. On a device without sensors you will see a notice explaining that motion data is unavailable."}}, {"@type": "Question", "name": "How accurate is the online spirit level?", "acceptedAnswer": {"@type": "Answer", "text": "Accuracy depends on your device's sensors and is typically within about 1 degree — fine for hanging pictures, leveling furniture or checking shelves. For professional construction work, use a dedicated physical level."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/bubble-level.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/bubble-level.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/bubble-level.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="lvl-notice" id="notice"></div>
+    <div class="lvl-stage">
+      <div class="lvl-mode" id="modes"></div>
+      <div class="lvl-display">
+        <div class="lvl-readout"><span class="v" id="val-angle">0.0°</span><span class="l" id="lbl-angle"></span><span class="lvl-flat bad" id="flat-badge"></span></div>
+        <div class="lvl-readout"><span class="v" id="val-side">0.0°</span><span class="l" id="lbl-side"></span></div>
+      </div>
+      <div id="vial-wrap">
+        <div class="lvl-vial" id="vial"><div class="lvl-bubble" id="bubble"></div></div>
+      </div>
+      <div id="circle-wrap" style="display:none">
+        <div class="lvl-circle"><div class="lvl-cross"></div><div class="lvl-cross v"></div><div class="lvl-needle" id="needle"></div><div class="lvl-center"></div><div class="lvl-2d-dot" id="dot2d"></div></div>
+      </div>
+      <div class="lvl-tol"><span id="lbl-tol"></span><input type="number" id="tol" min="0.1" max="5" step="0.1" value="1.0"><span>°</span></div>
+      <div class="lvl-actions">
+        <button class="gz-btn gz-btn-secondary" id="cal-btn"></button>
+        <button class="gz-btn gz-btn-secondary" id="perm-btn" style="display:none"></button>
+      </div>
+    </div>
+    <div class="lvl-tip" id="tip"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Bubble Level (Spirit Level)',
+    toolDesc: 'Turn your phone into a free bubble level. Use the built-in tilt sensors to check if any surface is flat — horizontal, vertical or full 2D level. Live degree readout, no app install.',
+    modeFlat: 'Flat (2D)',
+    modeHorizontal: 'Horizontal',
+    modeVertical: 'Vertical',
+    lblAngleH: 'Tilt (front-back)',
+    lblAngleV: 'Tilt (left-right)',
+    lblAngleFlat: 'Tilt (X)',
+    lblSideFlat: 'Tilt (Y)',
+    flat: 'LEVEL',
+    notFlat: 'TILTED',
+    start: '▶ Start',
+    calibrate: '🎯 Calibrate / Set Zero',
+    calibrateDone: '✓ Zero point set',
+    requestPerm: '🔑 Enable Motion Sensors',
+    permDenied: 'Motion sensor permission denied. Tap "Enable Motion Sensors" to try again.',
+    noSensor: 'No motion sensor detected. This tool works on phones, tablets and most laptops with a built-in accelerometer. Try opening it on a mobile device.',
+    tipText: '<strong>📱 Best on mobile.</strong> Lay your phone flat on a surface for 2D mode, or hold it against a wall for vertical mode. Tap <strong>Calibrate</strong> on a known-flat surface to set the zero point.',
+    step1: 'Pick a mode: Flat (2D), Horizontal or Vertical',
+    step2: 'On iPhone, tap "Enable Motion Sensors" and allow access',
+    step3: 'Lay or hold your device on the surface you want to check',
+    step4: 'Read the angle — green LEVEL means the surface is flat within your tolerance',
+  },
+  zh: {
+    toolTitle: '在线水平仪（气泡水平尺）',
+    toolDesc: '把手机变成免费水平仪。利用内置倾斜传感器检测任意表面是否水平 — 支持平放、竖直和 2D 平面模式。实时角度读数，无需安装应用。',
+    modeFlat: '平面 (2D)',
+    modeHorizontal: '水平',
+    modeVertical: '垂直',
+    lblAngleH: '前后倾角',
+    lblAngleV: '左右倾角',
+    lblAngleFlat: 'X 倾角',
+    lblSideFlat: 'Y 倾角',
+    flat: '水平',
+    notFlat: '倾斜',
+    start: '▶ 开始',
+    calibrate: '🎯 校准 / 归零',
+    calibrateDone: '✓ 已设置零点',
+    requestPerm: '🔑 开启运动传感器',
+    permDenied: '已拒绝运动传感器权限。点击「开启运动传感器」重试。',
+    noSensor: '未检测到运动传感器。此工具适用于带内置加速度计的手机、平板和大多数笔记本电脑。请在移动设备上打开试试。',
+    tipText: '<strong>📱 推荐在手机上使用。</strong> 2D 模式时将手机平放在表面上，垂直模式时贴在墙上。在已知水平面上点击「校准」可设置零点。',
+    step1: '选择模式：平面 (2D)、水平或垂直',
+    step2: 'iPhone 用户请点击「开启运动传感器」并允许访问',
+    step3: '将设备平放或贴在要检测的表面上',
+    step4: '读取角度 — 绿色「水平」表示表面在容差范围内是平的',
+  }
+});
+
+const { $, t, showToast } = GZ;
+let mode = 'flat';            // flat | horizontal | vertical
+let listening = false;
+let zeroX = 0, zeroY = 0;     // calibration offsets (degrees)
+let lastGX = 0, lastGY = 0, lastGZ = 0;
+
+function setMode(m){
+  mode = m;
+  document.querySelectorAll('.lvl-mbtn').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+  $('#vial-wrap').style.display = (m === 'flat') ? 'none' : 'block';
+  $('#circle-wrap').style.display = (m === 'flat') ? 'block' : 'none';
+  // labels
+  if(m === 'horizontal'){ $('#lbl-angle').textContent = t('lblAngleH'); $('#lbl-side').textContent = t('lblAngleV'); }
+  else if(m === 'vertical'){ $('#lbl-angle').textContent = t('lblAngleV'); $('#lbl-side').textContent = t('lblAngleH'); }
+  else { $('#lbl-angle').textContent = t('lblAngleFlat'); $('#lbl-side').textContent = t('lblSideFlat'); }
+  $('#val-side').style.display = '';
+  $('#lbl-side').style.display = '';
+}
+
+function showNotice(key){
+  const n = $('#notice');
+  n.textContent = t(key);
+  n.classList.add('show');
+}
+function hideNotice(){ $('#notice').classList.remove('show'); }
+
+function onMotion(e){
+  listening = true;
+  hideNotice();
+  const a = e.accelerationIncludingGravity;
+  if(!a || (a.x == null && a.y == null && a.z == null)){ return; }
+  let gx = a.x || 0, gy = a.y || 0, gz = a.z || 0;
+  // smoothing
+  lastGX = lastGX*0.7 + gx*0.3;
+  lastGY = lastGY*0.7 + gy*0.3;
+  lastGZ = lastGZ*0.7 + gz*0.3;
+  // pitch & roll in degrees (relative to gravity vector)
+  const g = Math.hypot(lastGX, lastGY, lastGZ) || 1;
+  // pitch (front-back tilt), roll (left-right tilt)
+  let pitch = Math.atan2(lastGY, Math.hypot(lastGX, lastGZ)) * 180 / Math.PI;
+  let roll  = Math.atan2(lastGX, Math.hypot(lastGY, lastGZ)) * 180 / Math.PI;
+  pitch -= zeroY;
+  roll  -= zeroX;
+  const tol = Math.max(0.1, parseFloat($('#tol').value) || 1);
+
+  if(mode === 'flat'){
+    // x = roll (left-right), y = pitch (front-back). Flat when |pitch| small AND |roll| small AND device face-up (gz ~ 9.8).
+    const ax = roll, ay = pitch;
+    const flat = Math.abs(ay) < tol && Math.abs(ax) < tol;
+    $('#val-angle').textContent = ax.toFixed(1) + '°';
+    $('#val-side').textContent = ay.toFixed(1) + '°';
+    $('#flat-badge').textContent = flat ? t('flat') : t('notFlat');
+    $('#flat-badge').className = 'lvl-flat ' + (flat ? 'ok' : 'bad');
+    // 2D dot inside circle (240px) — clamp within radius ~110
+    const max = 100;
+    const px = Math.max(-max, Math.min(max, ax * 2.5));
+    const py = Math.max(-max, Math.min(max, ay * 2.5));
+    $('#dot2d').style.left = `calc(50% + ${px}px)`;
+    $('#dot2d').style.top  = `calc(50% + ${py}px)`;
+  } else if(mode === 'horizontal'){
+    // lying flat edge: tilt = roll
+    const angle = roll;
+    const flat = Math.abs(angle) < tol;
+    $('#val-angle').textContent = angle.toFixed(1) + '°';
+    $('#val-side').textContent = pitch.toFixed(1) + '°';
+    $('#flat-badge').textContent = flat ? t('flat') : t('notFlat');
+    $('#flat-badge').className = 'lvl-flat ' + (flat ? 'ok' : 'bad');
+    moveBubble(angle);
+  } else { // vertical
+    const angle = pitch;
+    const flat = Math.abs(angle) < tol;
+    $('#val-angle').textContent = angle.toFixed(1) + '°';
+    $('#val-side').textContent = roll.toFixed(1) + '°';
+    $('#flat-badge').textContent = flat ? t('flat') : t('notFlat');
+    $('#flat-badge').className = 'lvl-flat ' + (flat ? 'ok' : 'bad');
+    moveBubble(angle);
+  }
+}
+
+function moveBubble(angle){
+  // map angle (-30..30) to position inside vial (width 280, bubble range ~ +-110)
+  const max = 30;
+  const clamped = Math.max(-max, Math.min(max, angle));
+  const offset = (clamped / max) * 110;
+  $('#bubble').style.left = `calc(50% + ${offset}px)`;
+  // also rotate the vial a bit visually for feedback
+}
+
+function handleOrientation(e){
+  // Some devices (especially iOS) give better tilt via orientation event when device is held vertically
+  // We use it only as a fallback signal — primary remains DeviceMotion.
+}
+
+async function requestPermission(){
+  // iOS 13+ requires explicit permission for DeviceMotionEvent
+  if(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function'){
+    try{
+      const res = await DeviceMotionEvent.requestPermission();
+      if(res === 'granted'){ startListening(); }
+      else { showNotice('permDenied'); }
+    }catch(err){ showNotice('permDenied'); }
+  } else {
+    startListening();
+  }
+}
+
+function startListening(){
+  hideNotice();
+  if(!('DeviceMotionEvent' in window)){ showNotice('noSensor'); return; }
+  window.addEventListener('devicemotion', onMotion);
+  // Orientation event can supplement pitch/roll on some platforms
+  window.addEventListener('deviceorientation', handleOrientation);
+  // If no event fires within ~700ms, show "no sensor" notice
+  setTimeout(() => { if(!listening){ showNotice('noSensor'); } }, 800);
+}
+
+function calibrate(){
+  // Use current reading as the zero point
+  zeroX = 0; zeroY = 0;
+  // derive current pitch/roll from last smoothed values
+  const pitch = Math.atan2(lastGY, Math.hypot(lastGX, lastGZ)) * 180 / Math.PI;
+  const roll  = Math.atan2(lastGX, Math.hypot(lastGY, lastGZ)) * 180 / Math.PI;
+  zeroY = pitch; zeroX = roll;
+  showToast(t('calibrateDone'));
+}
+
+// UI setup
+$('#toolbar').innerHTML = '';
+$('#modes').innerHTML = `
+  <button class="lvl-mbtn" data-m="flat" onclick="setMode('flat')">${t('modeFlat')}</button>
+  <button class="lvl-mbtn" data-m="horizontal" onclick="setMode('horizontal')">${t('modeHorizontal')}</button>
+  <button class="lvl-mbtn" data-m="vertical" onclick="setMode('vertical')">${t('modeVertical')}</button>`;
+$('#lbl-tol').textContent = t('lblAngleH').split(' ')[0] + ' / Tolerance';
+$('#cal-btn').textContent = t('calibrate');
+$('#cal-btn').onclick = calibrate;
+$('#tip').innerHTML = t('tipText');
+
+// iOS permission button
+const isIOS = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+if(isIOS){
+  $('#perm-btn').style.display = '';
+  $('#perm-btn').textContent = t('requestPerm');
+  $('#perm-btn').onclick = requestPermission;
+  showNotice('requestPerm');
+  $('#notice').textContent = t('requestPerm');
+} else {
+  startListening();
+}
+
+setMode('flat');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🪞', href:'/dev/online-mirror.html', name:'Online Mirror'},
+    {icon:'🧭', href:'/dev/online-compass.html', name:'Online Compass'},
+    {icon:'📍', href:'/dev/my-geolocation.html', name:'My Geolocation'},
+    {icon:'🔋', href:'/dev/battery-status.html', name:'Battery Status'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

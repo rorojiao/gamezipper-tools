@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>我的位置 & GPS 坐标 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查看你的精确位置和 GPS 坐标（纬度、经度）、精度、海拔、速度和方向。支持多种格式复制坐标，并在地图上显示你的位置 — 完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/my-geolocation.html">
+  <meta property="og:title" content="我的位置 & GPS 坐标">
+  <meta property="og:description" content="查看你的精确位置和 GPS 坐标（纬度、经度）、精度、海拔、速度和方向。支持多种格式复制坐标，并在地图上显示你的位置 — 完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/my-geolocation.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="我的位置 & GPS 坐标">
+<meta name="twitter:description" content="查看你的精确位置和 GPS 坐标（纬度、经度）、精度、海拔、速度和方向。支持多种格式复制坐标，并在地图上显示你的位置 — 完全在浏览器中运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.geo-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+.geo-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+.geo-stat{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.geo-stat .v{font-size:1.1rem;font-weight:800;color:var(--accent);font-family:monospace;display:block;word-break:break-all;line-height:1.3}
+.geo-stat .v.big{font-size:1.4rem}
+.geo-stat .l{color:var(--text2);font-size:.72rem;margin-top:6px;text-transform:uppercase;letter-spacing:1px}
+.geo-coords{background:var(--glass2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;text-align:center}
+.geo-coords .pair{font-family:monospace;font-size:1.05rem;color:var(--text);line-height:1.8}
+.geo-coords .pair b{color:var(--accent);min-width:36px;display:inline-block}
+.geo-coords .label{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.geo-coords .formats{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;text-align:left}
+.geo-coords .fmt{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.8rem;font-family:monospace;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.geo-coords .fmt b{color:var(--text);font-family:monospace;word-break:break-all}
+.geo-coords .fmt button{background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:.85rem;padding:2px 6px;border-radius:4px}
+.geo-coords .fmt button:hover{background:rgba(78,205,196,.15)}
+.geo-map{background:var(--glass);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:18px}
+.geo-map iframe{display:block;width:100%;height:340px;border:0;filter:var(--gz-map-filter,none)}
+.geo-empty{text-align:center;padding:34px 18px;color:var(--text2)}
+.geo-empty .ico{font-size:3.2rem;opacity:.5}
+.geo-empty p{max-width:340px;margin:14px auto 0;font-size:.92rem;line-height:1.6}
+.geo-error{background:rgba(255,71,87,.13);border:1px solid rgba(255,71,87,.4);border-radius:12px;padding:14px;color:#ff6b6b;font-size:.9rem;line-height:1.55;margin-bottom:16px;display:none}
+.geo-error.show{display:block}
+.geo-accuracy{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text2);font-size:.85rem;margin-top:8px}
+.geo-acc-bar{width:140px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
+.geo-acc-fill{height:100%;background:linear-gradient(90deg,#2ed573,#7bed9f,#ffa502,#ff4757);transition:width .3s}
+.geo-tip{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;color:var(--text2);font-size:.85rem;line-height:1.65}
+.geo-tip strong{color:var(--text)}
+.geo-spin{display:inline-block;width:18px;height:18px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:geoSpin .8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes geoSpin{to{transform:rotate(360deg)}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"My Geolocation","description":"Free online geolocation tool — find your exact GPS coordinates (latitude, longitude), accuracy, altitude, speed and heading. View your location on a map, copy coordinates, no signup.","url": "https://tools.gamezipper.com/zh/dev/my-geolocation.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does this tool find my location?", "acceptedAnswer": {"@type": "Answer", "text": "It uses your browser's built-in Geolocation API, which combines GPS, Wi-Fi networks, cell towers and IP address to estimate your position. You must click 'Detect My Location' and grant permission first."}}, {"@type": "Question", "name": "Is my location shared or stored?", "acceptedAnswer": {"@type": "Answer", "text": "No. The position is read inside your browser and shown only to you. It is never uploaded to any server, never logged and never shared. The map is embedded from OpenStreetMap and only loads the coordinates you already see."}}, {"@type": "Question", "name": "Why is my location inaccurate?", "acceptedAnswer": {"@type": "Answer", "text": "On a phone with GPS enabled, accuracy is usually within 10–30 meters. On a desktop using only Wi-Fi or IP, it may be off by several kilometers. Enable GPS / high-accuracy mode on your phone and allow location access for the best result."}}, {"@type": "Question", "name": "What coordinate formats does it show?", "acceptedAnswer": {"@type": "Answer", "text": "Decimal degrees (e.g. 37.7749, -122.4194), degrees-minutes-seconds (37°46'29.6\"N 122°25'9.6\"W), and the OpenStreetMap and Google Maps URL formats so you can paste your location anywhere."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/my-geolocation.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/my-geolocation.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/my-geolocation.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="geo-error" id="error"></div>
+    <div class="geo-actions">
+      <button class="gz-btn" id="detect-btn"></button>
+      <button class="gz-btn gz-btn-secondary" id="copy-btn" style="display:none"></button>
+      <button class="gz-btn gz-btn-secondary" id="map-btn" style="display:none"></button>
+    </div>
+    <div id="empty" class="geo-empty">
+      <div class="ico">📍</div>
+      <p id="empty-text"></p>
+    </div>
+    <div id="results" style="display:none">
+      <div class="geo-coords">
+        <div class="label" id="lbl-coords"></div>
+        <div class="pair"><b id="lat-l">Lat</b> <span id="lat-v"></span></div>
+        <div class="pair"><b id="lon-l">Lon</b> <span id="lon-v"></span></div>
+        <div class="formats" id="formats"></div>
+      </div>
+      <div class="geo-stats">
+        <div class="geo-stat"><span class="v big" id="s-acc">—</span><span class="l" id="s-acc-l"></span></div>
+        <div class="geo-stat"><span class="v" id="s-alt">—</span><span class="l" id="s-alt-l"></span></div>
+        <div class="geo-stat"><span class="v" id="s-spd">—</span><span class="l" id="s-spd-l"></span></div>
+        <div class="geo-stat"><span class="v" id="s-head">—</span><span class="l" id="s-head-l"></span></div>
+      </div>
+      <div class="geo-accuracy">
+        <span id="acc-label"></span>
+        <div class="geo-acc-bar"><div class="geo-acc-fill" id="acc-fill" style="width:0"></div></div>
+      </div>
+      <div class="geo-map" id="map-wrap" style="display:none"><iframe id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    </div>
+    <div class="geo-tip" id="tip"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'My Geolocation & GPS Coordinates',
+    toolDesc: 'Find your exact location and GPS coordinates (latitude, longitude), accuracy, altitude, speed and heading. Copy coordinates in multiple formats and view your spot on a map — all in your browser.',
+    detect: '📍 Detect My Location',
+    detecting: 'Detecting…',
+    copy: 'Copy Coordinates',
+    copied: '✓ Copied!',
+    openMap: '🗺 Open in Maps',
+    emptyText: 'Click "Detect My Location" and allow permission to see your exact GPS coordinates, accuracy, altitude and a map of where you are.',
+    lblCoords: 'Your GPS Coordinates',
+    sAcc: 'Accuracy',
+    sAlt: 'Altitude',
+    sSpd: 'Speed',
+    sHead: 'Heading',
+    accLabel: 'Accuracy',
+    errDenied: 'Location permission was denied. Click the location / padlock icon in your browser address bar, allow location access, then click Detect again.',
+    errUnavailable: 'Location is unavailable on this device or browser. Try enabling GPS / Wi-Fi and reloading.',
+    errTimeout: 'Location request timed out. Check your connection and GPS, then try again.',
+    errGeneric: 'Could not determine your location. Please try again on a device with GPS.',
+    fmtDec: 'Decimal',
+    fmtDMS: 'Degrees/Min/Sec',
+    fmtOSM: 'OpenStreetMap',
+    fmtGMaps: 'Google Maps',
+    fmtPlus: 'Plus Code',
+    tipText: '<strong>🔒 100% private.</strong> Your position is read only inside your browser and shown only to you. Nothing is uploaded, logged or shared. The map is loaded from OpenStreetMap only after you click Detect.',
+    notAvailable: 'n/a',
+    step1: 'Click "Detect My Location" and allow location access when prompted',
+    step2: 'Your latitude and longitude appear instantly in decimal and DMS formats',
+    step3: 'Check the accuracy, altitude, speed and heading cards',
+    step4: 'Tap a copy button or "Open in Maps" to use your coordinates anywhere',
+  },
+  zh: {
+    toolTitle: '我的位置 & GPS 坐标',
+    toolDesc: '查看你的精确位置和 GPS 坐标（纬度、经度）、精度、海拔、速度和方向。支持多种格式复制坐标，并在地图上显示你的位置 — 完全在浏览器中运行。',
+    detect: '📍 检测我的位置',
+    detecting: '正在检测…',
+    copy: '复制坐标',
+    copied: '✓ 已复制！',
+    openMap: '🗺 在地图中打开',
+    emptyText: '点击「检测我的位置」并允许权限，即可查看你的精确 GPS 坐标、精度、海拔和当前位置地图。',
+    lblCoords: '你的 GPS 坐标',
+    sAcc: '精度',
+    sAlt: '海拔',
+    sSpd: '速度',
+    sHead: '方向',
+    accLabel: '精度',
+    errDenied: '已拒绝定位权限。请点击浏览器地址栏的定位/锁形图标，允许位置访问后再次点击「检测」。',
+    errUnavailable: '此设备或浏览器不支持定位。请开启 GPS / Wi-Fi 后重试。',
+    errTimeout: '定位请求超时。请检查网络和 GPS 后重试。',
+    errGeneric: '无法确定你的位置。请尝试在带 GPS 的设备上使用。',
+    fmtDec: '十进制度',
+    fmtDMS: '度/分/秒',
+    fmtOSM: 'OpenStreetMap',
+    fmtGMaps: '谷歌地图',
+    fmtPlus: 'Plus Code',
+    tipText: '<strong>🔒 100% 私密。</strong>你的位置仅在浏览器内读取并只显示给你本人。不会上传、记录或分享任何数据。地图仅在点击「检测」后从 OpenStreetMap 加载。',
+    notAvailable: '无',
+    step1: '点击「检测我的位置」，并在提示时允许位置访问',
+    step2: '纬度和经度会立即以十进制和度/分/秒格式显示',
+    step3: '查看精度、海拔、速度和方向卡片',
+    step4: '点击复制按钮或「在地图中打开」随处使用坐标',
+  }
+});
+
+const { $, t, showToast } = GZ;
+let lastPos = null;
+
+function showErr(key){ const e=$('#error'); e.textContent=t(key); e.classList.add('show'); }
+function hideErr(){ $('#error').classList.remove('show'); }
+
+function fmtDMS(deg, isLat){
+  const dir = isLat ? (deg >= 0 ? 'N' : 'S') : (deg >= 0 ? 'E' : 'W');
+  const abs = Math.abs(deg);
+  const d = Math.floor(abs);
+  const minFloat = (abs - d) * 60;
+  const m = Math.floor(minFloat);
+  const s = ((minFloat - m) * 60).toFixed(1);
+  return `${d}°${m}'${s}"${dir}`;
+}
+
+function plusCode(lat, lon){
+  // Simplified Open Location Code (Plus Code) — full encoder inline
+  const CODE = '23456789CFGHJMPQRVWX';
+  const PAIR = Math.floor(lat * 8000) + '|' + Math.floor(lon * 8000); // not used directly
+  // Proper OLC algorithm
+  function olcEncode(lat, lon){
+    const ADJ = { lat: lat + 90, lon: lon + 180 };
+    let rv = '';
+    let latV = ADJ.lat, lonV = ADJ.lon;
+    let pairCount = 0;
+    while(pairCount < 5){
+      const ld = Math.floor(latV / 20); latV -= ld * 20;
+      const lnd = Math.floor(lonV / 20); lonV -= lnd * 20;
+      rv += CODE[ld] + CODE[lnd];
+      latV *= 20; lonV *= 20;
+      pairCount++;
+      if(pairCount === 4) rv += '+';
+    }
+    // refine to 8 pairs for street-level precision
+    for(let i = 0; i < 3; i++){
+      const ld = Math.floor(latV / 20); latV -= ld * 20;
+      const lnd = Math.floor(lonV / 20); lonV -= lnd * 20;
+      rv += CODE[ld] + CODE[lnd];
+      latV *= 20; lonV *= 20;
+    }
+    return rv;
+  }
+  return olcEncode(lat, lon);
+}
+
+function renderFormats(lat, lon){
+  const dec = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  const dms = `${fmtDMS(lat, true)} ${fmtDMS(lon, false)}`;
+  const osm = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}`;
+  const gmaps = `https://www.google.com/maps?q=${lat},${lon}`;
+  const pc = plusCode(lat, lon);
+  const fmts = [
+    {label: t('fmtDec'), val: dec},
+    {label: t('fmtDMS'), val: dms},
+    {label: t('fmtPlus'), val: pc},
+    {label: t('fmtOSM'), val: osm, link: true},
+    {label: t('fmtGMaps'), val: gmaps, link: true},
+  ];
+  $('#formats').innerHTML = fmts.map(f =>
+    `<div class="fmt"><div><div style="font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">${f.label}</div><b>${f.link ? `<a href="${f.val}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${f.val.length>40?f.val.slice(0,40)+'…':f.val}</a>` : f.val}</b></div><button onclick="copyFmt('${f.val.replace(/'/g,"\\'")}')">⧉</button></div>`
+  ).join('');
+}
+
+window.copyFmt = function(s){ GZ.copyText(s); showToast(t('copied')); };
+
+function detect(){
+  hideErr();
+  if(!('geolocation' in navigator)){ showErr('errUnavailable'); return; }
+  $('#detect-btn').innerHTML = `<span class="geo-spin"></span>${t('detecting')}`;
+  $('#detect-btn').disabled = true;
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = pos.coords;
+    lastPos = { latitude, longitude };
+    $('#empty').style.display = 'none';
+    $('#results').style.display = 'block';
+    $('#lat-v').textContent = latitude.toFixed(6) + '°';
+    $('#lon-v').textContent = longitude.toFixed(6) + '°';
+    $('#s-acc').textContent = '~' + Math.round(accuracy) + ' m';
+    $('#s-alt').textContent = (altitude == null) ? t('notAvailable') : altitude.toFixed(1) + ' m';
+    $('#s-spd').textContent = (speed == null || isNaN(speed)) ? t('notAvailable') : (speed * 3.6).toFixed(1) + ' km/h';
+    $('#s-head').textContent = (heading == null || isNaN(heading)) ? t('notAvailable') : Math.round(heading) + '°';
+    // accuracy bar — smaller accuracy = better, map 5m => 100%, 5000m => 5%
+    const pct = Math.max(5, Math.min(100, 100 - (Math.log10(Math.max(5, accuracy)) - 0.7) * 35));
+    $('#acc-fill').style.width = pct + '%';
+    renderFormats(latitude, longitude);
+    // map embed (OpenStreetMap, no API key)
+    $('#map').src = `https://www.openstreetmap.org/export/embed.html?bbox=${longitude-0.01}%2C${latitude-0.008}%2C${longitude+0.01}%2C${latitude+0.008}&layer=mapnik&marker=${latitude}%2C${longitude}`;
+    $('#map-wrap').style.display = 'block';
+    $('#copy-btn').style.display = '';
+    $('#map-btn').style.display = '';
+    $('#map-btn').onclick = () => window.open(`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`, '_blank', 'noopener');
+    $('#detect-btn').innerHTML = '🔄 ' + t('detect');
+    $('#detect-btn').disabled = false;
+    $('#copy-btn').onclick = () => { GZ.copyText(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`); showToast(t('copied')); };
+  }, err => {
+    $('#detect-btn').innerHTML = t('detect');
+    $('#detect-btn').disabled = false;
+    if(err.code === 1) showErr('errDenied');
+    else if(err.code === 2) showErr('errUnavailable');
+    else if(err.code === 3) showErr('errTimeout');
+    else showErr('errGeneric');
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+// labels
+$('#detect-btn').textContent = t('detect');
+$('#detect-btn').onclick = detect;
+$('#lbl-coords').textContent = t('lblCoords');
+$('#lat-l').textContent = 'Lat'; $('#lon-l').textContent = 'Lon';
+$('#s-acc-l').textContent = t('sAcc');
+$('#s-alt-l').textContent = t('sAlt');
+$('#s-spd-l').textContent = t('sSpd');
+$('#s-head-l').textContent = t('sHead');
+$('#acc-label').textContent = t('accLabel');
+$('#empty-text').textContent = t('emptyText');
+$('#tip').innerHTML = t('tipText');
+$('#toolbar').innerHTML = '';
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP Address'},
+    {icon:'🪞', href:'/dev/online-mirror.html', name:'Online Mirror'},
+    {icon:'📐', href:'/dev/bubble-level.html', name:'Bubble Level'},
+    {icon:'🌅', href:'/calc/sunrise-sunset.html', name:'Sunrise & Sunset'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
