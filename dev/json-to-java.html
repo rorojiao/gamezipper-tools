@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON to Java Class Generator - POJO from JSON | GameZipper Tools</title>
+  <meta name="description" content="Convert any JSON to Java POJO classes instantly. Generates nested classes, List fields, getters and setters, Gson @SerializedName and Jackson annotations. Free, instant, browser-only — like jsonschema2pojo online.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-to-java.html">
+  <meta property="og:title" content="JSON to Java Class Generator - POJO from JSON | GameZipper Tools">
+  <meta property="og:description" content="Convert JSON to Java POJO classes instantly. Nested classes, getters/setters, Gson and Jackson annotations. Free, browser-only — jsonschema2pojo online alternative.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-to-java.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON to Java Class Generator - POJO from JSON | GameZipper Tools">
+<meta name="twitter:description" content="Convert JSON to Java POJO classes with getters, setters and annotations. Free, browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.j2j-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.j2j-controls label{display:block;font-size:.78em;font-weight:600;color:var(--text2);margin-bottom:4px}
+.j2j-controls select,.j2j-controls input[type=text]{padding:8px;background:var(--glass);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:inherit;width:100%}
+.j2j-controls .check{display:flex;align-items:center;gap:6px;padding-bottom:8px}
+.j2j-controls input[type=checkbox]{width:auto;transform:scale(1.15)}
+#output{white-space:pre;overflow-x:auto;font-family:monospace;font-size:.85em;line-height:1.5}
+.tok-key{color:#ff79c6}.tok-str{color:#f1fa8c}.tok-num{color:#bd93f9}.tok-bool{color:#8be9fd}.tok-null{color:#6272a4}.tok-kw{color:#50fa7b;font-weight:600}.tok-com{color:#6272a4;font-style:italic}.tok-type{color:#8be9fd}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to Java Class Generator","description":"Convert any JSON to Java POJO classes instantly. Generates nested classes, List fields, getters, setters, Gson @SerializedName and Jackson @JsonProperty annotations. Free, instant, browser-only — jsonschema2pojo online alternative.","url":"https://tools.gamezipper.com/dev/json-to-java.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert JSON to a Java class?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your JSON into the input area. The tool infers each field's type (String, int, long, double, boolean, nested class or List), generates matching Java POJO classes and prints them with proper indentation. Click Copy to grab the code."}}, {"@type": "Question", "name": "How are numbers handled?", "acceptedAnswer": {"@type": "Answer", "text": "Integers become int (or long if they exceed Integer range), and decimals become double by default. Enable the BigDecimal option to use java.math.BigDecimal for every number, which avoids floating-point rounding for currency and high-precision values."}}, {"@type": "Question", "name": "Should I use getters and setters?", "acceptedAnswer": {"@type": "Answer", "text": "Encapsulated POJOs with private fields plus getters and setters are the JavaBeans standard and work with Gson, Jackson, JPA and most frameworks. For lightweight data carriers you can switch to public fields to keep the classes short."}}, {"@type": "Question", "name": "Does it add Gson or Jackson annotations?", "acceptedAnswer": {"@type": "Answer", "text": "Optionally. Enable Gson annotations to add @SerializedName on every field, or Jackson annotations to add @JsonProperty. This keeps your Java field names valid while mapping kebab-case or snake_case JSON keys."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-java.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-java.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-java.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="j2j-controls">
+      <div><label id="lbl-root"></label><input type="text" id="rootname" value="Root"></div>
+      <div><label id="lbl-anno"></label><select id="annotation"><option value="none" selected>None</option><option value="gson">Gson (@SerializedName)</option><option value="jackson">Jackson (@JsonProperty)</option></select></div>
+      <div><label id="lbl-num"></label><select id="numbers"><option value="primitive" selected>Primitive (int/long/double)</option><option value="bigdecimal">BigDecimal</option><option value="object">Object (Integer/Long/Double)</option></select></div>
+      <div class="check"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="getters" checked> <span id="lbl-getters"></span></label></div>
+      <div class="check"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="inner" checked> <span id="lbl-inner"></span></label></div>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="{...}"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to Java Class Generator',
+    toolDesc: 'Convert any JSON object into clean Java POJO classes. Automatic type inference, nested inner classes, List fields, getters and setters, and optional Gson or Jackson annotations. Free, instant, browser-only.',
+    rootLabel: 'Root class name', annoLabel: 'Annotations', numLabel: 'Number type',
+    gettersLabel: 'Getters & setters', innerLabel: 'Nested inner classes',
+    inputLabel: 'JSON input', outputLabel: 'Java output',
+    btnConvert: 'Convert', btnExample: 'Example', btnCopy: 'Copy', btnClear: 'Clear',
+    jsonValid: '✓ Valid JSON', jsonInvalid: '✗ Invalid JSON',
+    step1: 'Paste JSON into the input box — it parses and converts automatically.',
+    step2: 'Set the root class name and pick an annotation style (Gson or Jackson).',
+    step3: 'Choose how numbers map (primitive, BigDecimal or wrapper objects).',
+    step4: 'Toggle getters/setters and inner classes, then Copy the generated Java.',
+  },
+  zh: {
+    toolTitle: 'JSON 转 Java 类生成器',
+    toolDesc: '将任意 JSON 对象转换为干净的 Java POJO 类。自动类型推断、嵌套内部类、List 字段、getter/setter，可选 Gson 或 Jackson 注解。免费、即时、浏览器本地运行。',
+    rootLabel: '根类名', annoLabel: '注解', numLabel: '数字类型',
+    gettersLabel: 'Getter & Setter', innerLabel: '嵌套内部类',
+    inputLabel: 'JSON 输入', outputLabel: 'Java 输出',
+    btnConvert: '转换', btnExample: '示例', btnCopy: '复制', btnClear: '清空',
+    jsonValid: '✓ JSON 有效', jsonInvalid: '✗ JSON 无效',
+    step1: '将 JSON 粘贴到输入框，工具会自动解析并转换。',
+    step2: '设置根类名并选择注解风格（Gson 或 Jackson）。',
+    step3: '选择数字映射方式（基本类型、BigDecimal 或包装类型）。',
+    step4: '切换 getter/setter 和内部类，然后复制生成的 Java 代码。',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+const KW = new Set(['abstract','assert','boolean','break','byte','case','catch','char','class','const','continue','default','do','double','else','enum','extends','final','finally','float','for','goto','if','implements','import','instanceof','int','interface','long','native','new','package','private','protected','public','return','short','static','strictfp','super','switch','synchronized','this','throw','throws','transient','try','void','volatile','while','true','false','null']);
+
+function safeName(key){
+  let n = String(key).replace(/[^a-zA-Z0-9_$]/g,'_');
+  if(/^[0-9]/.test(n)) n = '_' + n;
+  if(KW.has(n)) n = n + '_';
+  return n;
+}
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function lower(s){ return s.charAt(0).toLowerCase() + s.slice(1); }
+
+// Infer the "shape" of a value. Returns a type descriptor.
+function inferType(value, name, numMode){
+  if(value === null) return {kind:'object', cls:'Object', nullable:true};
+  if(typeof value === 'boolean') return {kind:'bool'};
+  if(typeof value === 'number'){
+    if(numMode === 'bigdecimal') return {kind:'bigdecimal'};
+    if(numMode === 'object'){
+      return Number.isInteger(value) ? (Math.abs(value) > 2147483647 ? {kind:'longobj'} : {kind:'intobj'}) : {kind:'doubleobj'};
+    }
+    if(Number.isInteger(value)) return Math.abs(value) > 2147483647 ? {kind:'long'} : {kind:'int'};
+    return {kind:'double'};
+  }
+  if(typeof value === 'string') return {kind:'string'};
+  if(Array.isArray(value)){
+    // infer element type from non-null elements; merge object shapes
+    const elems = value.filter(v => v !== null);
+    if(elems.length === 0) return {kind:'list', elem:{kind:'object', cls:'Object'}};
+    const firstObj = elems.find(e => typeof e === 'object' && !Array.isArray(e));
+    if(firstObj){
+      return {kind:'list', elem:{kind:'class', cls:cap(name)}};
+    }
+    const firstNonObj = elems.find(e => typeof e !== 'object');
+    if(firstNonObj !== undefined){
+      const et = inferType(firstNonObj, name, numMode);
+      return {kind:'list', elem:et};
+    }
+    return {kind:'list', elem:{kind:'object', cls:'Object'}};
+  }
+  // plain object
+  return {kind:'class', cls:cap(name)};
+}
+
+// Merge an array of homogeneous object values into one representative object (first wins, fill gaps from later)
+function mergeObjects(arr){
+  const out = {};
+  arr.forEach(v => { if(v && typeof v==='object' && !Array.isArray(v)){ for(const k in v) if(!(k in out)) out[k]=v[k]; } });
+  return out;
+}
+
+let _classes = [];
+function genClass(obj, className, numMode, anno, useGetters, useInner, indentUnit, level){
+  const fields = [];
+  const innerClasses = [];
+  const ind = indentUnit.repeat(level);
+  const ind1 = indentUnit.repeat(level+1);
+
+  const keys = Object.keys(obj);
+  keys.forEach(key => {
+    let value = obj[key];
+    const fname = safeName(key);
+    const td = inferType(value, fname, numMode);
+    // list of objects -> generate inner class + merge shapes
+    if(td.kind === 'list' && td.elem.kind === 'class'){
+      const arr = value.filter(v => v && typeof v==='object' && !Array.isArray(v));
+      const merged = mergeObjects(arr);
+      const childCls = td.elem.cls;
+      genClass(merged, childCls, numMode, anno, useGetters, useInner, indentUnit, level+1);
+      fields.push({name:fname, type:'List<'+childCls+'>', rawType:childCls, jsonKey:key, isList:true});
+    } else if(td.kind === 'list'){
+      const javaElem = javaType(td.elem);
+      fields.push({name:fname, type:'List<'+javaElem+'>', rawType:javaElem, jsonKey:key, isList:true});
+    } else if(td.kind === 'class'){
+      const childCls = td.cls;
+      genClass(value, childCls, numMode, anno, useGetters, useInner, indentUnit, level+1);
+      fields.push({name:fname, type:childCls, rawType:childCls, jsonKey:key, isList:false});
+    } else {
+      fields.push({name:fname, type:javaType(td), rawType:javaType(td), jsonKey:key, isList:false});
+    }
+  });
+
+  // build class text lines (we store and later assemble)
+  _classes.push({className, fields, level});
+}
+
+function javaType(td){
+  switch(td.kind){
+    case 'bool': return 'boolean';
+    case 'int': return 'int';
+    case 'long': return 'long';
+    case 'double': return 'double';
+    case 'intobj': return 'Integer';
+    case 'longobj': return 'Long';
+    case 'doubleobj': return 'Double';
+    case 'bigdecimal': return 'BigDecimal';
+    case 'string': return 'String';
+    case 'object': return 'Object';
+    default: return 'Object';
+  }
+}
+
+function annotationLine(jsonKey, fieldName, anno, ind){
+  if(anno === 'none') return null;
+  if(jsonKey === fieldName) return null; // no annotation needed when identical
+  if(anno === 'gson') return `${ind}<span class="tok-com">@SerializedName("${escapeHtml(jsonKey)}")</span>`;
+  if(anno === 'jackson') return `${ind}<span class="tok-com">@JsonProperty("${escapeHtml(jsonKey)}")</span>`;
+  return null;
+}
+
+function build(){
+  _classes = [];
+  const inp = $('#input').value.trim();
+  if(!inp){ $('#output').innerHTML=''; $('#status').innerHTML=''; return; }
+  let obj;
+  try { obj = JSON.parse(inp); }
+  catch(e){ $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('jsonInvalid')}: ${escapeHtml(e.message)}</span>`; $('#output').innerHTML = `<span style="color:var(--gz-accent)">${escapeHtml(e.message)}</span>`; return; }
+
+  // If root is an array, wrap as { items: [...] }
+  let rootObj, rootName;
+  const rootInput = ($('#rootname').value.trim() || 'Root');
+  rootName = cap(safeName(rootInput));
+  if(Array.isArray(obj)){
+    rootObj = { items: obj };
+    rootName = cap(safeName(rootInput));
+    // generate item class then root
+    const anno = $('#annotation').value, numMode = $('#numbers').value;
+    const useGetters = $('#getters').checked, useInner = $('#inner').checked;
+    const indentUnit = '    ';
+    genClass(rootObj, rootName, numMode, anno, useGetters, useInner, indentUnit, 0);
+  } else {
+    const anno = $('#annotation').value, numMode = $('#numbers').value;
+    const useGetters = $('#getters').checked, useInner = $('#inner').checked;
+    const indentUnit = '    ';
+    genClass(obj, rootName, numMode, anno, useGetters, useInner, indentUnit, 0);
+  }
+
+  const anno = $('#annotation').value, numMode = $('#numbers').value, useGetters = $('#getters').checked, useInner = $('#inner').checked;
+  const indentUnit = '    ';
+
+  // assemble
+  const needsBigDecimal = _classes.some(c => c.fields.some(f => f.rawType === 'BigDecimal'));
+  const needsList = _classes.some(c => c.fields.some(f => f.isList));
+  let headerImports = '';
+  if(needsBigDecimal) headerImports += 'import java.math.BigDecimal;\n';
+  if(needsList) headerImports += 'import java.util.List;\n';
+  if(anno === 'gson') headerImports += 'import com.google.gson.annotations.SerializedName;\n';
+  if(anno === 'jackson') headerImports += 'import com.fasterxml.jackson.annotation.JsonProperty;\n';
+  if(headerImports) headerImports += '\n';
+
+  const parts = [];
+  for(let i=0;i<_classes.length;i++){
+    const c = _classes[i];
+    const ind = indentUnit.repeat(c.level);
+    const ind1 = indentUnit.repeat(c.level+1);
+    const kw = useInner && c.level>0 ? 'public static class ' : 'public class ';
+    parts.push(`${ind}<span class="tok-kw">${kw}</span><span class="tok-type">${escapeHtml(c.className)}</span> {`);
+
+    // fields
+    c.fields.forEach(f => {
+      const al = annotationLine(f.jsonKey, f.name, anno, ind1);
+      if(al) parts.push(al);
+      const mod = useGetters ? 'private ' : 'public ';
+      parts.push(`${ind1}${mod}<span class="tok-type">${escapeHtml(f.type)}</span> <span class="tok-key">${escapeHtml(f.name)}</span>;`);
+    });
+    if(c.fields.length && useGetters) parts.push('');
+
+    // getters & setters
+    if(useGetters){
+      c.fields.forEach(f => {
+        const T = f.type;
+        const FName = cap(f.name);
+        parts.push(`${ind1}<span class="tok-kw">public</span> ${T} <span class="tok-key">get${FName}</span>() { <span class="tok-kw">return</span> ${f.name}; }`);
+        const setT = T; // primitives ok
+        parts.push(`${ind1}<span class="tok-kw">public</span> <span class="tok-kw">void</span> <span class="tok-key">set${FName}</span>(${setT} ${f.name}) { <span class="tok-kw">this</span>.${f.name} = ${f.name}; }`);
+      });
+    }
+    parts.push(`${ind}}`);
+    if(i < _classes.length-1) parts.push('');
+  }
+
+  $('#output').innerHTML = (headerImports ? `<span class="tok-com">${escapeHtml(headerImports.trim())}</span>\n\n` : '') + parts.join('\n');
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('jsonValid')} · ${_classes.length} class${_classes.length!==1?'es':''}</span>`;
+}
+
+function loadExample(){
+  $('#input').value = JSON.stringify({
+    id: 42,
+    name: 'GameZipper',
+    active: true,
+    score: 98.6,
+    createdAt: '2026-06-22',
+    tags: ['tool','free','browser'],
+    owner: { id: 1, name: 'Admin', verified: true },
+    members: [
+      { id: 10, name: 'Alice', role: 'dev' },
+      { id: 11, name: 'Bob', role: 'qa' }
+    ]
+  }, null, 2);
+  build();
+}
+function doClear(){ $('#input').value=''; build(); }
+
+['input','rootname','annotation','numbers','getters','inner'].forEach(id => {
+  const el = $('#'+id);
+  el.addEventListener('input', build);
+  el.addEventListener('change', build);
+});
+
+$('#lbl-root').textContent = t('rootLabel');
+$('#lbl-anno').textContent = t('annoLabel');
+$('#lbl-num').textContent = t('numLabel');
+$('#lbl-getters').textContent = t('gettersLabel');
+$('#lbl-inner').textContent = t('innerLabel');
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-out').textContent = t('outputLabel');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="build()">${t('btnConvert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('btnExample')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('btnCopy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('btnClear')}</button>`;
+
+build();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🐍', href:'/dev/json-to-python.html', name:'JSON to Python'},
+    {icon:'📘', href:'/dev/json-to-typescript.html', name:'JSON to TypeScript'},
+    {icon:'🔵', href:'/convert/json-to-go.html', name:'JSON to Go'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
