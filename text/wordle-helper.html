@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Wordle Helper & Word Pattern Solver - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Free Wordle helper and word pattern solver. Enter your green, yellow and gray letters to instantly narrow down every possible answer. Also works for crossword and hangman patterns.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/wordle-helper.html">
+  <meta property="og:title" content="Wordle Helper & Word Pattern Solver - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Free Wordle helper and word pattern solver. Enter your green, yellow and gray letters to instantly narrow down every possible answer. Also works for crossword and hangman patterns.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/wordle-helper.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Wordle Helper & Word Pattern Solver - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<script src="/text/wordlist.js"></script>
+<style>
+.field{margin:10px 0}
+.field label{display:block;font-size:.85em;color:var(--text2);margin-bottom:4px}
+.field input{text-transform:lowercase;letter-spacing:.12em}
+#pattern{font-size:1.3em;font-family:monospace}
+.hint{font-size:.8em;color:var(--text3);margin-top:4px}
+.green{color:#6ab04c}.yellow{color:#f0a500}.gray{color:var(--text3)}
+.word-chip{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:.92em;cursor:pointer;display:inline-block;margin:3px}
+.word-chip:hover{background:var(--accent);color:#000}
+#output{min-height:60px}
+.stats{font-size:.85em;color:var(--text2);margin-bottom:8px}
+.row2{display:flex;gap:12px}
+.row2>div{flex:1}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Wordle Helper & Word Pattern Solver","description":"Free Wordle helper and word pattern solver. Enter your green, yellow and gray letters to instantly narrow down every possible answer. Also works for crossword and hangman patterns.","url":"https://tools.gamezipper.com/text/wordle-helper.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I use the Wordle helper?", "acceptedAnswer": {"@type": "Answer", "text": "Type the letters you know in the Pattern box, using dots, underscores or spaces for unknown positions. Add yellow letters to Includes (somewhere in the word) and gray letters to Excludes (definitely not in the word). The tool lists every matching answer instantly."}}, {"@type": "Question", "name": "Can I change the word length?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Set Length to any value from 2 to 15. The default is 5 for classic Wordle, but the solver also works for longer or shorter word games."}}, {"@type": "Question", "name": "Does it work for crosswords and hangman?", "acceptedAnswer": {"@type": "Answer", "text": "Absolutely. The Pattern box supports any wildcards (dots, underscores, spaces or question marks), so it doubles as a crossword helper and hangman solver for any word length."}}, {"@type": "Question", "name": "Is my Wordle data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Everything runs locally in your browser using a built-in dictionary. No letters or guesses are ever sent to a server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/wordle-helper.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/wordle-helper.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/wordle-helper.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="field">
+      <label id="lbl-pattern"></label>
+      <input id="pattern" class="gz-input" type="text" maxlength="15" placeholder="c..ts" autocomplete="off" spellcheck="false">
+      <div class="hint" id="hint-pattern"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label id="lbl-include"></label>
+        <input id="include" class="gz-input" type="text" maxlength="15" placeholder="ar" autocomplete="off" spellcheck="false">
+        <div class="hint yellow" id="hint-include"></div>
+      </div>
+      <div class="field">
+        <label id="lbl-exclude"></label>
+        <input id="exclude" class="gz-input" type="text" maxlength="26" placeholder="bzx" autocomplete="off" spellcheck="false">
+        <div class="hint gray" id="hint-exclude"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label id="lbl-length"></label>
+      <input id="length" class="gz-input" type="number" value="5" min="2" max="15">
+    </div>
+    <button class="gz-btn" id="go-btn" style="width:100%;padding:12px;font-size:1.05em"></button>
+    <div id="status" style="margin:10px 0"></div>
+    <div class="gz-output" id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Wordle Helper & Word Pattern Solver',
+    toolDesc: 'Narrow down every possible answer from your green, yellow and gray letters. Also works as a crossword and hangman pattern solver.',
+    goBtn: 'Find Words',
+    pattern: 'Pattern (green letters)',
+    patternHint: 'Use . _ space or ? for unknown positions',
+    include: 'Includes (yellow letters)',
+    includeHint: 'Letters in the word, wrong spot',
+    exclude: 'Excludes (gray letters)',
+    excludeHint: 'Letters NOT in the word',
+    length: 'Word length',
+    step1: 'Type known letters in Pattern using dots for blanks',
+    step2: 'Add yellow letters to Includes and gray letters to Excludes',
+    step3: 'Set the word length (default 5 for Wordle)',
+    step4: 'Click Find Words and tap any result to copy it',
+    foundN: 'matching words',
+    noMatch: 'No words match. Try loosening your pattern or includes.',
+    copyToast: 'Copied',
+  },
+  zh: {
+    toolTitle: 'Wordle 助手 / 单词模式求解',
+    toolDesc: '根据绿色、黄色和灰色字母即时缩小所有可能的答案范围。也可用于填字游戏和猜单词。',
+    goBtn: '查找单词',
+    pattern: '已知位置（绿色字母）',
+    patternHint: '用 . _ 空格或 ? 表示未知位置',
+    include: '包含（黄色字母）',
+    includeHint: '在单词中但位置不对的字母',
+    exclude: '排除（灰色字母）',
+    excludeHint: '一定不在单词中的字母',
+    length: '单词长度',
+    step1: '在「已知位置」中输入已知字母，用点号表示空位',
+    step2: '将黄色字母填入「包含」，灰色字母填入「排除」',
+    step3: '设置单词长度（Wordle 默认 5）',
+    step4: '点击「查找单词」，点击任意结果即可复制',
+    foundN: '个匹配单词',
+    noMatch: '没有匹配的单词。请放宽已知位置或包含条件。',
+    copyToast: '已复制',
+  }
+});
+
+const { $, copyText, showToast, t } = GZ;
+const WORDS = (window.GZ_WORDLIST || []);
+
+function findWords() {
+  const len = Math.max(2, Math.min(15, parseInt($('#length').value) || 5));
+  let pat = ($('#pattern').value || '').toLowerCase().replace(/[^a-z.?_ ]/g, '');
+  // normalize wildcards to '.'
+  pat = pat.replace(/[?_ ]/g, '.');
+  let regex;
+  try {
+    if (pat) {
+      if (pat.length < len) pat = pat + '.'.repeat(len - pat.length);
+      regex = new RegExp('^' + pat + '$');
+    } else {
+      regex = new RegExp('^.{' + len + '}$');
+    }
+  } catch (e) { $('#output').innerHTML = ''; return; }
+  const include = ($('#include').value || '').toLowerCase().replace(/[^a-z]/g, '');
+  const exclude = ($('#exclude').value || '').toLowerCase().replace(/[^a-z]/g, '');
+  const incSet = [...new Set(include.split(''))];
+  const excSet = new Set(exclude);
+  const results = [];
+  for (const w of WORDS) {
+    if (w.length !== len) continue;
+    if (!regex.test(w)) continue;
+    let ok = true;
+    for (const ch of incSet) { if (!w.includes(ch)) { ok = false; break; } }
+    if (!ok) continue;
+    for (const ch of excSet) { if (w.includes(ch)) { ok = false; break; } }
+    if (ok) results.push(w);
+  }
+  results.sort();
+  let html = `<div class="stats"><b>${results.length}</b> ${t('foundN')}</div>`;
+  if (!results.length) {
+    html += `<div style="color:var(--accent)">${t('noMatch')}</div>`;
+  } else {
+    html += results.map(w => `<span class="word-chip" data-w="${w}">${w}</span>`).join('');
+  }
+  $('#output').innerHTML = html;
+}
+
+$('#go-btn').addEventListener('click', findWords);
+['#pattern', '#include', '#exclude'].forEach(sel => {
+  $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') findWords(); });
+});
+$('#output').addEventListener('click', e => {
+  const chip = e.target.closest('.word-chip');
+  if (chip) { copyText(chip.dataset.w); showToast(t('copyToast') + ': ' + chip.dataset.w); }
+});
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example') || 'Example'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="resetForm()">${t('clear')}</button>`;
+function loadExample() {
+  $('#pattern').value = 'cr'; $('#include').value = 'n'; $('#exclude').value = 'bpx'; $('#length').value = 5;
+  findWords();
+}
+function resetForm() {
+  $('#pattern').value=''; $('#include').value=''; $('#exclude').value=''; $('#length').value=5; $('#output').innerHTML=''; $('#status').textContent=''; $('#pattern').focus();
+}
+
+$('#go-btn').textContent = t('goBtn');
+$('#lbl-pattern').textContent = t('pattern');
+$('#hint-pattern').textContent = t('patternHint');
+$('#lbl-include').textContent = t('include');
+$('#hint-include').textContent = t('includeHint');
+$('#lbl-exclude').textContent = t('exclude');
+$('#hint-exclude').textContent = t('excludeHint');
+$('#lbl-length').textContent = t('length');
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔤', href:'/text/word-unscrambler.html', name:'Word Unscrambler'},
+    {icon:'🎲', href:'/fun/wordle-solver.html', name:'Wordle Solver'},
+    {icon:'🪞', href:'/text/anagram-checker.html', name:'Anagram Checker'},
+    {icon:'🏁', href:'/fun/hangman-solver.html', name:'Hangman Solver'},
+    {icon:'🧩', href:'/fun/crossword-maker.html', name:'Crossword Maker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
