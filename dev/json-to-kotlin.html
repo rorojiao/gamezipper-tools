@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON to Kotlin Data Class Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert JSON to Kotlin data classes online. Generate clean Kotlin data class definitions with val properties, nullable types and List support from any JSON. Free, instant, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-to-kotlin.html">
+  <meta property="og:title" content="JSON to Kotlin Data Class Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert JSON to Kotlin data classes online. Generate clean Kotlin data class definitions with val properties, nullable types and List support from any JSON.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-to-kotlin.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON to Kotlin Data Class Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert JSON to Kotlin data classes online. Generate clean Kotlin data classes from any JSON instantly.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.82em;line-height:1.5;max-height:520px;overflow:auto}
+.gz-opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.gz-opt-row label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:.85em}
+.gz-opt-row input[type="text"]{padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.85em;width:150px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to Kotlin Data Class Converter","description":"Convert JSON to Kotlin data classes online. Generate clean Kotlin data class definitions with val properties, nullable types and List support from any JSON.","url":"https://tools.gamezipper.com/dev/json-to-kotlin.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert JSON to a Kotlin data class?","acceptedAnswer":{"@type":"Answer","text":"Paste your JSON into the input area and the Kotlin data class is generated instantly. The tool infers val property types, turns nested objects into inner data classes, and arrays into List<T>."}},{"@type":"Question","name":"Does it support kotlinx.serialization annotations?","acceptedAnswer":{"@type":"Answer","text":"Yes. When you enable the SerialName option, the tool adds the @SerialName annotation to each property and @Serializable to each class so the code is ready for kotlinx.serialization."}},{"@type":"Question","name":"Are properties nullable in Kotlin?","acceptedAnswer":{"@type":"Answer","text":"By default every property is nullable (String?, Int?, etc.) so any field missing from the JSON will not crash deserialization. This matches how Moshi and kotlinx.serialization handle optional keys."}},{"@type":"Question","name":"Is my JSON sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion runs entirely in your browser. Your JSON never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-kotlin.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-kotlin.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-kotlin.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="16" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to Kotlin Data Class',
+    toolDesc: 'Convert any JSON into clean Kotlin data classes with val properties, nullable types, List support and kotlinx.serialization annotations.',
+    lblIn: 'JSON Input',
+    lblOut: 'Kotlin Output',
+    rootName: 'Root class name',
+    serialName: '@Serializable + @SerialName',
+    step1: 'Paste your JSON data into the input area',
+    step2: 'Set the root class name and serialization option',
+    step3: 'The Kotlin data classes are generated instantly',
+    step4: 'Click Copy and paste into your Android/Kotlin project',
+  },
+  zh: {
+    toolTitle: 'JSON 转 Kotlin 数据类',
+    toolDesc: '将任意 JSON 转换为干净的 Kotlin data class，支持 val 属性、可空类型、List 和 kotlinx.serialization 注解。',
+    lblIn: 'JSON 输入',
+    lblOut: 'Kotlin 输出',
+    rootName: '根类名',
+    serialName: '@Serializable + @SerialName',
+    step1: '在输入区粘贴 JSON 数据',
+    step2: '设置根类名和序列化选项',
+    step3: 'Kotlin data class 即时生成',
+    step4: '点击「复制」粘贴到 Android/Kotlin 项目中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function pascal(s) {
+  return s.replace(/[^A-Za-z0-9]+/g, ' ').trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || 'Item';
+}
+function singularize(w) {
+  if (/ies$/i.test(w)) return w.replace(/ies$/i, 'y');
+  if (/(.)s$/i.test(w) && !/(ss|us|is|os|x|ch|sh)$/i.test(w)) return w.replace(/s$/i, '');
+  return w;
+}
+function kotlinType(value, hint) {
+  if (value === null) return 'Any';
+  if (Array.isArray(value)) {
+    const inner = value.length ? kotlinType(value[0], hint) : 'Any';
+    return `List<${inner}>`;
+  }
+  switch (typeof value) {
+    case 'string':  return /^[+-]?\d{4}-\d{2}-\d{2}T/.test(value) ? 'String' : 'String';
+    case 'number':  return Number.isInteger(value) ? 'Long' : 'Double';
+    case 'boolean': return 'Boolean';
+    case 'object':  return pascal(hint || 'Item');
+    default:        return 'Any';
+  }
+}
+
+function buildClasses(obj, rootName, serial, depth) {
+  const classes = [];
+  function walk(o, name) {
+    const fields = [];
+    for (const [key, val] of Object.entries(o)) {
+      let type = kotlinType(val, key);
+      if (Array.isArray(val) && val.length && typeof val[0] === 'object' && val[0] !== null) {
+        type = `List<${pascal(singularize(key))}>`;
+      }
+      const prop = pascal(key).charAt(0).toLowerCase() + pascal(key).slice(1);
+      const ann = (serial && prop !== key) ? `    @SerialName("${key}")\n` : '';
+      fields.push(`${ann}    val ${prop}: ${type}? = null`);
+    }
+    const header = serial ? `@Serializable\n` : '';
+    classes.push(`${header}data class ${name}(\n${fields.join(',\n')}\n)`);
+    for (const [key, val] of Object.entries(o)) {
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        walk(val, pascal(key));
+      } else if (Array.isArray(val)) {
+        const item = val.find(v => v && typeof v === 'object');
+        if (item) walk(item, pascal(singularize(key)));
+      }
+    }
+  }
+  walk(obj, rootName);
+  return classes.join('\n\n');
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  let obj;
+  try { obj = JSON.parse(inp); }
+  catch(e) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Invalid JSON: ${e.message}</span>`; $('#output').textContent = ''; return; }
+  const isArr = Array.isArray(obj);
+  const sample = isArr ? (obj[0] || {}) : obj;
+  if (typeof sample !== 'object' || sample === null) {
+    $('#output').textContent = isArr ? `// List<${kotlinType(obj[0])}>` : `// ${kotlinType(obj)}`;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Generated</span>`;
+    return;
+  }
+  const rootName = pascal(($('#root-name').value.trim() || 'Root').replace(/[^A-Za-z0-9]/g, '')) || 'Root';
+  const serial = $('#opt-serial').checked;
+  let code = '';
+  if (serial) code += 'import kotlinx.serialization.SerialName\nimport kotlinx.serialization.Serializable\n\n';
+  if (isArr) {
+    code += buildClasses(sample, rootName, serial) + '\n';
+    code += `\n// Usage: val data = Json.decodeFromString<List<${rootName}>>(json)\n`;
+  } else {
+    code += buildClasses(obj, rootName, serial) + '\n';
+    code += `\n// Usage: val data = Json.decodeFromString<${rootName}>(json)\n`;
+  }
+  $('#output').textContent = code;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${rootName} generated (${code.length} bytes)</span>`;
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    sessionId: 778899,
+    deviceModel: "Pixel 8 Pro",
+    osVersion: "Android 15",
+    isPremium: true,
+    storageBytes: 1073741824,
+    location: { lat: 37.7749, lng: -122.4194, city: "San Francisco" },
+    achievements: [{ id: 1, title: "First Steps", unlocked: true }]
+  }, null, 2);
+  $('#root-name').value = 'Session';
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', convert);
+$('#root-name').addEventListener('input', convert);
+$('#opt-serial').addEventListener('change', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#opts').innerHTML = `
+  <label>${t('rootName')}: <input type="text" id="root-name" value="Root"></label>
+  <label><input type="checkbox" id="opt-serial" checked> ${t('serialName')}</label>`;
+
+$('#lbl-in').textContent = t('lblIn');
+$('#lbl-out').textContent = t('lblOut');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🟨', href:'/dev/json-to-java.html', name:'JSON to Java'},
+    {icon:'🔵', href:'/dev/json-to-csharp.html', name:'JSON to C#'},
+    {icon:'🔷', href:'/dev/json-to-typescript.html', name:'JSON to TS'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

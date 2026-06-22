@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON to C# Class Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert JSON to C# classes online. Generate clean C# records or classes with PascalCase properties, nullable types and lists from any JSON. Free, instant, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-to-csharp.html">
+  <meta property="og:title" content="JSON to C# Class Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert JSON to C# classes online. Generate clean C# records or classes with PascalCase properties, nullable types and lists from any JSON.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-to-csharp.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON to C# Class Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert JSON to C# classes online. Generate clean C# records or classes from any JSON instantly.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.82em;line-height:1.5;max-height:520px;overflow:auto}
+.gz-opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.gz-opt-row label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:.85em}
+.gz-opt-row input[type="text"]{padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.85em;width:150px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to C# Class Converter","description":"Convert JSON to C# classes online. Generate clean C# records or classes with PascalCase properties, nullable types and lists from any JSON.","url":"https://tools.gamezipper.com/dev/json-to-csharp.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert JSON to a C# class?","acceptedAnswer":{"@type":"Answer","text":"Paste your JSON into the input area and the C# class is generated instantly. The tool infers property types, handles nested objects as inner classes, and turns arrays into List<T>."}},{"@type":"Question","name":"Does it generate C# records or classes?","acceptedAnswer":{"@type":"Answer","text":"Both. Use the toggle to choose between a C# record (immutable value type) and a classic class with { get; set; } properties. Records are great for DTOs and APIs."}},{"@type":"Question","name":"Are property names converted to PascalCase?","acceptedAnswer":{"@type":"Answer","text":"Yes. snake_case and camelCase JSON keys are converted to PascalCase C# property names, and the original key is preserved via a [JsonPropertyName] attribute so deserialization still works."}},{"@type":"Question","name":"Is my JSON sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion runs entirely in your browser. Your JSON never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-csharp.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-csharp.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-csharp.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="16" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to C# Class Converter',
+    toolDesc: 'Convert any JSON into clean C# records or classes with PascalCase properties, nullable types and List<T> support.',
+    lblIn: 'JSON Input',
+    lblOut: 'C# Output',
+    rootName: 'Root class name',
+    useRecord: 'C# record',
+    pascalCase: 'PascalCase + JsonPropertyName',
+    step1: 'Paste your JSON data into the input area',
+    step2: 'Choose record or class and set the root name',
+    step3: 'The C# classes are generated instantly',
+    step4: 'Click Copy and paste into your .NET project',
+  },
+  zh: {
+    toolTitle: 'JSON 转 C# 类',
+    toolDesc: '将任意 JSON 转换为干净的 C# record 或 class，支持 PascalCase 属性、可空类型和 List<T>。',
+    lblIn: 'JSON 输入',
+    lblOut: 'C# 输出',
+    rootName: '根类名',
+    useRecord: 'C# record',
+    pascalCase: 'PascalCase + JsonPropertyName',
+    step1: '在输入区粘贴 JSON 数据',
+    step2: '选择 record 或 class，设置根类名',
+    step3: 'C# 类即时生成',
+    step4: '点击「复制」粘贴到 .NET 项目中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function pascal(s) {
+  return s.replace(/[^A-Za-z0-9]+/g, ' ').trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('') || 'Item';
+}
+
+function singularize(w) {
+  if (/(.)s$/i.test(w) && !/(ss|us|is|os)$/i.test(w)) return w.replace(/s$/i, '');
+  if (/ies$/i.test(w)) return w.replace(/ies$/i, 'y');
+  return w;
+}
+
+function csType(value, hint) {
+  if (value === null) return 'object';
+  if (Array.isArray(value)) {
+    const inner = value.length ? csType(value[0], hint) : 'object';
+    return `List<${inner}>`;
+  }
+  switch (typeof value) {
+    case 'string':  return /^[+-]?\d{4}-\d{2}-\d{2}T/.test(value) ? 'DateTime' : 'string';
+    case 'number':  return Number.isInteger(value) ? 'long' : 'double';
+    case 'boolean': return 'bool';
+    case 'object':  return pascal(hint || 'Item');
+    default:        return 'object';
+  }
+}
+
+function nullable(tp) {
+  if (/^(string|object|List<.+>)$/.test(tp)) return tp + '?';
+  if (/^(long|double|bool|int|float|decimal|DateTime)$/.test(tp)) return tp + '?';
+  return tp + '?';
+}
+
+function buildClasses(obj, rootName, useRecord, pascalAttr, depth) {
+  const classes = [];
+  function walk(o, name) {
+    const props = [];
+    for (const [key, val] of Object.entries(o)) {
+      let type = csType(val, key);
+      if (Array.isArray(val) && val.length && typeof val[0] === 'object' && val[0] !== null) {
+        type = `List<${pascal(singularize(key))}>`;
+      }
+      const propName = pascal(key);
+      let attr = '';
+      if (pascalAttr && propName !== key) attr = `        [JsonPropertyName("${key}")]\n`;
+      const init = useRecord ? '{ get; init; }' : '{ get; set; }';
+      props.push(`${attr}        public ${nullable(type)} ${propName} ${init}`);
+    }
+    const decl = useRecord ? `public record ${name}` : `public class ${name}`;
+    classes.push(`${decl}\n{\n${props.join('\n')}\n}`);
+    // recurse nested
+    for (const [key, val] of Object.entries(o)) {
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        walk(val, pascal(key));
+      } else if (Array.isArray(val)) {
+        const item = val.find(v => v && typeof v === 'object');
+        if (item) walk(item, pascal(singularize(key)));
+      }
+    }
+  }
+  walk(obj, rootName);
+  return classes.join('\n\n');
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  let obj;
+  try { obj = JSON.parse(inp); }
+  catch(e) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${t('jsonInvalid')||'Invalid JSON'}: ${e.message}</span>`; $('#output').textContent = ''; return; }
+
+  const isArr = Array.isArray(obj);
+  const sample = isArr ? (obj[0] || {}) : obj;
+  if (typeof sample !== 'object' || sample === null) {
+    $('#output').textContent = isArr ? `// Array of ${csType(obj[0])}` : `// ${csType(obj)}`;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Generated</span>`;
+    return;
+  }
+  const rootName = pascal(($('#root-name').value.trim() || 'Root').replace(/[^A-Za-z0-9]/g, '')) || 'Root';
+  const useRecord = $('#opt-record').checked;
+  const pascalAttr = $('#opt-pascal').checked;
+  let code = 'using System;\nusing System.Collections.Generic;\nusing System.Text.Json.Serialization;\n\n';
+  if (isArr) {
+    code += buildClasses(sample, rootName, useRecord, pascalAttr) + '\n';
+    code += `\n// Usage: List<${rootName}> data = JsonSerializer.Deserialize<List<${rootName}>>(json);\n`;
+  } else {
+    code += buildClasses(obj, rootName, useRecord, pascalAttr) + '\n';
+    code += `\n// Usage: ${rootName} data = JsonSerializer.Deserialize<${rootName}>(json);\n`;
+  }
+  $('#output').textContent = code;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${rootName} generated (${code.length} bytes)</span>`;
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    userId: 1024,
+    userName: "alice_dev",
+    isActive: true,
+    balance: 1250.75,
+    lastLogin: "2026-06-23T08:30:00Z",
+    tags: ["vip", "beta"],
+    profile: { fullName: "Alice Wonder", age: 29, avatarUrl: null },
+    orders: [{ orderId: 5001, total: 49.99, shipped: false }]
+  }, null, 2);
+  $('#root-name').value = 'User';
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', convert);
+$('#root-name').addEventListener('input', convert);
+$('#opt-record').addEventListener('change', convert);
+$('#opt-pascal').addEventListener('change', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#opts').innerHTML = `
+  <label>${t('rootName')}: <input type="text" id="root-name" value="Root"></label>
+  <label><input type="checkbox" id="opt-record" checked> ${t('useRecord')}</label>
+  <label><input type="checkbox" id="opt-pascal" checked> ${t('pascalCase')}</label>`;
+
+$('#lbl-in').textContent = t('lblIn');
+$('#lbl-out').textContent = t('lblOut');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🟨', href:'/dev/json-to-java.html', name:'JSON to Java'},
+    {icon:'🐍', href:'/dev/json-to-python.html', name:'JSON to Python'},
+    {icon:'🔷', href:'/dev/json-to-typescript.html', name:'JSON to TS'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
