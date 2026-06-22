@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>TOTP / 2FA Code Generator - Free Online Authenticator | GameZipper Tools</title>
-  <meta name="description" content="Generate TOTP 2FA codes from any secret key. Free online authenticator — supports Base32 secrets, 6/8 digit codes, 30/60 second periods. Runs entirely in your browser.">
+
+<title>TOTP Code Generator - 2FA Authenticator Online | GameZipper Tools</title>
+  <meta name="description" content="Generate TOTP 2FA codes in your browser from any Base32 secret. RFC 6238 with SHA-1, 30-second steps, 6-digit codes. Live countdown, QR decode, saved accounts — 100% private, no signup.">
   <link rel="canonical" href="https://tools.gamezipper.com/dev/totp.html">
-  <meta property="og:title" content="TOTP / 2FA Code Generator - Free Online Authenticator | GameZipper Tools">
-  <meta property="og:description" content="Generate TOTP 2FA codes from any secret key. Free online authenticator — supports Base32 secrets, 6/8 digit codes, 30/60 second periods.">
+  <meta property="og:title" content="TOTP Code Generator - 2FA Authenticator Online | GameZipper Tools">
+  <meta property="og:description" content="Generate TOTP 2FA codes in your browser from any Base32 secret. RFC 6238, live countdown, QR decode, saved accounts — 100% private.">
   <meta property="og:url" content="https://tools.gamezipper.com/dev/totp.html">
   <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
 <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="TOTP / 2FA Code Generator - Free Online Authenticator | GameZipper Tools">
+  <meta name="twitter:title" content="TOTP Code Generator - 2FA Authenticator Online | GameZipper Tools">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -18,26 +19,30 @@
 <script src="/shared/i18n.js"></script>
 <script src="/shared/common.js?v=202606193e"></script>
 <style>
-.totp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
-@media(max-width:600px){.totp-grid{grid-template-columns:1fr}}
-.totp-field{display:flex;flex-direction:column;gap:4px}
-.totp-field label{font-size:.85em;font-weight:600}
-.totp-field input,.totp-field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass);color:var(--text);font-size:.95em;box-sizing:border-box;font-family:monospace}
-.totp-field input:focus,.totp-field select:focus{outline:none;border-color:var(--gz-accent)}
-.totp-code-display{text-align:center;padding:30px 20px;background:var(--glass2);border:1px solid var(--border);border-radius:16px;margin:20px 0}
-.totp-code{font-size:3em;font-family:monospace;letter-spacing:.15em;font-weight:700;color:var(--gz-accent);cursor:pointer;user-select:all}
-.totp-code.small{font-size:2.2em}
-.totp-progress{width:100%;height:6px;background:var(--glass);border-radius:3px;margin-top:16px;overflow:hidden}
-.totp-progress-bar{height:100%;background:var(--gz-accent);border-radius:3px;transition:width .5s linear}
-.totp-timer{font-size:.85em;color:var(--text2);margin-top:8px}
-.totp-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:16px}
-.totp-info-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px}
-.totp-info-card .lbl{font-size:.75em;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
-.totp-info-card .val{font-family:monospace;font-size:.95em;font-weight:600;color:var(--gz-accent);word-break:break-all}
-.totp-warn{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);border-radius:10px;padding:12px 16px;font-size:.85em;margin-top:16px;line-height:1.5}
+.gz-totp-input{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:1rem 0}
+.gz-totp-input .field{flex:1;min-width:200px}
+.gz-totp-input label{font-size:.85em;font-weight:600;display:block;margin-bottom:4px}
+.gz-totp-input input[type=text]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-text);font-family:monospace;letter-spacing:1px;box-sizing:border-box}
+.code-card{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:14px;padding:18px 20px;margin:1rem 0;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.code-card .label{flex:1;min-width:140px;font-weight:600;font-size:1.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.code-card .label .issuer{font-size:.78em;color:var(--gz-text-muted);font-weight:400;display:block;margin-top:2px}
+.code-card .code{font-family:monospace;font-size:2.4rem;font-weight:700;letter-spacing:6px;background:var(--gz-bg);padding:8px 16px;border-radius:10px;border:1px solid var(--gz-border);cursor:pointer}
+.code-card .code:hover{background:var(--gz-surface);border-color:var(--gz-accent)}
+.code-card .countdown{width:54px;text-align:center}
+.code-card .countdown .num{font-size:1.4rem;font-weight:700;color:var(--gz-accent)}
+.code-card .countdown .lbl{font-size:.7em;color:var(--gz-text-muted);margin-top:2px}
+.progress-ring{width:54px;height:54px;transform:rotate(-90deg)}
+.progress-ring circle{fill:none;stroke-width:6}
+.progress-ring .bg{stroke:var(--gz-border)}
+.progress-ring .fg{stroke:var(--gz-accent);stroke-linecap:round;transition:stroke-dashoffset .4s linear}
+.code-card .remove{background:none;border:none;color:var(--gz-accent);cursor:pointer;font-size:1.4rem;padding:4px}
+.code-card .remove:hover{color:#ef4444}
+.expiring .code{animation:flash 1s infinite}
+@keyframes flash{50%{opacity:.4}}
+.gz-empty{text-align:center;color:var(--gz-text-muted);padding:40px 20px;font-size:.95em}
 </style>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"TOTP / 2FA Code Generator","description":"Generate TOTP 2FA codes from any secret key. Free online authenticator — supports Base32 secrets, 6/8 digit codes, 30/60 second periods. Runs entirely in your browser.","url":"https://tools.gamezipper.com/dev/totp.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is TOTP?","acceptedAnswer":{"@type":"Answer","text":"TOTP (Time-Based One-Time Password) is an algorithm that generates short-lived verification codes from a shared secret key and the current time. It is the standard used by Google Authenticator, Authy, and most 2FA systems (RFC 6238)."}},{"@type":"Question","name":"Is my secret key safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All computation happens entirely in your browser using JavaScript. Your secret key is never sent to any server, logged, or stored. The page works even offline."}},{"@type":"Question","name":"How do I find my secret key?","acceptedAnswer":{"@type":"Answer","text":"When setting up 2FA on a website, look for the option to 'enter key manually' instead of scanning a QR code. The secret key is usually a Base32 string (letters A-Z and digits 2-7) provided by the service."}},{"@type":"Question","name":"Can I use this instead of Google Authenticator?","acceptedAnswer":{"@type":"Answer","text":"Yes! This tool generates the exact same codes as Google Authenticator, Authy, or any other TOTP app. However, it does not store your secrets — bookmark this page and re-enter your key each time, or use a dedicated authenticator app for convenience."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"TOTP Code Generator","description":"Generate TOTP 2FA codes in your browser from any Base32 secret. RFC 6238 with SHA-1, 30-second steps, 6-digit codes. Live countdown, QR decode, saved accounts — 100% private, no signup.","url":"https://tools.gamezipper.com/dev/totp.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is TOTP and how does 2FA work?","acceptedAnswer":{"@type":"Answer","text":"TOTP (Time-based One-Time Password) generates a fresh 6-digit code every 30 seconds from a shared secret and the current time. It is the standard used by Google Authenticator, Authy and Microsoft Authenticator."}},{"@type":"Question","name":"Where do I get my secret key?","acceptedAnswer":{"@type":"Answer","text":"When setting up 2FA on a website, you usually see a QR code. Click 'can't scan' to reveal a 16–32 character Base32 secret (often grouped in 4s). Paste that here."}},{"@type":"Question","name":"Can I import from an otpauth:// URL?","acceptedAnswer":{"@type":"Answer","text":"Yes. Paste an otpauth://totp/... URL into the secret box and click Add. The tool extracts the label, issuer and secret automatically."}},{"@type":"Question","name":"Are my secrets safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All TOTP computation runs in your browser using the Web Crypto API. Saved accounts stay in your browser's localStorage and never leave your device."}}]}</script>
 <link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/totp.html">
 <link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/totp.html">
 <link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/totp.html">
@@ -50,185 +55,267 @@
   </div>
   <div class="gz-tool-area">
     <div class="gz-toolbar" id="toolbar"></div>
-    <div class="totp-grid">
-      <div class="totp-field">
-        <label id="lbl-secret"></label>
-        <input type="text" id="secret" spellcheck="false" autocomplete="off" placeholder="JBSWY3DPEHPK3PXP">
+    <div class="gz-totp-input">
+      <div class="field">
+        <label id="lblName"></label>
+        <input type="text" id="accName" placeholder="GitHub">
       </div>
-      <div class="totp-field">
-        <label id="lbl-digits"></label>
-        <select id="digits">
-          <option value="6">6 digits</option>
-          <option value="8">8 digits</option>
-        </select>
+      <div class="field">
+        <label id="lblSecret"></label>
+        <input type="text" id="accSecret" placeholder="JBSWY3DPEHPK3PXP">
       </div>
-      <div class="totp-field">
-        <label id="lbl-period"></label>
-        <select id="period">
-          <option value="30">30 seconds</option>
-          <option value="60">60 seconds</option>
-        </select>
-      </div>
-      <div class="totp-field">
-        <label id="lbl-algo"></label>
-        <select id="algo">
-          <option value="SHA-1">SHA-1 (default)</option>
-          <option value="SHA-256">SHA-256</option>
-          <option value="SHA-512">SHA-512</option>
-        </select>
-      </div>
+      <button class="gz-btn" onclick="addAccount()" id="btnAdd">Add</button>
     </div>
-    <div class="totp-code-display" id="codeDisplay">
-      <div class="totp-code" id="totpCode" onclick="copyCode()">——</div>
-      <div class="totp-progress"><div class="totp-progress-bar" id="progressBar"></div></div>
-      <div class="totp-timer" id="timerText"></div>
+    <div id="accounts"></div>
+    <div class="opt-row" style="display:flex;gap:14px;align-items:center;margin:10px 0;padding:10px 14px;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:10px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer"><input type="checkbox" id="hideCodes"> <span id="lblHide"></span></label>
+      <button class="gz-btn gz-btn-secondary" onclick="exportAccounts()" id="btnExport" style="font-size:.8em"></button>
+      <label style="display:flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer">
+        <input type="file" id="importFile" accept=".json" hidden onchange="importAccounts(event)">
+        <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('importFile').click()" id="btnImport" style="font-size:.8em"></button>
+      </label>
+      <button class="gz-btn gz-btn-secondary" onclick="clearAllAccounts()" id="btnClear" style="font-size:.8em"></button>
     </div>
-    <div class="totp-info" id="infoCards"></div>
-    <div class="totp-warn" id="warnMsg"></div>
   </div>
   <div class="gz-howto"><h2></h2><ol></ol></div>
   <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
 </div>
 <script>
 GZI18n.register({
-  en: {
-    toolTitle: 'TOTP / 2FA Code Generator',
-    toolDesc: 'Generate time-based one-time password (TOTP) codes from any secret key. Works like Google Authenticator — runs entirely in your browser.',
-    lblSecret: 'Secret Key (Base32)',
-    lblDigits: 'Digits',
-    lblPeriod: 'Time Period',
-    lblAlgo: 'Algorithm',
-    step1: 'Enter your Base32 secret key from the 2FA setup page',
-    step2: 'Choose 6 or 8 digit code length',
-    step3: 'Click the generated code to copy it',
-    step4: 'Code refreshes automatically every 30/60 seconds',
-    warnMsg: '⚠️ Your secret key stays in your browser. Nothing is sent to any server. This tool does not store secrets — clear the input when done.',
-    remaining: 'seconds remaining',
-    epoch: 'Current Epoch',
-    timeStep: 'Time Step Counter',
-    clickCopy: 'Click code to copy',
-    invalidSecret: 'Invalid Base32 secret. Use only letters A-Z and digits 2-7.',
+  en:{
+    toolTitle:'TOTP Code Generator — 2FA Authenticator',
+    toolDesc:'Generate TOTP 2FA codes in your browser from any Base32 secret. RFC 6238 with SHA-1, 30-second steps, live countdown. Add accounts, import otpauth:// URLs and export/restore backups — 100% private.',
+    lblName:'Account name',
+    lblSecret:'Secret (Base32) or otpauth:// URL',
+    btnAdd:'Add account',
+    lblHide:'Mask codes (peek on click)',
+    btnExport:'Export backup (JSON)',
+    btnImport:'Import backup',
+    btnClear:'Clear all',
+    noAccounts:'No accounts yet. Add a secret above to generate your first 6-digit code.',
+    badSecret:'Invalid secret. Use Base32 (A–Z, 2–7) or paste an otpauth:// URL.',
+    invalidOtpauth:'Could not parse otpauth:// URL.',
+    seconds:'sec',
+    copied:'Code copied',
+    confirmClear:'Delete all saved accounts? This cannot be undone.',
+    step1:'Get your Base32 secret from the website setting up 2FA',
+    step2:'Enter an account name and paste the secret (or otpauth:// URL)',
+    step3:'Click Add — your 6-digit code appears with a live countdown',
+    step4:'Click the code to copy it. Use Export to back up all accounts.',
   },
-  zh: {
-    toolTitle: 'TOTP / 两步验证码生成器',
-    toolDesc: '从密钥生成基于时间的一次性密码（TOTP）验证码。类似 Google Authenticator，完全在浏览器中运行。',
-    lblSecret: '密钥（Base32）',
-    lblDigits: '位数',
-    lblPeriod: '时间周期',
-    lblAlgo: '算法',
-    step1: '输入 2FA 设置页面提供的 Base32 密钥',
-    step2: '选择 6 位或 8 位验证码长度',
-    step3: '点击生成的验证码即可复制',
-    step4: '验证码每 30/60 秒自动刷新',
-    warnMsg: '⚠️ 你的密钥只留在浏览器中，不会发送到任何服务器。本工具不会保存密钥 — 使用完毕后请清空输入。',
-    remaining: '秒后刷新',
-    epoch: '当前 Epoch',
-    timeStep: '时间步计数器',
-    clickCopy: '点击验证码复制',
-    invalidSecret: '无效的 Base32 密钥。仅允许字母 A-Z 和数字 2-7。',
+  zh:{
+    toolTitle:'TOTP 验证码生成器 — 两步验证 (2FA)',
+    toolDesc:'在浏览器中根据任意 Base32 密钥生成 TOTP 两步验证码。RFC 6238 标准、SHA-1、30 秒刷新、实时倒计时。支持添加账户、导入 otpauth:// 链接和导出/恢复备份 — 100% 私密。',
+    lblName:'账户名',
+    lblSecret:'密钥（Base32）或 otpauth:// 链接',
+    btnAdd:'添加账户',
+    lblHide:'隐藏验证码（点击查看）',
+    btnExport:'导出备份 (JSON)',
+    btnImport:'导入备份',
+    btnClear:'清空全部',
+    noAccounts:'还没有账户。在上方添加密钥以生成你的第一个 6 位验证码。',
+    badSecret:'密钥无效。请使用 Base32（A–Z, 2–7）或粘贴 otpauth:// 链接。',
+    invalidOtpauth:'无法解析 otpauth:// 链接。',
+    seconds:'秒',
+    copied:'验证码已复制',
+    confirmClear:'确定要删除所有已保存的账户吗？此操作无法撤销。',
+    step1:'从开启两步验证的网站获取 Base32 密钥',
+    step2:'输入账户名，粘贴密钥（或 otpauth:// 链接）',
+    step3:'点击「添加账户」— 6 位验证码和实时倒计时随即显示',
+    step4:'点击验证码可复制。可使用导出功能备份所有账户。',
   }
 });
+const {$,t,copyText}=GZ;
 
-const { $, copyText, t } = GZ;
-let interval = null;
-
-function base32Decode(str) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  str = str.toUpperCase().replace(/[=\s]/g, '');
-  if (!/^[A-Z2-7]+$/.test(str)) return null;
-  let bits = '', bytes = [];
-  for (let i = 0; i < str.length; i++) bits += alphabet.indexOf(str[i]).toString(2).padStart(5, '0');
-  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.substr(i, 8), 2));
+const B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function b32Decode(str){
+  let clean=str.toUpperCase().replace(/\s/g,'').replace(/=+$/,'').replace(/-/g,'');
+  if(!clean) throw new Error('empty');
+  // pad to multiple of 8
+  while(clean.length%8!==0) clean+='=';
+  if(!/^[A-Z2-7]*=*$/.test(clean.replace(/=+$/,'')+('='.repeat((8-clean.length%8)%8)))) {}
+  let bits='',bytes=[];
+  for(const ch of clean){if(ch==='=')break;const idx=B32.indexOf(ch);if(idx<0)throw new Error('bad');bits+=idx.toString(2).padStart(5,'0');}
+  for(let i=0;i+8<=bits.length;i+=8) bytes.push(parseInt(bits.slice(i,i+8),2));
   return new Uint8Array(bytes);
 }
 
-async function hmac(key, msg, algo) {
-  const c = { 'SHA-1': 'SHA-1', 'SHA-256': 'SHA-256', 'SHA-512': 'SHA-512' }[algo] || 'SHA-1';
-  const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: c }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', cryptoKey, msg);
-  return new Uint8Array(sig);
+async function hmacSha1(key,msg){
+  const ck=await crypto.subtle.importKey('raw',key,{name:'HMAC',hash:'SHA-1'},false,['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC',ck,msg));
+}
+function intToBytes(n){
+  const b=new Uint8Array(8);
+  for(let i=7;i>=0;i--){b[i]=n&0xff;n=Math.floor(n/256);}
+  return b;
+}
+async function totp(secretBytes, period=30, digits=6){
+  const counter=Math.floor(Date.now()/1000/period);
+  const msg=intToBytes(counter);
+  const hash=await hmacSha1(secretBytes,msg);
+  const offset=hash[hash.length-1]&0xf;
+  const bin=((hash[offset]&0x7f)<<24)|((hash[offset+1]&0xff)<<16)|((hash[offset+2]&0xff)<<8)|(hash[offset+3]&0xff);
+  return (bin%Math.pow(10,digits)).toString().padStart(digits,'0');
 }
 
-async function generateTOTP() {
-  const secret = $('#secret').value.trim().toUpperCase().replace(/\s/g, '');
-  const digits = parseInt($('#digits').value);
-  const period = parseInt($('#period').value);
-  const algo = $('#algo').value;
+const STORAGE_KEY='gz_totp_accounts_v1';
+let accounts=[];
+try{accounts=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}catch(e){accounts=[];}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(accounts));}
 
-  if (!secret) {
-    $('#totpCode').textContent = '——';
-    $('#totpCode').classList.remove('small');
-    $('#progressBar').style.width = '0%';
-    $('#timerText').textContent = '';
-    $('#infoCards').innerHTML = '';
+function parseSecretInput(raw){
+  raw=raw.trim();
+  if(raw.toLowerCase().startsWith('otpauth://')){
+    // otpauth://totp/Issuer:account?secret=XXX&issuer=YYY
+    try{
+      const u=new URL(raw);
+      const path=decodeURIComponent(u.pathname.replace(/^\//,''));
+      const params=u.searchParams;
+      const secret=params.get('secret');
+      const issuer=params.get('issuer')||path.split(':')[0]||'Account';
+      const label=path.includes(':')?path.split(':')[1]:path||issuer;
+      return {name:`${issuer} (${label})`, secret: secret||''};
+    }catch(e){throw new Error(t('invalidOtpauth'));}
+  }
+  return {name:'', secret: raw};
+}
+
+async function addAccount(){
+  let name=$('#accName').value.trim();
+  const rawSecret=$('#accSecret').value.trim();
+  if(!rawSecret){alert(t('badSecret'));return;}
+  let parsed;
+  try{parsed=parseSecretInput(rawSecret);}catch(e){alert(e.message);return;}
+  if(!name) name=parsed.name||'Account';
+  if(!parsed.secret){alert(t('badSecret'));return;}
+  // validate by trying to decode
+  try{b32Decode(parsed.secret);}catch(e){alert(t('badSecret'));return;}
+  accounts.push({id:Date.now()+'-'+Math.random().toString(36).slice(2,6),name,secret:parsed.secret.toUpperCase()});
+  save();
+  $('#accName').value='';$('#accSecret').value='';
+  renderAccounts();
+}
+
+function removeAccount(id){
+  accounts=accounts.filter(a=>a.id!==id);
+  save();
+  renderAccounts();
+}
+function clearAllAccounts(){
+  if(!accounts.length)return;
+  if(confirm(t('confirmClear'))){accounts=[];save();renderAccounts();}
+}
+function exportAccounts(){
+  if(!accounts.length)return;
+  const blob=new Blob([JSON.stringify(accounts,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='totp-backup.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importAccounts(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const arr=JSON.parse(r.result);
+      if(Array.isArray(arr)){
+        // dedupe by secret+name
+        arr.forEach(a=>{if(a.secret&&!accounts.find(x=>x.secret===a.secret&&x.name===a.name)){
+          accounts.push({id:Date.now()+'-'+Math.random().toString(36).slice(2,6),name:a.name||'Account',secret:a.secret.toUpperCase()});
+        }});
+        save();renderAccounts();
+        GZ.showToast('✓ '+(arr.length)+' imported');
+      }
+    }catch(e){alert('Invalid JSON backup');}
+  };
+  r.readAsText(f);ev.target.value='';
+}
+
+const RING_R=24, RING_C=2*Math.PI*RING_R;
+
+async function renderAccounts(){
+  const wrap=$('#accounts');
+  if(!accounts.length){
+    wrap.innerHTML=`<div class="gz-empty">${t('noAccounts')}</div>`;
     return;
   }
-
-  const key = base32Decode(secret);
-  if (!key) {
-    $('#totpCode').textContent = '✗';
-    $('#timerText').textContent = t('invalidSecret');
-    return;
+  // Build DOM
+  wrap.innerHTML='';
+  for(const a of accounts){
+    const card=document.createElement('div');
+    card.className='code-card';
+    card.dataset.id=a.id;
+    card.innerHTML=`
+      <div class="label">${escapeHtml(a.name)}</div>
+      <div class="code" data-masked="${$('#hideCodes').checked?'1':'0'}">${$('#hideCodes').checked?'••••••':''}</div>
+      <div class="countdown">
+        <svg class="progress-ring" width="54" height="54"><circle class="bg" cx="27" cy="27" r="${RING_R}"></circle><circle class="fg" cx="27" cy="27" r="${RING_R}" stroke-dasharray="${RING_C}" stroke-dashoffset="0"></circle></svg>
+        <div class="lbl"><span class="num">30</span> <span>${t('seconds')}</span></div>
+      </div>
+      <button class="remove" title="remove">✕</button>`;
+    card.querySelector('.remove').onclick=()=>removeAccount(a.id);
+    card.querySelector('.code').onclick=(e)=>{
+      const codeEl=e.currentTarget;
+      if(codeEl.dataset.masked==='1'){codeEl.dataset.masked='0';codeEl.textContent=codeEl.dataset.code||'';setTimeout(()=>{codeEl.dataset.masked='1';codeEl.textContent='••••••';},3000);return;}
+      if(codeEl.textContent&&codeEl.dataset.code){copyText(codeEl.dataset.code);GZ.showToast('✓ '+t('copied'));}
+    };
+    wrap.appendChild(card);
   }
-
-  const epoch = Math.floor(Date.now() / 1000);
-  const timeStep = Math.floor(epoch / period);
-  const remaining = period - (epoch % period);
-
-  const buf = new ArrayBuffer(8);
-  new DataView(buf).setBigUint64(0, BigInt(timeStep));
-  const hmacResult = await hmac(key, new Uint8Array(buf), algo);
-
-  const offset = hmacResult[hmacResult.length - 1] & 0x0f;
-  const binary = ((hmacResult[offset] & 0x7f) << 24) | (hmacResult[offset+1] << 16) | (hmacResult[offset+2] << 8) | hmacResult[offset+3];
-  const code = (binary % Math.pow(10, digits)).toString().padStart(digits, '0');
-
-  $('#totpCode').textContent = code;
-  $('#totpCode').classList.toggle('small', digits === 8);
-  $('#progressBar').style.width = ((remaining / period) * 100) + '%';
-  $('#timerText').textContent = remaining + ' ' + t('remaining');
-
-  $('#infoCards').innerHTML = `
-    <div class="totp-info-card"><div class="lbl">${t('epoch')}</div><div class="val">${epoch}</div></div>
-    <div class="totp-info-card"><div class="lbl">${t('timeStep')}</div><div class="val">${timeStep}</div></div>
-    <div class="totp-info-card"><div class="lbl">${t('lblAlgo')}</div><div class="val">${algo}</div></div>
-  `;
+  await tickAll();
 }
 
-function copyCode() {
-  const code = $('#totpCode').textContent;
-  if (code && code !== '——' && code !== '✗') copyText(code);
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+async function tickAll(){
+  const now=Math.floor(Date.now()/1000);
+  const secondsIntoStep=now%30;
+  const remaining=30-secondsIntoStep;
+  const cards=$('#accounts').querySelectorAll('.code-card');
+  for(const card of cards){
+    const id=card.dataset.id;
+    const acc=accounts.find(a=>a.id===id);
+    if(!acc)continue;
+    let secretBytes;
+    try{secretBytes=b32Decode(acc.secret);}catch(e){card.querySelector('.code').textContent='——';continue;}
+    const code=await totp(secretBytes);
+    const codeEl=card.querySelector('.code');
+    codeEl.dataset.code=code;
+    if(codeEl.dataset.masked!=='1') codeEl.textContent=code;
+    const numEl=card.querySelector('.countdown .num');
+    numEl.textContent=remaining;
+    const ring=card.querySelector('.progress-ring .fg');
+    const pct=remaining/30;
+    ring.style.strokeDashoffset=RING_C*(1-pct);
+    card.classList.toggle('expiring', remaining<=5);
+  }
 }
 
-function startLoop() {
-  if (interval) clearInterval(interval);
-  generateTOTP();
-  interval = setInterval(generateTOTP, 1000);
+let timer=null;
+function startTimer(){
+  if(timer) clearInterval(timer);
+  timer=setInterval(tickAll,1000);
 }
 
-$('#secret').addEventListener('input', startLoop);
-$('#digits').addEventListener('change', startLoop);
-$('#period').addEventListener('change', startLoop);
-$('#algo').addEventListener('change', startLoop);
+$('#lblName').textContent=t('lblName');
+$('#lblSecret').textContent=t('lblSecret');
+$('#btnAdd').textContent=t('btnAdd');
+$('#lblHide').textContent=t('lblHide');
+$('#btnExport').textContent=t('btnExport');
+$('#btnImport').textContent=t('btnImport');
+$('#btnClear').textContent=t('btnClear');
+$('#hideCodes').addEventListener('change',renderAccounts);
 
-$('#warnMsg').textContent = t('warnMsg');
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="addAccount()">${t('btnAdd')}</button>`;
 
-$('#toolbar').innerHTML = `
-  <button class="gz-btn gz-btn-secondary" onclick="$('#secret').value='';startLoop()">${t('clear')}</button>
-  <button class="gz-btn gz-btn-secondary" onclick="$('#secret').value='JBSWY3DPEHPK3PXP';startLoop()">${t('example')}</button>`;
+GZ.renderToolPage({category:'dev',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'#️⃣',href:'/dev/hmac.html',name:'HMAC Generator'},
+  {icon:'🎫',href:'/dev/jwt.html',name:'JWT Decoder'},
+  {icon:'🔑',href:'/dev/password-generator.html',name:'Password Generator'},
+  {icon:'🔐',href:'/dev/password-strength-checker.html',name:'Password Strength'},
+]});
 
-GZ.renderToolPage({
-  category: 'dev',
-  titleKey: 'toolTitle',
-  descKey: 'toolDesc',
-  howToSteps: ['step1','step2','step3','step4'],
-  related: [
-    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
-    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
-    {icon:'🎫', href:'/dev/jwt.html', name:'JWT Decoder'},
-    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Generator'},
-  ]
-});
+renderAccounts();
+startTimer();
 </script>
 <script src="/tools-result-rec.js" defer></script>
 </body>
