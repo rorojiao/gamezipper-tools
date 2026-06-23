@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>批量二维码生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="粘贴一组网址或文本（每行一条），一次批量生成多个二维码。可逐个下载 PNG，也可一键打包下载 ZIP。100% 浏览器本地运行，无需上传、无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/qrcode-batch.html">
+  <meta property="og:title" content="批量二维码生成器">
+  <meta property="og:description" content="粘贴一组网址或文本（每行一条），一次批量生成多个二维码。可逐个下载 PNG，也可一键打包下载 ZIP。100% 浏览器本地运行，无需上传、无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/qrcode-batch.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="批量二维码生成器">
+<meta name="twitter:description" content="粘贴一组网址或文本（每行一条），一次批量生成多个二维码。可逐个下载 PNG，也可一键打包下载 ZIP。100% 浏览器本地运行，无需上传、无需注册。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+.bqr-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+.bqr-controls label{display:block;font-size:.78em;font-weight:600;color:var(--text2);margin-bottom:4px}
+.bqr-controls select,.bqr-controls input{padding:8px;background:var(--glass);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:inherit;width:100%}
+.bqr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:10px}
+.bqr-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.bqr-card canvas{background:#fff;border-radius:6px;image-rendering:pixelated;max-width:100%}
+.bqr-card .bqr-label{font-size:.72rem;color:var(--text2);word-break:break-all;line-height:1.3;max-height:2.6em;overflow:hidden;width:100%}
+.bqr-card .bqr-dl{font-size:.72rem;cursor:pointer;color:var(--accent);text-decoration:underline;border:none;background:none;font-family:inherit}
+.bqr-card.err{border-color:rgba(248,113,113,.5)}
+.bqr-card.err canvas{display:none}
+.bqr-card .bqr-err{color:#f87171;font-size:.72rem}
+.bqr-empty{text-align:center;padding:30px;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Bulk QR Code Generator","description":"Free bulk QR code generator. Paste a list of URLs or text and generate many QR codes at once. Download each as PNG or all as a ZIP. 100% browser-only, no upload, no signup.","url": "https://tools.gamezipper.com/zh/convert/qrcode-batch.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I generate multiple QR codes at once?", "acceptedAnswer": {"@type": "Answer", "text": "Paste one URL or text string per line into the input box. Each line becomes its own QR code rendered in a grid. Click Download ZIP to save every QR code as a PNG inside a single ZIP file, or download them one by one."}}, {"@type": "Question", "name": "Is there a limit to how many QR codes I can generate?", "acceptedAnswer": {"@type": "Answer", "text": "There is no hard limit, but for performance we recommend staying under 200 at a time. Each individual entry can hold up to about 200 characters (byte-mode QR up to version 10). Longer entries are flagged so you can shorten them."}}, {"@type": "Question", "name": "Can I change the QR code size?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the Size control to pick 128, 256, 384 or 512 pixels. Larger codes scan more reliably from a distance. You can also pick the margin (quiet zone) around each code."}}, {"@type": "Question", "name": "Are my URLs sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every QR code is generated locally in your browser. Your list of URLs never leaves your device, which makes this tool safe for private links, internal URLs and credentials."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/qrcode-batch.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/qrcode-batch.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/qrcode-batch.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" style="min-height:140px"></textarea></div>
+    <div class="bqr-controls">
+      <div><label id="lbl-size"></label><select id="size"><option value="128">128 px</option><option value="256" selected>256 px</option><option value="384">384 px</option><option value="512">512 px</option></select></div>
+      <div><label id="lbl-margin"></label><select id="margin"><option value="0">0 (none)</option><option value="2">2 modules</option><option value="4" selected>4 modules</option><option value="8">8 modules</option></select></div>
+      <div><label id="lbl-fg"></label><input type="color" id="fg" value="#000000"></div>
+      <div><label id="lbl-bg"></label><input type="color" id="bg" value="#ffffff"></div>
+    </div>
+    <div id="status"></div>
+    <div class="bqr-grid" id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+/* Minimal QR Code encoder (byte mode, v1-10, EC M) — self-contained */
+(function(){
+const EC_M_CAPACITY=[0,16,28,44,64,86,108,124,154,182,216];
+const GF_EXP=new Uint8Array(512),GF_LOG=new Uint8Array(256);
+(function(){let x=1;for(let i=0;i<255;i++){GF_EXP[i]=x;GF_LOG[x]=i;x<<=1;if(x&256)x^=285;}for(let i=255;i<512;i++)GF_EXP[i]=GF_EXP[i-255];})();
+function gfMul(a,b){return a&&b?GF_EXP[GF_LOG[a]+GF_LOG[b]]:0;}
+function polyMul(a,b){const r=new Uint8Array(a.length+b.length-1);for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++)r[i+j]^=gfMul(a[i],b[j]);return r;}
+function genPoly(n){let p=new Uint8Array([1]);for(let i=0;i<n;i++)p=polyMul(p,new Uint8Array([1,GF_EXP[i]]));return p;}
+function ecBytes(data,ecCount){const gen=genPoly(ecCount);const msg=new Uint8Array(data.length+ecCount);msg.set(data);for(let i=0;i<data.length;i++){const c=msg[i];if(c)for(let j=0;j<gen.length;j++)msg[i+j]^=gfMul(gen[j],c);}return msg.slice(data.length);}
+const EC_CW=[0,10,16,26,18,24,16,18,22,22,26];
+const TOTAL_CW=[0,26,44,70,100,134,172,196,242,292,346];
+function makeQR(text){
+  const data=new TextEncoder().encode(text);
+  let ver=1; for(;ver<=10;ver++) if(data.length<=EC_M_CAPACITY[ver]) break;
+  if(ver>10) throw new Error('too long');
+  const totalDC=TOTAL_CW[ver]-EC_CW[ver];
+  const bits=[];
+  function push(val,len){for(let i=len-1;i>=0;i--)bits.push((val>>i)&1);}
+  push(4,4); push(data.length, ver<=9?8:16);
+  for(const b of data) push(b,8);
+  const cap=totalDC*8;
+  for(let i=0;i<4&&bits.length<cap;i++)bits.push(0);
+  while(bits.length%8)bits.push(0);
+  const pads=[0xEC,0x11];let pi=0;
+  while(bits.length<cap){bits.push(...Array.from({length:8},(_, k)=>(pads[pi]>>(7-k))&1));pi^=1;}
+  const codewords=new Uint8Array(totalDC);
+  for(let i=0;i<totalDC;i++){let v=0;for(let j=0;j<8;j++)v=(v<<1)|bits[i*8+j];codewords[i]=v;}
+  const ec=ecBytes(codewords,EC_CW[ver]);
+  const final=new Uint8Array(TOTAL_CW[ver]); final.set(codewords); final.set(ec,totalDC);
+  const size=ver*4+17;
+  const matrix=Array.from({length:size},()=>new Int8Array(size));
+  const reserved=Array.from({length:size},()=>new Uint8Array(size));
+  function setMod(r,c,v){if(r>=0&&r<size&&c>=0&&c<size){matrix[r][c]=v?1:0;reserved[r][c]=1;}}
+  function finder(r,c){for(let dr=-1;dr<=7;dr++)for(let dc=-1;dc<=7;dc++){const v=(dr<0||dr>6||dc<0||dc>6)?0:(dr===0||dr===6||dc===0||dc===6||(dr>=2&&dr<=4&&dc>=2&&dc<=4))?1:0;setMod(r+dr,c+dc,v);}}
+  finder(0,0);finder(0,size-7);finder(size-7,0);
+  for(let i=8;i<size-8;i++){setMod(6,i,i%2===0);setMod(i,6,i%2===0);}
+  setMod(size-8,8,1);
+  for(let i=0;i<9;i++){if(!reserved[8][i])setMod(8,i,0);if(!reserved[i][8])setMod(i,8,0);}
+  for(let i=0;i<8;i++){if(!reserved[8][size-1-i])setMod(8,size-1-i,0);if(!reserved[size-1-i][8])setMod(size-1-i,8,0);}
+  if(ver>=2){const pos=[6,ver*4+10];
+    for(const r of pos)for(const c of pos){if(reserved[r][c])continue;
+      for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)setMod(r+dr,c+dc,(Math.abs(dr)===2||Math.abs(dc)===2||(!dr&&!dc))?1:0);}}
+  const allBits=[];
+  for(const b of final)for(let i=7;i>=0;i--)allBits.push((b>>i)&1);
+  let bi=0,up=true;
+  for(let col=size-1;col>=0;col-=2){
+    if(col===6)col--;
+    for(let row=0;row<size;row++){
+      const r=up?size-1-row:row;
+      for(const dc of [0,-1]){const c=col+dc;if(c>=0&&c<size&&!reserved[r][c]){matrix[r][c]=bi<allBits.length?allBits[bi++]:0;}}
+    }
+    up=!up;
+  }
+  for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(!reserved[r][c]&&(r+c)%2===0)matrix[r][c]^=1;
+  const fmtBits=0b101010000010010;
+  function setFmt(i,v){
+    if(i<6)setMod(8,i,v);else if(i===6)setMod(8,7,v);else if(i===7)setMod(8,8,v);else if(i===8)setMod(7,8,v);else setMod(14-i,8,v);
+    if(i<8)setMod(size-1-i,8,v);else setMod(8,size-8+i-8,v);
+  }
+  for(let i=0;i<15;i++)setFmt(i,(fmtBits>>i)&1);
+  return {matrix,size};
+}
+window.__makeQR=makeQR;
+})();
+
+GZI18n.register({
+  en: {
+    toolTitle: 'Bulk QR Code Generator',
+    toolDesc: 'Paste a list of URLs or text — one per line — and generate dozens of QR codes at once. Download each as PNG or grab them all in a single ZIP. 100% browser-only, no upload, no signup.',
+    inputLabel: 'Enter one URL or text per line',
+    phInput: 'https://example.com\nhttps://github.com\nHello world\nmailto:info@example.com',
+    lblSize: 'Size (px)', lblMargin: 'Quiet zone', lblFg: 'Foreground', lblBg: 'Background',
+    btnGenerate: 'Generate', btnDownloadAll: 'Download all (ZIP)', btnExample: 'Example', btnClear: 'Clear',
+    noInput: 'Paste a list above (one item per line) to generate QR codes.',
+    generated: (n) => `${n} QR code${n!==1?'s':''} generated`,
+    download: 'Download PNG', tooLong: 'Too long (>200 chars). Shorten to generate.',
+    step1: 'Paste URLs or text — one item per line — into the input box.',
+    step2: 'Pick a size, quiet-zone margin and colors.',
+    step3: 'Click Generate to render a QR code for every line.',
+    step4: 'Download individual PNGs or grab them all as a ZIP.',
+  },
+  zh: {
+    toolTitle: '批量二维码生成器',
+    toolDesc: '粘贴一组网址或文本（每行一条），一次批量生成多个二维码。可逐个下载 PNG，也可一键打包下载 ZIP。100% 浏览器本地运行，无需上传、无需注册。',
+    inputLabel: '每行输入一条网址或文本',
+    phInput: 'https://example.com\nhttps://github.com\n你好世界\nmailto:info@example.com',
+    lblSize: '尺寸 (px)', lblMargin: '留白边距', lblFg: '前景色', lblBg: '背景色',
+    btnGenerate: '生成', btnDownloadAll: '打包下载 (ZIP)', btnExample: '示例', btnClear: '清空',
+    noInput: '请在上方粘贴列表（每行一条）以生成二维码。',
+    generated: (n) => `已生成 ${n} 个二维码`,
+    download: '下载 PNG', tooLong: '内容过长（>200 字符），请缩短后生成。',
+    step1: '在输入框中粘贴网址或文本，每行一条。',
+    step2: '选择尺寸、留白边距和颜色。',
+    step3: '点击「生成」为每行渲染一个二维码。',
+    step4: '逐个下载 PNG，或一键打包为 ZIP。',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function slug(s){
+  return (s||'qr').toLowerCase().replace(/https?:\/\//,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,30) || 'qr';
+}
+
+function renderOne(canvas, text, size, margin, fg, bg){
+  const {matrix, qsize} = (function(){
+    const r = window.__makeQR(text);
+    return {matrix: r.matrix, qsize: r.size};
+  })();
+  const mod = Math.max(1, Math.floor(size / (qsize + margin*2)));
+  const dim = (qsize + margin*2) * mod;
+  canvas.width = dim; canvas.height = dim;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,dim,dim);
+  ctx.fillStyle = fg;
+  const off = margin*mod;
+  for(let r=0;r<qsize;r++) for(let c=0;c<qsize;c++) if(matrix[r][c]) ctx.fillRect(off+c*mod, off+r*mod, mod, mod);
+}
+
+function generate(){
+  const raw = $('#input').value;
+  const items = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  const size = +$('#size').value;
+  const margin = +$('#margin').value;
+  const fg = $('#fg').value, bg = $('#bg').value;
+  if(items.length === 0){
+    $('#output').innerHTML = `<div class="bqr-empty">${t('noInput')}</div>`;
+    $('#status').innerHTML = '';
+    return;
+  }
+  $('#output').innerHTML = items.map((item,idx) => {
+    if(item.length > 200){
+      return `<div class="bqr-card err"><div class="bqr-err">${t('tooLong')}</div><div class="bqr-label">${escapeHtml(item.slice(0,40))}…</div></div>`;
+    }
+    return `<div class="bqr-card"><canvas data-idx="${idx}"></canvas><div class="bqr-label">${escapeHtml(item)}</div><button class="bqr-dl" data-dl="${idx}">${t('download')}</button></div>`;
+  }).join('');
+  // render canvases
+  const canvases = document.querySelectorAll('#output canvas');
+  canvases.forEach(c => {
+    const idx = +c.dataset.idx;
+    try { renderOne(c, items[idx], size, margin, fg, bg); }
+    catch(e){ c.parentElement.classList.add('err'); c.style.display='none'; }
+  });
+  // wire download buttons
+  document.querySelectorAll('#output .bqr-dl').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = +btn.dataset.dl;
+      const canvas = document.querySelector(`#output canvas[data-idx="${idx}"]`);
+      if(!canvas) return;
+      const a = document.createElement('a');
+      a.download = slug(items[idx]) + '.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+  });
+  // store items for ZIP
+  window.__bqrItems = items;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('generated')(items.length)}</span>`;
+}
+
+async function downloadAll(){
+  const items = window.__bqrItems || [];
+  if(!items.length){ return; }
+  const size = +$('#size').value, margin = +$('#margin').value, fg = $('#fg').value, bg = $('#bg').value;
+  if(typeof JSZip === 'undefined'){ alert('ZIP library not loaded yet — try again in a moment.'); return; }
+  const zip = new JSZip();
+  const used = {};
+  for(const item of items){
+    if(item.length > 200) continue;
+    let base = slug(item);
+    let name = base + '.png'; let n = 2;
+    while(used[name]){ name = base + '-' + (n++) + '.png'; }
+    used[name] = true;
+    const canvas = document.createElement('canvas');
+    try { renderOne(canvas, item, size, margin, fg, bg); }
+    catch(e){ continue; }
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    zip.file(name, blob);
+  }
+  const out = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.download = 'qr-codes.zip';
+  a.href = URL.createObjectURL(out);
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function loadExample(){
+  $('#input').value = 'https://tools.gamezipper.com\nhttps://gamezipper.com\nhttps://github.com\nHello world!\nmailto:hello@example.com\nWIFI:S:MyNetwork;T:WPA;P:secretpass;;';
+  generate();
+}
+function doClear(){ $('#input').value=''; generate(); }
+
+['input','size','margin','fg','bg'].forEach(id => $('#' + id).addEventListener('input', generate));
+
+$('#lbl-in').textContent = t('inputLabel');
+$('#input').placeholder = t('phInput');
+$('#lbl-size').textContent = t('lblSize');
+$('#lbl-margin').textContent = t('lblMargin');
+$('#lbl-fg').textContent = t('lblFg');
+$('#lbl-bg').textContent = t('lblBg');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="generate()">${t('btnGenerate')}</button>
+  <button class="gz-btn" onclick="downloadAll()">${t('btnDownloadAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('btnExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('btnClear')}</button>`;
+
+generate();
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📱', href:'/convert/qrcode.html', name:'QR Code Generator'},
+    {icon:'📶', href:'/convert/wifi-qrcode.html', name:'WiFi QR Code'},
+    {icon:'📇', href:'/convert/vcard-qrcode.html', name:'vCard QR Code'},
+    {icon:'📷', href:'/convert/qr-reader.html', name:'QR Code Reader'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>PDF 拆分工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线拆分 PDF — 提取指定页码范围、按单页拆分或平均分成 N 份。基于 pdf-lib 100% 浏览器本地处理，无需上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/pdf-splitter.html">
+  <meta property="og:title" content="PDF 拆分工具">
+  <meta property="og:description" content="在线拆分 PDF — 提取指定页码范围、按单页拆分或平均分成 N 份。基于 pdf-lib 100% 浏览器本地处理，无需上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/pdf-splitter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PDF 拆分工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<style>
+.pdf-drop{border:2px dashed var(--gz-border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:1rem;background:var(--gz-surface)}
+.pdf-drop:hover,.pdf-drop.dragover{border-color:var(--gz-accent);background:rgba(78,205,196,.08)}
+.pdf-drop svg{width:48px;height:48px;margin-bottom:8px;opacity:.6}
+.pdf-info{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:10px;padding:14px 18px;margin:1rem 0;display:flex;align-items:center;gap:14px}
+.pdf-info .ico{font-size:2rem}
+.pdf-info .meta{flex:1;min-width:0;overflow:hidden}
+.pdf-info .fname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdf-info .fmeta{font-size:.8em;color:var(--gz-text-muted);margin-top:2px}
+.gz-mode-row{display:flex;gap:10px;flex-wrap:wrap;margin:1rem 0}
+.gz-mode-card{flex:1;min-width:200px;background:var(--gz-surface);border:2px solid var(--gz-border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s}
+.gz-mode-card:hover{border-color:var(--gz-accent)}
+.gz-mode-card.active{border-color:var(--gz-accent);background:rgba(78,205,196,.08)}
+.gz-mode-card h3{margin:0 0 4px;font-size:1rem}
+.gz-mode-card p{margin:0;font-size:.8em;color:var(--gz-text-muted)}
+#ranges{width:100%;font-family:monospace;padding:10px;border-radius:8px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-text)}
+.split-results{margin-top:1rem}
+.split-results .row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;margin-bottom:6px}
+.split-results .row .pages{flex:1;font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PDF Splitter","description":"Split any PDF online for free — extract page ranges or split every page into separate PDFs. 100% client-side with pdf-lib, no upload, no signup.","url": "https://tools.gamezipper.com/zh/convert/pdf-splitter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is my PDF data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All processing happens entirely in your browser using pdf-lib. Your files never leave your device."}},{"@type":"Question","name":"How do I extract specific pages from a PDF?","acceptedAnswer":{"@type":"Answer","text":"Pick the Extract page ranges mode and type ranges like 1-3, 5, 8-10. The tool will create one new PDF containing only those pages, in the order you specified."}},{"@type":"Question","name":"Can I split every page into its own PDF?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose the Split every page mode. Each page becomes its own single-page PDF that you can download individually."}},{"@type":"Question","name":"What is the largest PDF I can split?","acceptedAnswer":{"@type":"Answer","text":"There is no hard limit beyond your browser memory. Most users can split PDFs of a few hundred pages without issues."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/pdf-splitter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/pdf-splitter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/pdf-splitter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="pdf-drop" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+      <p id="dropText"></p>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+    <div id="afterLoad" style="display:none">
+      <div class="pdf-info">
+        <span class="ico">📄</span>
+        <div class="meta">
+          <div class="fname" id="fileName"></div>
+          <div class="fmeta" id="fileMeta"></div>
+        </div>
+        <button class="gz-btn gz-btn-secondary" onclick="resetFiles()">✕</button>
+      </div>
+      <div class="gz-mode-row">
+        <div class="gz-mode-card active" id="modeRange" onclick="setMode('range')">
+          <h3 id="modeRangeTitle"></h3>
+          <p id="modeRangeDesc"></p>
+        </div>
+        <div class="gz-mode-card" id="modeEach" onclick="setMode('each')">
+          <h3 id="modeEachTitle"></h3>
+          <p id="modeEachDesc"></p>
+        </div>
+        <div class="gz-mode-card" id="modeParts" onclick="setMode('parts')">
+          <h3 id="modePartsTitle"></h3>
+          <p id="modePartsDesc"></p>
+        </div>
+      </div>
+      <div id="rangeControls">
+        <label id="rangesLabel" style="font-weight:600;display:block;margin-bottom:6px"></label>
+        <input id="ranges" placeholder="1-3, 5, 8-10">
+        <p style="font-size:.8em;color:var(--gz-text-muted);margin-top:6px" id="rangesHint"></p>
+      </div>
+      <div id="partsControls" style="display:none">
+        <label id="partsLabel" style="font-weight:600;display:block;margin-bottom:6px"></label>
+        <input id="partsCount" type="number" min="2" value="2" style="width:120px;padding:8px;border-radius:8px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-text)">
+      </div>
+      <div class="split-results" id="results"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'PDF Splitter',
+    toolDesc:'Split any PDF online — extract page ranges, split every page, or divide into N equal parts. 100% client-side with pdf-lib, no upload.',
+    dropText:'Drop a PDF file here or click to browse',
+    noFile:'Please select a PDF file first',
+    loadError:'Could not load PDF: ',
+    pages:'pages',
+    modeRangeTitle:'📋 Extract page ranges',
+    modeRangeDesc:'Create a new PDF from specific pages like 1-3, 5',
+    modeEachTitle:'📄 Split every page',
+    modeEachDesc:'Each page becomes its own single-page PDF',
+    modePartsTitle:'🔢 Split into N parts',
+    modePartsDesc:'Divide the document into N equal-sized PDFs',
+    rangesLabel:'Page ranges (1-indexed):',
+    rangesHint:'Examples: 1-5  ·  2,4,6  ·  1-3, 7, 10-12',
+    partsLabel:'Number of parts:',
+    splitBtn:'Split PDF',
+    split:'Split',
+    download:'Download',
+    invalidRange:'Invalid range. Use format 1-5 or single numbers, separated by commas.',
+    pageOutOfRange:'Page {n} is out of range (1–{max}).',
+    partMustBeGreater:'Number of parts must be at least 2',
+    extracted:'Extracted',
+    splitEach:'Split into',
+    singlePages:'single-page PDFs',
+    parts:'parts',
+    step1:'Drop or click to select a PDF file',
+    step2:'Pick a split mode: page ranges, every page, or N parts',
+    step3:'Enter your ranges or part count',
+    step4:'Click Split — download the resulting PDF(s)',
+  },
+  zh:{
+    toolTitle:'PDF 拆分工具',
+    toolDesc:'在线拆分 PDF — 提取指定页码范围、按单页拆分或平均分成 N 份。基于 pdf-lib 100% 浏览器本地处理，无需上传。',
+    dropText:'拖拽 PDF 文件到此处或点击选择',
+    noFile:'请先选择一个 PDF 文件',
+    loadError:'无法加载 PDF：',
+    pages:'页',
+    modeRangeTitle:'📋 提取页码范围',
+    modeRangeDesc:'从指定页（如 1-3, 5）创建新 PDF',
+    modeEachTitle:'📄 每页单独拆分',
+    modeEachDesc:'每一页都生成一个独立的 PDF',
+    modePartsTitle:'🔢 平均分成 N 份',
+    modePartsDesc:'将文档平均拆分成 N 个大小相近的 PDF',
+    rangesLabel:'页码范围（从 1 开始）：',
+    rangesHint:'示例：1-5  ·  2,4,6  ·  1-3, 7, 10-12',
+    partsLabel:'拆分份数：',
+    splitBtn:'拆分 PDF',
+    split:'拆分',
+    download:'下载',
+    invalidRange:'范围格式无效。请使用 1-5 或单个数字，逗号分隔。',
+    pageOutOfRange:'页码 {n} 超出范围（1–{max}）。',
+    partMustBeGreater:'拆分份数至少为 2',
+    extracted:'已提取',
+    splitEach:'已拆分为',
+    singlePages:'个单页 PDF',
+    parts:'份',
+    step1:'拖拽或点击选择一个 PDF 文件',
+    step2:'选择拆分方式：页码范围、按页拆分或 N 等份',
+    step3:'输入页码范围或拆分份数',
+    step4:'点击「拆分」并下载生成的 PDF',
+  }
+});
+const {$,t}=GZ;
+let pdfFile=null, pdfBytes=null, pdfDoc=null, mode='range';
+
+function formatSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+
+const dz=$('#dropZone');
+dz.addEventListener('click',()=>$('#fileInput').click());
+$('#fileInput').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);e.target.value='';});
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+$('#dropText').textContent=t('dropText');
+
+async function loadFile(file){
+  if(file.type!=='application/pdf'&& !file.name.toLowerCase().endsWith('.pdf')){alert(t('noFile'));return;}
+  try{
+    pdfFile=file;
+    pdfBytes=await file.arrayBuffer();
+    pdfDoc=await PDFLib.PDFDocument.load(pdfBytes);
+    $('#fileName').textContent=file.name;
+    $('#fileMeta').textContent=`${formatSize(file.size)} · ${pdfDoc.getPageCount()} ${t('pages')}`;
+    $('#afterLoad').style.display='block';
+    $('#dropZone').style.display='none';
+    $('#results').innerHTML='';
+  }catch(e){alert(t('loadError')+e.message);}
+}
+
+function resetFiles(){
+  pdfFile=null;pdfBytes=null;pdfDoc=null;
+  $('#afterLoad').style.display='none';
+  $('#dropZone').style.display='block';
+}
+
+function setMode(m){
+  mode=m;
+  $('#modeRange').classList.toggle('active',m==='range');
+  $('#modeEach').classList.toggle('active',m==='each');
+  $('#modeParts').classList.toggle('active',m==='parts');
+  $('#rangeControls').style.display=m==='range'?'block':'none';
+  $('#partsControls').style.display=m==='parts'?'block':'none';
+}
+
+function parseRanges(str){
+  const parts=str.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!parts.length)throw new Error(t('invalidRange'));
+  const out=[];
+  for(const p of parts){
+    const m=p.match(/^(\d+)(?:-(\d+))?$/);
+    if(!m)throw new Error(t('invalidRange'));
+    const a=+m[1], b=m[2]?+m[2]:a;
+    if(a<1||b<1||b<a)throw new Error(t('invalidRange'));
+    for(let i=a;i<=b;i++)out.push(i);
+  }
+  return out;
+}
+
+function downloadBytes(bytes,name){
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function doSplit(){
+  if(!pdfDoc){alert(t('noFile'));return;}
+  const total=pdfDoc.getPageCount();
+  try{
+    if(mode==='range'){
+      const pages=parseRanges($('#ranges').value);
+      for(const p of pages){
+        if(p<1||p>total)throw new Error(t('pageOutOfRange').replace('{n}',p).replace('{max}',total));
+      }
+      const out=await PDFLib.PDFDocument.create();
+      const copied=await out.copyPages(pdfDoc,pages.map(p=>p-1));
+      copied.forEach(p=>out.addPage(p));
+      const bytes=await out.save();
+      const base=pdfFile.name.replace(/\.pdf$/i,'');
+      downloadBytes(bytes,`${base}_extracted.pdf`);
+      $('#results').innerHTML=`<div class="row"><span class="pages">✓ ${t('extracted')} ${pages.length} ${t('pages')}</span></div>`;
+    }else if(mode==='each'){
+      const base=pdfFile.name.replace(/\.pdf$/i,'');
+      $('#results').innerHTML='';
+      for(let i=0;i<total;i++){
+        const out=await PDFLib.PDFDocument.create();
+        const [pg]=await out.copyPages(pdfDoc,[i]);
+        out.addPage(pg);
+        const bytes=await out.save();
+        const num=String(i+1).padStart(String(total).length,'0');
+        const name=`${base}_page_${num}.pdf`;
+        const blobUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+        const row=document.createElement('div');
+        row.className='row';
+        row.innerHTML=`<span class="pages">📄 ${name}</span>`;
+        const btn=document.createElement('button');
+        btn.className='gz-btn';btn.textContent=t('download');
+        btn.onclick=()=>downloadBytes(bytes,name);
+        row.appendChild(btn);
+        $('#results').appendChild(row);
+      }
+      // also auto-download first
+      GZ.showToast(`✓ ${t('splitEach')} ${total} ${t('singlePages')}`);
+    }else if(mode==='parts'){
+      const n=Math.max(2,parseInt($('#partsCount').value)||2);
+      const per=Math.ceil(total/n);
+      const base=pdfFile.name.replace(/\.pdf$/i,'');
+      $('#results').innerHTML='';
+      for(let part=0;part<n;part++){
+        const start=part*per, end=Math.min(start+per,total);
+        if(start>=end)break;
+        const out=await PDFLib.PDFDocument.create();
+        const idxs=[];
+        for(let i=start;i<end;i++)idxs.push(i);
+        const copied=await out.copyPages(pdfDoc,idxs);
+        copied.forEach(p=>out.addPage(p));
+        const bytes=await out.save();
+        const name=`${base}_part_${part+1}.pdf`;
+        const row=document.createElement('div');
+        row.className='row';
+        row.innerHTML=`<span class="pages">📄 ${name} (${end-start} ${t('pages')})</span>`;
+        const btn=document.createElement('button');
+        btn.className='gz-btn';btn.textContent=t('download');
+        btn.onclick=()=>downloadBytes(bytes,name);
+        row.appendChild(btn);
+        $('#results').appendChild(row);
+      }
+      GZ.showToast(`✓ ${t('splitEach')} ${n} ${t('parts')}`);
+    }
+  }catch(e){alert(e.message);}
+}
+
+// Mode card labels
+$('#modeRangeTitle').textContent=t('modeRangeTitle');
+$('#modeRangeDesc').textContent=t('modeRangeDesc');
+$('#modeEachTitle').textContent=t('modeEachTitle');
+$('#modeEachDesc').textContent=t('modeEachDesc');
+$('#modePartsTitle').textContent=t('modePartsTitle');
+$('#modePartsDesc').textContent=t('modePartsDesc');
+$('#rangesLabel').textContent=t('rangesLabel');
+$('#rangesHint').textContent=t('rangesHint');
+$('#partsLabel').textContent=t('partsLabel');
+$('#ranges').placeholder='1-3, 5, 8-10';
+
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="doSplit()">${t('splitBtn')}</button>`;
+
+GZ.renderToolPage({category:'convert',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'📄',href:'/convert/pdf-merger.html',name:'PDF Merger'},
+  {icon:'🖼️',href:'/convert/pdf-to-image.html',name:'PDF to Image'},
+  {icon:'🗜️',href:'/convert/pdf-compressor.html',name:'PDF Compressor'},
+  {icon:'📄',href:'/convert/image-to-pdf.html',name:'Image to PDF'},
+]});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
