@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>SQL to TypeScript Interface Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert SQL CREATE TABLE statements to TypeScript interfaces instantly. Map MySQL, PostgreSQL and SQLite column types to TS types, detect nullables, primary keys and auto-increment. Free and private.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/sql-to-typescript.html">
+  <meta property="og:title" content="SQL to TypeScript Interface Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert SQL CREATE TABLE statements to TypeScript interfaces instantly. Map MySQL, PostgreSQL and SQLite column types to TS types, detect nullables, primary keys and auto-increment. Free and private.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/sql-to-typescript.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SQL to TypeScript Interface Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.55;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:600px;overflow:auto}
+.ts-kw{color:#c792ea}.ts-key{color:#e94560}.ts-type{color:#61afef}.ts-num{color:#d19a66}.ts-com{color:#888;font-style:italic}
+.options{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.85em}
+.options label{display:flex;align-items:center;gap:6px;cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SQL to TypeScript Interface Converter","description":"Convert SQL CREATE TABLE statements to TypeScript interfaces instantly. Map MySQL, PostgreSQL and SQLite column types to TS types, detect nullables and primary keys. Free and private.","url":"https://tools.gamezipper.com/dev/sql-to-typescript.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert SQL to TypeScript?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CREATE TABLE SQL (MySQL, PostgreSQL or SQLite) into the input area and the tool generates matching TypeScript interfaces, mapping each column type to the correct TS type and marking nullable columns as optional."}}, {"@type": "Question", "name": "Which SQL types are supported?", "acceptedAnswer": {"@type": "Answer", "text": "All common types are mapped: INT, BIGINT, SMALLINT, TINYINT, SERIAL become number; DECIMAL, NUMERIC, FLOAT, DOUBLE become number; BOOLEAN becomes boolean; DATE, DATETIME, TIMESTAMP, TIME become string (or Date); CHAR, VARCHAR, TEXT, JSON, UUID, ENUM become string; BLOB becomes Uint8Array."}}, {"@type": "Question", "name": "Does it handle NULL and NOT NULL columns?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Columns without NOT NULL (or with an explicit DEFAULT NULL) are marked as optional with a trailing question mark. NOT NULL columns are required. Primary key and auto-increment metadata are also detected."}}, {"@type": "Question", "name": "Is my SQL uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing and conversion happens locally in your browser. Your SQL schema never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sql-to-typescript.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sql-to-typescript.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sql-to-typescript.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="options">
+      <label><input type="checkbox" id="optExport" checked onchange="convert()"> <span id="lbl-export"></span></label>
+      <label><input type="checkbox" id="optSuffix" onchange="convert()"> <span id="lbl-suffix"></span></label>
+      <label><input type="checkbox" id="optDate" checked onchange="convert()"> <span id="lbl-date"></span></label>
+      <label><input type="checkbox" id="optComment" checked onchange="convert()"> <span id="lbl-comment"></span></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="CREATE TABLE users (&#10;  id SERIAL PRIMARY KEY,&#10;  email VARCHAR(255) NOT NULL UNIQUE,&#10;  age INT,&#10;  created_at TIMESTAMP DEFAULT NOW()&#10;);"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SQL to TypeScript Interface Converter',
+    toolDesc: 'Turn CREATE TABLE DDL (MySQL, PostgreSQL, SQLite) into clean TypeScript interfaces with correct type mapping, nullable detection and primary-key annotations.',
+    exportInterfaces: 'export interfaces',
+    addSuffix: 'append "Entity" suffix',
+    dateAsString: 'dates as string',
+    inlineComments: 'inline type comments',
+    ok: n => `✓ Generated ${n} interface${n===1?'':'s'}`,
+    noTable: 'No CREATE TABLE statement found.',
+    step1: 'Paste one or more CREATE TABLE statements',
+    step2: 'Pick export, suffix, date-type and comment options',
+    step3: 'Copy the generated interfaces into your TypeScript project',
+    step4: 'Use them with your ORM (Prisma, TypeORM, Drizzle, Kysely) or API models',
+  },
+  zh: {
+    toolTitle: 'SQL 转 TypeScript 接口转换器',
+    toolDesc: '将 CREATE TABLE DDL（MySQL、PostgreSQL、SQLite）转换为整洁的 TypeScript 接口，自动映射类型、检测可空字段并标注主键。',
+    exportInterfaces: '导出接口',
+    addSuffix: '添加 "Entity" 后缀',
+    dateAsString: '日期作为 string',
+    inlineComments: '行内类型注释',
+    ok: n => `✓ 生成 ${n} 个接口`,
+    noTable: '未找到 CREATE TABLE 语句。',
+    step1: '粘贴一条或多条 CREATE TABLE 语句',
+    step2: '选择导出、后缀、日期类型和注释选项',
+    step3: '将生成的接口复制到你的 TypeScript 项目',
+    step4: '配合 ORM（Prisma、TypeORM、Drizzle、Kysely）或 API 模型使用',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function mapType(sqlType){
+  const u = sqlType.toUpperCase();
+  if (/^(INT|INTEGER|BIGINT|SMALLINT|TINYINT|MEDIUMINT|SERIAL|BIGSERIAL|BIT)\b/.test(u)) return 'number';
+  if (/^(DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|DEC)\b/.test(u)) return 'number';
+  if (/^(BOOL|BOOLEAN)\b/.test(u)) return 'boolean';
+  if (/^(DATE|DATETIME|TIMESTAMP|TIME|INTERVAL|YEAR)\b/.test(u)) {
+    return $('#optDate').checked ? 'string' : 'Date';
+  }
+  if (/^(BLOB|BINARY|VARBINARY|BYTEA|IMAGE)\b/.test(u)) return 'Uint8Array';
+  if (/^(JSON|JSONB)\b/.test(u)) return 'unknown';
+  if (/^ENUM\b/.test(u)) return 'string';
+  return 'string';
+}
+
+function pascal(s){
+  return s.replace(/[^a-zA-Z0-9]+/g,'_').split('_').filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('');
+}
+
+function parseTables(sql){
+  // strip line and block comments
+  sql = sql.replace(/--[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+  const tables = [];
+  const re = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[]?([a-zA-Z0-9_.\->]+)[`"\]]?\s*\(([\s\S]*?)\)\s*(?:ENGINE|DEFAULT|;|$)/gi;
+  let m;
+  while ((m = re.exec(sql))){
+    const rawName = m[1].split('.').pop();
+    const name = rawName.replace(/[`"\[\]]/g,'');
+    const body = m[2];
+    const cols = [];
+    // split top-level commas (ignore commas inside parens, e.g. DECIMAL(10,2) or ENUM('a','b'))
+    let depth=0, cur='';
+    for (const ch of body){
+      if (ch==='(') depth++;
+      else if (ch===')') depth--;
+      if (ch===',' && depth===0){ cols.push(cur); cur=''; }
+      else cur += ch;
+    }
+    if (cur.trim()) cols.push(cur);
+    const outCols = [];
+    for (let raw of cols){
+      const c = raw.trim().replace(/,$/,'').trim();
+      if (!c) continue;
+      const upper = c.toUpperCase();
+      // skip table-level constraints
+      if (/^(PRIMARY\s+KEY|FOREIGN\s+KEY|CONSTRAINT|UNIQUE|KEY|INDEX|CHECK)\b/.test(upper)) continue;
+      const cm = c.match(/^[`"\[]?([a-zA-Z_][a-zA-Z0-9_$]*)[`"\]]?\s+([a-zA-Z]+(?:\s*\([^)]*\))?)/);
+      if (!cm) continue;
+      const colName = cm[1];
+      const fullType = cm[2].trim();
+      const typeBase = fullType.replace(/\s*\(.*\)/,'').trim();
+      const tsType = mapType(typeBase);
+      const isNullable = !/NOT\s+NULL/i.test(c);
+      const isPK = /\bPRIMARY\s+KEY\b/i.test(c);
+      const isAuto = /\b(AUTO_INCREMENT|SERIAL|GENERATED\s+.*AS\s+IDENTITY)\b/i.test(c);
+      outCols.push({ name: colName, tsType, isNullable, isPK, isAuto, typeBase });
+    }
+    tables.push({ name, className: pascal(name), cols: outCols });
+  }
+  return tables;
+}
+
+function convert(){
+  const inp = $('#input').value;
+  if (!inp.trim()){ $('#output').innerHTML=''; $('#status').innerHTML=''; return; }
+  const tables = parseTables(inp);
+  if (!tables.length){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noTable')}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${t('noTable')}</span>`;
+    return;
+  }
+  const exportKw = $('#optExport').checked ? 'export ' : '';
+  const suffix = $('#optSuffix').checked ? 'Entity' : '';
+  const showComment = $('#optComment').checked;
+  let out = '';
+  for (const tb of tables){
+    const ifaceName = tb.className + suffix;
+    out += `${exportKw}interface ${ifaceName} {\n`;
+    for (const c of tb.cols){
+      const optional = c.isNullable ? '?' : '';
+      const safeKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(c.name) ? c.name : `"${c.name}"`;
+      const comment = showComment ? `  // ${c.typeBase}${c.isPK?' (PK)':''}${c.isAuto?' (auto)':''}${c.isNullable?' (nullable)':''}\n` : '';
+      out += `${comment}  ${safeKey}${optional}: ${c.tsType};\n`;
+    }
+    out += '}\n\n';
+  }
+  $('#output').textContent = out.trim()+'\n';
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('ok')(tables.length)}</span>`;
+}
+
+function loadExample(){
+  $('#input').value = `CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  username VARCHAR(50) NOT NULL,
+  age INT,
+  is_active BOOLEAN DEFAULT true,
+  balance DECIMAL(10,2) DEFAULT 0.00,
+  bio TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  avatar_url VARCHAR(500)
+);
+
+CREATE TABLE products (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  sku VARCHAR(64) NOT NULL,
+  name VARCHAR(200) NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  in_stock INT DEFAULT 0,
+  metadata JSON,
+  image BLOB
+);`;
+  convert();
+}
+
+function doClear(){ $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔷', href:'/dev/json-to-typescript.html', name:'JSON to TypeScript'},
+    {icon:'📊', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'🔀', href:'/dev/json-to-sql.html', name:'JSON to SQL'},
+    {icon:'🛡️', href:'/dev/json-to-zod.html', name:'JSON to Zod'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
