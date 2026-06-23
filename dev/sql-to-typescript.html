@@ -106,29 +106,53 @@ function pascal(s){
     .map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('');
 }
 
-function parseTables(sql){
-  // strip line and block comments
-  sql = sql.replace(/--[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+// Find table bodies by scanning with paren-depth balance so nested parens like
+// DECIMAL(10,2), VARCHAR(255), ENUM('a','b') don't break extraction.
+function extractTables(sql){
   const tables = [];
-  const re = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[]?([a-zA-Z0-9_.\->]+)[`"\]]?\s*\(([\s\S]*?)\)\s*(?:ENGINE|DEFAULT|;|$)/gi;
+  const re = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[]?([a-zA-Z0-9_.\->]+)[`"\]]?\s*\(/gi;
   let m;
   while ((m = re.exec(sql))){
-    const rawName = m[1].split('.').pop();
-    const name = rawName.replace(/[`"\[\]]/g,'');
-    const body = m[2];
-    const cols = [];
-    // split top-level commas (ignore commas inside parens, e.g. DECIMAL(10,2) or ENUM('a','b'))
-    let depth=0, cur='';
-    for (const ch of body){
-      if (ch==='(') depth++;
-      else if (ch===')') depth--;
-      if (ch===',' && depth===0){ cols.push(cur); cur=''; }
-      else cur += ch;
+    const name = m[1].split('.').pop().replace(/[`"\[\]]/g,'');
+    const start = re.lastIndex; // index just after the opening (
+    let depth = 1, i = start, inStr = null;
+    while (i < sql.length && depth > 0){
+      const ch = sql[i];
+      if (inStr){ if (ch === inStr && sql[i-1] !== '\\') inStr = null; }
+      else if (ch === "'" || ch === '"' || ch === '`') inStr = ch;
+      else if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+      i++;
     }
-    if (cur.trim()) cols.push(cur);
+    tables.push({ name, body: sql.slice(start, i - 1) });
+  }
+  return tables;
+}
+
+// Split column list on top-level commas, respecting parens and string quotes.
+function splitCols(body){
+  const cols = [];
+  let depth = 0, inStr = null, cur = '';
+  for (let i = 0; i < body.length; i++){
+    const ch = body[i];
+    if (inStr){ cur += ch; if (ch === inStr && body[i-1] !== '\\') inStr = null; continue; }
+    if (ch === "'" || ch === '"' || ch === '`'){ inStr = ch; cur += ch; continue; }
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    if (ch === ',' && depth === 0){ cols.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  if (cur.trim()) cols.push(cur);
+  return cols;
+}
+
+function parseTables(sql){
+  sql = sql.replace(/--[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+  const tables = [];
+  for (const tb of extractTables(sql)){
     const outCols = [];
-    for (let raw of cols){
-      const c = raw.trim().replace(/,$/,'').trim();
+    for (let raw of splitCols(tb.body)){
+      const c = raw.trim();
       if (!c) continue;
       const upper = c.toUpperCase();
       // skip table-level constraints
@@ -139,12 +163,13 @@ function parseTables(sql){
       const fullType = cm[2].trim();
       const typeBase = fullType.replace(/\s*\(.*\)/,'').trim();
       const tsType = mapType(typeBase);
-      const isNullable = !/NOT\s+NULL/i.test(c);
       const isPK = /\bPRIMARY\s+KEY\b/i.test(c);
       const isAuto = /\b(AUTO_INCREMENT|SERIAL|GENERATED\s+.*AS\s+IDENTITY)\b/i.test(c);
+      // PRIMARY KEY columns are implicitly NOT NULL in SQL.
+      const isNullable = !isPK && !/NOT\s+NULL/i.test(c);
       outCols.push({ name: colName, tsType, isNullable, isPK, isAuto, typeBase });
     }
-    tables.push({ name, className: pascal(name), cols: outCols });
+    tables.push({ name: tb.name, className: pascal(tb.name), cols: outCols });
   }
   return tables;
 }
