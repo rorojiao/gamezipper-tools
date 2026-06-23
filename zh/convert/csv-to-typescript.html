@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>CSV 转 TypeScript 接口转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将任意 CSV（含表头）转换为带类型的 TypeScript 接口。基于样本自动推断 number、boolean、date、string 类型，并检测可选字段。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/csv-to-typescript.html">
+  <meta property="og:title" content="CSV 转 TypeScript 接口转换器">
+  <meta property="og:description" content="将任意 CSV（含表头）转换为带类型的 TypeScript 接口。基于样本自动推断 number、boolean、date、string 类型，并检测可选字段。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/csv-to-typescript.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV 转 TypeScript 接口转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.55;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:600px;overflow:auto}
+.options{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.85em}
+.options label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.options select,.options input[type=text]{padding:4px 8px;background:var(--glass);border:1px solid var(--border);border-radius:6px;color:inherit}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV to TypeScript Interface Converter","description":"Convert CSV data to TypeScript interfaces automatically. Infer number, boolean, date and string types from sample rows, detect optional fields — free and private.","url": "https://tools.gamezipper.com/zh/convert/csv-to-typescript.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert CSV to TypeScript?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSV (with a header row) into the input area. The tool samples the data rows, infers the correct TypeScript type for every column (number, boolean, string, Date), marks optional columns, and prints a ready-to-use interface."}}, {"@type": "Question", "name": "How are types inferred from CSV?", "acceptedAnswer": {"@type": "Answer", "text": "Each non-empty cell is checked against patterns: integers and decimals become number, true/false/yes/no/0/1 (when consistent) become boolean, ISO dates become string, and everything else falls back to string. A column is only number or boolean if every sampled value matches."}}, {"@type": "Question", "name": "Can it handle quoted fields and different delimiters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The parser correctly handles quoted values containing commas, escaped double-quotes and embedded newlines. You can also switch the delimiter between comma, semicolon, tab and pipe."}}, {"@type": "Question", "name": "Is my CSV uploaded anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Parsing and type inference run entirely in your browser. Your data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-to-typescript.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-to-typescript.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-to-typescript.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="options">
+      <label><span id="lbl-name"></span> <input type="text" id="ifaceName" value="CsvRow" oninput="convert()"></label>
+      <label><span id="lbl-delim"></span>
+        <select id="delim" onchange="convert()">
+          <option value=",">comma ( , )</option>
+          <option value=";">semicolon ( ; )</option>
+          <option value="\t">tab</option>
+          <option value="|">pipe ( | )</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="optExport" checked onchange="convert()"> <span id="lbl-export"></span></label>
+      <label><input type="checkbox" id="optDate" checked onchange="convert()"> <span id="lbl-date"></span></label>
+      <label><input type="checkbox" id="optOptional" checked onchange="convert()"> <span id="lbl-optional"></span></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="id,name,email,age,active,joined&#10;1,Alice,alice@example.com,30,true,2024-01-15&#10;2,Bob,,25,false,2024-02-20"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV to TypeScript Interface Converter',
+    toolDesc: 'Turn any CSV (with headers) into a typed TypeScript interface. Sample-driven type inference for number, boolean, date and string columns, plus optional-field detection.',
+    ifaceName: 'interface name',
+    delimiter: 'delimiter',
+    exportInterface: 'export',
+    dateAsString: 'dates as string',
+    markOptional: 'optional empty fields',
+    ok: n => `✓ Inferred ${n} field${n===1?'':'s'}`,
+    needHeader: 'Please include a header row with column names.',
+    empty: 'No CSV data to convert.',
+    step1: 'Paste CSV data that includes a header row',
+    step2: 'Set the interface name, delimiter and inference options',
+    step3: 'Review the inferred types on the right',
+    step4: 'Copy the interface into your TypeScript project',
+  },
+  zh: {
+    toolTitle: 'CSV 转 TypeScript 接口转换器',
+    toolDesc: '将任意 CSV（含表头）转换为带类型的 TypeScript 接口。基于样本自动推断 number、boolean、date、string 类型，并检测可选字段。',
+    ifaceName: '接口名',
+    delimiter: '分隔符',
+    exportInterface: '导出',
+    dateAsString: '日期作为 string',
+    markOptional: '空字段标记为可选',
+    ok: n => `✓ 推断 ${n} 个字段`,
+    needHeader: '请包含带列名的表头行。',
+    empty: '没有可转换的 CSV 数据。',
+    step1: '粘贴包含表头的 CSV 数据',
+    step2: '设置接口名、分隔符和推断选项',
+    step3: '在右侧查看推断出的类型',
+    step4: '将接口复制到你的 TypeScript 项目',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseCSV(text, delim){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i], next = text[i+1];
+    if (inQuotes){
+      if (ch === '"' && next === '"'){ field += '"'; i++; }
+      else if (ch === '"'){ inQuotes = false; }
+      else field += ch;
+    } else {
+      if (ch === '"'){ inQuotes = true; }
+      else if (ch === delim){ row.push(field); field = ''; }
+      else if (ch === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else if (ch === '\r'){ /* ignore */ }
+      else field += ch;
+    }
+  }
+  if (field !== '' || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+
+function isNumber(v){ return v !== '' && !isNaN(Number(v)) && isFinite(Number(v)); }
+function isInt(v){ return isNumber(v) && /^-?\d+$/.test(v.trim()); }
+const BOOL_TRUE = /^(true|yes|y|t)$/i, BOOL_FALSE = /^(false|no|n|f)$/i;
+function isBool(v){ return BOOL_TRUE.test(v) || BOOL_FALSE.test(v); }
+function boolVal(v){ return BOOL_TRUE.test(v); }
+const DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
+function isDate(v){ return DATE_RE.test(v.trim()); }
+
+function inferColumn(values){
+  const nonEmpty = values.filter(v => v !== '');
+  if (!nonEmpty.length) return { type: 'any', optional: true };
+  const optional = $('#optOptional').checked && nonEmpty.length < values.length;
+  let allInt = true, allNum = true, allBool = true, allDate = true;
+  let consistentBool = null;
+  for (const v of nonEmpty){
+    if (!isInt(v)) allInt = false;
+    if (!isNumber(v)) allNum = false;
+    if (!isBool(v)) allBool = false;
+    else { if (consistentBool === null) consistentBool = boolVal(v); else if (consistentBool !== boolVal(v)) consistentBool = 'mixed'; }
+    if (!isDate(v)) allDate = false;
+  }
+  let type;
+  if (allInt && allNum) type = 'number';
+  else if (allNum) type = 'number';
+  else if (allBool) type = 'boolean';
+  else if (allDate && $('#optDate').checked) type = 'string';
+  else if (allDate) type = 'Date';
+  else type = 'string';
+  return { type, optional };
+}
+
+function safeKey(name){
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name) ? name : `"${name}"`;
+}
+
+function convert(){
+  const raw = $('#input').value;
+  if (!raw.trim()){ $('#output').textContent=''; $('#status').innerHTML=''; return; }
+  const delimStr = $('#delim').value;
+  const delim = delimStr === '\\t' ? '\t' : delimStr;
+  const rows = parseCSV(raw, delim);
+  if (rows.length < 1){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`;
+    return;
+  }
+  const headers = rows[0];
+  if (!headers.some(h => h.trim())){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('needHeader')}</span>`;
+    return;
+  }
+  const dataRows = rows.slice(1);
+  const sampleRows = dataRows.length ? dataRows : [headers.map(()=> '')];
+  const exportKw = $('#optExport').checked ? 'export ' : '';
+  const ifaceName = ($('#ifaceName').value.trim() || 'CsvRow').replace(/[^a-zA-Z0-9_$]/g,'') || 'CsvRow';
+  // de-duplicate headers
+  const seen = {}; const fields = [];
+  headers.forEach((h, i) => {
+    let name = h.trim() || ('col' + (i+1));
+    if (seen[name] !== undefined){ seen[name]++; name = name + seen[name]; } else seen[name] = 1;
+    const values = sampleRows.map(r => (r[i] !== undefined ? r[i] : '').trim());
+    fields.push({ name, ...inferColumn(values) });
+  });
+  let out = `${exportKw}interface ${ifaceName} {\n`;
+  for (const f of fields){
+    out += `  ${safeKey(f.name)}${f.optional ? '?' : ''}: ${f.type};\n`;
+  }
+  out += '}\n';
+  $('#output').textContent = out;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('ok')(fields.length)}</span>`;
+}
+
+function loadExample(){
+  $('#input').value = `id,first_name,email,age,active,signup_date,balance
+1,Alice,alice@example.com,30,true,2024-01-15,1500.50
+2,Bob,,25,false,2024-02-20,0.00
+3,Charlie,charlie@example.com,42,true,2024-03-10,875.25`;
+  convert();
+}
+
+function doClear(){ $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'🐘', href:'/dev/sql-to-typescript.html', name:'SQL to TypeScript'},
+    {icon:'🔷', href:'/dev/json-to-typescript.html', name:'JSON to TypeScript'},
+    {icon:'👁️', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

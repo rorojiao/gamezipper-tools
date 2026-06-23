@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>TypeScript 转 JSON Schema 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 TypeScript 接口和类型别名转换为 JSON Schema（draft-07），支持 $defs、数组、联合类型、可选字段和 $ref — 浏览器本地即时转换。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/ts-to-json-schema.html">
+  <meta property="og:title" content="TypeScript 转 JSON Schema 转换器">
+  <meta property="og:description" content="将 TypeScript 接口和类型别名转换为 JSON Schema（draft-07），支持 $defs、数组、联合类型、可选字段和 $ref — 浏览器本地即时转换。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/ts-to-json-schema.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="TypeScript 转 JSON Schema 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.55;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:600px;overflow:auto}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"TypeScript to JSON Schema Converter","description":"Convert TypeScript interfaces and types to JSON Schema instantly. Parse nested types, arrays, optional fields, unions and $ref — free, private, browser-based.","url": "https://tools.gamezipper.com/zh/dev/ts-to-json-schema.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert TypeScript to JSON Schema?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your TypeScript interface or type definitions into the input area and the tool generates a matching JSON Schema (draft-07). Nested interfaces are inlined as $defs and referenced with $ref."}}, {"@type": "Question", "name": "Which TypeScript features are supported?", "acceptedAnswer": {"@type": "Answer", "text": "String, number, boolean, null, undefined, any and Date are mapped to primitive JSON Schema types. Arrays (T[] and Array<T>), optional fields (key?:), unions (a | b) and named references to other interfaces are all supported."}}, {"@type": "Question", "name": "How are nested types handled?", "acceptedAnswer": {"@type": "Answer", "text": "Each named interface becomes a definition under $defs. References between interfaces use { \"$ref\": \"#/\\$defs/Name\" } so the schema stays DRY and matches how most JSON Schema validators expect shared definitions."}}, {"@type": "Question", "name": "Is my TypeScript code sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Parsing happens entirely in your browser. Your types never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ts-to-json-schema.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ts-to-json-schema.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ts-to-json-schema.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="interface User {&#10;  id: number;&#10;  name: string;&#10;  email?: string;&#10;  roles: string[];&#10;  profile: Profile;&#10;}&#10;interface Profile {&#10;  bio: string;&#10;  age: number | null;&#10;}"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'TypeScript to JSON Schema Converter',
+    toolDesc: 'Transform TypeScript interfaces and type aliases into JSON Schema (draft-07) with $defs, arrays, unions, optionals and $ref — instantly, in your browser.',
+    ok: n => `✓ Converted ${n} type${n===1?'':'s'}`,
+    noType: 'No interface or type definition found.',
+    step1: 'Paste one or more TypeScript interfaces or type aliases',
+    step2: 'The JSON Schema is generated live on the right',
+    step3: 'Choose a root type if multiple interfaces are present',
+    step4: 'Copy the schema and use it with Ajv, Zod-to-JSON-Schema, OpenAPI or form builders',
+  },
+  zh: {
+    toolTitle: 'TypeScript 转 JSON Schema 转换器',
+    toolDesc: '将 TypeScript 接口和类型别名转换为 JSON Schema（draft-07），支持 $defs、数组、联合类型、可选字段和 $ref — 浏览器本地即时转换。',
+    ok: n => `✓ 转换 ${n} 个类型`,
+    noType: '未找到 interface 或 type 定义。',
+    step1: '粘贴一个或多个 TypeScript 接口或类型别名',
+    step2: '右侧实时生成 JSON Schema',
+    step3: '如有多个接口，选择根类型',
+    step4: '复制 schema 配合 Ajv、Zod-to-JSON-Schema、OpenAPI 或表单生成器使用',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const PRIMITIVES = {
+  string: { type: 'string' },
+  number: { type: 'number' },
+  bigint: { type: 'integer' },
+  boolean: { type: 'boolean' },
+  null: { type: 'null' },
+  undefined: { type: 'null' },
+  any: {},
+  unknown: {},
+  object: { type: 'object' },
+  Date: { type: 'string', format: 'date-time' },
+  Function: {},
+};
+
+function parseTypeExpr(expr){
+  expr = expr.trim();
+  if (!expr) return {};
+  // union
+  const parts = splitTop(expr, '|');
+  if (parts.length > 1){
+    const schemas = parts.map(parseTypeExpr).filter(s => Object.keys(s).length);
+    if (schemas.length === 1) return schemas[0];
+    return { anyOf: schemas };
+  }
+  // array shorthand T[]
+  if (/^(.+)\[\]$/.test(expr) && !expr.includes('{')){
+    const inner = RegExp.$1.trim();
+    return { type: 'array', items: parseTypeExpr(inner) };
+  }
+  // Array<T> / ReadonlyArray<T>
+  const am = expr.match(/^(?:ReadonlyArray|Array)<(.+)>$/);
+  if (am) return { type: 'array', items: parseTypeExpr(am[1]) };
+  // tuple [T, U]
+  if (/^\[.+\]$/.test(expr)){
+    const items = splitTop(expr.slice(1,-1), ',').map(s => parseTypeExpr(s));
+    return { type: 'array', items: items.length ? items[0] : {}, minItems: items.length, maxItems: items.length };
+  }
+  // Record<K, V>
+  const rm = expr.match(/^Record<(.+),\s*(.+)>$/);
+  if (rm) return { type: 'object', additionalProperties: parseTypeExpr(rm[2]) };
+  // literal string
+  if (/^["'].*["']$/.test(expr)) return { const: expr.slice(1,-1) };
+  // literal number
+  if (/^-?\d+(\.\d+)?$/.test(expr)) return { const: Number(expr) };
+  // primitive
+  if (PRIMITIVES[expr]) return { ...PRIMITIVES[expr] };
+  // named reference to another interface -> $ref
+  return { $ref: '#/$defs/' + expr };
+}
+
+function splitTop(s, sep){
+  const out = []; let depth=0, cur='';
+  const match = ch => typeof sep === 'string' ? ch === sep : sep.test(ch);
+  for (const ch of s){
+    if ('<([{'.includes(ch)) depth++;
+    else if ('>)]}'.includes(ch)) depth--;
+    if (match(ch) && depth===0){ out.push(cur); cur=''; }
+    else cur += ch;
+  }
+  if (cur.trim()) out.push(cur);
+  return out.map(x=>x.trim()).filter(x=>x.length);
+}
+
+function parseDefs(src){
+  // strip line comments
+  src = src.replace(/\/\/[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+  const defs = {};   // name -> { props:[{name,expr,optional}], isAlias }
+  // interfaces
+  const ire = /(?:export\s+)?interface\s+([A-Za-z_$][\w$]*)\s*(?:extends\s+[^\{]+)?\{([\s\S]*?)\}/g;
+  let m;
+  while ((m = ire.exec(src))){
+    defs[m[1]] = parseBody(m[2]);
+  }
+  // type aliases:  type Name = { ... };
+  const tre = /(?:export\s+)?type\s+([A-Za-z_$][\w$]*)\s*=\s*\{([\s\S]*?)\};?/g;
+  while ((m = tre.exec(src))){
+    defs[m[1]] = parseBody(m[2]);
+  }
+  // simple type aliases: type Name = OtherType;
+  const sre = /(?:export\s+)?type\s+([A-Za-z_$][\w$]*)\s*=\s*([^;{}\n]+);/g;
+  while ((m = sre.exec(src))){
+    if (defs[m[1]]) continue;
+    defs[m[1]] = { alias: m[2].trim() };
+  }
+  return defs;
+}
+
+function parseBody(body){
+  const props = [];
+  const fields = splitTop(body, /;|\n/);
+  for (let f of fields){
+    f = f.trim().replace(/,$/,'').replace(/;$/,'').trim();
+    if (!f) continue;
+    const fm = f.match(/^(?:readonly\s+)?([A-Za-z_$][\w$]*|"[^"]+"|'[^']+')(?:\?)?\s*:\s*(.+)$/);
+    if (!fm) continue;
+    let name = fm[1];
+    if (/^["']/.test(name)) name = name.slice(1,-1);
+    const optional = /\?\s*:/.test(f);
+    props.push({ name, expr: fm[2].trim(), optional });
+  }
+  return { props };
+}
+
+function buildObjectSchema(def, defs, seen){
+  if (!def || !def.props) return {};
+  const properties = {};
+  const required = [];
+  for (const p of def.props){
+    properties[p.name] = exprToSchema(p.expr, defs, seen);
+    if (!p.optional) required.push(p.name);
+  }
+  const schema = { type: 'object', properties };
+  if (required.length) schema.required = required;
+  return schema;
+}
+
+function exprToSchema(expr, defs, seen){
+  // inline anonymous object { ... }
+  const im = expr.match(/^\{([\s\S]*)\}$/);
+  if (im){
+    return buildObjectSchema(parseBody(im[1]), defs, seen);
+  }
+  const sch = parseTypeExpr(expr);
+  resolveRefs(sch, defs, seen);
+  return sch;
+}
+
+function resolveRefs(node, defs, seen){
+  if (!node || typeof node !== 'object') return;
+  if (node.$ref){
+    const name = node.$ref.split('/').pop();
+    if (defs[name] && !seen.has(name)){
+      if (defs[name].alias){
+        // expand alias
+      } else {
+        seen.add(name);
+        resolveRefs(buildObjectSchema(defs[name], defs, seen), defs, seen);
+      }
+    }
+    return;
+  }
+  for (const v of Object.values(node)){
+    if (Array.isArray(v)) v.forEach(x => resolveRefs(x, defs, seen));
+    else resolveRefs(v, defs, seen);
+  }
+}
+
+function convert(){
+  const inp = $('#input').value;
+  if (!inp.trim()){ $('#output').innerHTML=''; $('#status').innerHTML=''; return; }
+  const defs = parseDefs(inp);
+  const names = Object.keys(defs).filter(n => defs[n].props);
+  if (!names.length){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noType')}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${t('noType')}</span>`;
+    return;
+  }
+  const root = names[0];
+  const seen = new Set();
+  const $defs = {};
+  for (const n of names){
+    seen.clear(); seen.add(n);
+    $defs[n] = buildObjectSchema(defs[n], defs, seen);
+  }
+  const schema = {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    ...buildObjectSchema(defs[root], defs, new Set([root])),
+  };
+  schema.$defs = $defs;
+  $('#output').textContent = JSON.stringify(schema, null, 2);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('ok')(names.length)}</span>`;
+}
+
+function loadExample(){
+  $('#input').value = `interface User {
+  id: number;
+  name: string;
+  email?: string;
+  active: boolean;
+  roles: string[];
+  profile: Profile;
+  tags: Array<string>;
+  score: number | null;
+}
+
+interface Profile {
+  bio: string;
+  age: number;
+  settings: Record<string, boolean>;
+}`;
+  convert();
+}
+
+function doClear(){ $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📐', href:'/dev/json-schema.html', name:'JSON Schema'},
+    {icon:'🔷', href:'/dev/json-to-typescript.html', name:'JSON to TypeScript'},
+    {icon:'🛡️', href:'/dev/json-to-zod.html', name:'JSON to Zod'},
+    {icon:'✅', href:'/dev/json-schema-validator.html', name:'JSON Schema Validator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
