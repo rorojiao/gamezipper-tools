@@ -1,7 +1,23 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.6-tools-monetag-cross-deploy (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.7-tools-exit-intent (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.7 Changes (2026-06-24 — Exit-Intent Commercial Break + Frequency Tuning):
+ *   - 🚀 New: initExitIntent() — detects user mouse moving to top of viewport
+ *     (the "I want to leave" gesture). On tool pages only, fires a Poki-style
+ *     overlay so we capture one more high-CTR impression before the user
+ *     navigates away. Mirrors gamezipper.com v5.8 implementation.
+ *     Smart guards: 30s minimum time-on-page, 5-min cooldown, suppressed on
+ *     hub pages (no engagement to interrupt), suppressed during popunder
+ *     cooldowns.
+ *   - 📈 Reduce firstAdDelay 45s → 30s on tool pages (mirrors gz.com v5.4).
+ *     BI data 7d showed AdSense commercial_break fill rate ~5-10% on
+ *     tools.gamezipper.com — recovering cost in 5 imps. 30s first ad gives
+ *     users enough onboarding time without losing the early-session slot.
+ *   - 🎯 minBetweenAds 45s → 35s. Slightly tighter spacing aligns tools with
+ *     gamezipper.com v5.4 frequency. Daily cap 60 / session cap 20 unchanged.
+ *   - Version bumped 5.6 → 5.7 to track on BI server.
  *
  * v5.6 Changes (2026-06-21 — Cross-Deploy Working Zone from gamezipper.com):
  *   - gamezipper.com data (7d, 2026-06-14~06-21): zone 11012002 is the ONLY working
@@ -108,8 +124,8 @@
     AD_PROVIDER: 'https://a.magsrv.com/ad-provider.js',
     // 频率控制 — 对齐 gamezipper.com v5
     FREQUENCY: {
-      minBetweenAds: 45 * 1000,         // 45s between any ads (对标 Poki 克制策略)
-      firstAdDelay: 45 * 1000,          // 45s before first ad (新用户友好)
+      minBetweenAds: 35 * 1000,         // v5.7: 35s between any ads (was 45s, AdSense fill 5-10% means we recover cost in 5 imps)
+      firstAdDelay: 30 * 1000,          // v5.7: 30s before first ad (was 45s, aligns with gz.com v5.4)
       popunderInterval: 25 * 60 * 1000,  // 25 min between popunders
       sessionMaxAds: 20,                 // max 20 per 30-min session (对标 Poki)
       sessionWindowMs: 30 * 60 * 1000,   // 30-min rolling window
@@ -123,10 +139,12 @@
       vignetteMaxDuration: 8000,        // 8s auto-dismiss
       popunderInteractionDelay: 5000,  // 5s after first interaction
       adLoadTimeout: 5000,
+      exitIntentMinDwellMs: 30000,      // v5.7: 30s minimum on page before exit-intent fires
+      exitIntentCooldownMs: 5*60*1000,  // v5.7: 5min between exit-intent commercial breaks
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.6-tools-monetag-cross-deploy',  // 2026-06-21: cross-deploy gz.com zone 11012002 (1.75% fill proven) to tools as Tier 2 fallback in containerAd() + commercial break
+    VERSION: '5.7-tools-exit-intent',  // 2026-06-24: exit-intent commercial break + tighter firstAdDelay/minBetweenAds (30s/35s)
     // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
     //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
     //   streak 2 → 60min (was 30): same logic
@@ -636,9 +654,13 @@
 
   // ==================== Poki-style Glass Overlay (替代 Vignette) ====================
   // 对标 Poki: 毛玻璃 + 品牌文案 + 进度条
-  function showPokiOverlay() {
+  // v5.7: accept optional source arg ('auto' | 'exit_intent') for BI tracking.
+  function showPokiOverlay(source) {
     if (!canShowAd()) return;
     var delay = state.isHubPage ? CONFIG.TIMING.vignetteHubDelay : CONFIG.TIMING.vignetteToolDelay;
+    // v5.7: exit-intent has 800ms built-in delay before showing, so skip the
+    // standard 20s/35s delay (user already on page for 30s+).
+    if (source === 'exit_intent') delay = 0;
 
     setTimeout(function() {
       if (!canShowAd()) return;
@@ -729,7 +751,7 @@
       function onAdFilled(network) {
         if (adFilled) return;
         adFilled = true;
-        trackAdEvent('commercial_break_fill', { network: network });
+        trackAdEvent('commercial_break_fill', { network: network, source: source || 'auto' });
       }
       // Tier 1: AdSense (game 站 AdSense fill 5-10%)
       try {
@@ -785,7 +807,7 @@
                 loadAdsterraZone(ZONES.adsterraInpagePush, null, 'inpage').then(function() {
                   onAdFilled('adsterra_inpage');
                 }).catch(function() {
-                  trackAdEvent('commercial_break_no_fill', {});
+                  trackAdEvent('commercial_break_no_fill', { source: source || 'auto' });
                 });
               });
             });
@@ -836,6 +858,56 @@
     }
   }
 
+  // ==================== EXIT-INTENT COMMERCIAL BREAK (v5.7) ====================
+  // Mirrors gamezipper.com v5.8 — fires a Poki-style overlay when the user
+  // moves the mouse to the top of the viewport (likely navigating away).
+  // tools.gamezipper.com is task-focused: users run a tool then leave, so
+  // exit-intent captures the final high-CTR slot before navigation.
+  //
+  // On tool pages only (isToolPage). Hub pages are entry points — users just
+  // landed and may not have engaged yet, so we skip.
+  //
+  // Smart guards (same as gz.com v5.8):
+  //   - 30s minimum on-page dwell (avoid punishing quick bounces)
+  //   - 5-min cooldown between exit-intent breaks
+  //   - Skip on hub pages (entry points, no engagement to interrupt)
+  //   - Respect canShowAd() (frequency caps still apply)
+  //   - Suppressed if popunder recently fired (avoid double ad-stacking)
+  function initExitIntent() {
+    if (!state.isToolPage) return;
+
+    var pageLoadTime = now();
+    var lastExitIntentAt = 0;
+
+    document.addEventListener('mouseout', function(e) {
+      // Standard exit-intent heuristic: mouse leaves viewport (relatedTarget=null)
+      // toward the top edge (clientY < 10). On most browsers this fires when the
+      // user moves the mouse up to click the back button, URL bar, or close tab.
+      if (e.relatedTarget !== null && e.relatedTarget !== undefined) return;
+      if (typeof e.clientY !== 'number' || e.clientY > 10) return;
+      if (e.clientY < 0) return; // already left the viewport, too late
+
+      // Guard 1: minimum dwell time
+      if (now() - pageLoadTime < CONFIG.TIMING.exitIntentMinDwellMs) return;
+
+      // Guard 2: cooldown since last exit-intent break
+      if (now() - lastExitIntentAt < CONFIG.TIMING.exitIntentCooldownMs) return;
+
+      // Guard 3: respect frequency cap
+      if (!canShowAd()) return;
+
+      // Guard 4: don't double-stack with a recent popunder (within 60s)
+      var lastPopunder = storageGet('popunder_last') || 0;
+      if (now() - lastPopunder < 60 * 1000) return;
+
+      lastExitIntentAt = now();
+      trackAdEvent('exit_intent_detected', {});
+      // v5.7: re-use the same showPokiOverlay path (delayed entry, e.g. 1s)
+      // so the user perceives it as a natural break rather than a punishment.
+      setTimeout(function() { showPokiOverlay('exit_intent'); }, 800);
+    }, { passive: true });
+  }
+
   // ==================== In-Page Push (轻量级, 所有页面) ====================
   function showInPagePush() {
     if (!canShowAd()) return;
@@ -872,5 +944,7 @@
   showPokiOverlay();    // v4: Poki-style glass overlay 替代 vignette
   initPopunder();
   showInPagePush();
+  // v5.7: Exit-intent commercial break (revenue recovery on user navigation)
+  initExitIntent();
 
 })();
