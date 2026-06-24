@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Stable Diffusion 提示词构建器 - 正向 / 负向提示词 | GameZipper 工具箱</title>
+  <meta name="description" content="免费 Stable Diffusion 提示词构建器。构建正向和负向提示词，添加质量增强词、艺术风格、光线、镜头和通用负向标签包。兼容 SDXL、SD 1.5、Flux 和 AUTOMATIC1111。无需注册，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/sd-prompt-builder.html">
+  <meta property="og:title" content="Stable Diffusion 提示词构建器">
+  <meta property="og:description" content="免费 Stable Diffusion 提示词构建器。构建正向和负向提示词，添加质量增强词、艺术风格、光线、镜头和通用负向标签包。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/sd-prompt-builder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Stable Diffusion 提示词构建器">
+<meta name="twitter:description" content="免费 Stable Diffusion 提示词构建器。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.field{margin-bottom:12px}
+.field label{display:block;font-weight:600;margin-bottom:5px;font-size:.9em}
+.field input{width:100%;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-size:.9em}
+.field input:focus{outline:none;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.chips button{padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.76em;cursor:pointer;transition:all .15s}
+.chips button:hover{border-color:var(--accent);color:var(--text)}
+.chips button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chips button.on.neg{background:#e94560;border-color:#e94560}
+.out-block{margin-bottom:14px}
+.out-block h4{margin:0 0 5px;font-size:.82em;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);font-weight:700}
+.out-block.pos h4{color:var(--accent)}
+.out-block.neg h4{color:#e94560}
+#posOut,#negOut{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86em;line-height:1.55;min-height:64px;padding:12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Stable Diffusion Prompt Builder","description":"Free Stable Diffusion prompt builder. Craft positive and negative prompts with quality boosters, art styles, lighting, camera and Common Negative tag packs. Works with SDXL, SD 1.5, Flux and AUTOMATIC1111. No signup, browser-only.","url":"https://tools.gamezipper.com/zh/text/sd-prompt-builder.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does this tool generate images?","acceptedAnswer":{"@type":"Answer","text":"No. It only assembles the positive and negative prompt text strings that you then paste into Stable Diffusion, AUTOMATIC1111, ComfyUI, Forge or any diffusion UI. No images are rendered and nothing is uploaded."}},{"@type":"Question","name":"What are quality boosters?","acceptedAnswer":{"@type":"Answer","text":"Tags like masterpiece, best quality, highly detailed and 8k that historically push diffusion models toward sharper, higher-fidelity outputs. They are optional and most useful on SD 1.5 — SDXL and Flux need them less."}},{"@type":"Question","name":"What goes in a negative prompt?","acceptedAnswer":{"@type":"Answer","text":"Anything you want to avoid: low quality, blurry, extra fingers, watermark, text, deformed. The Common Negative pack bundles the most useful ones; you can toggle individual tags on or off."}},{"@type":"Question","name":"Is this prompt builder free?","acceptedAnswer":{"@type":"Answer","text":"Yes — completely free, no signup, runs entirely in your browser and never sends your prompt to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/sd-prompt-builder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/sd-prompt-builder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/sd-prompt-builder.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in" style="font-weight:600;display:block;margin-bottom:8px"></label>
+        <div class="field"><label id="lbl-subject"></label><input id="subject" type="text" placeholder="例如：一只红狐在雪林中酣睡"></div>
+        <div class="field"><label id="lbl-quality"></label><div class="chips" id="quality-chips"></div></div>
+        <div class="field"><label id="lbl-style"></label><div class="chips" id="style-chips"></div></div>
+        <div class="field"><label id="lbl-light"></label><div class="chips" id="light-chips"></div></div>
+        <div class="field"><label id="lbl-camera"></label><div class="chips" id="camera-chips"></div></div>
+        <div class="field"><label id="lbl-extra"></label><input id="extra" type="text" placeholder="额外正向标签，逗号分隔"></div>
+        <div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--border)">
+          <div class="field"><label id="lbl-neg-title"></label></div>
+          <div class="field"><label id="lbl-neg-pack"></label><div class="chips" id="negpack-chips"></div></div>
+          <div class="field"><label id="lbl-neg-extra"></label><input id="negExtra" type="text" placeholder="额外负向标签，逗号分隔"></div>
+        </div>
+      </div>
+      <div>
+        <label id="lbl-out" style="font-weight:600;display:block;margin-bottom:8px"></label>
+        <div class="out-block pos"><h4 id="h-pos"></h4><div id="posOut"></div></div>
+        <div class="out-block neg"><h4 id="h-neg"></h4><div id="negOut"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Stable Diffusion Prompt Builder',
+    toolDesc: 'Craft positive and negative prompts for Stable Diffusion, SDXL, SD 1.5 and Flux. Add quality boosters, art styles, lighting, camera and Common Negative tag packs. Free, browser-only.',
+    lblIn: 'Composition', lblOut: 'Generated prompts',
+    lblSubject: 'Subject', lblQuality: 'Quality boosters', lblStyle: 'Art style', lblLight: 'Lighting', lblCamera: 'Camera / shot', lblExtra: 'Extra positive tags',
+    lblNegTitle: 'Negative prompt', lblNegPack: 'Common negative pack', lblNegExtra: 'Extra negative tags',
+    hPos: 'Positive prompt', hNeg: 'Negative prompt',
+    empty: 'Describe your subject on the left — positive and negative prompts appear here.',
+    step1: 'Type the main subject of your image',
+    step2: 'Toggle quality boosters, art style, lighting and camera tags',
+    step3: 'Pick a Common Negative pack and add any custom negative tags',
+    step4: 'Copy both prompts into Stable Diffusion, AUTOMATIC1111 or ComfyUI',
+  },
+  zh: {
+    toolTitle: 'Stable Diffusion 提示词构建器',
+    toolDesc: '为 Stable Diffusion、SDXL、SD 1.5 和 Flux 构建正向和负向提示词。添加质量增强词、艺术风格、光线、镜头和通用负向标签包。免费，浏览器本地运行。',
+    lblIn: '画面构成', lblOut: '生成的提示词',
+    lblSubject: '主体', lblQuality: '质量增强词', lblStyle: '艺术风格', lblLight: '光线', lblCamera: '镜头 / 构图', lblExtra: '额外正向标签',
+    lblNegTitle: '负向提示词', lblNegPack: '通用负向标签包', lblNegExtra: '额外负向标签',
+    hPos: '正向提示词', hNeg: '负向提示词',
+    empty: '在左侧描述你的主体 — 正向和负向提示词将出现在这里。',
+    step1: '输入图像的主要主体',
+    step2: '切换质量增强词、艺术风格、光线和镜头标签',
+    step3: '选择通用负向标签包并添加自定义负向标签',
+    step4: '将两组提示词复制到 Stable Diffusion、AUTOMATIC1111 或 ComfyUI',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const QUALITY = ['masterpiece','best quality','highly detailed','ultra-detailed','8k uhd','sharp focus','intricate details','award-winning'];
+const STYLES  = ['photorealistic','anime style','oil painting','watercolor','digital art','concept art','cyberpunk','fantasy','minimalist','pixel art','3D render','ink wash'];
+const LIGHTS  = ['golden hour','soft lighting','dramatic lighting','studio lighting','volumetric lighting','cinematic lighting','backlit','natural light'];
+const CAMERAS = ['close-up','wide shot','portrait','macro','aerial view','low angle','bokeh','shot on 35mm','telephoto'];
+const NEG_PACKS = ['low quality','worst quality','blurry','deformed','distorted','bad anatomy','extra limbs','missing fingers','watermark','signature','text','jpeg artifacts','out of frame','cropped','ugly','duplicate'];
+
+const picked = { quality:[], style:[], light:[], camera:[], neg:[] };
+
+function buildSet(container, arr, key, neg) {
+  arr.forEach(label => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    if (neg) b.classList.add('neg');
+    b.onclick = () => {
+      const a = picked[key];
+      const i = a.indexOf(label);
+      if (i >= 0) { a.splice(i, 1); b.classList.remove('on'); } else { a.push(label); b.classList.add('on'); }
+      render();
+    };
+    container.appendChild(b);
+  });
+}
+
+buildSet($('#quality-chips'), QUALITY, 'quality');
+buildSet($('#style-chips'),   STYLES,  'style');
+buildSet($('#light-chips'),   LIGHTS,  'light');
+buildSet($('#camera-chips'),  CAMERAS, 'camera');
+buildSet($('#negpack-chips'), NEG_PACKS, 'neg', true);
+
+function render() {
+  const subj = $('#subject').value.trim();
+  if (!subj) { $('#posOut').textContent = t('empty'); $('#negOut').textContent = ''; return; }
+  const pos = [subj];
+  if (picked.quality.length) pos.push(...picked.quality);
+  if (picked.style.length)   pos.push(...picked.style);
+  if (picked.light.length)   pos.push(...picked.light);
+  if (picked.camera.length)  pos.push(...picked.camera);
+  const extra = $('#extra').value.trim();
+  if (extra) extra.split(',').map(s => s.trim()).filter(Boolean).forEach(x => pos.push(x));
+  $('#posOut').textContent = pos.join(', ');
+
+  const neg = [...picked.neg];
+  const ne = $('#negExtra').value.trim();
+  if (ne) ne.split(',').map(s => s.trim()).filter(Boolean).forEach(x => neg.push(x));
+  $('#negOut').textContent = neg.length ? neg.join(', ') : '—';
+}
+
+$('#subject').addEventListener('input', render);
+$('#extra').addEventListener('input', render);
+$('#negExtra').addEventListener('input', render);
+
+function loadExample() {
+  $('#subject').value = 'a cozy bookshop interior on a rainy evening';
+  picked.quality = ['masterpiece','best quality','highly detailed','8k uhd'];
+  picked.style = ['digital art','concept art']; picked.light = ['warm lighting','volumetric lighting'];
+  picked.camera = ['wide shot','bokeh'];
+  picked.neg = ['low quality','blurry','watermark','text','deformed'];
+  $('#extra').value = 'warm tones, dust motes in light';
+  $('#negExtra').value = 'people, modern furniture';
+  ['quality','style','light','camera','neg'].forEach(k => {
+    const c = $('#' + (k === 'neg' ? 'negpack' : k) + '-chips');
+    [...c.children].forEach(b => b.classList.toggle('on', picked[k].includes(b.textContent)));
+  });
+  render();
+}
+
+function doClear() {
+  $('#subject').value = ''; $('#extra').value = ''; $('#negExtra').value = '';
+  Object.keys(picked).forEach(k => picked[k] = []);
+  document.querySelectorAll('.chips button').forEach(b => b.classList.remove('on'));
+  render();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="render()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText('Positive:\\n'+$('#posOut').textContent+'\\n\\nNegative:\\n'+$('#negOut').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+render();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/zh/text/midjourney-prompt-builder.html', name:'Midjourney Prompt Builder'},
+    {icon:'🤖', href:'/zh/text/ai-image-prompt-generator.html', name:'AI Image Prompts'},
+    {icon:'🧠', href:'/zh/dev/system-prompt-builder.html', name:'System Prompt Builder'},
+    {icon:'🖼️', href:'/zh/image/placeholder-image.html', name:'Placeholder Image'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

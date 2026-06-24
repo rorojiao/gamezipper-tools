@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>AI Token 与成本计算器 - OpenAI / Claude / Gemini 价格 | GameZipper 工具箱</title>
+  <meta name="description" content="免费 AI token 与 API 成本计算器。估算 GPT-4o、Claude 3.5 Sonnet、Gemini 1.5 Pro、Llama、DeepSeek 等模型的 token 数量和成本，对比每百万 token 输入/输出价格。无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/token-cost-calculator.html">
+  <meta property="og:title" content="AI Token 与成本计算器">
+  <meta property="og:description" content="免费 AI token 与 API 成本计算器。估算 GPT-4o、Claude、Gemini、Llama、DeepSeek 等模型的 token 数量和成本。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/token-cost-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="AI Token 与成本计算器">
+<meta name="twitter:description" content="免费 AI token 与 API 成本计算器。估算主流大模型的 token 数量和成本。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:14px 0}
+.model-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .18s}
+.model-card:hover{border-color:var(--accent)}
+.model-card.on{border-color:var(--accent);background:rgba(78,205,196,.08);box-shadow:0 0 0 1px var(--accent) inset}
+.model-card .mn{font-weight:700;font-size:.96em}
+.model-card .mp{font-size:.78em;color:var(--text2);margin-top:4px}
+.stat-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.stat{flex:1;min-width:120px;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;text-align:center}
+.stat .v{font-size:1.5em;font-weight:800;color:var(--accent);line-height:1.1}
+.stat .l{font-size:.76em;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+.field label{display:block;font-weight:600;margin-bottom:5px;font-size:.92em}
+.field input,.field select{width:100%;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:.92em}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+#input{width:100%;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);min-height:120px;font-family:inherit;font-size:.92em;resize:vertical}
+.note{font-size:.78em;color:var(--text2);margin-top:10px;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"AI Token Cost Calculator","description":"Free AI token and API cost calculator for OpenAI GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro, Llama, DeepSeek and more. Compare input/output prices per 1M tokens. No signup.","url":"https://tools.gamezipper.com/zh/dev/token-cost-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How are tokens estimated?","acceptedAnswer":{"@type":"Answer","text":"This tool uses the well-known approximation of about 4 characters per token for English text and about 1.5 characters per token for Chinese. Real counts vary by tokenizer (tiktoken for OpenAI, Claude tokenizer, SentencePiece for Gemini), so treat the estimate as a planning guide, not an exact bill."}},{"@type":"Question","name":"Are the prices up to date?","acceptedAnswer":{"@type":"Answer","text":"Prices reflect publicly listed API rates at the time of writing and are editable. Always confirm current pricing on the official provider dashboard before budgeting."}},{"@type":"Question","name":"Does this tool send my text to OpenAI or Anthropic?","acceptedAnswer":{"@type":"Answer","text":"No. All counting and math happen locally in your browser. No text, prompt or API key ever leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/token-cost-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/token-cost-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/token-cost-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="field" style="margin-bottom:12px">
+      <label id="lbl-input"></label>
+      <textarea id="input" spellcheck="false" placeholder="在此粘贴你的提示词或文本..."></textarea>
+    </div>
+    <div class="model-grid" id="models"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+      <div class="field">
+        <label id="lbl-out-tok"></label>
+        <input id="outTok" type="number" min="0" value="200">
+      </div>
+      <div class="field">
+        <label id="lbl-reqs"></label>
+        <input id="reqs" type="number" min="1" value="1">
+      </div>
+    </div>
+    <div class="stat-row" id="stats"></div>
+    <p class="note" id="note"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'AI Token & Cost Calculator',
+    toolDesc: 'Estimate token counts and API cost for GPT-4o, Claude, Gemini, Llama, DeepSeek and more. Compare input/output prices per 1M tokens — all in your browser, no signup.',
+    lblInput: 'Your text / prompt', lblOutTok: 'Expected output tokens', lblReqs: 'Number of requests',
+    tokCount: 'Input tokens', estCost: 'Estimated cost', perReq: 'Cost / request', inPrice: 'In $/1M', outPrice: 'Out $/1M',
+    noteTxt: 'Token counts use the ~4 chars/token (English) and ~1.5 chars/token (Chinese) approximation. Real counts depend on each model\'s tokenizer. Prices are editable — click a card to adjust. Always confirm on the provider\'s official pricing page.',
+    pickModel: 'Pick one or more models to compare:',
+    step1: 'Paste the text or prompt you plan to send to the LLM',
+    step2: 'Pick one or more models to compare side by side',
+    step3: 'Set expected output tokens and number of requests',
+    step4: 'Read the estimated input tokens and total cost per model',
+  },
+  zh: {
+    toolTitle: 'AI Token 与成本计算器',
+    toolDesc: '估算 GPT-4o、Claude、Gemini、Llama、DeepSeek 等模型的 token 数量和 API 成本。对比每百万 token 的输入/输出价格 — 全部在浏览器本地运行，无需注册。',
+    lblInput: '你的文本 / 提示词', lblOutTok: '预期输出 token 数', lblReqs: '请求次数',
+    tokCount: '输入 token', estCost: '预计总成本', perReq: '单次成本', inPrice: '输入 $/百万', outPrice: '输出 $/百万',
+    noteTxt: 'Token 数量采用约 4 字符/token（英文）和约 1.5 字符/token（中文）的近似值。实际数量取决于各模型的分词器。价格可编辑 — 点击卡片调整。请务必在官方价格页面确认。',
+    pickModel: '选择一个或多个模型进行对比：',
+    step1: '粘贴你打算发送给大模型的文本或提示词',
+    step2: '选择一个或多个模型并排对比',
+    step3: '设置预期输出 token 数和请求次数',
+    step4: '查看每个模型的估算输入 token 数和总成本',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const MODELS = [
+  ['gpt-4o',         'GPT-4o',              2.50, 10.00],
+  ['gpt-4o-mini',    'GPT-4o mini',         0.15,  0.60],
+  ['gpt-4.1',        'GPT-4.1',             2.00,  8.00],
+  ['gpt-4.1-mini',   'GPT-4.1 mini',        0.40,  1.60],
+  ['o1',             'o1',                 15.00, 60.00],
+  ['o3-mini',        'o3-mini',             1.10,  4.40],
+  ['claude-sonnet',  'Claude 3.5 Sonnet',   3.00, 15.00],
+  ['claude-haiku',   'Claude 3.5 Haiku',    0.80,  4.00],
+  ['claude-opus',    'Claude 3 Opus',      15.00, 75.00],
+  ['gemini-pro',     'Gemini 1.5 Pro',      1.25,  5.00],
+  ['gemini-flash',   'Gemini 1.5 Flash',    0.075, 0.30],
+  ['llama-405b',     'Llama 3.1 405B',      0.90,  0.90],
+  ['deepseek-chat',  'DeepSeek V3',         0.27,  1.10],
+  ['mistral-large',  'Mistral Large',       2.00,  6.00],
+];
+
+let selected = new Set(['gpt-4o','gpt-4o-mini','claude-sonnet']);
+
+function estimateTokens(text) {
+  if (!text) return 0;
+  const cjk = (text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g) || []).length;
+  const other = text.length - cjk;
+  return Math.ceil(cjk / 1.5 + other / 4);
+}
+
+function fmtMoney(n) {
+  if (n === 0) return '$0.00';
+  if (n < 0.01) return '$' + n.toFixed(4);
+  if (n < 1) return '$' + n.toFixed(3);
+  return '$' + n.toFixed(2);
+}
+
+function renderModels() {
+  const grid = $('#models');
+  grid.innerHTML = '<div style="grid-column:1/-1;font-size:.85em;color:var(--text2);margin-bottom:2px">' + t('pickModel') + '</div>';
+  MODELS.forEach(([id, name, ip, op]) => {
+    const c = document.createElement('div');
+    c.className = 'model-card' + (selected.has(id) ? ' on' : '');
+    c.innerHTML = `<div class="mn">${name}</div><div class="mp">${t('inPrice')}: $${ip} · ${t('outPrice')}: $${op}</div>`;
+    c.onclick = () => {
+      if (selected.has(id)) selected.delete(id); else selected.add(id);
+      renderModels(); render();
+    };
+    grid.appendChild(c);
+  });
+}
+
+function render() {
+  const text = $('#input').value;
+  const inTok = estimateTokens(text);
+  const outTok = Math.max(0, parseInt($('#outTok').value) || 0);
+  const reqs = Math.max(1, parseInt($('#reqs').value) || 1);
+  const rows = [];
+  MODELS.forEach(([id, name, ip, op]) => {
+    if (!selected.has(id)) return;
+    const cost = (inTok * ip + outTok * op) / 1e6 * reqs;
+    rows.push({ name, cost, per: cost / reqs });
+  });
+  rows.sort((a, b) => a.cost - b.cost);
+  if (!rows.length) { $('#stats').innerHTML = ''; return; }
+  const cheapest = rows[0].name;
+  $('#stats').innerHTML = `
+    <div class="stat"><div class="v">${inTok.toLocaleString()}</div><div class="l">${t('tokCount')}</div></div>
+    ${rows.map(r => `
+      <div class="stat">
+        <div class="v">${fmtMoney(r.cost)}${r.name === cheapest ? ' ★' : ''}</div>
+        <div class="l">${r.name} · ${fmtMoney(r.per)}/${t('perReq').split('/')[0].trim().toLowerCase()}</div>
+      </div>`).join('')}
+  `;
+}
+
+$('#input').addEventListener('input', render);
+$('#outTok').addEventListener('input', render);
+$('#reqs').addEventListener('input', render);
+
+function loadExample() {
+  $('#input').value = "Summarize the following article in 5 bullet points, then suggest 3 related topics for further reading.\n\nThe rapid adoption of large language models has reshaped how developers build software. From code generation to automated testing, AI assistants now participate in nearly every stage of the development lifecycle.";
+  $('#outTok').value = 400;
+  $('#reqs').value = 1000;
+  render();
+}
+
+const tb = document.createElement('div');
+tb.className = 'gz-toolbar';
+tb.innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';render()">${t('clear')}</button>`;
+$('.gz-tool-area').insertBefore(tb, $('#models'));
+
+renderModels();
+render();
+$('#note').textContent = t('noteTxt');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🧠', href:'/zh/dev/system-prompt-builder.html', name:'System Prompt Builder'},
+    {icon:'🤖', href:'/zh/text/ai-prompt-generator.html', name:'AI Prompt Generator'},
+    {icon:'🪙', href:'/zh/dev/llm-token-counter.html', name:'LLM Token Counter'},
+    {icon:'📊', href:'/zh/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
