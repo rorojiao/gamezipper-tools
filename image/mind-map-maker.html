@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Mind Map Maker - Free Online Mind Map Tool | GameZipper Tools</title>
+  <meta name="description" content="Create free mind maps online. Add nodes, edit text, drag to arrange, and download as PNG or SVG. No signup, runs entirely in your browser — perfect for brainstorming, planning and study notes.">
+  <link rel="canonical" href="https://tools.gamezipper.com/image/mind-map-maker.html">
+  <meta property="og:title" content="Mind Map Maker - Free Online Mind Map Tool | GameZipper Tools">
+  <meta property="og:description" content="Create free mind maps online. Add nodes, edit text, drag, download as PNG or SVG. No signup, runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/image/mind-map-maker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Mind Map Maker - Free Online Mind Map Tool | GameZipper Tools">
+  <meta name="twitter:description" content="Create free mind maps online. Add nodes, drag, download PNG or SVG. 100% browser-only, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.mm-wrap{display:grid;grid-template-columns:220px 1fr;gap:14px}
+@media(max-width:720px){.mm-wrap{grid-template-columns:1fr}}
+.mm-side{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:12px;padding:14px;height:fit-content}
+.mm-side h3{margin:0 0 8px;font-size:.95rem}
+.mm-side p{font-size:.78rem;color:var(--gz-text-muted);line-height:1.5;margin:.5rem 0}
+.mm-side .btns{display:flex;flex-direction:column;gap:6px}
+.mm-side button{width:100%;text-align:left}
+.mm-canvas{background:repeating-conic-gradient(rgba(255,255,255,.03) 0% 25%,transparent 0% 50%) 50%/24px 24px;border:1px solid var(--gz-border);border-radius:12px;overflow:hidden;position:relative;height:560px}
+.mm-canvas svg{width:100%;height:100%;cursor:grab;display:block}
+.mm-canvas svg.grabbing{cursor:grabbing}
+.mm-node{cursor:pointer}
+.mm-node text{font-family:inherit;font-weight:600;pointer-events:none;user-select:none;text-anchor:middle;dominant-baseline:central}
+.mm-node.root rect{fill:var(--gz-accent);stroke:#06231f;stroke-width:2}
+.mm-node.root text{fill:#06231f}
+.mm-node rect{fill:var(--gz-surface);stroke:var(--gz-accent);stroke-width:2;transition:filter .15s}
+.mm-node text{fill:var(--gz-text)}
+.mm-node.sel rect{stroke:#fff;filter:drop-shadow(0 0 6px var(--gz-accent))}
+.mm-edge{stroke:var(--gz-accent);stroke-width:2;fill:none;opacity:.7}
+.mm-tip{font-size:.74rem;color:var(--gz-text-muted);margin-top:10px;line-height:1.5}
+.mm-editedit{position:absolute;display:none;background:var(--gz-surface);border:2px solid var(--gz-accent);border-radius:6px;padding:4px 8px;color:var(--gz-text);font-weight:600;z-index:10}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Mind Map Maker","description":"Create free mind maps online. Add nodes, edit text, drag to arrange, download as PNG or SVG. No signup, 100% browser-only — perfect for brainstorming, planning and study notes.","url":"https://tools.gamezipper.com/image/mind-map-maker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this mind map maker really free?","acceptedAnswer":{"@type":"Answer","text":"Yes. It is completely free with no signup, no watermark and no limits. Everything runs in your browser."}},{"@type":"Question","name":"How do I edit a node's text?","acceptedAnswer":{"@type":"Answer","text":"Double-click any node to open an inline editor, type your text, then press Enter to confirm or Esc to cancel. You can also select a node and use the Add Child button to branch out."}},{"@type":"Question","name":"Can I download my mind map?","acceptedAnswer":{"@type":"Answer","text":"Yes. Download as a crisp scalable SVG or as a PNG image. Your map also auto-saves to your browser so it is still there when you come back."}},{"@type":"Question","name":"Are my mind maps private?","acceptedAnswer":{"@type":"Answer","text":"Completely. Your map is stored only in your browser's local storage. Nothing is uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/mind-map-maker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/mind-map-maker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/mind-map-maker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mm-wrap">
+      <div class="mm-side">
+        <h3 id="side-title"></h3>
+        <div class="btns">
+          <button class="gz-btn" id="btnAdd" data-i18n></button>
+          <button class="gz-btn gz-btn-secondary" id="btnDel" data-i18n></button>
+          <button class="gz-btn gz-btn-secondary" id="btnReset" data-i18n></button>
+        </div>
+        <p id="side-help"></p>
+        <div class="btns" style="margin-top:10px">
+          <button class="gz-btn gz-btn-secondary" id="btnPng" data-i18n></button>
+          <button class="gz-btn gz-btn-secondary" id="btnSvg" data-i18n></button>
+        </div>
+      </div>
+      <div class="mm-canvas" id="canvas">
+        <svg id="svg" viewBox="0 0 800 560" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Mind Map Maker',
+    toolDesc: 'Build free mind maps online. Add branches, edit text, drag to rearrange and export as PNG or SVG. Auto-saved in your browser — no signup.',
+    add: '➕ Add child',
+    del: '🗑️ Delete node',
+    reset: '↺ Reset map',
+    png: '⬇ Download PNG',
+    svg: '⬇ Download SVG',
+    rootLabel: 'Central Idea',
+    sideHelp: 'Tip: click a node to select it, double-click to edit text, then drag to move. Use Add child to branch out.',
+    step1: 'Click the central node, then Add child to create your first branch',
+    step2: 'Double-click any node to rename it',
+    step3: 'Drag nodes to arrange your map',
+    step4: 'Download as PNG or SVG when you are done',
+  },
+  zh: {
+    toolTitle: '思维导图制作工具',
+    toolDesc: '免费在线制作思维导图。添加分支、编辑文字、拖拽排版，导出 PNG 或 SVG。自动保存在浏览器中 — 无需注册。',
+    add: '➕ 添加子节点',
+    del: '🗑️ 删除节点',
+    reset: '↺ 重置导图',
+    png: '⬇ 下载 PNG',
+    svg: '⬇ 下载 SVG',
+    rootLabel: '中心主题',
+    sideHelp: '提示：单击节点选中，双击编辑文字，拖动可移动。点击「添加子节点」展开分支。',
+    step1: '点击中心节点，再点「添加子节点」创建第一个分支',
+    step2: '双击任意节点可重命名',
+    step3: '拖动节点整理导图布局',
+    step4: '完成后下载为 PNG 或 SVG',
+  }
+});
+const { $, t } = GZ;
+const svg = $('#svg');
+const SAVE_KEY = 'gz_mindmap_v1';
+let nodes = [];   // {id,x,y,text,isRoot}
+let edges = [];   // {from,to}
+let selected = null;
+let nextId = 1;
+
+function newNode(x, y, text, isRoot=false){
+  const n = { id: nextId++, x, y, text, isRoot };
+  nodes.push(n);
+  return n;
+}
+
+function load(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      nodes = d.nodes || []; edges = d.edges || []; nextId = d.nextId || (nodes.length+1);
+      return;
+    }
+  } catch(e){}
+  defaultMap();
+}
+function defaultMap(){
+  nodes = []; edges = []; nextId = 1;
+  const root = newNode(400, 280, t('rootLabel'), true);
+  selected = root.id;
+}
+function save(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify({nodes,edges,nextId})); } catch(e){} }
+
+// layout helper: place a new child to the right or left of parent
+function placeChild(parent){
+  const children = edges.filter(e=>e.from===parent.id).map(e=>nodes.find(n=>n.id===e.to)).filter(Boolean);
+  const side = parent.isRoot ? (children.length % 2 === 0 ? 1 : -1) : (parent.x > 400 ? 1 : -1);
+  const yOff = (children.length - Math.floor(children.length/2)) * 70 * (children.length%2?1:-1);
+  return { x: parent.x + side * 170, y: Math.max(40, Math.min(520, parent.y + yOff)) };
+}
+
+function render(){
+  // recompute text box sizes
+  const tmp = document.createElement('canvas').getContext('2d');
+  tmp.font = '600 14px system-ui, sans-serif';
+  let html = '';
+  // edges first
+  for (const e of edges){
+    const a = nodes.find(n=>n.id===e.from), b = nodes.find(n=>n.id===e.to);
+    if(!a||!b) continue;
+    const mx=(a.x+b.x)/2;
+    html += `<path class="mm-edge" d="M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}"></path>`;
+  }
+  for (const n of nodes){
+    const w = Math.max(90, tmp.measureText(n.text).width + 28);
+    const h = n.isRoot ? 48 : 38;
+    const sel = selected===n.id ? ' sel' : '';
+    const cls = n.isRoot ? 'root' : '';
+    const lines = escapeHtml(n.text);
+    html += `<g class="mm-node ${cls}${sel}" data-id="${n.id}" transform="translate(${n.x},${n.y})">
+      <rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${h/2}"></rect>
+      <text font-size="${n.isRoot?16:14}">${lines}</text>
+    </g>`;
+  }
+  svg.innerHTML = html;
+  save();
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// Interactions: select, drag, double-click edit
+let drag = null;
+function pt(evt){
+  const r = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  return { x: (evt.clientX - r.left)/r.width * vb.width, y: (evt.clientY - r.top)/r.height * vb.height };
+}
+svg.addEventListener('mousedown', e=>{
+  const g = e.target.closest('.mm-node');
+  if(g){
+    const id = +g.dataset.id;
+    selected = id; render();
+    const n = nodes.find(x=>x.id===id);
+    const p = pt(e);
+    drag = { id, ox: n.x - p.x, oy: n.y - p.y };
+    svg.classList.add('grabbing');
+  } else { selected = null; render(); }
+});
+svg.addEventListener('mousemove', e=>{
+  if(!drag) return;
+  const n = nodes.find(x=>x.id===drag.id);
+  if(!n) return;
+  const p = pt(e);
+  n.x = Math.max(60, Math.min(740, p.x + drag.ox));
+  n.y = Math.max(30, Math.min(530, p.y + drag.oy));
+  render();
+});
+window.addEventListener('mouseup', ()=>{ if(drag){drag=null; svg.classList.remove('grabbing');} });
+
+// touch
+svg.addEventListener('touchstart', e=>{
+  if(e.touches.length!==1) return;
+  const t0=e.touches[0];
+  const g = document.elementFromPoint(t0.clientX,t0.clientY)?.closest('.mm-node');
+  if(g){ const id=+g.dataset.id; selected=id; render();
+    const n=nodes.find(x=>x.id===id); const p=pt(t0); drag={id,ox:n.x-p.x,oy:n.y-p.y}; }
+},{passive:true});
+svg.addEventListener('touchmove', e=>{
+  if(!drag||e.touches.length!==1) return;
+  const p=pt(e.touches[0]); const n=nodes.find(x=>x.id===drag.id);
+  if(n){n.x=Math.max(60,Math.min(740,p.x+drag.ox));n.y=Math.max(30,Math.min(530,p.y+drag.oy));render();}
+},{passive:true});
+window.addEventListener('touchend', ()=>{drag=null;});
+
+// double-click edit
+svg.addEventListener('dblclick', e=>{
+  const g = e.target.closest('.mm-node');
+  if(!g) return;
+  const id = +g.dataset.id;
+  startEdit(id);
+});
+function startEdit(id){
+  const n = nodes.find(x=>x.id===id); if(!n) return;
+  const r = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  const px = n.x/vb.width*r.width + r.left;
+  const py = n.y/vb.height*r.height + r.top - 14;
+  const inp = document.createElement('input');
+  inp.value = n.text;
+  inp.style.cssText = `position:fixed;left:${px}px;top:${py}px;min-width:120px;background:var(--gz-surface);border:2px solid var(--gz-accent);border-radius:6px;padding:4px 8px;color:var(--gz-text);font-weight:600;font-size:14px;z-index:50;transform:translateX(-50%)`;
+  document.body.appendChild(inp); inp.focus(); inp.select();
+  const done = (commit)=>{ if(commit && inp.value.trim()) n.text = inp.value.trim().slice(0,60); inp.remove(); render(); };
+  inp.addEventListener('keydown', ev=>{ if(ev.key==='Enter'){done(true);} else if(ev.key==='Escape'){done(false);} });
+  inp.addEventListener('blur', ()=>done(true));
+}
+
+// buttons
+$('#btnAdd').onclick = ()=>{
+  if(selected==null) { selected = nodes.find(n=>n.isRoot)?.id; if(selected==null) return; }
+  const p = nodes.find(n=>n.id===selected);
+  const pos = placeChild(p);
+  const child = newNode(pos.x, pos.y, t('add').replace(/^[^\sA-Za-z]+ /,''));
+  edges.push({ from: p.id, to: child.id });
+  selected = child.id;
+  render();
+  startEdit(child.id);
+};
+$('#btnDel').onclick = ()=>{
+  if(selected==null) return;
+  const n = nodes.find(x=>x.id===selected);
+  if(!n || n.isRoot) return;
+  // remove node + connected edges + descendants
+  const toRemove = new Set([selected]);
+  let changed=true;
+  while(changed){ changed=false;
+    for(const e of edges){ if(toRemove.has(e.from) && !toRemove.has(e.to)){ toRemove.add(e.to); changed=true; } }
+  }
+  nodes = nodes.filter(x=>!toRemove.has(x.id));
+  edges = edges.filter(e=>!toRemove.has(e.from)&&!toRemove.has(e.to));
+  selected = nodes.find(x=>x.isRoot)?.id ?? null;
+  render();
+};
+$('#btnReset').onclick = ()=>{ if(confirm('↺')){ localStorage.removeItem(SAVE_KEY); defaultMap(); render(); } };
+$('#btnPng').onclick = ()=>{
+  const xml = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob(['<?xml version="1.0"?>\n'+xml], {type:'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = ()=>{
+    const c = document.createElement('canvas'); c.width=1600; c.height=1120;
+    const ctx=c.getContext('2d'); ctx.fillStyle='#0a0a1a'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);
+    const a=document.createElement('a'); a.download='mind-map.png'; a.href=c.toDataURL('image/png'); a.click();
+  };
+  img.src = url;
+};
+$('#btnSvg').onclick = ()=>{
+  const xml = new XMLSerializer().serializeToString(svg);
+  const a=document.createElement('a'); a.download='mind-map.svg';
+  a.href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<?xml version="1.0"?>\n'+xml); a.click();
+};
+
+// i18n button labels via data-i18n auto-bind in renderToolPage
+load();
+render();
+GZ.renderToolPage({
+  category:'image',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'📊',href:'/image/chart-maker.html',name:'Chart Maker'},
+    {icon:'🧩',href:'/fun/decision-wheel.html',name:'Decision Wheel'},
+    {icon:'📋',href:'/fun/kanban-board.html',name:'Kanban Board'},
+    {icon:'🗺️',href:'/fun/family-tree.html',name:'Family Tree'},
+  ]
+});
+// manual bind for sidebar (renderToolPage covers [data-i18n])
+['btnAdd','btnDel','btnReset','btnPng','btnSvg'].forEach(id=>{
+  const el=$('#'+id); const map={btnAdd:'add',btnDel:'del',btnReset:'reset',btnPng:'png',btnSvg:'svg'};
+  el.textContent = t(map[id]);
+});
+$('#side-title').textContent = t('toolTitle');
+$('#side-help').textContent = t('sideHelp');
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
