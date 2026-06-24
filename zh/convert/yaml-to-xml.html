@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>YAML 转 XML 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时将 YAML 转换为格式良好、缩进的 XML。支持嵌套对象、数组和属性 — 100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/yaml-to-xml.html">
+  <meta property="og:title" content="YAML 转 XML 转换器">
+  <meta property="og:description" content="即时将 YAML 转换为格式良好、缩进的 XML。支持嵌套对象、数组和属性 — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/yaml-to-xml.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="YAML 转 XML 转换器">
+<meta name="twitter:description" content="即时将 YAML 转换为格式良好、缩进的 XML。支持嵌套对象、数组和属性 — 100% 浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"YAML to XML Converter","description":"Convert YAML to XML online for free. Paste YAML and instantly get well-formed, indented XML — supports nested objects, arrays and attributes. No signup, runs in your browser.","url": "https://tools.gamezipper.com/zh/convert/yaml-to-xml.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert YAML to XML?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your YAML into the input box and the converter outputs well-formed, indented XML. Object keys become element tags, YAML arrays repeat the same element name, and keys prefixed with @ become XML attributes."}}, {"@type": "Question", "name": "How are YAML arrays represented in XML?", "acceptedAnswer": {"@type": "Answer", "text": "Each item in a YAML array becomes a child element with the parent key as the tag name. For example, features: [a, b] becomes <features>a</features><features>b</features>."}}, {"@type": "Question", "name": "Is my YAML data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All parsing and serialization happen entirely in your browser using js-yaml. No data is ever sent to any server."}}, {"@type": "Question", "name": "Can I convert YAML with attributes back to XML?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Any YAML key starting with @ is emitted as an XML attribute on the parent element, which makes round-tripping with the XML to YAML converter lossless."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/yaml-to-xml.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/yaml-to-xml.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/yaml-to-xml.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'YAML to XML Converter',
+    toolDesc: 'Convert YAML to well-formed, indented XML instantly. Supports nested objects, arrays and attributes — 100% in your browser.',
+    lblIn: 'Input YAML',
+    lblOut: 'Output XML',
+    valid: '✓ Valid conversion',
+    step1: 'Paste or type your YAML in the input area',
+    step2: 'The tool instantly converts YAML to XML',
+    step3: 'Click Copy to copy the XML result',
+    step4: 'Click Example to load sample YAML data',
+  },
+  zh: {
+    toolTitle: 'YAML 转 XML 转换器',
+    toolDesc: '即时将 YAML 转换为格式良好、缩进的 XML。支持嵌套对象、数组和属性 — 100% 浏览器本地运行。',
+    lblIn: '输入 YAML',
+    lblOut: '输出 XML',
+    valid: '✓ 转换成功',
+    step1: '在输入区粘贴或输入 YAML',
+    step2: '工具即时将 YAML 转换为 XML',
+    step3: '点击「复制」将 XML 结果复制到剪贴板',
+    step4: '点击「示例」加载示例 YAML 数据',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function escapeXml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function isObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+function buildXml(tag, value, indent) {
+  const pad = '  '.repeat(indent);
+  // Separate attributes (@-prefixed) and #text from real children
+  const attrs = [];
+  let textNode = null;
+  const children = {};
+  if (isObj(value)) {
+    for (const [k, v] of Object.entries(value)) {
+      if (k.startsWith('@')) attrs.push(`${k.slice(1)}="${escapeXml(v)}"`);
+      else if (k === '#text') textNode = v;
+      else children[k] = v;
+    }
+  }
+  const attrStr = attrs.length ? ' ' + attrs.join(' ') : '';
+  const childKeys = Object.keys(children);
+
+  // Leaf: scalar value or no object children
+  if (!isObj(value)) {
+    if (Array.isArray(value)) {
+      return value.map(item => buildXml(tag, item, indent)).join('\n');
+    }
+    // scalar
+    if (value === null || value === undefined || value === '') return `${pad}<${tag}${attrStr} />`;
+    return `${pad}<${tag}${attrStr}>${escapeXml(value)}</${tag}>`;
+  }
+
+  if (childKeys.length === 0) {
+    if (textNode !== null) return `${pad}<${tag}${attrStr}>${escapeXml(textNode)}</${tag}>`;
+    return `${pad}<${tag}${attrStr} />`;
+  }
+
+  // Has children
+  const inner = Object.entries(children).map(([k, v]) => buildXml(k, v, indent + 1)).join('\n');
+  if (textNode !== null) {
+    return `${pad}<${tag}${attrStr}>${escapeXml(textNode)}\n${inner}\n${pad}</${tag}>`;
+  }
+  return `${pad}<${tag}${attrStr}>\n${inner}\n${pad}</${tag}>`;
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').innerHTML = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj = jsyaml.load(inp);
+    if (obj === null || obj === undefined) throw new Error('Empty YAML');
+    if (!isObj(obj) || Object.keys(obj).length !== 1) {
+      throw new Error('Top-level YAML must have exactly one root key');
+    }
+    const rootTag = Object.keys(obj)[0];
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += buildXml(rootTag, obj[rootTag], 0);
+    $('#output').textContent = xml;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `# Server configuration
+server:
+  "@version": "2.1.0"
+  "@env": production
+  host: localhost
+  port: 8080
+  debug: true
+  database:
+    "@engine": postgresql
+    host: db.example.com
+    port: 5432
+    name: myapp_production
+  features:
+    - authentication
+    - caching
+    - logging`;
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('lblIn');
+$('#lbl-out').textContent = t('lblOut');
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/convert/xml-to-yaml.html', name:'XML to YAML'},
+    {icon:'📋', href:'/convert/xml-to-json.html', name:'XML to JSON'},
+    {icon:'📋', href:'/dev/json-to-xml.html', name:'JSON to XML'},
+    {icon:'🔧', href:'/convert/yaml-to-json.html', name:'YAML to JSON'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
