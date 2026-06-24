@@ -94,36 +94,36 @@ function escapeVerb(s) {
 }
 
 function parseInline(text) {
-  // Inline code first to protect from other transforms
-  const codeStash = [];
-  text = text.replace(/`([^`]+)`/g, (_, c) => {
-    codeStash.push(c);
-    return `\x00CODE${codeStash.length - 1}\x00`;
-  });
-  // Inline math (passthrough)
-  const mathStash = [];
-  text = text.replace(/\$([^$]+)\$/g, (_, m) => {
-    mathStash.push(m);
-    return `\x00MATH${mathStash.length - 1}\x00`;
-  });
-  // Images ![alt](url)
+  // Strategy: transform each markdown construct into ready LaTeX, stashing the
+  // generated LaTeX command so the final escapeLatexText pass only touches
+  // literal text and never corrupts the commands we just built.
+  const stash = [];
+  const keep = s => { stash.push(s); return `\x00${stash.length - 1}\x00`; };
+
+  // 1. Inline code — escape content, wrap in \texttt
+  text = text.replace(/`([^`]+)`/g, (_, c) => keep(`\\texttt{${escapeLatexText(c)}}`));
+  // 2. Inline math — passthrough (LaTeX math mode), do NOT escape
+  text = text.replace(/\$([^$]+)\$/g, (_, m) => keep(`$${m}$`));
+  // 3. Images ![alt](url)
   text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) =>
-    `\\includegraphics[width=0.7\\linewidth]{${url}}`);
-  // Links [text](url)
+    keep(`\\includegraphics[width=0.7\\linewidth]{${url}}`));
+  // 4. Links [text](url) — recursively process the label so nested bold/code works
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) =>
-    `\\href{${url}}{${parseInline(label)}}`);
-  // Bold then italic
-  text = text.replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}');
-  text = text.replace(/__([^_]+)__/g, '\\textbf{$1}');
-  text = text.replace(/\*([^*]+)\*/g, '\\textit{$1}');
-  text = text.replace(/(?<!\w)_([^_]+)_(?!\w)/g, '\\textit{$1}');
-  // Strikethrough
-  text = text.replace(/~~([^~]+)~~/g, '\\sout{$1}');
-  // Escape remaining special chars
+    keep(`\\href{${url}}{${parseInline(label)}}`));
+  // 5. Bold / italic / strikethrough — loop to handle nesting, escape inner content
+  let prev;
+  do {
+    prev = text;
+    text = text.replace(/\*\*([^*]+)\*\*/g, (_, c) => keep(`\\textbf{${escapeLatexText(c)}}`));
+    text = text.replace(/__([^_]+)__/g, (_, c) => keep(`\\textbf{${escapeLatexText(c)}}`));
+    text = text.replace(/\*([^*]+)\*/g, (_, c) => keep(`\\textit{${escapeLatexText(c)}}`));
+    text = text.replace(/(?<!\w)_([^_]+)_(?!\w)/g, (_, c) => keep(`\\textit{${escapeLatexText(c)}}`));
+    text = text.replace(/~~([^~]+)~~/g, (_, c) => keep(`\\sout{${escapeLatexText(c)}}`));
+  } while (text !== prev);
+  // 6. Escape the remaining literal text (placeholders contain no special chars)
   text = escapeLatexText(text);
-  // Restore stashes
-  text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => `\\texttt{${escapeLatexText(codeStash[+i])}}`);
-  text = text.replace(/\x00MATH(\d+)\x00/g, (_, i) => `$${mathStash[+i]}$`);
+  // 7. Restore stashed LaTeX commands
+  text = text.replace(/\x00(\d+)\x00/g, (_, i) => stash[+i]);
   return text;
 }
 
