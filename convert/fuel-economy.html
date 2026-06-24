@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Fuel Economy Converter — MPG, L/100km, km/L (US & UK) | GameZipper Tools</title>
+  <meta name="description" content="Free online fuel economy converter. Convert between MPG (US), MPG (UK), L/100km and km/L instantly. Compare US and Imperial miles per gallon. Private and accurate.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/fuel-economy.html">
+  <meta property="og:title" content="Fuel Economy Converter — MPG, L/100km, km/L (US & UK) | GameZipper Tools">
+  <meta property="og:description" content="Free online fuel economy converter. Convert between MPG (US), MPG (UK), L/100km and km/L instantly. Compare US and Imperial miles per gallon. Private and accurate.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/fuel-economy.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Fuel Economy Converter — MPG, L/100km, km/L (US & UK) | GameZipper Tools">
+<meta name="twitter:description" content="Free online fuel economy converter. Convert between MPG (US), MPG (UK), L/100km and km/L instantly. Compare US and Imperial miles per gallon. Private and accurate.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202606193e"></script>
+<style>
+.gz-converter-grid{display:grid;gap:8px}
+.gz-converter-row{display:flex;align-items:center;gap:8px}
+.gz-converter-row input{flex:1;min-width:0}
+.gz-converter-row select{width:170px;min-width:120px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Fuel Economy Converter","description":"Free online fuel economy converter. Convert between MPG (US), MPG (UK), L/100km and km/L instantly. Compare US and Imperial miles per gallon. Private and accurate.","url":"https://tools.gamezipper.com/convert/fuel-economy.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert MPG to L/100km?", "acceptedAnswer": {"@type": "Answer", "text": "For US MPG, divide 235.215 by the MPG value: L/100km = 235.215 / MPG. For example, 30 US MPG = 235.215 / 30 = 7.84 L/100km. For UK (Imperial) MPG, use 282.481 instead."}}, {"@type": "Question", "name": "What is the difference between US and UK MPG?", "acceptedAnswer": {"@type": "Answer", "text": "A US gallon is 3.785 liters while a UK (Imperial) gallon is 4.546 liters. So 40 UK MPG equals about 33.6 US MPG. Always check which gallon a figure uses before comparing."}}, {"@type": "Question", "name": "Which is better, a higher MPG or a lower L/100km?", "acceptedAnswer": {"@type": "Answer", "text": "Higher MPG is better (more distance per gallon). Lower L/100km is better (less fuel used). The two scales are inversely related, so MPG goes up while L/100km goes down."}}, {"@type": "Question", "name": "How do I convert km/L to MPG?", "acceptedAnswer": {"@type": "Answer", "text": "First convert km/L to L/100km using 100 / (km per liter), then convert to US MPG using 235.215 / L/100km. For example, 15 km/L = 6.67 L/100km = about 35.3 US MPG."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/fuel-economy.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/fuel-economy.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/fuel-economy.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-converter-grid" id="converter"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Fuel Economy Converter',
+    toolDesc: 'Convert between US MPG, UK MPG, liters per 100km (L/100km) and km/L. Compare US and Imperial miles per gallon — instant, free and private.',
+    swap: 'Swap',
+    clear: 'Clear',
+    copy: 'Copy',
+    step1: 'Enter a fuel economy value',
+    step2: 'Pick the source unit (From)',
+    step3: 'Pick the target unit (To)',
+    step4: 'The result and conversion factor update instantly',
+  },
+  zh: {
+    toolTitle: '油耗单位转换器',
+    toolDesc: '在美制 MPG、英制 MPG、百公里油耗 (L/100km) 和 km/L 之间转换。对比美制和英制每加仑英里数 — 即时、免费且私密。',
+    swap: '交换',
+    clear: '清除',
+    copy: '复制',
+    step1: '输入一个油耗数值',
+    step2: '选择源单位（从）',
+    step3: '选择目标单位（到）',
+    step4: '结果和换算系数即时更新',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+/*
+  Fuel economy uses an INVERSE relationship (consumption vs economy).
+  Internal base unit: liters per 100 km (L/100km).
+    toL100(value, unit) -> value in L/100km
+    fromL100(l100, unit) -> value in that unit
+  Constants:
+    1 US gallon = 3.785411784 L, 1 mile = 1.609344 km
+    1 UK gallon = 4.54609 L
+*/
+const US_GAL = 3.785411784;
+const UK_GAL = 4.54609;
+const MILE_KM = 1.609344;
+const MPG_US_FACTOR = (100 * US_GAL) / MILE_KM; // 235.214583
+const MPG_UK_FACTOR = (100 * UK_GAL) / MILE_KM; // 282.480936
+
+const UNITS = [
+  { id: 'mpg_us',  label: 'MPG (US)',        zh: '美制 MPG (mpg)' },
+  { id: 'mpg_uk',  label: 'MPG (UK/Imperial)',zh: '英制 MPG (mpg)' },
+  { id: 'l100',    label: 'Liters / 100km (L/100km)', zh: '百公里油耗 (L/100km)' },
+  { id: 'kml',     label: 'Kilometers / Liter (km/L)', zh: '每升公里 (km/L)' },
+];
+
+function toL100(val, id) {
+  switch (id) {
+    case 'l100':   return val;
+    case 'kml':    return val > 0 ? 100 / val : Infinity;
+    case 'mpg_us': return val > 0 ? MPG_US_FACTOR / val : Infinity;
+    case 'mpg_uk': return val > 0 ? MPG_UK_FACTOR / val : Infinity;
+  }
+  return NaN;
+}
+function fromL100(l100, id) {
+  switch (id) {
+    case 'l100':   return l100;
+    case 'kml':    return l100 > 0 ? 100 / l100 : Infinity;
+    case 'mpg_us': return l100 > 0 ? MPG_US_FACTOR / l100 : Infinity;
+    case 'mpg_uk': return l100 > 0 ? MPG_UK_FACTOR / l100 : Infinity;
+  }
+  return NaN;
+}
+
+const lang = GZI18n.getLang();
+const opts = UNITS.map(u => `<option value="${u.id}">${lang === 'zh' ? u.zh : u.label}</option>`).join('');
+
+$('#converter').innerHTML = `
+  <div class="gz-converter-row">
+    <input type="number" id="inputVal" placeholder="0" step="any" min="0" oninput="convert()">
+    <select id="fromUnit" onchange="convert()">${opts}</select>
+  </div>
+  <div class="gz-converter-row" style="justify-content:center">
+    <button class="gz-btn gz-btn-secondary" onclick="swapUnits()">⇅ ${t('swap')}</button>
+  </div>
+  <div class="gz-converter-row">
+    <input type="text" id="outputVal" readonly>
+    <select id="toUnit" onchange="convert()">${opts}</select>
+  </div>
+  <div id="formulaDisplay" style="margin-top:8px;font-size:.85em;opacity:.7"></div>
+`;
+
+$('#fromUnit').value = 'mpg_us';
+$('#toUnit').value = 'l100';
+
+function fmt(n) {
+  if (!isFinite(n)) return '∞';
+  return parseFloat(n.toPrecision(8)).toString();
+}
+
+function convert() {
+  const val = parseFloat($('#inputVal').value);
+  if (isNaN(val) || val < 0) { $('#outputVal').value = ''; $('#formulaDisplay').textContent = ''; return; }
+  const fromId = $('#fromUnit').value;
+  const toId = $('#toUnit').value;
+  const l100 = toL100(val, fromId);
+  const result = fromL100(l100, toId);
+  $('#outputVal').value = fmt(result);
+  // Show a 1-unit reference
+  const refL100 = toL100(1, fromId);
+  const ref = fromL100(refL100, toId);
+  $('#formulaDisplay').textContent = `1 ${fromId} = ${fmt(ref)} ${toId}`;
+}
+
+function swapUnits() {
+  const f = $('#fromUnit').value;
+  $('#fromUnit').value = $('#toUnit').value;
+  $('#toUnit').value = f;
+  convert();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText($('#outputVal').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#inputVal').value='';$('#outputVal').value='';$('#formulaDisplay').textContent=''">${t('clear')}</button>
+`;
+
+convert();
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⛽', href:'/calc/fuel-cost-calculator.html', name:'Fuel Cost'},
+    {icon:'🚗', href:'/calc/gas-mileage-calculator.html', name:'Gas Mileage'},
+    {icon:'📏', href:'/convert/length-converter.html', name:'Length'},
+    {icon:'🔋', href:'/calc/ev-savings-calculator.html', name:'EV Savings'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
