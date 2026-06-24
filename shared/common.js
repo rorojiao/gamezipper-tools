@@ -1,9 +1,47 @@
-/* GameZipper Tools — Common JS — tunnel: garden-cricket-aged-depends */
+/* GameZipper Tools — Common JS — tunnel: garden-cricket-aged-depends
+ * v5.5.3-tools-preconnect (2026-06-25, P1 task t_de6e7e3f):
+ *   Inject preconnect + dns-prefetch for ad/analytics CDNs at the top of common.js.
+ *   common.js is parser-blocking (no defer/async), so the browser starts DNS
+ *   resolution + TLS handshake for these origins ~50-200ms before the deferred
+ *   ad scripts (adsense-auto.js, monetag-manager.js) load and request resources.
+ *   Affects all 2769 HTML pages that include shared/common.js.
+ *   Mirrors index.html lines 73-80 + gamezipper.com's manual preconnect set.
+ *   Browser dedups preconnect hints, so this is safe even on pages that already
+ *   have them in <head> (only index.html and 2 zh siblings).
+ *   Domains:
+ *     - pagead2.googlesyndication.com → AdSense auto-ads (https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js)
+ *     - a.magsrv.com + static.magsrv.com → Monetag in-page push (CDN 530 root cause)
+ *     - bi.gamezipper.com → BI server analytics (referenced from gz-analytics.js)
+ *   dns-prefetch is the fallback for browsers without preconnect (older Firefox/Safari).
+ */
 (function(){
+  // ── v5.5.3 preconnect/dns-prefetch injection (runs synchronously during HTML parse) ──
+  try {
+    var hints = [
+      { rel: 'preconnect',  href: 'https://pagead2.googlesyndication.com', crossorigin: true },
+      { rel: 'preconnect',  href: 'https://a.magsrv.com',                 crossorigin: true },
+      { rel: 'preconnect',  href: 'https://static.magsrv.com',            crossorigin: true },
+      { rel: 'preconnect',  href: 'https://bi.gamezipper.com',            crossorigin: true },
+      { rel: 'dns-prefetch', href: 'https://pagead2.googlesyndication.com' },
+      { rel: 'dns-prefetch', href: 'https://a.magsrv.com' },
+      { rel: 'dns-prefetch', href: 'https://static.magsrv.com' }
+    ];
+    for (var i = 0; i < hints.length; i++) {
+      var h = hints[i];
+      var l = document.createElement('link');
+      l.rel = h.rel;
+      l.href = h.href;
+      if (h.crossorigin) l.crossOrigin = 'anonymous';
+      document.head.appendChild(l);
+    }
+  } catch(e) {
+    // Non-fatal: tools pages without document.head (very rare) just lose the hints.
+  }
+
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://profiles-coffee-distributed-pit.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://genome-metric-divide-probably.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
   var s1=document.createElement('script');s1.src='/monetag-manager.js?v=202606240b57exi';s1.defer=true;document.head.appendChild(s1);
