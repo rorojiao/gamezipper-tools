@@ -139,12 +139,12 @@
       vignetteMaxDuration: 8000,        // 8s auto-dismiss
       popunderInteractionDelay: 5000,  // 5s after first interaction
       adLoadTimeout: 5000,
-      exitIntentMinDwellMs: 30000,      // v5.7: 30s minimum on page before exit-intent fires
-      exitIntentCooldownMs: 5*60*1000,  // v5.7: 5min between exit-intent commercial breaks
+      exitIntentMinDwellMs: 15000,      // v5.8: 15s minimum on page (was 30s; tools task flow exits faster than games)
+      exitIntentCooldownMs: 60*1000,    // v5.8: 60s between exit-intent commercial breaks (was 5min, mirrors gz.com v5.9)
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.7-tools-exit-intent',  // 2026-06-24: exit-intent commercial break + tighter firstAdDelay/minBetweenAds (30s/35s)
+    VERSION: '5.8-tools-exit-intent-fix',  // 2026-06-25: port gz.com v5.9 fix — track exit_intent_detected before canShowAd, add canShowAdExitIntent() + exit_intent_blocked, loosen 30s/5m → 15s/60s
     // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
     //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
     //   streak 2 → 60min (was 30): same logic
@@ -378,6 +378,28 @@
       var minGap = ts.length <= 2 ? CONFIG.FREQUENCY.firstAdDelay : CONFIG.FREQUENCY.minBetweenAds;
       if (n - lastAd < minGap) return false;
     }
+    return true;
+  }
+
+  // v5.8: Exit-intent-specific canShowAd that bypasses the type-specific
+  // firstAdDelay / minBetweenAds cooldown but still respects global daily
+  // and session caps. The user is about to leave — we want to attempt a fill
+  // even if a regular commercial break just fired 10s ago. Exit-intent is
+  // treated as its own ad slot, parallel to the standard frequency cap chain.
+  // Mirrors gamezipper.com v5.9's canShowAdExitIntent() implementation.
+  function canShowAdExitIntent() {
+    var ts = storageGet('ad_ts') || [];
+    var n = now();
+    ts = ts.filter(function(t) { return (n - t) < 24 * 60 * 60 * 1000; });
+    // Daily limit
+    if (ts.length >= CONFIG.FREQUENCY.dailyMaxAds) return false;
+    // Session (30-min rolling) limit
+    var sessionTs = ts.filter(function(t) { return (n - t) < CONFIG.FREQUENCY.sessionWindowMs; });
+    if (sessionTs.length >= CONFIG.FREQUENCY.sessionMaxAds) return false;
+    // Intentionally skip:
+    //   - firstAdDelay / minBetweenAds cooldown — exit-intent is its own slot,
+    //     not a commercial_break. The user is about to leave; firing late
+    //     would defeat the purpose.
     return true;
   }
 
