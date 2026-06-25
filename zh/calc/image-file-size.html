@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片文件大小计算器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="根据图片的尺寸和颜色深度，计算未压缩的原始数据大小，并估算 PNG、JPEG、WebP 和 GIF 压缩后的文件大小。">
+<link rel="canonical" href="https://tools.gamezipper.comzh/calc/image-file-size.html">
+<meta property="og:title" content="图片文件大小计算器">
+<meta property="og:description" content="根据图片的尺寸和颜色深度，计算未压缩的原始数据大小，并估算 PNG、JPEG、WebP 和 GIF 压缩后的文件大小。">
+<meta property="og:url" content="https://tools.gamezipper.comzh/calc/image-file-size.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="图片文件大小计算器">
+<meta name="twitter:description" content="根据图片的尺寸和颜色深度，计算未压缩的原始数据大小，并估算 PNG、JPEG、WebP 和 GIF 压缩后的文件大小。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260625pc"></script>
+<style>
+.ifs-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.ifs-form label{font-size:.78em;color:var(--text2);display:block;margin-bottom:3px}
+.ifs-form input,.ifs-form select{width:100%;box-sizing:border-box}
+.ifs-out{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:16px}
+.ifs-big{text-align:center;font-size:1.4em;font-weight:800;color:var(--accent);margin-bottom:10px}
+.ifs-table{width:100%;border-collapse:collapse;font-size:.9em}
+.ifs-table th,.ifs-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.ifs-table th{color:var(--text2);font-size:.78em;text-transform:uppercase;letter-spacing:.5px}
+.ifs-table td.num{text-align:right;font-family:monospace}
+.ifs-badge{font-size:.72em;padding:2px 8px;border-radius:6px;background:var(--bg2);color:var(--text2)}
+.note{font-size:.78em;color:var(--text2);margin-top:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Image File Size Calculator","description":"Free Image File Size Calculator — compute raw uncompressed pixel data size and estimate compressed PNG, JPEG, WebP and GIF file sizes from width, height and color depth. 100% in-browser, no upload, no signup.","url": "https://tools.gamezipper.comzh/calc/image-file-size.html","applicationCategory":"Calculator","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How is raw image size calculated?", "acceptedAnswer": {"@type": "Answer", "text": "Raw size = width × height × color depth ÷ 8. A 1920×1080 image at 24-bit color (3 bytes per pixel) equals 1920 × 1080 × 3 = 6,220,800 bytes, or about 5.93 MB uncompressed."}}, {"@type": "Question", "name": "Are the compressed sizes exact?", "acceptedAnswer": {"@type": "Answer", "text": "No. Compressed sizes are statistical estimates based on typical compression ratios for each format. Real output depends on image content — photos compress better as JPEG, flat graphics compress better as PNG or WebP. Use it for planning, then verify the actual file."}}, {"@type": "Question", "name": "What color depth should I use?", "acceptedAnswer": {"@type": "Answer", "text": "Use 24-bit for standard color photos (8 bits each for red, green, blue), 32-bit when an alpha/transparency channel is present, 8-bit for grayscale, and 1-bit for black-and-white line art."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.comcalc/image-file-size.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.comzh/calc/image-file-size.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.comcalc/image-file-size.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="ifs-form">
+      <div><label id="lbl-w"></label><input type="number" id="w" min="1" value="1920"></div>
+      <div><label id="lbl-h"></label><input type="number" id="h" min="1" value="1080"></div>
+      <div><label id="lbl-d"></label><select id="depth">
+        <option value="1">1-bit (B/W)</option>
+        <option value="8">8-bit (grayscale)</option>
+        <option value="24" selected>24-bit (RGB)</option>
+        <option value="32">32-bit (RGBA)</option>
+      </select></div>
+    </div>
+    <div class="ifs-out">
+      <div class="ifs-big" id="big"></div>
+      <table class="ifs-table"><thead><tr><th>Format</th><th class="num">Est. size</th><th class="num">vs raw</th></tr></thead><tbody id="tbl"></tbody></table>
+    </div>
+    <p class="note" id="note"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Image File Size Calculator',
+    toolDesc: 'Compute the raw uncompressed size of an image and estimate compressed PNG, JPEG, WebP and GIF file sizes from its dimensions and color depth.',
+    width: 'Width (px)', height: 'Height (px)', depth: 'Color depth',
+    example: 'Load Example', clear: 'Clear',
+    rawSize: 'Raw uncompressed size',
+    note: 'Compressed estimates use typical real-world ratios. Actual size depends on image content, compression settings and metadata. PNG/WebP lossless assumes photographic content.',
+    step1: 'Enter image width and height in pixels',
+    step2: 'Pick the color depth — 24-bit for normal color photos',
+    step3: 'Read the raw uncompressed size in the big badge',
+    step4: 'Compare estimated compressed sizes per format',
+  },
+  zh: {
+    toolTitle: '图片文件大小计算器',
+    toolDesc: '根据图片的尺寸和颜色深度，计算未压缩的原始数据大小，并估算 PNG、JPEG、WebP 和 GIF 压缩后的文件大小。',
+    width: '宽度（像素）', height: '高度（像素）', depth: '颜色深度',
+    example: '加载示例', clear: '清空',
+    rawSize: '原始未压缩大小',
+    note: '压缩大小为基于典型比例的估算值，实际大小取决于图片内容、压缩参数和元数据。PNG/WebP 无损假设为照片内容。',
+    step1: '输入图片的宽度和高度（像素）',
+    step2: '选择颜色深度 — 普通彩色照片用 24 位',
+    step3: '在大数字处查看未压缩原始大小',
+    step4: '比较各格式的估算压缩大小',
+  }
+});
+const { $, t } = GZ;
+
+// Format: ratio relative to raw
+const FORMATS = [
+  {key:'RAW / BMP',   ratio:1.00},
+  {key:'PNG (lossless)', ratio:0.45},
+  {key:'JPEG (photo)',   ratio:0.12},
+  {key:'WebP (photo)',   ratio:0.09},
+  {key:'WebP (lossless)',ratio:0.30},
+  {key:'GIF (256)',      ratio:0.40},
+  {key:'AVIF (photo)',   ratio:0.06},
+];
+
+function fmtBytes(b){
+  if (b < 1024) return b.toFixed(0) + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  if (b < 1073741824) return (b/1048576).toFixed(2) + ' MB';
+  return (b/1073741824).toFixed(2) + ' GB';
+}
+
+function calc(){
+  const w = +$('#w').value || 0, h = +$('#h').value || 0, d = +$('#depth').value || 24;
+  const raw = w * h * (d/8);
+  $('#big').innerHTML = raw > 0
+    ? `${t('rawSize')}: ${fmtBytes(raw)} <span class="ifs-badge">${w}×${h} · ${d}-bit</span>`
+    : '—';
+  const tb = $('#tbl');
+  tb.innerHTML = FORMATS.map(f=>{
+    const sz = raw * f.ratio;
+    const pct = f.ratio < 0.001 ? '—' : Math.round(f.ratio*100)+'%';
+    return `<tr><td>${f.key}</td><td class="num">${sz>0?fmtBytes(sz):'—'}</td><td class="num">${pct}</td></tr>`;
+  }).join('');
+}
+
+$('#lbl-w').textContent = t('width');
+$('#lbl-h').textContent = t('height');
+$('#lbl-d').textContent = t('depth');
+$('#note').textContent = t('note');
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadEx()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+['w','h','depth'].forEach(id=>$('#'+id).addEventListener('input',calc));
+
+function loadEx(){ $('#w').value=4000; $('#h').value=3000; $('#depth').value='24'; calc(); }
+function clearAll(){ $('#w').value=''; $('#h').value=''; calc(); }
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📐', href:'/calc/dpi-calculator.html', name:'DPI / PPI Calculator'},
+    {icon:'🖼️', href:'/image/resizer.html', name:'Image Resizer'},
+    {icon:'📦', href:'/image/compressor.html', name:'Image Compressor'},
+    {icon:'🖥️', href:'/calc/aspect-ratio.html', name:'Aspect Ratio'},
+  ]
+});
+
+calc();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
