@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-
-<title>文本改写 / 句子重写工具 - 免费在线 | GameZipper 工具箱</title>
-  <meta name="description" content="免费在线文本改写和句子重写工具。通过同义词替换、句式重组和语气模式（正式、随意、简化、扩展）改写文本。100% 浏览器本地运行，无需注册，不调用 AI API。">
+<title>文本改写 / 句子重写工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时改写文本，支持同义词替换、句式重组和语气模式 — 正式、随意、简化或扩展。100% 浏览器本地运行，不调用 AI API，无需注册。">
   <link rel="canonical" href="https://tools.gamezipper.com/zh/text/text-paraphraser.html">
   <meta property="og:title" content="文本改写 / 句子重写工具">
-  <meta property="og:description" content="免费在线文本改写和句子重写工具。通过同义词替换、句式重组和语气模式改写文本。">
+  <meta property="og:description" content="即时改写文本，支持同义词替换、句式重组和语气模式 — 正式、随意、简化或扩展。100% 浏览器本地运行，不调用 AI API，无需注册。">
   <meta property="og:url" content="https://tools.gamezipper.com/zh/text/text-paraphraser.html">
   <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
 <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="文本改写 / 句子重写工具">
-<meta name="twitter:description" content="免费在线文本改写和句子重写工具。">
+<meta name="twitter:description" content="即时改写文本，支持同义词替换、句式重组和语气模式 — 正式、随意、简化或扩展。100% 浏览器本地运行，不调用 AI API，无需注册。">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -32,7 +31,7 @@
 .stats{display:flex;gap:14px;margin-top:10px;font-size:.78em;color:var(--text2);flex-wrap:wrap}
 .stats b{color:var(--accent)}
 </style>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Text Paraphraser","description":"Free online text paraphraser and sentence rewriter. Rephrase text with synonym swap, sentence shuffling and tone modes. Runs 100% in your browser, no signup, no AI API calls.","url":"https://tools.gamezipper.com/zh/text/text-paraphraser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Text Paraphraser","description":"Free online text paraphraser and sentence rewriter. Rephrase text with synonym swap, sentence shuffling and tone modes — formal, casual, simpler, expanded. Runs 100% in your browser, no signup, no AI API calls.","url": "https://tools.gamezipper.com/zh/text/text-paraphraser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does this paraphraser use AI like ChatGPT?","acceptedAnswer":{"@type":"Answer","text":"No. It runs a deterministic, rule-based rewrite engine entirely in your browser — synonym lookup, synonym strength control, sentence-structure reshuffling and tone filters. No prompt or text is ever sent to an AI API."}},{"@type":"Question","name":"Will the rewritten text pass AI detectors or plagiarism checks?","acceptedAnswer":{"@type":"Answer","text":"This tool rephrases wording and structure to vary your text. It is designed for rewriting, summarizing and avoiding accidental duplication — not for defeating plagiarism or AI-detection systems, which should not be circumvented."}},{"@type":"Question","name":"Which languages are supported?","acceptedAnswer":{"@type":"Answer","text":"The synonym dictionary is English-focused. Chinese text is processed with structural reshuffling (word-order and connector swaps) but has a smaller synonym map. Best results are on English prose."}},{"@type":"Question","name":"Is my text private?","acceptedAnswer":{"@type":"Answer","text":"Yes — completely. All rewriting happens locally in your browser. Your text never leaves your device and is not stored anywhere."}}]}</script>
 <link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/text-paraphraser.html">
 <link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/text-paraphraser.html">
@@ -94,6 +93,7 @@ GZI18n.register({
 
 const { $, copyText, t } = GZ;
 
+// Synonym groups — each array is interchangeable. Formal/casual bias handled by tag.
 const SYN = [
   ['important','significant','crucial','vital','essential','key','major'],
   ['big','large','huge','massive','enormous','substantial','sizable'],
@@ -135,9 +135,10 @@ const SYN = [
   ['way','method','approach','technique','manner','process','strategy'],
 ];
 
+// Tone-biased index hints (formal prefers later synonyms, casual earlier, simpler prefers shortest)
 function pickSyn(group, mode, strength) {
-  if (Math.random() * 100 > strength) return group[0];
-  let pool = group.slice(1);
+  if (Math.random() * 100 > strength) return group[0]; // keep original sometimes
+  let pool = group.slice(1); // exclude original
   if (mode === 'formal') pool = pool.filter(w => w.split(' ').length <= 2).sort((a,b) => b.length - a.length);
   else if (mode === 'casual') pool = pool.sort((a,b) => a.length - b.length);
   else if (mode === 'simpler') pool = pool.sort((a,b) => a.length - b.length);
@@ -163,14 +164,18 @@ function rephraseWord(word, mode, strength) {
   const group = SYN_MAP.get(lower);
   if (!group) return word;
   const repl = pickSyn(group, mode, strength);
+  // preserve capitalization
   if (word[0] === word[0].toUpperCase()) {
     return repl.charAt(0).toUpperCase() + repl.slice(1);
   }
   return repl;
 }
 
+// Light syntactic shuffles for English sentences
 function shuffleSentence(sent, mode) {
   sent = sent.trim();
+  // "Subject is X" -> "X is what Subject is" type mild variation is too risky; keep conservative.
+  // Swap common connectors at start
   if (mode === 'casual' && /^However,/.test(sent)) return sent.replace(/^However,\s*/i, 'But ');
   if (mode === 'formal' && /^But\s/.test(sent)) return sent.replace(/^But\s/i, 'However, ');
   if (mode === 'formal' && /^And\s/.test(sent)) return sent.replace(/^And\s/i, 'Additionally, ');
@@ -187,6 +192,7 @@ function paraphrase() {
   const isCJK = /[\u4e00-\u9fff]/.test(text);
   let out;
   if (isCJK) {
+    // Structural shuffle for Chinese: split on punctuation, occasionally reorder clauses split by ，
     out = text.split(/(?<=[。！？])/).map(sent => {
       if (doShuffle && sent.includes('，') && Math.random() < 0.3) {
         const parts = sent.split('，');
@@ -197,6 +203,7 @@ function paraphrase() {
       return sent;
     }).join('');
   } else {
+    // English: tokenize words, swap synonyms, optionally shuffle sentence starts
     out = text.split(/(\s+)/).map(tok => {
       if (/^\s+$/.test(tok)) return tok;
       const m = tok.match(/^([A-Za-z']+)(.*)$/);
@@ -221,6 +228,7 @@ function paraphrase() {
 
   const wIn = text.trim().split(/\s+/).length;
   const wOut = out.trim().split(/\s+/).length;
+  // crude changed-word estimate
   let changed = 0;
   const a = text.toLowerCase().split(/\s+/), b = out.toLowerCase().split(/\s+/);
   const setB = new Set(b);
@@ -266,10 +274,10 @@ GZ.renderToolPage({
   descKey: 'toolDesc',
   howToSteps: ['step1','step2','step3','step4'],
   related: [
-    {icon:'🔤', href:'/zh/text/case-converter.html', name:'Case Converter'},
-    {icon:'📝', href:'/zh/text/word-counter.html', name:'Word Counter'},
-    {icon:'🤖', href:'/zh/text/ai-prompt-generator.html', name:'AI Prompt Generator'},
-    {icon:'✍️', href:'/zh/text/handwriting.html', name:'Text to Handwriting'},
+    {icon:'🔤', href:'/text/case-converter.html', name:'Case Converter'},
+    {icon:'📝', href:'/text/word-counter.html', name:'Word Counter'},
+    {icon:'🤖', href:'/text/ai-prompt-generator.html', name:'AI Prompt Generator'},
+    {icon:'✍️', href:'/text/handwriting.html', name:'Text to Handwriting'},
   ]
 });
 </script>

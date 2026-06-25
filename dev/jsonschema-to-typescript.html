@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON Schema to TypeScript Converter | GameZipper Tools</title>
+<meta name="description" content="Free JSON Schema to TypeScript converter — paste a JSON Schema and get clean TS interfaces & types instantly. Supports nested objects, arrays, enums, unions, $ref, required and index signatures. 100% in-browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/jsonschema-to-typescript.html">
+<meta property="og:title" content="JSON Schema to TypeScript Converter | GameZipper Tools">
+<meta property="og:description" content="Free JSON Schema to TypeScript converter — paste a JSON Schema and get clean TS interfaces & types instantly. Supports nested objects, arrays, enums, unions, $ref and required. 100% in-browser.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/jsonschema-to-typescript.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JSON Schema to TypeScript Converter | GameZipper Tools">
+<meta name="twitter:description" content="Free JSON Schema to TypeScript converter — paste a JSON Schema and get clean TS interfaces & types instantly. 100% in-browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260625pc"></script>
+<style>
+#input{min-height:200px;font-family:monospace;font-size:.86em}
+#output{white-space:pre;overflow:auto;font-family:monospace;font-size:.84em;line-height:1.5;min-height:200px;margin:0;padding:14px}
+.gz-output{padding:0}
+.jt-opts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:.85em;color:var(--text2)}
+.jt-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.jt-root{font-weight:600}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Schema to TypeScript Converter","description":"Free JSON Schema to TypeScript converter — paste a JSON Schema and get clean TS interfaces and types instantly. Supports nested objects, arrays, enums, unions, $ref, required and index signatures. 100% in-browser.","url":"https://tools.gamezipper.com/dev/jsonschema-to-typescript.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert a JSON Schema to TypeScript?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your JSON Schema into the input box. The tool parses it and emits TypeScript interfaces for objects and type aliases for primitives, with proper nullable/optional handling, arrays, enums and nested definitions."}}, {"@type": "Question", "name": "Does it support $ref references?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Local $ref pointers like #/definitions/User or #/$defs/Address are resolved, rendered as separate interfaces and referenced by name."}}, {"@type": "Question", "name": "How are required and optional fields handled?", "acceptedAnswer": {"@type": "Answer", "text": "Properties listed in the schema's required array become required fields; everything else gets the optional ? modifier. null types become a union with null."}}, {"@type": "Question", "name": "Is my JSON Schema sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The whole conversion runs locally in your browser. Your schema never leaves your device, so it is safe to use with proprietary or sensitive schemas."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jsonschema-to-typescript.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jsonschema-to-typescript.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jsonschema-to-typescript.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="jt-opts" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output"><pre id="output"></pre></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Schema to TypeScript Converter',
+    toolDesc: 'Paste a JSON Schema and get clean TypeScript interfaces and type aliases instantly. Handles nested objects, arrays, enums, unions, $ref, required and index signatures. 100% in-browser.',
+    lblIn: 'JSON Schema',
+    lblOut: 'TypeScript',
+    optExport: 'export keyword',
+    optUnknownNever: 'unknown → never',
+    invalidSchema: '✗ Invalid JSON Schema — not parseable JSON',
+    validOk: '✓ Generated',
+    rootName: 'Root name',
+    step1: 'Paste a valid JSON Schema (draft-07 / 2020-12 style) into the input',
+    step2: 'Optionally set a custom root interface name',
+    step3: 'Toggle export keywords and unknown→never behavior',
+    step4: 'Copy the generated TypeScript types to your project',
+  },
+  zh: {
+    toolTitle: 'JSON Schema 转 TypeScript 转换器',
+    toolDesc: '粘贴 JSON Schema，即时生成干净的 TypeScript 接口和类型别名。支持嵌套对象、数组、枚举、联合类型、$ref、required 和索引签名。完全在浏览器本地运行。',
+    lblIn: 'JSON Schema',
+    lblOut: 'TypeScript',
+    optExport: '添加 export',
+    optUnknownNever: 'unknown → never',
+    invalidSchema: '✗ 无效的 JSON Schema — 不是可解析的 JSON',
+    validOk: '✓ 已生成',
+    rootName: '根名称',
+    step1: '在输入区粘贴有效的 JSON Schema（draft-07 / 2020-12 风格）',
+    step2: '可选：自定义根接口名称',
+    step3: '切换是否添加 export、unknown→never 等行为',
+    step4: '将生成的 TypeScript 类型复制到项目中',
+  }
+});
+const { $, copyText, t } = GZ;
+let useExport = true;
+let unknownNever = false;
+let rootName = 'Root';
+
+function pascal(s){ return (s||'').replace(/[^a-zA-Z0-9]+/g,' ').trim().replace(/(?:^|\s)\S/g,c=>c.toUpperCase()).replace(/\s/g,'') || 'Root'; }
+function refName(ref){ const m=String(ref||'').split('/').pop(); return pascal(m||'Ref'); }
+
+function primitiveType(schema){
+  const tp = Array.isArray(schema.type)?schema.type:schema.type;
+  const map = {string:'string',integer:'number',number:'number',boolean:'boolean',null:'null'};
+  if(schema.const!==undefined){ return JSON.stringify(schema.const); }
+  if(Array.isArray(schema.enum)){ return schema.enum.map(v=>JSON.stringify(v)).join(' | '); }
+  if(typeof tp==='string'){
+    let base = map[tp];
+    if(tp==='array' && schema.items){ return arrayType(schema.items); }
+    if(!base){ base = unknownNever?'never':'unknown'; }
+    if(schema.enum) return base;
+    return base;
+  }
+  if(Array.isArray(tp)){
+    const parts = tp.map(x=> { if(x==='array'&&schema.items) return arrayType(schema.items); const m2={string:'string',integer:'number',number:'number',boolean:'boolean',null:'null'}; return m2[x]||(unknownNever?'never':'unknown'); });
+    return [...new Set(parts)].join(' | ');
+  }
+  return unknownNever?'never':'unknown';
+}
+function arrayType(items){
+  if(!items) return (unknownNever?'never[]':'unknown[]');
+  if(Array.isArray(items)){ return '('+items.map(i=>typeOf(i)).join(' | ')+')[]'; }
+  const inner = typeOf(items);
+  return /[\s|]/.test(inner) && !inner.endsWith(']') ? '('+inner+')[]' : inner+'[]';
+}
+
+const interfaces = {};
+const order = [];
+
+function typeOf(schema, hint){
+  if(!schema || typeof schema!=='object') return unknownNever?'never':'unknown';
+  if(schema.$ref){ return refName(schema.$ref); }
+  if(schema.const!==undefined){ return JSON.stringify(schema.const); }
+  if(Array.isArray(schema.enum)){ return schema.enum.map(v=>JSON.stringify(v)).join(' | '); }
+  if(schema.oneOf||schema.anyOf){
+    const list=schema.oneOf||schema.anyOf;
+    return list.map(s=>{ const r=typeOf(s); return /[\s|]/.test(r)?'('+r+')':r; }).join(' | ');
+  }
+  if(schema.allOf){ return schema.allOf.map(s=>typeOf(s)).join(' & '); }
+  const tp = schema.type;
+  if(tp==='array'||(Array.isArray(tp)&&tp.includes('array'))){ return arrayType(schema.items); }
+  const isObject = (tp==='object')||(schema.properties)||(tp&&Array.isArray(tp)&&tp.includes('object'))||schema.additionalProperties;
+  if(isObject){
+    const name = pascal(hint || schema.title || 'Object');
+    registerInterface(name, schema);
+    return name;
+  }
+  return primitiveType(schema);
+}
+
+function registerInterface(name, schema){
+  if(interfaces[name]) return;
+  interfaces[name]=null; // placeholder to avoid infinite recursion
+  const props = schema.properties||{};
+  const required = new Set(schema.required||[]);
+  const lines=[];
+  // index signature
+  let ap = schema.additionalProperties;
+  if(ap===true) ap={};
+  if(ap && typeof ap==='object' && Object.keys(ap).length===0){
+    lines.push('[key: string]: '+(unknownNever?'any':'unknown')+';');
+  }else if(ap && typeof ap==='object'){
+    lines.push('[key: string]: '+typeOf(ap)+';');
+  }
+  Object.keys(props).forEach((key,i)=>{
+    const sub = props[key];
+    const isReq = required.has(key);
+    let ts = typeOf(sub, key);
+    let opt = isReq?'':'?';
+    lines.push('  '+JSON.stringify(key)+opt+': '+ts+';');
+  });
+  interfaces[name]={ lines, hasIndex: !!(ap) };
+  order.push(name);
+  // recurse into registered children already handled by typeOf via registerInterface
+}
+
+function convert(){
+  const inp=$('#input').value.trim();
+  if(!inp){ $('#output').textContent=''; $('#status').innerHTML=''; return; }
+  let schema;
+  try{ schema=JSON.parse(inp); }
+  catch(e){ $('#output').textContent=''; $('#status').innerHTML='<span style="color:var(--gz-accent)">'+t('invalidSchema')+': '+e.message+'</span>'; return; }
+  // reset
+  for(const k in interfaces) delete interfaces[k];
+  order.length=0;
+  const rn = pascal($('#rootName').value.trim() || rootName);
+  // Pre-register every named definition (draft-07 "definitions" / 2019+ "$defs")
+  const defs = Object.assign({}, schema.definitions||{}, schema.$defs||{});
+  Object.keys(defs).forEach(defKey=>{
+    const dn = refName('#/'+(schema.definitions&&schema.definitions[defKey]!==undefined?'definitions':'$defs')+'/'+defKey);
+    if(defs[defKey] && (defs[defKey].type==='object'||defs[defKey].properties||defs[defKey].oneOf||defs[defKey].anyOf||defs[defKey].allOf)){
+      typeOf(defs[defKey], dn);
+    } else {
+      typeOf(defs[defKey], dn);
+    }
+  });
+  const rootType = typeOf(schema, rn);
+  // Build output
+  const parts=[];
+  const seen=new Set();
+  order.forEach(n=>{ if(!seen.has(n)){ seen.add(n); } });
+  // emit root first if it's an interface
+  function emit(name){
+    const def=interfaces[name];
+    if(!def||!def.lines) return;
+    const kw = useExport?'export ':'';
+    parts.push(kw+'interface '+name+' {');
+    def.lines.forEach(l=>{ if(l.startsWith('[')) parts.push('  '+l); else parts.push(l); });
+    parts.push('}');
+    parts.push('');
+  }
+  // emit all registered interfaces in discovery order, dedup
+  const emitted=new Set();
+  (function emitAll(){
+    for(const n of order){ if(!emitted.has(n)){ emitted.add(n); emit(n); } }
+  })();
+  // If root is not an interface (e.g. type alias), emit it
+  if(!order.includes(rn)){
+    const kw = useExport?'export ':'';
+    parts.unshift(kw+'type '+rn+' = '+rootType+';', '');
+  }
+  $('#output').textContent = parts.join('\n').replace(/\n{3,}/g,'\n\n').trim()+'\n';
+  $('#status').innerHTML='<span style="color:var(--gz-success)">'+t('validOk')+' '+order.length+' interface(s)</span>';
+}
+window.convert=convert;
+
+function loadExample(){
+$('#input').value=JSON.stringify({
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "title":"User",
+  "type":"object",
+  "required":["id","name","email"],
+  "properties":{
+    "id":{"type":"integer"},
+    "name":{"type":"string","minLength":1},
+    "email":{"type":"string","format":"email"},
+    "age":{"type":"integer","minimum":0},
+    "role":{"type":"string","enum":["admin","editor","viewer"]},
+    "tags":{"type":"array","items":{"type":"string"}},
+    "address":{"$ref":"#/definitions/Address"},
+    "isActive":{"type":"boolean"},
+    "nickname":{"type":["string","null"]}
+  },
+  "definitions":{
+    "Address":{
+      "type":"object",
+      "required":["city"],
+      "properties":{
+        "street":{"type":"string"},
+        "city":{"type":"string"},
+        "zip":{"type":"string"}
+      }
+    }
+  }
+},null,2);
+  convert();
+}
+function doClear(){ $('#input').value=''; convert(); }
+window.doClear=doClear;
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="convert()">${t('convert')||'Convert'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+$('#opts').innerHTML=`
+  <label>${t('rootName')}: <input id="rootName" type="text" value="User" class="gz-input" style="width:120px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--glass2);color:var(--text)"></label>
+  <label><input type="checkbox" id="optExport" ${useExport?'checked':''} onchange="useExport=this.checked;convert()"> ${t('optExport')}</label>
+  <label><input type="checkbox" id="optNever" ${unknownNever?'checked':''} onchange="unknownNever=this.checked;convert()"> ${t('optUnknownNever')}</label>`;
+$('#rootName').addEventListener('input',convert);
+$('#lbl-in').textContent=t('lblIn');
+$('#lbl-out').textContent=t('lblOut');
+$('#input').addEventListener('input',convert);
+loadExample();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📘', href:'/dev/json-to-typescript.html', name:'JSON to TS'},
+    {icon:'🛡️', href:'/dev/json-schema-validator.html', name:'JSON Schema Validator'},
+    {icon:'🔎', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🧩', href:'/dev/json-schema.html', name:'JSON Schema Viewer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
