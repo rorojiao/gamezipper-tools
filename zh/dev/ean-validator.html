@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>EAN / UPC / GTIN 条码验证器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用 GS1 模 10 校验位验证任意 EAN、UPC、GTIN、JAN 或 ISBN-13 条码。解码类型、公司（GS1）前缀、商品代码和校验位。免费、私密、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/ean-validator.html">
+  <meta property="og:title" content="EAN / UPC / GTIN 条码验证器">
+  <meta property="og:description" content="使用 GS1 模 10 校验位验证任意 EAN、UPC、GTIN、JAN 或 ISBN-13 条码。解码类型、公司（GS1）前缀、商品代码和校验位。免费、私密、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/ean-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="EAN / UPC / GTIN 条码验证器">
+<meta name="twitter:description" content="使用 GS1 模 10 校验位验证任意 EAN、UPC、GTIN、JAN 或 ISBN-13 条码。解码类型、公司（GS1）前缀、商品代码和校验位。免费、私密、浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260625pc"></script>
+<style>
+.ean-input{font-size:1.4rem!important;font-family:monospace;letter-spacing:2px;text-align:center;max-width:480px!important}
+.ean-display{font-family:monospace;font-size:1.7rem;letter-spacing:4px;text-align:center;padding:16px;background:var(--glass2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px}
+.decode-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);gap:12px}
+.decode-row:last-child{border-bottom:none}
+.decode-row .key{font-weight:600;color:var(--text2)}
+.decode-row .val{font-weight:700;color:var(--accent);text-align:right;word-break:break-all}
+.check-valid{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:700;font-size:.9em}
+.check-ok{background:#27ae60;color:#fff}
+.check-fail{background:#e74c3c;color:#fff}
+.barcode{font-family:'Libre Barcode 39',monospace;height:60px;background:#fff;color:#000;border-radius:8px;display:flex;align-items:flex-end;justify-content:center;gap:0;overflow:hidden;padding:8px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"EAN / UPC / GTIN Barcode Validator","description":"Free EAN, UPC, GTIN, ISBN and JAN barcode validator. Verify the GS1 check digit with the modulo-10 algorithm, detect barcode type (GTIN-8/12/13/14), company prefix and product number. Private, instant, browser-only.","url": "https://tools.gamezipper.com/zh/dev/ean-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an EAN or UPC barcode?","acceptedAnswer":{"@type":"Answer","text":"EAN (European Article Number) and UPC (Universal Product Code) are GS1 standards used worldwide to identify retail products. EAN-13 has 13 digits and is common outside North America; UPC-A (GTIN-12) has 12 digits and is common in the US and Canada."}},{"@type":"Question","name":"How is the GS1 check digit calculated?","acceptedAnswer":{"@type":"Answer","text":"GS1 uses a modulo-10 algorithm: digits in odd positions (counting from the right) are multiplied by 3, the others by 1, the sum is taken, and the check digit is the smallest number that rounds the total up to a multiple of 10. This tool recomputes and verifies it."}},{"@type":"Question","name":"What barcode types does this validator support?","acceptedAnswer":{"@type":"Answer","text":"GTIN-8 (EAN-8), GTIN-12 (UPC-A), GTIN-13 (EAN-13/JAN), GTIN-14 (ITF-14), and short UPC-E. ISBN-13 numbers are validated and decoded as GTIN-13 with the Bookland prefix 978/979."}},{"@type":"Question","name":"Is my barcode number uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. Validation runs entirely in your browser using the GS1 algorithm. The barcode is never sent to a server, stored, or logged."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ean-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ean-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ean-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="app"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'EAN / UPC / GTIN Barcode Validator',
+    toolDesc: 'Validate any EAN, UPC, GTIN, JAN or ISBN-13 barcode with the GS1 modulo-10 check digit. Decode the type, company (GS1) prefix, item reference and check digit. Free, private, browser-only.',
+    placeholder: 'Enter barcode (8, 12, 13 or 14 digits)',
+    check: 'Validate Barcode',
+    sample: 'Load sample',
+    invalid: 'Please enter 8, 12, 13 or 14 digits.',
+    valid: '✓ Valid — check digit correct',
+    invalid2: '✗ Invalid — check digit mismatch',
+    checksum: 'GS1 Checksum',
+    type: 'Barcode Type',
+    t8: 'GTIN-8 (EAN-8)',
+    t12: 'GTIN-12 (UPC-A)',
+    t13: 'GTIN-13 (EAN-13)',
+    t14: 'GTIN-14 (ITF-14)',
+    isbn: 'ISBN-13 (Bookland)',
+    jan: 'GTIN-13 (JAN — Japan)',
+    prefix: 'GS1 Company Prefix',
+    country: 'GS1 Country / Region',
+    item: 'Item Reference',
+    checkDigit: 'Check Digit',
+    expected: 'Expected check digit',
+    notFound: 'Unknown / not a registered prefix',
+    step1: 'Find the product barcode on its packaging or label',
+    step2: 'Type the 8, 12, 13 or 14-digit number above',
+    step3: 'Click Validate Barcode to verify the GS1 check digit',
+    step4: 'Read the type, country and prefix breakdown',
+  },
+  zh: {
+    toolTitle: 'EAN / UPC / GTIN 条码验证器',
+    toolDesc: '使用 GS1 模 10 校验位验证任意 EAN、UPC、GTIN、JAN 或 ISBN-13 条码。解码类型、公司（GS1）前缀、商品代码和校验位。免费、私密、浏览器本地运行。',
+    placeholder: '输入条码（8、12、13 或 14 位数字）',
+    check: '验证条码',
+    sample: '加载示例',
+    invalid: '请输入 8、12、13 或 14 位数字。',
+    valid: '✓ 有效 — 校验位正确',
+    invalid2: '✗ 无效 — 校验位不匹配',
+    checksum: 'GS1 校验',
+    type: '条码类型',
+    t8: 'GTIN-8（EAN-8）',
+    t12: 'GTIN-12（UPC-A）',
+    t13: 'GTIN-13（EAN-13）',
+    t14: 'GTIN-14（ITF-14）',
+    isbn: 'ISBN-13（Bookland）',
+    jan: 'GTIN-13（JAN — 日本）',
+    prefix: 'GS1 公司前缀',
+    country: 'GS1 国家 / 地区',
+    item: '商品代码',
+    checkDigit: '校验位',
+    expected: '预期校验位',
+    notFound: '未知 / 未注册前缀',
+    step1: '在产品包装或标签上找到条形码',
+    step2: '在上方输入 8、12、13 或 14 位数字',
+    step3: '点击"验证条码"以检查 GS1 校验位',
+    step4: '查看类型、国家和前缀分解',
+  }
+});
+
+const { $, t } = GZ;
+
+// GS1 prefix -> country/region (curated subset of the official GS1 prefix list)
+const GS1_PREFIX = {
+  '000':'GS1 US','001':'GS1 US','002':'GS1 US','003':'GS1 US','004':'GS1 US','005':'GS1 US','006':'GS1 US','007':'GS1 US','008':'GS1 US','009':'GS1 US',
+  '010':'GS1 US','011':'GS1 US','012':'GS1 US','013':'GS1 US',
+  '030':'GS1 US / France','031':'GS1 France','032':'GS1 France','033':'GS1 France','034':'GS1 France','035':'GS1 France','036':'GS1 Canada','037':'GS1 France',
+  '038':'GS1 Croatia','039':'GS1 Italy','040':'GS1 Germany','041':'GS1 Germany','042':'GS1 Germany','043':'GS1 Germany','044':'GS1 Germany',
+  '045':'GS1 Japan','046':'GS1 Russia','047':'GS1 Taiwan','048':'GS1 Philippines','049':'GS1 UK',
+  '050':'GS1 UK','051':'GS1 UK','052':'GS1 UK','053':'GS1 UK','054':'GS1 Belgium','055':'GS1 Belgium','056':'GS1 Portugal','057':'GS1 Denmark','058':'GS1 Brazil','059':'GS1 Brazil',
+  '060':'GS1 US','061':'GS1 US','062':'GS1 US','063':'GS1 US','064':'GS1 US','065':'GS1 US','066':'GS1 US','067':'GS1 US','068':'GS1 US','069':'GS1 US',
+  '070':'GS1 Norway','071':'GS1 Norway','072':'GS1 Norway','073':'GS1 Sweden','074':'GS1 Sweden','075':'GS1 Sweden','076':'GS1 Switzerland','077':'GS1 Switzerland','078':'GS1 Switzerland','079':'GS1 Austria',
+  '080':'GS1 Austria','081':'GS1 Austria','082':'GS1 Austria','083':'GS1 Italy','084':'GS1 Spain','085':'GS1 Spain','086':'GS1 Serbia','087':'GS1 Netherlands','088':'GS1 Netherlands','089':'GS1 Netherlands',
+  '090':'GS1 Germany','091':'GS1 Germany','092':'GS1 Germany','093':'GS1 Australia','094':'GS1 New Zealand','095':'GS1 New Zealand','096':'GS1 New Zealand','097':'GS1 New Zealand','098':'GS1 Greece','099':'GS1 Greece',
+  '200':'GS1 Restricted','300':'GS1 France','301':'GS1 France','302':'GS1 France','303':'GS1 France','304':'GS1 France','305':'GS1 France','306':'GS1 France','307':'GS1 France','308':'GS1 France','309':'GS1 France',
+  '310':'GS1 France','311':'GS1 France','312':'GS1 France','313':'GS1 France','314':'GS1 France','315':'GS1 France','316':'GS1 France','317':'GS1 France','318':'GS1 France','319':'GS1 France',
+  '320':'GS1 France','321':'GS1 France','322':'GS1 France','323':'GS1 France','324':'GS1 France','325':'GS1 France','326':'GS1 France','327':'GS1 France','328':'GS1 France','329':'GS1 France',
+  '330':'GS1 France','331':'GS1 France','332':'GS1 France','333':'GS1 France','334':'GS1 France','335':'GS1 France','336':'GS1 France','337':'GS1 France','338':'GS1 France','339':'GS1 France',
+  '340':'GS1 Mauritius','341':'GS1 France','342':'GS1 France','343':'GS1 France','344':'GS1 France','345':'GS1 France','346':'GS1 France','347':'GS1 France','348':'GS1 France','349':'GS1 France',
+  '400':'GS1 Germany','410':'GS1 Germany','411':'GS1 Germany','412':'GS1 Germany','413':'GS1 Germany','414':'GS1 Germany','415':'GS1 Germany','416':'GS1 Germany','417':'GS1 Germany','418':'GS1 Germany','419':'GS1 Germany',
+  '420':'GS1 Germany','421':'GS1 Germany','422':'GS1 Germany','423':'GS1 Germany','424':'GS1 Germany','425':'GS1 Germany','426':'GS1 Germany','427':'GS1 Germany','428':'GS1 Germany','429':'GS1 Germany',
+  '430':'GS1 Germany','431':'GS1 Germany','432':'GS1 Germany','433':'GS1 Germany','434':'GS1 Germany','435':'GS1 Germany','436':'GS1 Germany','437':'GS1 Germany','438':'GS1 Germany','439':'GS1 Germany',
+  '440':'GS1 Germany','441':'GS1 Germany','442':'GS1 Germany','443':'GS1 Germany','444':'GS1 Germany','445':'GS1 Germany','446':'GS1 Germany','447':'GS1 Germany','448':'GS1 Germany','449':'GS1 Germany',
+  '450':'GS1 Japan','451':'GS1 Japan','452':'GS1 Japan','453':'GS1 Japan','454':'GS1 Japan','455':'GS1 Japan','456':'GS1 Japan','457':'GS1 Japan','458':'GS1 Japan','459':'GS1 Japan',
+  '460':'GS1 Russia','461':'GS1 Russia','462':'GS1 Russia','463':'GS1 Russia','464':'GS1 Russia','465':'GS1 Russia','466':'GS1 Russia','467':'GS1 Russia','468':'GS1 Russia','469':'GS1 Russia',
+  '470':'GS1 Kyrgyzstan','471':'GS1 Taiwan','474':'GS1 Estonia','475':'GS1 Latvia','476':'GS1 Azerbaijan','477':'GS1 Lithuania','478':'GS1 Uzbekistan','479':'GS1 Sri Lanka',
+  '480':'GS1 Philippines','481':'GS1 Belarus','482':'GS1 Ukraine','483':'GS1 Turkmenistan','484':'GS1 Moldova','485':'GS1 Armenia','486':'GS1 Georgia','487':'GS1 Kazakhstan','488':'GS1 Hong Kong','489':'GS1 Hong Kong',
+  '490':'GS1 Japan','491':'GS1 Japan','492':'GS1 Japan','493':'GS1 Japan','494':'GS1 Japan','495':'GS1 Japan','496':'GS1 Japan','497':'GS1 Japan','498':'GS1 Japan','499':'GS1 Japan',
+  '500':'GS1 UK','501':'GS1 UK','502':'GS1 UK','503':'GS1 UK','504':'GS1 UK','505':'GS1 UK','506':'GS1 UK','507':'GS1 UK','508':'GS1 UK','509':'GS1 UK',
+  '520':'GS1 Greece','521':'GS1 Greece','528':'GS1 Lebanon','529':'GS1 Cyprus','530':'GS1 Albania','531':'GS1 Macedonia','535':'GS1 Malta','539':'GS1 Ireland',
+  '540':'GS1 Belgium','541':'GS1 Belgium','542':'GS1 Belgium','543':'GS1 Belgium','544':'GS1 Belgium','545':'GS1 Belgium','546':'GS1 Belgium','547':'GS1 Belgium','548':'GS1 Belgium','549':'GS1 Belgium',
+  '560':'GS1 Portugal','569':'GS1 Portugal',
+  '570':'GS1 Denmark','571':'GS1 Denmark','572':'GS1 Denmark','573':'GS1 Denmark','574':'GS1 Denmark','575':'GS1 Denmark','576':'GS1 Denmark','577':'GS1 Denmark','578':'GS1 Denmark','579':'GS1 Denmark',
+  '590':'GS1 Poland','591':'GS1 Poland','592':'GS1 Poland','593':'GS1 Poland','594':'GS1 Poland','595':'GS1 Poland','596':'GS1 Poland','597':'GS1 Poland','598':'GS1 Poland','599':'GS1 Poland',
+  '600':'GS1 South Africa','601':'GS1 South Africa','602':'GS1 South Africa','603':'GS1 South Africa','604':'GS1 South Africa','605':'GS1 South Africa','606':'GS1 South Africa','607':'GS1 South Africa','608':'GS1 South Africa','609':'GS1 South Africa',
+  '610':'GS1 South Africa','611':'GS1 South Africa','612':'GS1 South Africa','613':'GS1 South Africa','614':'GS1 South Africa','615':'GS1 South Africa','616':'GS1 South Africa','617':'GS1 South Africa','618':'GS1 South Africa','619':'GS1 South Africa',
+  '620':'GS1 South Africa','621':'GS1 South Africa','622':'GS1 South Africa','623':'GS1 South Africa','624':'GS1 South Africa','625':'GS1 South Africa','626':'GS1 South Africa','627':'GS1 South Africa','628':'GS1 South Africa','629':'GS1 South Africa',
+  '640':'GS1 Finland','641':'GS1 Finland','642':'GS1 Finland','643':'GS1 Finland','644':'GS1 Finland','645':'GS1 Finland','646':'GS1 Finland','647':'GS1 Finland','648':'GS1 Finland','649':'GS1 Finland',
+  '690':'GS1 China','691':'GS1 China','692':'GS1 China','693':'GS1 China','694':'GS1 China','695':'GS1 China','696':'GS1 China','697':'GS1 China','698':'GS1 China','699':'GS1 China',
+  '700':'GS1 Norway','701':'GS1 Norway','702':'GS1 Norway','703':'GS1 Norway','704':'GS1 Norway','705':'GS1 Norway','706':'GS1 Norway','707':'GS1 Norway','708':'GS1 Norway','709':'GS1 Norway',
+  '710':'GS1 Norway','711':'GS1 Norway','712':'GS1 Norway','713':'GS1 Norway','714':'GS1 Norway','715':'GS1 Norway','716':'GS1 Norway','717':'GS1 Norway','718':'GS1 Norway','719':'GS1 Norway',
+  '729':'GS1 Israel',
+  '730':'GS1 Sweden','731':'GS1 Sweden','732':'GS1 Sweden','733':'GS1 Sweden','734':'GS1 Sweden','735':'GS1 Sweden','736':'GS1 Sweden','737':'GS1 Sweden','738':'GS1 Sweden','739':'GS1 Sweden',
+  '740':'GS1 Guatemala','741':'GS1 El Salvador','742':'GS1 Honduras','743':'GS1 Nicaragua','744':'GS1 Costa Rica','745':'GS1 Panama','746':'GS1 Dominican Republic','750':'GS1 Mexico',
+  '754':'GS1 Canada','755':'GS1 Canada','756':'GS1 Switzerland','757':'GS1 Switzerland','758':'GS1 Switzerland','759':'GS1 Venezuela',
+  '760':'GS1 Switzerland','761':'GS1 Switzerland','762':'GS1 Switzerland','763':'GS1 Switzerland','764':'GS1 Switzerland','765':'GS1 Switzerland','766':'GS1 Switzerland','767':'GS1 Switzerland','768':'GS1 Switzerland','769':'GS1 Switzerland',
+  '770':'GS1 Colombia','771':'GS1 Colombia','772':'GS1 Uruguay','773':'GS1 Uruguay','774':'GS1 Peru','775':'GS1 Peru','776':'GS1 Bolivia','777':'GS1 Bolivia','778':'GS1 Argentina','779':'GS1 Argentina',
+  '780':'GS1 Chile','781':'GS1 Chile','782':'GS1 Chile','783':'GS1 Chile','784':'GS1 Chile','785':'GS1 Chile','786':'GS1 Ecuador','787':'GS1 Ecuador','788':'GS1 Ecuador','789':'GS1 Ecuador',
+  '790':'GS1 Brazil','791':'GS1 Brazil','792':'GS1 Brazil','793':'GS1 Brazil','794':'GS1 Brazil','795':'GS1 Brazil','796':'GS1 Brazil','797':'GS1 Brazil','798':'GS1 Brazil','799':'GS1 Brazil',
+  '800':'GS1 Italy','801':'GS1 Italy','802':'GS1 Italy','803':'GS1 Italy','804':'GS1 Italy','805':'GS1 Italy','806':'GS1 Italy','807':'GS1 Italy','808':'GS1 Italy','809':'GS1 Italy',
+  '810':'GS1 Italy','811':'GS1 Italy','812':'GS1 Italy','813':'GS1 Italy','814':'GS1 Italy','815':'GS1 Italy','816':'GS1 Italy','817':'GS1 Italy','818':'GS1 Italy','819':'GS1 Italy',
+  '820':'GS1 Italy','821':'GS1 Italy','822':'GS1 Italy','823':'GS1 Italy','824':'GS1 Italy','825':'GS1 Italy','826':'GS1 Italy','827':'GS1 Italy','828':'GS1 Italy','829':'GS1 Italy',
+  '830':'GS1 Italy','831':'GS1 Italy','832':'GS1 Italy','833':'GS1 Italy','834':'GS1 Italy','835':'GS1 Italy','836':'GS1 Italy','837':'GS1 Italy','838':'GS1 Italy','839':'GS1 Italy',
+  '840':'GS1 Spain','841':'GS1 Spain','842':'GS1 Spain','843':'GS1 Spain','844':'GS1 Spain','845':'GS1 Spain','846':'GS1 Spain','847':'GS1 Spain','848':'GS1 Spain','849':'GS1 Spain',
+  '850':'GS1 Cuba','858':'GS1 Slovakia','859':'GS1 Czech Republic','860':'GS1 Serbia','865':'GS1 Mongolia','867':'GS1 North Korea',
+  '868':'GS1 Turkey','869':'GS1 Turkey',
+  '870':'GS1 Netherlands','871':'GS1 Netherlands','872':'GS1 Netherlands','873':'GS1 Netherlands','874':'GS1 Netherlands','875':'GS1 Netherlands','876':'GS1 Netherlands','877':'GS1 Netherlands','878':'GS1 Netherlands','879':'GS1 Netherlands',
+  '880':'GS1 South Korea','881':'GS1 South Korea','882':'GS1 South Korea','883':'GS1 South Korea','884':'GS1 South Korea','885':'GS1 Thailand','886':'GS1 Thailand','887':'GS1 Thailand','888':'GS1 Singapore','889':'GS1 Singapore',
+  '890':'GS1 India','891':'GS1 India','892':'GS1 India','893':'GS1 India','894':'GS1 India','895':'GS1 India','896':'GS1 India','897':'GS1 India','898':'GS1 India','899':'GS1 India',
+  '900':'GS1 Austria','901':'GS1 Austria','902':'GS1 Austria','903':'GS1 Austria','904':'GS1 Austria','905':'GS1 Austria','906':'GS1 Austria','907':'GS1 Austria','908':'GS1 Austria','909':'GS1 Austria',
+  '910':'GS1 Austria','911':'GS1 Austria','912':'GS1 Austria','913':'GS1 Austria','914':'GS1 Austria','915':'GS1 Austria','916':'GS1 Austria','917':'GS1 Austria','918':'GS1 Austria','919':'GS1 Austria',
+  '930':'GS1 Australia','931':'GS1 Australia','932':'GS1 Australia','933':'GS1 Australia','934':'GS1 Australia','935':'GS1 Australia','936':'GS1 Australia','937':'GS1 Australia','938':'GS1 Australia','939':'GS1 Australia',
+  '940':'GS1 New Zealand','941':'GS1 New Zealand','942':'GS1 New Zealand','943':'GS1 New Zealand','944':'GS1 New Zealand',
+  '955':'GS1 Malaysia','958':'GS1 Macau',
+  '978':'GS1 ISBN (Books)','979':'GS1 ISBN (Music/Books)',
+};
+
+function lookupCountry(prefix3) {
+  // GS1 prefixes are usually 3 digits but can be 2-digit ranges (like 30-37 = France)
+  if (GS1_PREFIX[prefix3]) return GS1_PREFIX[prefix3];
+  // Try 2-digit ranges
+  const p2 = prefix3.substring(0, 2);
+  const ranges = [
+    ['00','13','GS1 US & Canada'],['30','37','GS1 France'],['38','38','GS1 Croatia'],
+    ['40','44','GS1 Germany'],['46','46','GS1 Russia'],['49','49','GS1 Japan'],
+    ['50','50','GS1 UK'],['52','52','GS1 Greece'],['54','54','GS1 Belgium'],['56','56','GS1 Portugal'],
+    ['57','57','GS1 Denmark'],['590','599','GS1 Poland'],['640','649','GS1 Finland'],
+    ['690','699','GS1 China'],['700','709','GS1 Norway'],['730','739','GS1 Sweden'],
+    ['760','769','GS1 Switzerland'],['93','93','GS1 Australia'],
+  ];
+  for (const r of ranges) {
+    const lo = parseInt(r[0]), hi = parseInt(r[1]);
+    const pp = parseInt(p2);
+    if (pp >= lo && pp <= hi) return r[2];
+  }
+  return null;
+}
+
+// GS1 mod-10 check digit
+function calcCheckDigit(digits) {
+  // digits is the data portion (without check digit)
+  let sum = 0;
+  let dbl = true; // last digit is doubled
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let d = parseInt(digits[i]);
+    if (dbl) {
+      d *= 3;
+    }
+    sum += d;
+    dbl = !dbl;
+  }
+  return (10 - (sum % 10)) % 10;
+}
+
+function row(key, val) {
+  return `<div class="decode-row"><span class="key">${key}</span><span class="val">${val}</span></div>`;
+}
+
+$('#app').innerHTML = `
+  <div class="gz-field" style="margin-bottom:12px">
+    <input type="text" id="ean" class="ean-input" placeholder="${t('placeholder')}" autocomplete="off" inputmode="numeric"
+      oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+  </div>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
+    <button class="gz-btn" onclick="check()" style="font-size:1.05em;padding:12px 24px">${t('check')}</button>
+    <button class="gz-btn gz-btn-ghost" onclick="loadSample()" style="padding:12px 18px;font-size:.95em">${t('sample')}</button>
+  </div>
+  <div id="result" style="margin-top:14px"></div>
+`;
+
+function loadSample() {
+  $('#ean').value = '5012345678900';
+  check();
+}
+
+function check() {
+  let raw = $('#ean').value.trim();
+  $('#result').innerHTML = '';
+  if (!/^\d{8}$|^\d{12,14}$/.test(raw)) {
+    $('#result').innerHTML = `<div style="color:#e74c3c;padding:12px;text-align:center;background:var(--glass);border-radius:12px">${t('invalid')}</div>`;
+    return;
+  }
+
+  const data = raw.substring(0, raw.length - 1);
+  const providedCheck = parseInt(raw.substring(raw.length - 1));
+  const expectedCheck = calcCheckDigit(data);
+  const valid = (providedCheck === expectedCheck);
+
+  let typeLabel;
+  switch (raw.length) {
+    case 8: typeLabel = t('t8'); break;
+    case 12: typeLabel = t('t12'); break;
+    case 13:
+      if (raw.startsWith('978') || raw.startsWith('979')) typeLabel = t('isbn');
+      else if (raw.startsWith('45') || raw.startsWith('49')) typeLabel = t('jan');
+      else typeLabel = t('t13');
+      break;
+    case 14: typeLabel = t('t14'); break;
+  }
+
+  // Determine prefix and country
+  let prefixLen = raw.length === 8 ? 3 : 3;
+  const prefix = raw.substring(0, prefixLen);
+  const country = lookupCountry(prefix) || t('notFound');
+
+  // colored display
+  let colors = [];
+  for (let i = 0; i < raw.length; i++) {
+    let bg;
+    if (i < prefixLen) bg = '#9b59b6';
+    else if (i === raw.length - 1) bg = valid ? '#27ae60' : '#e74c3c';
+    else bg = '#4ecdc4';
+    colors.push(`<span style="color:#fff;background:${bg};border-radius:4px;padding:2px 2px">${raw[i]}</span>`);
+  }
+
+  const status = valid ? t('valid') : `${t('invalid2')} <span style="opacity:.7;font-size:.85em">(${t('expected')}: ${expectedCheck})</span>`;
+  const statusClass = valid ? 'check-ok' : 'check-fail';
+
+  // Item reference = digits between prefix and check digit
+  const itemRef = raw.substring(prefixLen, raw.length - 1);
+
+  // Build a simple visual "barcode" stripes
+  let stripes = '';
+  let seed = 0;
+  for (let i = 0; i < raw.length; i++) seed = (seed * 31 + parseInt(raw[i])) & 0xfffff;
+  for (let i = 0; i < 60; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const w = (seed % 3) + 1;
+    const dark = (seed % 2) === 0;
+    stripes += `<span style="display:inline-block;width:${w}px;height:48px;background:${dark ? '#000' : '#fff'}"></span>`;
+  }
+
+  $('#result').innerHTML = `
+    <div class="ean-display">${colors.join('')}</div>
+    <div class="barcode" aria-hidden="true">${stripes}</div>
+    <div style="text-align:center;color:var(--text3);font-size:.78rem;margin:6px 0 14px">Synthetic representation · not scannable</div>
+    <div style="background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:4px 16px">
+      ${row(t('checksum'), `<span class="check-valid ${statusClass}">${status}</span>`)}
+      ${row(t('type'), typeLabel)}
+      ${row(t('country'), country)}
+      ${row(t('prefix'), prefix)}
+      ${row(t('item'), itemRef)}
+      ${row(t('checkDigit'), providedCheck)}
+    </div>
+  `;
+}
+
+window.check = check;
+window.loadSample = loadSample;
+
+$('#toolbar').innerHTML = ``;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📚', href:'/dev/isbn-validator.html', name:'ISBN Validator'},
+    {icon:'💳', href:'/dev/credit-card-validator.html', name:'Credit Card Validator'},
+    {icon:'📱', href:'/dev/imei-checker.html', name:'IMEI Checker'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
