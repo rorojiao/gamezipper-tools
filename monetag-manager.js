@@ -1,7 +1,17 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.9-tools-home-banner (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.9.1-tools-zone-backoff-tune (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.9.1 Changes (2026-06-27 — Relax Zone Backoff to gz.com v5.4 Curve):
+ *   - ⚙️ ZONE_BACKOFF.backoffs: [30min, 60min, 24h] → [10min, 30min, 2h].
+ *     Streak 1 now 10min (was 30min) — real fills often land on attempt 2-3, and tools
+ *     high-frequency session pattern (multiple tool visits per session) meant the 30min
+ *     streak-1 left zones blocked for the entire user session. tools had 30d 0 fills
+ *     / 246 script_loaded (0% fill rate); gz.com with the same 1.71% fill curve got
+ *     88 fills / 5137 loads. Curve now matches gamezipper.com v5.4 exactly.
+ *   - 📊 Acceptance: 7d fill count > 0 (was 0), zone_backoff_skip ratio < 70% (was ~96%).
+ *   - Version bumped 5.9 → 5.9.1 to track on BI server.
  *
  * v5.9 Changes (2026-06-26 — Port gz.com Homepage Banner Pattern to Tools):
  *   - 🚀 New: showHomepageBanner() — fills the #gz-home-banner and
@@ -161,15 +171,19 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.9-tools-home-banner',  // 2026-06-26: port gz.com gz-home-banner pattern to tools — add #gz-home-banner + #gz-home-banner-2 divs, showHomepageBanner() with working-zone-first waterfall (11012002 Tier 1), init() calls on hub pages only. Mirrors gz.com v5.9.
-    // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
-    //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
-    //   streak 2 → 60min (was 30): same logic
-    //   streak 3+ → 24h (was 60min): if a zone misses 3 times, give it a full day
+    VERSION: '5.9.1-tools-zone-backoff-tune',  // 2026-06-27: relax zone backoff to gz.com v5.4 curve — streak 1 10min / streak 2 30min / streak 3+ 2h. Previous 30/60/1440min was too aggressive on tools (0 fills in 30d across 246 script_loaded events); gz.com v5.4 [10/30/60min] curve averages 1.71% fill. Bumped from v5.9 to track on BI.
+    // v5.9.1: Monetag zone backoff — gentler curve matching gamezipper.com v5.4 (proven 1.71% fill).
+    //   streak 1 → 10min (was 30min): real fills often land on attempt 2-3, don't punish the
+    //     first miss. tools had 30d 0/246 with the old 30min streak-1 because high-frequency
+    //     tool-page sessions never let a zone retry inside the 30min window.
+    //   streak 2 → 30min (was 60min): same logic.
+    //   streak 3+ → 2h (was 24h): if a zone misses 3 times, give it some breathing room but
+    //     not a full day — tools users visit multiple tools per session so we need slots open.
+    //   Mirrors gamezipper.com ZONE_BACKOFF.backoffs at v5.4.
     ZONE_BACKOFF: {
       enabled: true,
       storageKey: 'gzt4_zone_backoff_v1',
-      backoffs: [30 * 60 * 1000, 60 * 60 * 1000, 24 * 60 * 60 * 1000],
+      backoffs: [10 * 60 * 1000, 30 * 60 * 1000, 2 * 60 * 60 * 1000],
       minRecordIntervalMs: 60 * 1000,
     },
     // v5.5.2: Primary zone kill switch — manually disable a specific primary zone

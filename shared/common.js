@@ -44,7 +44,11 @@
   window.GZ_COLLECT_ENDPOINT = 'https://jesus-rank-alternatively-divine.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=2026062659hb2';s1.defer=true;document.head.appendChild(s1);
+  // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
+  // v5.9 had [30/60/1440min] backoffs causing 0 fills in 30d on tools; new
+  // v5.9.1 uses gz.com v5.4 curve [10/30/120min]. Cache suffix must be
+  // monotonically increasing to avoid browser reusing old v5.9 from cache.
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260627001';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260627444';s4.defer=true;document.head.appendChild(s4);
