@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Snowflake ID 生成器与解码器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="生成和解码 Twitter / Discord 风格的 64 位 Snowflake ID。可调纪元、worker ID 和序列号 — 查询任意 Snowflake 的创建时间。100% 浏览器本地运行。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/snowflake-id-generator.html">
+<meta property="og:title" content="Snowflake ID 生成器与解码器">
+<meta property="og:description" content="生成和解码 Twitter / Discord 风格的 64 位 Snowflake ID。可调纪元、worker ID 和序列号 — 查询任意 Snowflake 的创建时间。100% 浏览器本地运行。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/snowflake-id-generator.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Snowflake ID 生成器与解码器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260625pc"></script>
+<style>
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--glass2);cursor:pointer;font-size:.88em;transition:all .15s}
+.tab.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.panel{display:none}
+.panel.active{display:block}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:.78em;font-weight:600;color:var(--text2)}
+.field input,.field select{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:.9em}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.field .hint{font-size:.72em;color:var(--text3);margin-top:2px}
+.out-big{font-family:monospace;font-size:1.4em;font-weight:700;color:var(--accent);background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:14px 16px;word-break:break-all;margin:10px 0}
+.decode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px}
+.decode-cell{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.decode-cell .k{font-size:.72em;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.decode-cell .v{font-family:monospace;font-size:1.05em;font-weight:600;margin-top:4px;word-break:break-all}
+.batch{display:grid;gap:6px;margin-top:10px;max-height:300px;overflow:auto}
+.batch .row{font-family:monospace;font-size:.85em;background:var(--glass2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Snowflake ID Generator & Decoder","description":"Free Snowflake ID generator and decoder. Generate Twitter/Discord-style 64-bit distributed IDs and decode any Snowflake back to its timestamp, worker ID, sequence and creation date. Pure browser, no signup.","url": "https://tools.gamezipper.com/zh/dev/snowflake-id-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a Snowflake ID?","acceptedAnswer":{"@type":"Answer","text":"A Snowflake ID is a 64-bit unique identifier invented at Twitter. It packs a 41-bit millisecond timestamp, a 10-bit machine/worker ID and a 12-bit sequence into a single integer, so IDs are sortable, time-ordered and generated without a central coordinator."}},{"@type":"Question","name":"Which services use Snowflake IDs?","acceptedAnswer":{"@type":"Answer","text":"Twitter, Discord, Instagram and many distributed databases use Snowflake-style IDs. Discord uses the same 41+10+12 layout as Twitter with epoch 1420070400000 (2015-01-01). Instagram uses a 41+13+10 variant."}},{"@type":"Question","name":"Can this tool decode any Snowflake ID?","acceptedAnswer":{"@type":"Answer","text":"Yes. Paste any Twitter or Discord ID and the decoder will reveal the embedded timestamp, worker ID and sequence. You can switch the epoch to match the service that issued the ID."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/snowflake-id-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/snowflake-id-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/snowflake-id-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+<div class="gz-tool-area">
+<div class="tabs">
+<button class="tab active" id="tab-gen" onclick="switchTab('gen')">⚙️ Generate</button>
+<button class="tab" id="tab-dec" onclick="switchTab('dec')">🔍 Decode</button>
+<button class="tab" id="tab-batch" onclick="switchTab('batch')">📦 Batch</button>
+</div>
+
+<!-- GENERATE PANEL -->
+<div class="panel active" id="panel-gen">
+<div class="gz-toolbar" id="toolbar-gen"></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+<div class="field"><label id="lbl-epoch"></label><input type="number" id="g-epoch" value="1288834974657" oninput="genOne()"><div class="hint" id="hint-epoch"></div></div>
+<div class="field"><label id="lbl-worker"></label><input type="number" id="g-worker" min="0" max="1023" value="1" oninput="genOne()"><div class="hint">0 – 1023</div></div>
+<div class="field"><label id="lbl-seq"></label><input type="number" id="g-seq" min="0" max="4095" value="0" oninput="genOne()"><div class="hint">0 – 4095</div></div>
+<div class="field"><label id="lbl-when"></label><input type="text" id="g-when" readonly></div>
+</div>
+<div class="out-big" id="g-out">—</div>
+<div id="g-bits" style="font-family:monospace;font-size:.78em;color:var(--text2);line-height:1.6;word-break:break-all"></div>
+</div>
+
+<!-- DECODE PANEL -->
+<div class="panel" id="panel-dec">
+<div class="gz-toolbar" id="toolbar-dec"></div>
+<div class="field"><label id="lbl-decid"></label><input type="text" id="d-id" placeholder="175928847299117063" oninput="decode()" style="font-family:monospace"></div>
+<div class="field"><label id="lbl-decepoch"></label><input type="number" id="d-epoch" value="1288834974657" oninput="decode()"><div class="hint" id="hint-decepoch"></div></div>
+<div id="d-error" style="color:var(--accent);font-size:.85em;margin-bottom:8px;display:none"></div>
+<div class="decode-grid" id="d-grid"></div>
+</div>
+
+<!-- BATCH PANEL -->
+<div class="panel" id="panel-batch">
+<div class="gz-toolbar" id="toolbar-batch"></div>
+<div class="field"><label id="lbl-count"></label><input type="number" id="b-count" min="1" max="1000" value="10"></div>
+<div class="field"><label id="lbl-bepoch"></label><input type="number" id="b-epoch" value="1288834974657"></div>
+<div class="field"><label id="lbl-bworker"></label><input type="number" id="b-worker" min="0" max="1023" value="1"></div>
+<div class="batch" id="b-out"></div>
+</div>
+
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Snowflake ID Generator & Decoder',
+toolDesc:'Generate and decode Twitter / Discord-style 64-bit Snowflake IDs. Adjustable epoch, worker ID and sequence — find the exact creation time of any Snowflake. 100% in your browser.',
+lblEpoch:'Epoch (ms)',
+hintEpoch:'Twitter default: 1288834974657 (2010-11-04). Discord: 1420070400000 (2015-01-01).',
+lblWorker:'Worker / machine ID',
+lblSeq:'Sequence',
+lblWhen:'Created at (UTC)',
+lblDecId:'Snowflake ID to decode',
+lblDecEpoch:'Epoch used by this ID',
+lblCount:'How many IDs?',
+lblBepoch:'Epoch (ms)',
+lblBworker:'Worker ID',
+step1:'Pick Generate, then set epoch, worker ID and sequence (or leave defaults for Twitter).',
+step2:'Switch to Decode and paste any Snowflake — see its timestamp, worker and sequence.',
+step3:'Use Batch to mint dozens of unique IDs for testing databases and queues.',
+step4:'Copy the result with one click — nothing leaves your browser.',
+},
+zh:{
+toolTitle:'Snowflake ID 生成器与解码器',
+toolDesc:'生成和解码 Twitter / Discord 风格的 64 位 Snowflake ID。可调纪元、worker ID 和序列号 — 查询任意 Snowflake 的创建时间。100% 浏览器本地运行。',
+lblEpoch:'纪元（毫秒）',
+hintEpoch:'Twitter 默认：1288834974657（2010-11-04）。Discord：1420070400000（2015-01-01）。',
+lblWorker:'Worker / 机器 ID',
+lblSeq:'序列号',
+lblWhen:'创建时间（UTC）',
+lblDecId:'要解码的 Snowflake ID',
+lblDecEpoch:'该 ID 使用的纪元',
+lblCount:'生成数量',
+lblBepoch:'纪元（毫秒）',
+lblBworker:'Worker ID',
+step1:'选择「生成」，设置纪元、worker ID 和序列号（或保留 Twitter 默认值）。',
+step2:'切换到「解码」，粘贴任意 Snowflake — 查看其时间戳、worker 和序列号。',
+step3:'使用「批量」一次性生成几十个唯一 ID，用于测试数据库和队列。',
+step4:'一键复制结果 — 所有计算都在你的浏览器中完成。',
+}
+});
+
+const { $, copyText, t } = GZ;
+
+// Snowflake layout (Twitter/Discord canonical):
+//  1 bit sign (always 0) | 41 bits timestamp ms | 10 bits worker | 12 bits sequence
+const SEQ_BITS   = 12;
+const WORKER_BITS= 10;
+const SEQ_MASK   = (1 << SEQ_BITS) - 1;          // 4095
+const WORKER_MASK= (1 << WORKER_BITS) - 1;       // 1023
+const MAX_ID     = BigInt(2) ** BigInt(63) - BigInt(1);   // signed 63-bit max
+
+function buildSnowflake(epochMs, workerId, seq, tsMs){
+  tsMs = tsMs || Date.now();
+  const ts    = BigInt(tsMs) - BigInt(epochMs);
+  const worker= BigInt(workerId) & BigInt(WORKER_MASK);
+  const s     = BigInt(seq) & BigInt(SEQ_MASK);
+  const id    = (ts << BigInt(WORKER_BITS + SEQ_BITS))
+              | (worker << BigInt(SEQ_BITS))
+              | s;
+  return id;
+}
+
+function decodeSnowflake(idBig, epochMs){
+  const seq    = Number(idBig & BigInt(SEQ_MASK));
+  const worker = Number((idBig >> BigInt(SEQ_BITS)) & BigInt(WORKER_MASK));
+  const ts     = idBig >> BigInt(WORKER_BITS + SEQ_BITS);
+  const ms     = Number(ts) + Number(epochMs);
+  return { seq, worker, ts: Number(ts), ms };
+}
+
+function fmtDate(ms){
+  if(!isFinite(ms)) return '—';
+  return new Date(ms).toISOString().replace('T',' ').replace(/\.\d+Z$/,' UTC');
+}
+
+// ---- Generate ----
+function genOne(){
+  const epoch  = parseInt($('#g-epoch').value) || 0;
+  const worker = parseInt($('#g-worker').value) || 0;
+  const seq    = parseInt($('#g-seq').value) || 0;
+  const ts     = Date.now();
+  const id     = buildSnowflake(epoch, worker, seq, ts);
+  $('#g-out').textContent = id.toString();
+  $('#g-when').value = fmtDate(ts);
+  // bit breakdown (top 63 bits as string with separators)
+  const bits = id.toString(2).padStart(63,'0');
+  const sign = bits[0];
+  const tBits= bits.substr(1,41);
+  const wBits= bits.substr(42,10);
+  const sBits= bits.substr(52,12);
+  $('#g-bits').innerHTML =
+    '<span style="color:var(--text3)">sign['+sign+']</span> | '+
+    '<span style="color:var(--accent)">ts['+tBits+']</span> | '+
+    '<span style="color:#00d672">worker['+wBits+']</span> | '+
+    '<span style="color:#ffd93d">seq['+sBits+']</span>';
+}
+
+// ---- Decode ----
+function decode(){
+  const raw = ($('#d-id').value || '').trim();
+  const errEl = $('#d-error');
+  const grid = $('#d-grid');
+  errEl.style.display = 'none';
+  if(!raw){
+    grid.innerHTML = '';
+    return;
+  }
+  // accept decimal, 0x hex, 0b binary
+  let idBig;
+  try {
+    if(/^0x[0-9a-f]+$/i.test(raw)) idBig = BigInt(raw);
+    else if(/^\d+$/.test(raw))    idBig = BigInt(raw);
+    else throw new Error('not a number');
+  } catch(e){
+    errEl.style.display = 'block';
+    errEl.textContent = '✗ Not a valid Snowflake ID. Use decimal or 0x-hex.';
+    grid.innerHTML = '';
+    return;
+  }
+  if(idBig < 0n || idBig > MAX_ID){
+    errEl.style.display = 'block';
+    errEl.textContent = '✗ ID out of 63-bit range (max ' + MAX_ID.toString() + ').';
+    grid.innerHTML = '';
+    return;
+  }
+  const epoch = parseInt($('#d-epoch').value) || 0;
+  const d = decodeSnowflake(idBig, epoch);
+  grid.innerHTML = [
+    ['Timestamp (ms since epoch)', d.ts.toLocaleString()],
+    ['Created at (UTC)',           fmtDate(d.ms)],
+    ['Worker / machine ID',        d.worker.toString()],
+    ['Sequence',                   d.seq.toString()],
+    ['Binary',                     idBig.toString(2).padStart(63,'0')],
+    ['Hex',                        '0x' + idBig.toString(16).toUpperCase()],
+  ].map(([k,v])=>'<div class="decode-cell"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>').join('');
+}
+
+// ---- Batch ----
+let batchIds = [];
+function genBatch(){
+  const n      = Math.min(1000, Math.max(1, parseInt($('#b-count').value) || 10));
+  const epoch  = parseInt($('#b-epoch').value) || 0;
+  const worker = parseInt($('#b-worker').value) || 0;
+  // Simulate real Snowflake: same ms shares sequence counter, advance ms as needed
+  const start = Date.now();
+  batchIds = [];
+  let curTs = start, seq = 0;
+  for(let i=0;i<n;i++){
+    if(seq > SEQ_MASK){ curTs++; seq = 0; }
+    batchIds.push(buildSnowflake(epoch, worker, seq, curTs));
+    seq++;
+  }
+  renderBatch();
+}
+function renderBatch(){
+  const out = $('#b-out');
+  if(!batchIds.length){ out.innerHTML = '<div style="color:var(--text3);font-size:.85em">No IDs yet — click Generate.</div>'; return; }
+  out.innerHTML = batchIds.map((id,i)=>
+    '<div class="row"><span>'+(i+1)+'. '+id.toString()+'</span>'+
+    '<button class="gz-btn gz-btn-secondary" style="padding:3px 10px;font-size:.78em" onclick="copyText(\''+id.toString()+'\')">copy</button></div>'
+  ).join('');
+}
+
+// ---- Tab switching ----
+function switchTab(name){
+  ['gen','dec','batch'].forEach(n=>{
+    $('#tab-'+n).classList.toggle('active', n===name);
+    $('#panel-'+n).classList.toggle('active', n===name);
+  });
+  if(name==='gen') genOne();
+  if(name==='dec') decode();
+  if(name==='batch' && !batchIds.length) genBatch();
+}
+
+// Wire labels
+$('#lbl-epoch').textContent = t('lblEpoch');
+$('#hint-epoch').textContent = t('hintEpoch');
+$('#lbl-worker').textContent = t('lblWorker');
+$('#lbl-seq').textContent = t('lblSeq');
+$('#lbl-when').textContent = t('lblWhen');
+$('#lbl-decid').textContent = t('lblDecId');
+$('#lbl-decepoch').textContent = t('lblDecEpoch');
+$('#hint-decepoch').textContent = t('hintEpoch');
+$('#lbl-count').textContent = t('lblCount');
+$('#lbl-bepoch').textContent = t('lblBepoch');
+$('#lbl-bworker').textContent = t('lblBworker');
+
+$('#toolbar-gen').innerHTML =
+  '<button class="gz-btn" onclick="genOne()">🔄 '+t('generate')+'</button>'+
+  '<button class="gz-btn gz-btn-secondary" onclick="copyText($(\'#g-out\').textContent)">📋 '+t('copy')+'</button>';
+$('#toolbar-dec').innerHTML =
+  '<button class="gz-btn gz-btn-secondary" onclick="copyText($(\'#d-id\').value)">📋 '+t('copy')+'</button>';
+$('#toolbar-batch').innerHTML =
+  '<button class="gz-btn" onclick="genBatch()">🔄 '+t('generate')+'</button>'+
+  '<button class="gz-btn gz-btn-secondary" onclick="copyText(batchIds.map(i=>i.toString()).join(\'\\n\'))">📋 '+t('copy')+' all</button>';
+
+genOne();
+
+GZ.renderToolPage({
+  category:'dev',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🆔', href:'/dev/uuid.html', name:'UUID Generator'},
+    {icon:'🌱', href:'/dev/ulid-generator.html', name:'ULID Generator'},
+    {icon:'🔢', href:'/dev/nanoid-generator.html', name:'NanoID Generator'},
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp Converter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>邮件垃圾词检测器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="扫描你的邮件主题和正文中的垃圾触发词。即时可送达性评分、分类统计和更安全的替换建议 — 全部在浏览器本地运行。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/seo/email-spam-checker.html">
+<meta property="og:title" content="邮件垃圾词检测器">
+<meta property="og:description" content="扫描你的邮件主题和正文中的垃圾触发词。即时可送达性评分、分类统计和更安全的替换建议 — 全部在浏览器本地运行。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/seo/email-spam-checker.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="邮件垃圾词检测器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260625pc"></script>
+<style>
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.split{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:.78em;font-weight:600;color:var(--text2)}
+.field textarea,.field input{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:.9em;font-family:inherit;resize:vertical}
+.field textarea:focus,.field input:focus{outline:none;border-color:var(--accent)}
+.score-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.score-num{font-size:2.6rem;font-weight:900;line-height:1}
+.score-label{font-size:.85em;color:var(--text2)}
+.badge{padding:4px 12px;border-radius:14px;font-size:.78em;font-weight:700}
+.hits{display:grid;gap:8px}
+.hit-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;background:var(--glass2);border:1px solid var(--border)}
+.hit-cat{font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:10px;background:var(--accent);color:#000;white-space:nowrap}
+.hit-word{font-weight:700;color:var(--accent)}
+.hit-suggest{font-size:.82em;color:var(--text2)}
+mark{background:rgba(255,217,61,.35);color:inherit;border-radius:3px;padding:1px 2px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Email Spam Word Checker","description":"Free email spam word checker. Paste your subject line and body to find spam trigger words that hurt Gmail, Outlook and Yahoo deliverability. Get an instant spam score and replacement suggestions.","url": "https://tools.gamezipper.com/zh/seo/email-spam-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the email spam word checker work?","acceptedAnswer":{"@type":"Answer","text":"The tool scans your subject line and email body against a curated list of 300+ known spam trigger words grouped into categories (urgency, money, marketing, sales, clickbait, etc.). It then highlights every match and gives you an instant 0-100 deliverability score."}},{"@type":"Question","name":"Will a single spam word send my email to the spam folder?","acceptedAnswer":{"@type":"Answer","text":"No single word will doom a legitimate email. Spam filters combine many signals — sender reputation, authentication (SPF/DKIM/DMARC), engagement, links and content. Treat the score as a guide: aim for green and rewrite risky phrases."}},{"@type":"Question","name":"Is my email content uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. The check runs entirely in your browser using a local word list. Nothing is sent anywhere, so you can safely test internal drafts and confidential campaigns."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/seo/email-spam-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/seo/email-spam-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/seo/email-spam-checker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+<div class="gz-tool-area">
+<div class="gz-toolbar" id="toolbar"></div>
+<div class="field"><label id="lbl-subject"></label><input type="text" id="f-subject" placeholder="Win a FREE iPhone today!" oninput="check()"></div>
+<div class="field"><label id="lbl-body"></label><textarea id="f-body" rows="8" placeholder="Paste your email body here..." oninput="check()"></textarea></div>
+<div class="score-card">
+<div><div class="score-num" id="score">--</div><div class="score-label" id="score-out-of"></div></div>
+<div><div id="grade" class="badge">—</div><div id="summary" class="score-label" style="margin-top:6px"></div></div>
+</div>
+<div id="hits-block" style="display:none">
+<h3 id="hits-title" style="font-size:1em;margin:0 0 10px"></h3>
+<div class="hits" id="hits"></div>
+</div>
+<div id="highlight-block" style="display:none;margin-top:14px">
+<h3 id="hl-title" style="font-size:1em;margin:0 0 8px"></h3>
+<div id="hl-subject" style="padding:10px 12px;border-radius:8px;background:var(--glass2);border:1px solid var(--border);margin-bottom:8px;font-weight:600"></div>
+<div id="hl-body" style="padding:12px;border-radius:8px;background:var(--glass2);border:1px solid var(--border);white-space:pre-wrap;line-height:1.6"></div>
+</div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Email Spam Word Checker',
+toolDesc:'Scan your subject line and email body for spam trigger words. Instant deliverability score, category breakdown and safer replacement suggestions — all in your browser.',
+lblSubject:'Subject line',
+lblBody:'Email body',
+scoreOutOf:'out of 100 (higher = better)',
+gradeGood:'✓ Likely safe',
+gradeOk:'⚠ Review recommended',
+gradeBad:'✗ High spam risk',
+foundWords:'Trigger words found',
+noWords:'No trigger words found. Looks clean!',
+hlTitle:'Highlighted preview',
+step1:'Paste your email subject line in the top field.',
+step2:'Paste the email body in the second box.',
+step3:'Read your score — green is safe, yellow needs work, red is risky.',
+step4:'Rewrite each highlighted trigger using the suggested alternatives.',
+},
+zh:{
+toolTitle:'邮件垃圾词检测器',
+toolDesc:'扫描你的邮件主题和正文中的垃圾触发词。即时可送达性评分、分类统计和更安全的替换建议 — 全部在浏览器本地运行。',
+lblSubject:'邮件主题',
+lblBody:'邮件正文',
+scoreOutOf:'满分 100（越高越好）',
+gradeGood:'✓ 安全',
+gradeOk:'⚠ 建议修改',
+gradeBad:'✗ 垃圾风险高',
+foundWords:'发现的触发词',
+noWords:'未发现触发词，看起来很干净！',
+hlTitle:'高亮预览',
+step1:'在最上方输入框粘贴邮件主题。',
+step2:'在第二个框粘贴邮件正文。',
+step3:'查看评分 — 绿色为安全，黄色需修改，红色为高风险。',
+step4:'根据建议替换每个高亮的触发词。',
+}
+});
+
+const { $, t } = GZ;
+
+// Curated spam trigger list. weight 1-3, category, optional safer replacement.
+// Sources: Mailchimp / HubSpot / SendGrid public trigger-word guidance.
+const TRIGGERS = [
+// money / financial
+['$',2,'money','Remove the $ symbol or spell out the currency'],
+['100% free',3,'money','Use "complimentary" or "no-cost"'],
+['act now',3,'urgency','Use "when you have a moment"'],
+['all natural',2,'marketing','Drop the claim or prove it'],
+['amazing',1,'marketing','Use specific value'],
+['as seen on',2,'marketing','Cite the actual source'],
+['bargain',2,'sales','Use "value" or specific pricing'],
+['best price',2,'sales','Show the price directly'],
+['buy',1,'sales','Use "order" or "get"'],
+['buy direct',2,'sales','Remove'],
+['call now',3,'urgency','Use "reach us at your convenience"'],
+['cancel at any time',1,'money','Keep but soften'],
+['cash',2,'money','Use "payment"'],
+['cash bonus',3,'money','Remove bonus framing'],
+['cheap',2,'quality','Use "affordable"'],
+['check or money order',3,'money','Use "payment"'],
+['claim now',3,'urgency','Use "claim your copy"'],
+['click',2,'cta','Use "open" or "visit"'],
+['click here',3,'cta','Describe the link target'],
+['click below',2,'cta','Describe the destination'],
+['collect',2,'money','Use "claim"'],
+['compare',1,'sales','Keep with context'],
+['consolidate debt',3,'money','Avoid debt framing'],
+['credit',2,'money','Use "account"'],
+['credit card offers',3,'money','Avoid'],
+['deal',1,'sales','Use specifics'],
+['deadline',2,'urgency','Use specific dates'],
+['discount',1,'sales','Use "savings"'],
+['double your',3,'marketing','Avoid inflated promises'],
+['earn',2,'money','Use "receive"'],
+['earn money',3,'money','Avoid income claims'],
+['easy',1,'marketing','Remove or quantify'],
+['exclusive deal',2,'sales','Use "member pricing"'],
+['fast cash',3,'money','Avoid'],
+['free',3,'money','Use "complimentary" — or use sparingly'],
+['free access',3,'money','Use "included"'],
+['free gift',3,'money','Use "bonus"'],
+['free hosting',3,'money','Avoid'],
+['free info',3,'money','Use "details"'],
+['free instant',3,'money','Avoid'],
+['free money',3,'money','Avoid'],
+['free preview',2,'money','Use "sample"'],
+['free quote',2,'money','Use "estimate"'],
+['free trial',2,'money','Often OK with sender reputation'],
+['full refund',2,'money','Use "money-back guarantee"'],
+['guarantee',2,'marketing','Be specific about what'],
+['hello',1,'greeting','Personalize the greeting'],
+['home based',3,'money','Avoid'],
+['income',2,'money','Avoid income framing'],
+['incredible',1,'marketing','Use specifics'],
+['info you requested',1,'cta','Keep if accurate'],
+['instant',2,'urgency','Use "immediate"'],
+['instant approval',3,'money','Avoid'],
+['investment',2,'money','Use specific context'],
+['join us',1,'cta','Keep but personalize'],
+['last chance',3,'urgency','Use sparingly with date'],
+['limited time',2,'urgency','Give an actual end date'],
+['loan',2,'money','Avoid'],
+['lose',1,'health','Reframe positively'],
+['lose weight',3,'health','Avoid'],
+['lowest price',2,'sales','Use "competitive price"'],
+['make money',3,'money','Avoid'],
+['money back',2,'money','Use "guarantee"'],
+['money making',3,'money','Avoid'],
+['no cost',2,'money','Use "complimentary"'],
+['no fees',2,'money','Use "no upfront charges"'],
+['no hidden',2,'money','Use "transparent pricing"'],
+['no obligation',2,'sales','Keep but soften'],
+['obligation',1,'sales','Reframe'],
+['offer',1,'sales','Be specific'],
+['one time',2,'urgency','Use "single"'],
+['online degree',3,'marketing','Avoid'],
+['online marketing',2,'marketing','Be specific'],
+['opportunity',2,'marketing','Be specific'],
+['order',1,'sales','Keep'],
+['order now',3,'cta','Use "shop now" or specific CTA'],
+['order today',2,'cta','Give a date'],
+['potential earnings',3,'money','Avoid'],
+['presently',1,'filler','Remove'],
+['prize',2,'marketing','Use specifics'],
+['profit',2,'money','Be specific'],
+['promise',2,'marketing','Show proof'],
+['rate',1,'money','Use context'],
+['refinance',3,'money','Avoid'],
+['request now',3,'cta','Use "request access"'],
+['risk-free',2,'marketing','Use "guaranteed"'],
+['sale',1,'sales','Be specific'],
+['satisfaction guaranteed',2,'marketing','Use specific terms'],
+['save',1,'money','Use specifics'],
+['save $',3,'money','Use "save [amount]" spelled out'],
+['save money',2,'money','Use specific amount'],
+['save up to',2,'sales','Be specific'],
+['search engine',2,'marketing','Be specific'],
+['see for yourself',1,'cta','Use specifics'],
+['selected',1,'marketing','Be specific'],
+['sent in compliance',2,'legal','Avoid disclaimer framing'],
+['serious cash',3,'money','Avoid'],
+['sign up free',3,'money','Use "sign up" only'],
+['special promotion',2,'sales','Use specifics'],
+['stop further',2,'legal','Use "unsubscribe" link'],
+['subject to',1,'legal','Be specific'],
+['take action',2,'cta','Use specific verb'],
+['this is not spam',3,'legal','Remove entirely'],
+['today',1,'urgency','Use sparingly'],
+['trial',1,'sales','Keep'],
+['u.s. dollars',2,'money','Use "USD" or drop'],
+['urgent',3,'urgency','Use "important" with reason'],
+['viagra',3,'health','Avoid'],
+['winner',2,'marketing','Use specifics'],
+['winning',2,'marketing','Use specifics'],
+['while supplies last',2,'urgency','Use specific date'],
+['work from home',3,'money','Avoid'],
+['you have been selected',3,'marketing','Avoid'],
+['you are a winner',3,'marketing','Avoid'],
+['best',1,'quality','Use specifics'],
+['check',1,'cta','Use specific verb'],
+['dear',1,'greeting','Use recipient name'],
+['great',1,'quality','Use specifics'],
+['hello friend',2,'greeting','Use recipient name'],
+['increase',1,'marketing','Be specific'],
+['increase sales',2,'marketing','Use specifics'],
+['million',2,'money','Avoid inflated numbers'],
+['now',1,'urgency','Use sparingly'],
+['opportunity',2,'marketing','Be specific'],
+['please read',2,'cta','Use specific reason'],
+['remove',1,'legal','Use "unsubscribe" link'],
+['removed',1,'legal','Use "unsubscribe" link'],
+['reverse',1,'marketing','Be specific'],
+['search',1,'marketing','Be specific'],
+['subject',1,'legal','Use clear topic'],
+['unsubscribe',1,'legal','Keep — required by CAN-SPAM/GDPR'],
+['weight',2,'health','Reframe'],
+];
+
+// pre-compile regexes (case-insensitive, word boundary on left for letters)
+const RULES = TRIGGERS.map(r=>{
+  const word = r[0];
+  // Use a smart boundary: \b for letters, plain text for symbols ($, %, etc.)
+  const startBoundary = /^[a-z0-9]/i.test(word) ? '\\b' : '';
+  const endBoundary   = /[a-z0-9]$/i.test(word) ? '\\b' : '';
+  const re = new RegExp(startBoundary + word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + endBoundary, 'gi');
+  return {word, weight:r[1], cat:r[2], suggest:r[3], re};
+});
+
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function check(){
+  const subj = $('#f-subject').value;
+  const body = $('#f-body').value;
+  const text = (subj + '\n' + body);
+  if(!text.trim()){
+    $('#score').textContent = '--';
+    $('#grade').textContent = '—';
+    $('#grade').style.background = 'var(--glass2)';
+    $('#grade').style.color = 'var(--text2)';
+    $('#summary').textContent = '';
+    $('#hits-block').style.display = 'none';
+    $('#highlight-block').style.display = 'none';
+    return;
+  }
+  const hits = [];
+  const textLower = text.toLowerCase();
+  RULES.forEach(r=>{
+    const m = text.match(r.re);
+    if(m){
+      // count distinct occurrences
+      const count = m.length;
+      hits.push({word:r.word, weight:r.weight, cat:r.cat, suggest:r.suggest, count});
+    }
+  });
+
+  // score: start at 100, subtract weighted penalty (capped)
+  let penalty = 0;
+  hits.forEach(h => penalty += h.weight * Math.min(h.count, 3));
+  // scale: 0 penalty = 100, heavy penalty floors around 25
+  let score = Math.max(0, Math.min(100, 100 - penalty * 4));
+
+  $('#score').textContent = score;
+  $('#score-out-of').textContent = t('scoreOutOf');
+  const gradeEl = $('#grade');
+  let gradeText, gradeColor, summaryText;
+  if(score >= 80){
+    gradeText = t('gradeGood');
+    gradeColor = '#00d672';
+  } else if(score >= 55){
+    gradeText = t('gradeOk');
+    gradeColor = '#ffd93d';
+  } else {
+    gradeText = t('gradeBad');
+    gradeColor = '#ff6b6b';
+  }
+  gradeEl.textContent = gradeText;
+  gradeEl.style.background = gradeColor;
+  gradeEl.style.color = score >= 80 ? '#000' : '#1a1a1a';
+
+  // hits list
+  const hitsBlock = $('#hits-block');
+  const hitsList = $('#hits');
+  if(hits.length === 0){
+    hitsBlock.style.display = 'block';
+    $('#hits-title').textContent = t('foundWords') + ' (0)';
+    hitsList.innerHTML = '<div style="color:var(--text2);font-size:.9em;padding:10px">'+t('noWords')+'</div>';
+  } else {
+    hitsBlock.style.display = 'block';
+    $('#hits-title').textContent = t('foundWords') + ' ('+hits.length+')';
+    hitsList.innerHTML = hits.sort((a,b)=>b.weight-a.weight).map(h=>
+      '<div class="hit-row"><span class="hit-cat">'+h.cat+'</span><div style="flex:1"><span class="hit-word">'+esc(h.word)+'</span> '+(h.count>1?'<span style="color:var(--text3);font-size:.78em">×'+h.count+'</span>':'')+'<div class="hit-suggest">→ '+esc(h.suggest)+'</div></div></div>'
+    ).join('');
+  }
+  const cats = new Set(hits.map(h=>h.cat));
+  $('#summary').textContent = hits.length + ' trigger ' + (hits.length===1?'word':'words') + ' · ' + cats.size + ' categor' + (cats.size===1?'y':'ies');
+
+  // highlight preview
+  $('#highlight-block').style.display = 'block';
+  $('#hl-title').textContent = t('hlTitle');
+  $('#hl-subject').innerHTML = highlightText(subj);
+  $('#hl-body').innerHTML    = highlightText(body);
+}
+
+function highlightText(s){
+  if(!s) return '<span style="color:var(--text3)">—</span>';
+  let out = esc(s);
+  // sort by length desc so longer phrases win
+  const sorted = [...RULES].sort((a,b)=>b.word.length - a.word.length);
+  sorted.forEach(r=>{
+    const re = new RegExp(r.word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
+    out = out.replace(re, m => '<mark>'+m+'</mark>');
+  });
+  return out;
+}
+
+function loadExample(){
+  $('#f-subject').value = 'URGENT: Click here for your FREE $1000 gift — limited time!';
+  $('#f-body').value = 'Dear friend,\n\nYou have been selected to win an amazing prize! Act now and click below to claim your free money before the deadline. This is a once in a lifetime opportunity — earn money fast with no obligation.\n\nBest price guaranteed. Order today!';
+  check();
+}
+
+$('#toolbar').innerHTML =
+  '<button class="gz-btn gz-btn-secondary" onclick="loadExample()">✨ '+t('example')+'</button>'+
+  '<button class="gz-btn gz-btn-secondary" onclick="$(\'#f-subject\').value=\'\';$(\'#f-body\').value=\'\';check()">🧹 '+t('clear')+'</button>';
+
+check();
+
+GZ.renderToolPage({
+  category:'seo',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'✉️', href:'/text/email-subject-tester.html', name:'Email Subject Tester'},
+    {icon:'📧', href:'/text/email-writer.html', name:'AI Email Writer'},
+    {icon:'🔖', href:'/seo/open-graph-preview.html', name:'Open Graph Preview'},
+    {icon:'🏷️', href:'/seo/meta-tag-generator.html', name:'Meta Tag Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
