@@ -42,3 +42,43 @@
 ## 监控
 - 24h 后检查 tools.gamezipper.com AdSense fill rate
 - 如果 fill 仍然 0: 检查 AdSense 后台 tools.gamezipper.com 域名状态 + ads.txt
+
+---
+
+## 24h 监控结果 (2026-06-27 07:10 CST 部署后, 截至 2026-06-27 07:10)
+
+### 数据（BI SQLite, 2026-06-26 07:10 → 2026-06-27 07:10）
+
+| site | adsense_script_loaded | cb_no_fill | cb_fill | load_error |
+|------|----------------------:|-----------:|--------:|-----------:|
+| gamezipper.com | (未单独统计) | 3 | **120** ✅ | 0 |
+| tools.gamezipper.com | 3 | 10 | **0** ❌ | 9 |
+
+**结论: v5.4.4 mid-slot 注入生效（.gz-related 前的 `<ins id="gz-tool-mid-slot">` 已渲染），但 AdSense fill 仍为 0。**
+
+### 真实浏览器验证（camoufox headless 抓 tools.gamezipper.com/calc/age-calculator.html）
+- `<ins id="gz-tool-mid-slot">` ✅ 正确渲染在 `.gz-related` div 前
+- `data-ad-client="ca-pub-8346383990981353"` ✅ 正确
+- `data-adsbygoogle-status` 长期 null / `done`，`offsetHeight = 0`，iframe 1x1 ghost
+- `window.adsbygoogle` undefined（camoufox 被 AdSense 反作弊屏蔽，但 BI 显示真实用户 24h 也只有 3 次 script_loaded + 0 fill）
+
+### 根因分析
+
+**发现 1: ads.txt 没问题**（gamezipper.com 用同样 pub-8346383990981353 在 fill）。
+
+**发现 2: tools 站点 `<head>` 缺少 AdSense Auto Ads 必需 meta 标签**:
+```html
+<meta content="ca-pub-8346383990981353" name="google-adsense-platform-account">
+```
+gamezipper.com 所有 219 个游戏页面都带此 meta，tools 站点 0 个。AdSense Auto Ads 文档明确要求此 meta 用于平台/账号识别。
+
+**发现 3: monetag-manager.js 第 884-887 行重复注入 pagead2 脚本（不带 client param）**:
+```js
+adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+```
+这条路径是商业 break fallback（showPokiOverlay Tier 1），在 tool pages 也会触发。重复注入的脚本无 client 参数，浏览器执行后初始化失败，覆盖 adsense-auto.js 注入的正常版本。
+
+### 下一步建议修复（创建为新子任务）
+1. **P0**: 在 shared/common.js 同步注入 `<meta name="google-adsense-platform-account" content="ca-pub-8346383990981353">` 到所有 2915 tools 页面
+2. **P0**: 修复 monetag-manager.js 第 886 行: `adsenseScript.src` 改为 `+ '?client=ca-pub-8346383990981353'` 或加 `if (!window.adsbygoogle)` 守卫避免重复注入
+3. **P1**: 验证 fix 后 24h 再观察

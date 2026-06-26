@@ -1,4 +1,11 @@
 /* GameZipper Tools — Common JS — tunnel: garden-cricket-aged-depends
+ * v5.5.4-tools-platform-account (2026-06-27, P0 task t_5e438852):
+ *   Inject <meta name="google-adsense-platform-account" content="ca-pub-8346383990981353">
+ *   at parse time. AdSense Auto Ads REQUIRES this meta to register the publisher
+ *   account; tools site had 0 of it (gamezipper.com has 406) → 24h AdSense fill=0
+ *   even when adsense-auto.js loaded successfully (3 script_loaded in last 24h).
+ *   Mirrors gamezipper.com/<game>/index.html line 201.
+ *   Safe: <meta> in <head> is idempotent — duplicate has no effect.
  * v5.5.3-tools-preconnect (2026-06-25, P1 task t_de6e7e3f):
  *   Inject preconnect + dns-prefetch for ad/analytics CDNs at the top of common.js.
  *   common.js is parser-blocking (no defer/async), so the browser starts DNS
@@ -15,6 +22,16 @@
  *   dns-prefetch is the fallback for browsers without preconnect (older Firefox/Safari).
  */
 (function(){
+  // ── v5.5.4 platform-account meta injection (P0 t_5e438852) — MUST run BEFORE AdSense ──
+  try {
+    if (!document.querySelector('meta[name="google-adsense-platform-account"]')) {
+      var m = document.createElement('meta');
+      m.name = 'google-adsense-platform-account';
+      m.content = 'ca-pub-8346383990981353';
+      document.head.appendChild(m);
+    }
+  } catch(e) { /* non-fatal */ }
+
   // ── v5.5.3 preconnect/dns-prefetch injection (runs synchronously during HTML parse) ──
   try {
     var hints = [

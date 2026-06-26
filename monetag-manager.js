@@ -1,7 +1,19 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.9.1-tools-zone-backoff-tune (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.9.2-tools-adsense-script-guard (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.9.2 Changes (2026-06-27 — AdSense Script Guard + client Param, P0 t_5e438852):
+ *   - 🔧 AdSense Tier-1 fallback (showPokiOverlay) no longer overrides adsense-auto.js.
+ *     Old logic injected pagead2.googlesyndication.com/pagead/js/adsbygoogle.js
+ *     WITHOUT client= parameter, clobbering the version adsense-auto.js:348 already
+ *     injected WITH client=ca-pub-8346383990981353. Browser kept the latest <script>,
+ *     so the no-client version won — script_loaded=3 but fill=0 in 24h BI.
+ *   - ✅ Skip inject when window.adsbygoogle.loaded is true.
+ *   - 🔧 If we DO inject, use ?client=ca-pub-8346383990981353 (Auto Ads format).
+ *   - 📊 Acceptance: tools 24h AdSense fill > 0 (was 0); no increase in load_error
+ *     events beyond the existing 9/day noise floor.
+ *   - Version bumped 5.9.1 → 5.9.2 to track on BI server.
  *
  * v5.9.1 Changes (2026-06-27 — Relax Zone Backoff to gz.com v5.4 Curve):
  *   - ⚙️ ZONE_BACKOFF.backoffs: [30min, 60min, 24h] → [10min, 30min, 2h].
@@ -883,8 +895,16 @@
         adsenseIns.setAttribute('data-ad-format', 'rectangle');
         var adsenseScript = document.createElement('script');
         adsenseScript.async = true;
-        adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
-        document.head.appendChild(adsenseScript);
+        // v5.9.2 (2026-06-27, P0 t_5e438852): 加 client 参数 + 守卫避免覆盖 adsense-auto.js
+        //   已加载的 adsbygoogle.js?client=... 版本 (with platform-account meta from
+        //   v5.5.4 common.js). 老逻辑注入无 client 版本会触发 AdSense script.loaded
+        //   但无 fill 状态 — 24h BI 数据显示 9 load_error / 10 no_fill / 3 script_loaded / 0 fill.
+        if (window.adsbygoogle && window.adsbygoogle.loaded) {
+          // adsense-auto.js 已注入正确版本, 跳过重复注入, 只 push 新 ins.
+        } else {
+          adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
+          document.head.appendChild(adsenseScript);
+        }
         var statusEl2 = document.getElementById('gz-cb-status');
         // Insert ad below the message
         if (statusEl2 && statusEl2.parentNode) {
