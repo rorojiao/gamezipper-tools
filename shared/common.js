@@ -44,7 +44,7 @@
   window.GZ_COLLECT_ENDPOINT = 'https://opposite-rental-chan-wheel.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=2026062659hb';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=2026062659hb2';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260621a';s4.defer=true;document.head.appendChild(s4);
