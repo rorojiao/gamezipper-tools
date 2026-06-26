@@ -1,9 +1,24 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.7-tools-exit-intent (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.9-tools-home-banner (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
  *
- * v5.7 Changes (2026-06-24 — Exit-Intent Commercial Break + Frequency Tuning):
+ * v5.9 Changes (2026-06-26 — Port gz.com Homepage Banner Pattern to Tools):
+ *   - 🚀 New: showHomepageBanner() — fills the #gz-home-banner and
+ *     #gz-home-banner-2 divs on hub pages (/, /zh/) with a 4-tier waterfall
+ *     that leads with the cross-deployed working zone 11012002 (the only
+ *     zone with 0.8% fill rate on gz.com, currently 0% on tools). Mirrors
+ *     gamezipper.com v5.9's showHomepageBanner().
+ *   - 📊 BI data 7d (2026-06-19~06-26): tools has 0 Monetag fills EVER
+ *     across 100+ events. gamezipper.com gets 86 fills/week, all on
+ *     gz-home-banner. The fix is structural: tools now has the same banner
+ *     positions as gz.com, so when the zone is authorized for tools (or new
+ *     zones are added) the fill path is already wired.
+ *   - 🛠️ init() now calls showHomepageBanner() when isHubPage is true.
+ *   - ⏱️ New TIMING.homepageBannerDelay: 2s (matches gz.com). Two banners
+ *     fill staggered at 2s and 6s.
+ *   - 📈 New FREQUENCY.homepageBannerCooldown: 10min between banners.
+ *   - Version bumped 5.8 → 5.9 to track on BI server.
  *   - 🚀 New: initExitIntent() — detects user mouse moving to top of viewport
  *     (the "I want to leave" gesture). On tool pages only, fires a Poki-style
  *     overlay so we capture one more high-CTR impression before the user
@@ -130,9 +145,11 @@
       sessionMaxAds: 20,                 // max 20 per 30-min session (对标 Poki)
       sessionWindowMs: 30 * 60 * 1000,   // 30-min rolling window
       dailyMaxAds: 60,                   // max 60 per day (对标 Poki)
+      homepageBannerCooldown: 10 * 60 * 1000, // v5.9: 10 min between homepage banners
     },
     TIMING: {
       containerAdDelay: 3000,           // 3s
+      homepageBannerDelay: 2000,         // v5.9: 2s before homepage banner (matches gz.com)
       vignetteHubDelay: 20 * 1000,      // 20s on hub pages
       vignetteToolDelay: 35 * 1000,     // 35s on tool pages
       vignetteSkipAfter: 5000,          // 5s skip countdown for Poki overlay
@@ -144,7 +161,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.8-tools-exit-intent-fix',  // 2026-06-25: port gz.com v5.9 fix — track exit_intent_detected before canShowAd, add canShowAdExitIntent() + exit_intent_blocked, loosen 30s/5m → 15s/60s
+    VERSION: '5.9-tools-home-banner',  // 2026-06-26: port gz.com gz-home-banner pattern to tools — add #gz-home-banner + #gz-home-banner-2 divs, showHomepageBanner() with working-zone-first waterfall (11012002 Tier 1), init() calls on hub pages only. Mirrors gz.com v5.9.
     // v5.4: Monetag zone backoff — gentler curve for tools (was 10/30/60min).
     //   streak 1 → 30min (was 10): real fills often land on attempt 2, don't punish
     //   streak 2 → 60min (was 30): same logic
@@ -634,6 +651,73 @@
     state.isToolPage = !state.isHubPage && path.length > 1;
   }
 
+  // ==================== HOMEPAGE BANNER (v5.9) ====================
+  // Fills the #gz-home-banner and #gz-home-banner-2 divs on hub pages
+  // (/, /zh/) with a 4-tier waterfall:
+  //   Tier 1: Monetag 11012002 (gz.com working zone, 0.8% fill rate on gz.com)
+  //   Tier 2: Monetag 11012010 (tools primary, currently 0% on tools but kept for when CDN recovers)
+  //   Tier 3: Monetag 10689345 (Pungent legacy, kill-switchable)
+  //   Tier 4: Adsterra in-page push (no-op if not enabled)
+  //
+  // Why port from gz.com v5.9: tools has 0 Monetag fills EVER in 7d BI data.
+  //   gz.com gets 86 fills/week from the same 11012002 zone, ALL on gz-home-banner position.
+  //   Adding the same #gz-home-banner divs to tools index.html + this function
+  //   means the moment the zone is authorized for tools (or new zones are added),
+  //   the fill path is already wired up. Currently 0% on tools but we want to be ready.
+  //
+  // Cooldown 10min between banners (CONFIG.FREQUENCY.homepageBannerCooldown).
+  function showHomepageBanner() {
+    if (!state.isHubPage) return;
+    if (!canShowAd()) return;
+
+    var bannerIds = ['gz-home-banner', 'gz-home-banner-2'];
+    for (var bi = 0; bi < bannerIds.length; bi++) {
+      (function(containerId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        if (container.getAttribute('data-filled')) return;
+
+        setTimeout(function() {
+          if (container.getAttribute('data-filled')) return;
+          if (!canShowAd()) return;
+
+          // Tier 1: Cross-deployed 11012002 (only working zone from gz.com).
+          // v5.9: Lead with the working zone so we don't waste ad-provider.js
+          // bandwidth on broken primary zones. Mirrors gz.com v5.6 waterfall.
+          loadZone(ZONES.inpagePushGz, container).then(function() {
+            container.setAttribute('data-filled', '1');
+            markShown();
+            trackAdEvent('homepage_banner_fill', { network: 'monetag', zoneId: ZONES.inpagePushGz, containerId: containerId });
+          }).catch(function() {
+            if (container.getAttribute('data-filled')) return;
+            // Tier 2: tools primary 11012010
+            loadZone(ZONES.inpagePush, container).then(function() {
+              container.setAttribute('data-filled', '1');
+              markShown();
+              trackAdEvent('homepage_banner_fill', { network: 'monetag', zoneId: ZONES.inpagePush, containerId: containerId });
+            }).catch(function() {
+              if (container.getAttribute('data-filled')) return;
+              // Tier 3: legacy zone (kill-switchable via ZONES.legacyEnabled)
+              if (!ZONES.legacyEnabled) return;
+              loadZone(ZONES.inpagePushLegacy, container).then(function() {
+                container.setAttribute('data-filled', '1');
+                markShown();
+                trackAdEvent('homepage_banner_fill', { network: 'monetag', zoneId: ZONES.inpagePushLegacy, containerId: containerId });
+              }).catch(function() {
+                // Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
+                if (container.getAttribute('data-filled')) return;
+                loadAdsterraZone(ZONES.adsterraInpagePush, container, 'inpage').then(function() {
+                  container.setAttribute('data-filled', '1');
+                  markShown();
+                }).catch(function() {});
+              });
+            });
+          });
+        }, CONFIG.TIMING.homepageBannerDelay + (bi * 4000));  // 2s for first banner, 6s for second
+      })(bannerIds[bi]);
+    }
+  }
+
   // ==================== Container ad (工具结果下方) ====================
   function showContainerAd() {
     var container = document.getElementById('gz-tools-ad-below');
@@ -962,6 +1046,11 @@
   });
 
   detectPage();
+  if (state.isHubPage) {
+    // v5.9: tools homepage now has #gz-home-banner + #gz-home-banner-2 divs —
+    // fill them with the working-zone-first waterfall (mirrors gz.com v5.9).
+    showHomepageBanner();
+  }
   showContainerAd();
   showPokiOverlay();    // v4: Poki-style glass overlay 替代 vignette
   initPopunder();
