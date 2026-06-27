@@ -58,14 +58,15 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://blond-sessions-candidate-vertex.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://cincinnati-include-necessity-polar.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
-  // v5.9 had [30/60/1440min] backoffs causing 0 fills in 30d on tools; new
-  // v5.9.1 uses gz.com v5.4 curve [10/30/120min]. Cache suffix must be
-  // monotonically increasing to avoid browser reusing old v5.9 from cache.
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260627001';s1.defer=true;document.head.appendChild(s1);
+  // v5.10 (2026-06-27): Banner AdSense Tier 0 + event completeness. v5.9.2 had
+  // [10/30/120min] backoffs; v5.10 same backoff curve but adds AdSense Tier 0
+  // to homepage banner waterfall. Cache suffix must be monotonically increasing
+  // to avoid browser reusing old v5.9.2 from cache.
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260627002';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260627444';s4.defer=true;document.head.appendChild(s4);
