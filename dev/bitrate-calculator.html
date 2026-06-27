@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Video Bitrate Calculator - File Size & Quality Estimator | GameZipper Tools</title>
+  <meta name="description" content="Free online video bitrate calculator. Calculate file size from bitrate and duration, or find the ideal bitrate for a target file size. Supports 4K, 1080p, streaming and YouTube recommended bitrates. Pure browser, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/bitrate-calculator.html">
+  <meta property="og:title" content="Video Bitrate Calculator - File Size & Quality Estimator | GameZipper Tools">
+  <meta property="og:description" content="Free online video bitrate calculator. Calculate file size from bitrate and duration, or find the ideal bitrate for a target file size. Supports 4K, 1080p, streaming and YouTube recommended bitrates.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/bitrate-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Video Bitrate Calculator - File Size & Quality Estimator | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.field{margin-bottom:12px}
+.field label{font-size:.8rem;color:var(--text2);display:block;margin-bottom:4px}
+.field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.result-box{background:var(--glass2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:14px;text-align:center}
+.result-box .big{font-size:2.2rem;font-weight:800;color:var(--accent);line-height:1.1}
+.result-box .sub{font-size:.85rem;color:var(--text2);margin-top:6px}
+.sub-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.sub-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.sub-card .v{font-size:1.1rem;font-weight:700;color:var(--accent2)}
+.sub-card .l{font-size:.72rem;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.toggle-group{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Video Bitrate Calculator","description":"Free online video bitrate calculator. Calculate file size from bitrate and duration, or find the ideal bitrate for a target file size. Supports 4K, 1080p, streaming and YouTube recommended bitrates. Pure browser, no upload.","url":"https://tools.gamezipper.com/dev/bitrate-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is video bitrate?", "acceptedAnswer": {"@type": "Answer", "text": "Video bitrate is the amount of data processed per second of video, usually measured in megabits per second (Mbps). Higher bitrate means better quality but larger file size. Bitrate, resolution and frame rate together determine how a video looks and how big the file is."}}, {"@type": "Question", "name": "How is video file size calculated from bitrate?", "acceptedAnswer": {"@type": "Answer", "text": "File size = (total bitrate in bits per second × duration in seconds) ÷ 8. Total bitrate combines the video bitrate and audio bitrate. For example, 8 Mbps for 60 seconds produces about 60 MB. This calculator handles the conversion automatically."}}, {"@type": "Question", "name": "What bitrate should I use for 1080p?", "acceptedAnswer": {"@type": "Answer", "text": "For standard 1080p YouTube uploads, 8 Mbps is recommended for typical content and 12 Mbps for high-motion content. For streaming, Netflix-style 1080p often uses 5-8 Mbps. For 4K, YouTube recommends 35-45 Mbps. Use the presets in this tool as a starting point."}}, {"@type": "Question", "name": "Does this calculator upload my video?", "acceptedAnswer": {"@type": "Answer", "text": "No. This is a pure math calculator that runs entirely in your browser. No files or data are uploaded anywhere — you just enter numbers and get instant estimates."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/bitrate-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/bitrate-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/bitrate-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="toggle-group">
+      <button class="gz-btn" id="dir-size" onclick="setDir('size')"></button>
+      <button class="gz-btn gz-btn-secondary" id="dir-bitrate" onclick="setDir('bitrate')"></button>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label id="lbl-dur"></label>
+        <div style="display:flex;gap:4px">
+          <input id="durH" type="number" min="0" value="0" style="width:33%">
+          <input id="durM" type="number" min="0" max="59" value="2" style="width:33%">
+          <input id="durS" type="number" min="0" max="59" value="0" style="width:33%">
+        </div>
+      </div>
+      <div class="field">
+        <label id="lbl-fps"></label>
+        <select id="fps" class="gz-select" onchange="recalc()" style="width:100%">
+          <option value="24">24 fps</option>
+          <option value="30" selected>30 fps</option>
+          <option value="60">60 fps</option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="lbl-res"></label>
+        <select id="res" class="gz-select" onchange="applyPreset()" style="width:100%">
+          <option value="480">480p (SD)</option>
+          <option value="720">720p (HD)</option>
+          <option value="1080" selected>1080p (Full HD)</option>
+          <option value="1440">1440p (2K)</option>
+          <option value="2160">2160p (4K)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="size-input-block">
+      <div class="field-row">
+        <div class="field">
+          <label id="lbl-vbr"></label>
+          <input id="vbr" type="number" min="0" step="0.1" value="8" style="width:100%">
+        </div>
+        <div class="field">
+          <label id="lbl-abr"></label>
+          <input id="abr" type="number" min="0" step="1" value="128" style="width:100%">
+        </div>
+      </div>
+    </div>
+
+    <div id="target-block" style="display:none">
+      <div class="field-row">
+        <div class="field">
+          <label id="lbl-target"></label>
+          <input id="targetSize" type="number" min="0" step="0.1" value="100" style="width:100%">
+        </div>
+        <div class="field">
+          <label id="lbl-targetunit"></label>
+          <select id="targetUnit" class="gz-select" style="width:100%">
+            <option value="MB">MB</option>
+            <option value="GB">GB</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="br-result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Video Bitrate Calculator',
+    toolDesc: 'Calculate video file size from bitrate and duration, or find the ideal bitrate for a target file size. Includes YouTube and streaming presets for 480p to 4K.',
+    dirSize: 'Bitrate → File size',
+    dirBitrate: 'Target size → Bitrate',
+    lblDur: 'Duration (H : M : S)',
+    lblFps: 'Frame rate',
+    lblRes: 'Resolution',
+    lblVbr: 'Video bitrate (Mbps)',
+    lblAbr: 'Audio bitrate (kbps)',
+    lblTarget: 'Target file size',
+    lblTargetunit: 'Unit',
+    estSize: 'Estimated file size',
+    estBitrate: 'Recommended total bitrate',
+    sizeMb: 'MB',
+    sizeGb: 'GB',
+    videoOnly: 'Video only',
+    audioOnly: 'Audio only',
+    perMin: 'per minute',
+    targetVbr: 'Video bitrate to use',
+    step1: 'Pick a mode: estimate file size from bitrate, or find bitrate for a target size',
+    step2: 'Set the video duration (hours : minutes : seconds)',
+    step3: 'Choose resolution and frame rate — presets auto-fill typical bitrates',
+    step4: 'Read the estimated file size or recommended bitrate instantly',
+  },
+  zh: {
+    toolTitle: '视频码率计算器',
+    toolDesc: '根据码率和时长计算视频文件大小，或根据目标大小计算理想码率。内置 480p 到 4K 的 YouTube 和流媒体码率预设。',
+    dirSize: '码率 → 文件大小',
+    dirBitrate: '目标大小 → 码率',
+    lblDur: '时长（时:分:秒）',
+    lblFps: '帧率',
+    lblRes: '分辨率',
+    lblVbr: '视频码率 (Mbps)',
+    lblAbr: '音频码率 (kbps)',
+    lblTarget: '目标文件大小',
+    lblTargetunit: '单位',
+    estSize: '估算文件大小',
+    estBitrate: '推荐总码率',
+    sizeMb: 'MB',
+    sizeGb: 'GB',
+    videoOnly: '仅视频',
+    audioOnly: '仅音频',
+    perMin: '每分钟',
+    targetVbr: '建议视频码率',
+    step1: '选择模式：由码率估算文件大小，或由目标大小反推码率',
+    step2: '设置视频时长（时:分:秒）',
+    step3: '选择分辨率和帧率 — 预设会自动填入常用码率',
+    step4: '即时查看估算的文件大小或推荐码率',
+  }
+});
+
+const { $, t } = GZ;
+let dir = 'size';
+
+// YouTube-style recommended video bitrate (Mbps) by resolution × fps tier
+const PRESETS = {
+  '480':  { sdr30: 2.5, sdr60: 4 },
+  '720':  { sdr30: 5,   sdr60: 7.5 },
+  '1080': { sdr30: 8,   sdr60: 12 },
+  '1440': { sdr30: 16,  sdr60: 24 },
+  '2160': { sdr30: 40,  sdr60: 60 },
+};
+
+function setDir(d){
+  dir = d;
+  $('#dir-size').className = d === 'size' ? 'gz-btn' : 'gz-btn gz-btn-secondary';
+  $('#dir-bitrate').className = d === 'bitrate' ? 'gz-btn' : 'gz-btn gz-btn-secondary';
+  $('#dir-size').textContent = t('dirSize');
+  $('#dir-bitrate').textContent = t('dirBitrate');
+  $('#size-input-block').style.display = d === 'size' ? 'block' : 'none';
+  $('#target-block').style.display = d === 'bitrate' ? 'block' : 'none';
+  recalc();
+}
+
+function applyPreset(){
+  const res = $('#res').value;
+  const fps = +$('#fps').value;
+  const p = PRESETS[res];
+  if (!p) return;
+  const vbr = fps >= 60 ? p.sdr60 : p.sdr30;
+  $('#vbr').value = vbr;
+  recalc();
+}
+
+function recalc(){
+  const dur = (+$('#durH').value||0)*3600 + (+$('#durM').value||0)*60 + (+$('#durS').value||0);
+  const vbr = +$('#vbr').value || 0; // Mbps
+  const abr = +$('#abr').value || 0; // kbps
+  const totalMbps = vbr + abr/1000;  // Mbps
+
+  if (dir === 'size'){
+    // total bits = totalMbps * 1e6 * dur ; bytes = /8
+    const bytes = totalMbps * 1e6 * dur / 8;
+    const mb = bytes / (1024*1024);
+    const gb = mb / 1024;
+    const vBytes = vbr * 1e6 * dur / 8;
+    const aBytes = abr * 1e3 * dur / 8;
+    const perMin = totalMbps * 1e6 * 60 / 8 / (1024*1024);
+    const niceSize = gb >= 1 ? gb.toFixed(2)+' '+t('sizeGb') : mb.toFixed(1)+' '+t('sizeMb');
+    $('#br-result').innerHTML = `
+      <div class="result-box">
+        <div class="big">${niceSize}</div>
+        <div class="sub">${t('estSize')}${dur>0 ? ' · '+(perMin*dur/60/ (gb>=1?1024:1)).toFixed(1)+' '+(gb>=1?t('sizeMb'):t('sizeMb')) : ''}</div>
+      </div>
+      <div class="sub-results">
+        <div class="sub-card"><div class="v">${(vBytes/(1024*1024)).toFixed(1)} ${t('sizeMb')}</div><div class="l">${t('videoOnly')}</div></div>
+        <div class="sub-card"><div class="v">${(aBytes/(1024*1024)).toFixed(2)} ${t('sizeMb')}</div><div class="l">${t('audioOnly')}</div></div>
+        <div class="sub-card"><div class="v">${perMin.toFixed(1)} ${t('sizeMb')}</div><div class="l">${t('perMin')}</div></div>
+        <div class="sub-card"><div class="v">${totalMbps.toFixed(2)} Mbps</div><div class="l">${t('estBitrate')}</div></div>
+      </div>`;
+  } else {
+    const target = +$('#targetSize').value || 0;
+    const unit = $('#targetUnit').value;
+    const targetBytes = unit === 'GB' ? target*1024*1024*1024 : target*1024*1024;
+    // total bitrate (Mbps) = targetBytes * 8 / dur / 1e6
+    let totalReq = dur > 0 ? (targetBytes * 8 / dur / 1e6) : 0;
+    const audioMbps = abr/1000;
+    const vbrReq = Math.max(0, totalReq - audioMbps);
+    $('#br-result').innerHTML = `
+      <div class="result-box">
+        <div class="big">${totalReq > 0 ? totalReq.toFixed(2)+' Mbps' : '—'}</div>
+        <div class="sub">${t('estBitrate')}</div>
+      </div>
+      <div class="sub-results">
+        <div class="sub-card"><div class="v">${vbrReq > 0 ? vbrReq.toFixed(2)+' Mbps' : '—'}</div><div class="l">${t('targetVbr')}</div></div>
+        <div class="sub-card"><div class="v">${audioMbps.toFixed(3)} Mbps</div><div class="l">${t('audioOnly')}</div></div>
+        <div class="sub-card"><div class="v">${dur>0 ? (dur/60).toFixed(1)+' min' : '—'}</div><div class="l">${t('lblDur')}</div></div>
+      </div>`;
+  }
+}
+
+// wire inputs
+['durH','durM','durS','vbr','abr','targetSize','targetUnit'].forEach(id=>{
+  $('#'+id).addEventListener('input', recalc);
+  $('#'+id).addEventListener('change', recalc);
+});
+
+setDir('size');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎬', href:'/convert/video-to-gif.html', name:'Video to GIF'},
+    {icon:'🗜️', href:'/convert/gif-compressor.html', name:'GIF Compressor'},
+    {icon:'🎞️', href:'/convert/images-to-gif.html', name:'Images to GIF'},
+    {icon:'🎵', href:'/convert/audio-converter.html', name:'Audio Converter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
