@@ -1,7 +1,21 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.10-tools-banner-adsense (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.10.1-tools-container-adsense (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.10.1 Changes (2026-06-27 — Container AdSense Tier 0):
+ *   - 🚀 New: showContainerAd() Tier 0 = AdSense slot 7373732357 (gz.com container slot)
+ *     BEFORE Monetag. Mirrors v5.10 homepage banner pattern. Same root cause: tools
+ *     Monetag zones 0% fill on tools subdomain (zone 11012002 9.7% load_error vs
+ *     gz.com 0.14% — CDN auth gap on tools subdomain). AdSense is gz.com's proven
+ *     container fill source. 2s grace period then fallback to Monetag Tiers 1-4.
+ *   - 🐛 Fix: showContainerAd() event leak — failed Tier 1 (inpagePush) + Tier 2
+ *     (inpagePushGz) + legacy_disabled dead end produced no trackAdEvent. Now
+ *     tracks adsense_container_ad_no_fill / container_ad_no_fill / container_ad_fill
+ *     for complete observability.
+ *   - 📊 Acceptance: 7d container_ad_fill events > 0 (was 0); 7d
+ *     adsense_container_ad_no_fill events > 0 confirms AdSense being attempted.
+ *   - Version bumped 5.10 → 5.10.1 to track on BI server.
  *
  * v5.10 Changes (2026-06-27 — Banner AdSense Tier 0 + Event Completeness):
  *   - 🚀 New: showHomepageBanner() Tier 0 = AdSense slot 1099212472 BEFORE Monetag.
@@ -206,7 +220,12 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.10-tools-banner-adsense',  // 2026-06-27: homepage banner Tier 0 = AdSense slot 1099212472 (mirrors gz.com v5.9 path) + event completeness fix for failed waterfall attempts. 30d BI: tools.banner 0 fill / 14 attempts vs gz.com 252/wk from same AdSense slot. Bumped from 5.9.2 to track on BI.
+    VERSION: '5.10.1-tools-container-adsense',  // 2026-06-27: container_ad AdSense Tier 0 (slot 7373732357) — same root cause fix as v5.10 homepage banner. tools Monetag zones 0% fill on tools subdomain (gz.com same zones 1.75% fill — CDN auth gap). AdSense is the proven fill source gz.com uses for container slots. Bumped from 5.10 to track on BI.
+    // v5.10.1: Container AdSense Tier 0 — showContainerAd() (gz-tools-ad-below div, injected
+    //   on every tool sub-page via shared/common.js) was still pure Monetag 4-tier. v5.10
+    //   only fixed showHomepageBanner. Adding AdSense Tier 0 here unlocks AdSense fill on
+    //   tool pages too — slot 7373732357 is gz.com's proven container-ad slot. 2s grace
+    //   period then fallback to Monetag Tiers 1-4 (Poki-style race).
     // v5.10: Banner AdSense Tier 0 — gz.com banner fill source is 95% AdSense (slot 1099212472),
     //   only 5% Monetag 11012002. tools had 30d 0 banner fills because v5.9 ported only the
     //   4-tier Monetag waterfall, missing the AdSense Tier 0 that's the actual fill source.
@@ -841,6 +860,12 @@
   }
 
   // ==================== Container ad (工具结果下方) ====================
+  // v5.10.1 (2026-06-27 — Container AdSense Tier 0): Mirror showHomepageBanner pattern.
+  //   Same root cause: tools Monetag zones 11012010/11012002/11012011 all 0% fill on tools
+  //   (gz.com same zones 1.75% fill — Monetag not authorizing tools subdomain). v5.10
+  //   added AdSense Tier 0 to homepage banner; tool pages' container ad (gz-tools-ad-below)
+  //   still pure Monetag 4-tier. Adding AdSense here too unlocks the same fill source
+  //   gz.com uses for its container slots.
   function showContainerAd() {
     var container = document.getElementById('gz-tools-ad-below');
     if (!container) return;
@@ -849,34 +874,87 @@
 
     setTimeout(function() {
       if (container.getAttribute('data-filled')) return;
-      // Try Superior first; fall back to Pungent (legacy) if Superior fails
-      loadZone(ZONES.inpagePush, container).then(function() {
-        container.setAttribute('data-filled', '1');
-        markShown();
-      }).catch(function() {
+
+      // Tier 0: AdSense race — slot 7373732357 (gz.com container-ad slot, same publisher).
+      // 2s grace period then fallback to Monetag Tiers 1-4 (Poki-style race).
+      var adsenseIns = document.createElement('ins');
+      adsenseIns.className = 'adsbygoogle';
+      adsenseIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden;';
+      adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
+      adsenseIns.setAttribute('data-ad-slot', '7373732357');
+      adsenseIns.setAttribute('data-ad-format', 'auto');
+      adsenseIns.setAttribute('data-full-width-responsive', 'false');
+      container.innerHTML = '';
+      container.appendChild(adsenseIns);
+      // v5.9.2 script guard (P0 t_5e438852): adsense-auto.js may have loaded
+      //   adsbygoogle.js?client=ca-pub-... already — skip redundant inject.
+      if (!(window.adsbygoogle && window.adsbygoogle.loaded)) {
+        var adsenseScript = document.createElement('script');
+        adsenseScript.async = true;
+        adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
+        document.head.appendChild(adsenseScript);
+      }
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+      var adsenseStart = Date.now();
+      var adsenseTimer = setInterval(function() {
+        if (container.getAttribute('data-filled')) { clearInterval(adsenseTimer); return; }
+        var status = adsenseIns.getAttribute('data-ad-status');
+        var ifr = adsenseIns.querySelector('iframe');
+        if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 50)) {
+          container.setAttribute('data-filled', '1');
+          markShown();
+          trackAdEvent('container_ad_fill', { network: 'adsense', containerId: 'gz-tools-ad-below', slotId: '7373732357' });
+          clearInterval(adsenseTimer);
+          return;
+        }
+        if (Date.now() - adsenseStart > 2000) {
+          clearInterval(adsenseTimer);
+          trackAdEvent('adsense_container_ad_no_fill', { containerId: 'gz-tools-ad-below', slotId: '7373732357' });
+          if (!container.getAttribute('data-filled')) startMonetagWaterfall();
+        }
+      }, 250);
+
+      // Tier 1-4: Monetag 4-tier waterfall (unchanged from v5.6 — only adds AdSense
+      // race as Tier 0; primary inpagePush path still leads with Monetag 11012010).
+      function startMonetagWaterfall() {
         if (container.getAttribute('data-filled')) return;
-        // v5.6 Tier 2: Cross-deployed zone from gamezipper.com (11012002).
-        //   gz.com data (7d): 48 fills / 2748 loads = 1.75% fill — the only working Monetag zone.
-        //   Tools had 0% fill on its 3 primary zones; this gives a chance at impressions
-        //   before falling back to dead legacy zone + Adsterra no-op.
-        loadZone(ZONES.inpagePushGz, container).then(function() {
+        // Tier 1: tools primary 11012010
+        loadZone(ZONES.inpagePush, container).then(function() {
+          if (container.getAttribute('data-filled')) return;
           container.setAttribute('data-filled', '1');
           markShown();
         }).catch(function() {
           if (container.getAttribute('data-filled')) return;
-          loadZone(ZONES.inpagePushLegacy, container).then(function() {
+          // Tier 2: Cross-deployed zone from gamezipper.com (11012002).
+          loadZone(ZONES.inpagePushGz, container).then(function() {
+            if (container.getAttribute('data-filled')) return;
             container.setAttribute('data-filled', '1');
             markShown();
           }).catch(function() {
-            // v6.5 Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
             if (container.getAttribute('data-filled')) return;
-            loadAdsterraZone(ZONES.adsterraInpagePush, container, 'inpage').then(function() {
+            // Tier 3: legacy zone (kill-switchable via ZONES.legacyEnabled)
+            if (!ZONES.legacyEnabled) {
+              trackAdEvent('container_ad_no_fill', { network: 'monetag', reason: 'legacy_disabled' });
+              return;
+            }
+            loadZone(ZONES.inpagePushLegacy, container).then(function() {
+              if (container.getAttribute('data-filled')) return;
               container.setAttribute('data-filled', '1');
               markShown();
-            }).catch(function() {});
+            }).catch(function() {
+              // Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
+              if (container.getAttribute('data-filled')) return;
+              loadAdsterraZone(ZONES.adsterraInpagePush, container, 'inpage').then(function() {
+                if (container.getAttribute('data-filled')) return;
+                container.setAttribute('data-filled', '1');
+                markShown();
+              }).catch(function() {
+                trackAdEvent('container_ad_no_fill', { network: 'all', containerId: 'gz-tools-ad-below' });
+              });
+            });
           });
         });
-      });
+      }
     }, CONFIG.TIMING.containerAdDelay);
   }
 
