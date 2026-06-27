@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>图片添加投影工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线为图片添加投影（阴影）。阴影跟随主体真实形状，可调整颜色、模糊、角度、距离、透明度和留白。免费，浏览器本地处理。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/drop-shadow.html">
+  <meta property="og:title" content="图片添加投影工具">
+  <meta property="og:description" content="在线为图片添加投影（阴影）。阴影跟随主体真实形状，可调整颜色、模糊、角度、距离、透明度和留白。免费，浏览器本地处理。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/drop-shadow.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="图片添加投影工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+#dropzone{border:2px dashed var(--gz-border,#444);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .25s;margin-bottom:16px}
+#dropzone:hover,#dropzone.dragover{border-color:var(--gz-accent,#e94560);background:rgba(233,69,96,.06)}
+#dropzone p{margin:8px 0;opacity:.7}
+#dropzone .drop-icon{font-size:2.5em;margin-bottom:8px}
+#file-input{display:none}
+#controls{display:none}
+#canvas-wrap{margin:16px 0;text-align:center;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:12px;overflow:auto;max-height:60vh}
+#canvas{max-width:100%;height:auto;border-radius:6px;display:inline-block}
+.checker{background-image:linear-gradient(45deg,#888 25%,transparent 25%),linear-gradient(-45deg,#888 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#888 75%),linear-gradient(-45deg,transparent 75%,#888 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0}
+.field-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.field-row label{font-size:.85em;font-weight:600;min-width:80px}
+.field-row input[type="range"]{flex:1;min-width:140px}
+.field-row .val{opacity:.8;font-weight:700;min-width:46px;text-align:right}
+.field-row input[type="color"]{width:46px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer}
+.chk{display:flex;align-items:center;gap:6px;font-size:.85em}
+.gz-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Add Drop Shadow to Image","description":"Add a drop shadow to an image online for free. Set shadow color, blur, angle, distance and opacity. Keeps transparency or fills a background. PNG/JPG export — all in your browser.","url": "https://tools.gamezipper.com/zh/image/drop-shadow.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I add a drop shadow to an image?", "acceptedAnswer": {"@type": "Answer", "text": "Upload your image, then adjust the shadow Color, Blur, Angle, Distance and Opacity sliders. The shadow follows the actual shape of your image (including any transparent areas). Download the result as PNG or JPG."}}, {"@type": "Question", "name": "Does the shadow follow the image shape or just the rectangle?", "acceptedAnswer": {"@type": "Answer", "text": "It follows the real shape. The tool uses the native canvas shadow pipeline, which casts a shadow from the image alpha channel. For a PNG with transparency, the shadow wraps around the visible subject rather than forming a plain box."}}, {"@type": "Question", "name": "Why is there padding around my image?", "acceptedAnswer": {"@type": "Answer", "text": "Padding gives the shadow room to spread so it is not clipped at the edges. Increase the Padding slider for large, soft shadows. With a transparent background and PNG export, the padding stays transparent."}}, {"@type": "Question", "name": "Is my image uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The drop shadow is rendered locally in your browser using the HTML canvas. Your image never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/drop-shadow.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/drop-shadow.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/drop-shadow.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="dropzone">
+      <div class="drop-icon">🌑</div>
+      <p id="dropzone-text"></p>
+      <button class="gz-btn" id="select-btn"></button>
+      <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp">
+    </div>
+    <div id="controls">
+      <div class="field-row"><label id="lbl-angle"></label><input type="range" id="angle" min="0" max="360" value="45"><span class="val" id="angle-val">45°</span></div>
+      <div class="field-row"><label id="lbl-dist"></label><input type="range" id="dist" min="0" max="80" value="18"><span class="val" id="dist-val">18</span></div>
+      <div class="field-row"><label id="lbl-blur"></label><input type="range" id="blur" min="0" max="80" value="24"><span class="val" id="blur-val">24</span></div>
+      <div class="field-row"><label id="lbl-opacity"></label><input type="range" id="opacity" min="0" max="100" value="60"><span class="val" id="opacity-val">60%</span></div>
+      <div class="field-row"><label id="lbl-pad"></label><input type="range" id="pad" min="0" max="160" value="60"><span class="val" id="pad-val">60</span></div>
+      <div class="field-row">
+        <label id="lbl-color"></label>
+        <input type="color" id="color" value="#000000">
+        <label id="lbl-bg"></label>
+        <input type="color" id="bg-color" value="#ffffff">
+        <div class="chk"><input type="checkbox" id="transparent" checked><label for="transparent" id="lbl-transparent"></label></div>
+      </div>
+      <div id="canvas-wrap"><canvas id="canvas" class="checker"></canvas></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Add Drop Shadow to Image',
+    toolDesc: 'Add a drop shadow to any image online. The shadow follows the real shape of your subject. Adjustable color, blur, angle, distance, opacity and padding. Free and browser-based.',
+    selectBtn: 'Select Image',
+    dropzone: 'Drop an image here or click to upload',
+    angle: 'Angle',
+    dist: 'Distance',
+    blur: 'Blur',
+    opacity: 'Opacity',
+    pad: 'Padding',
+    color: 'Shadow Color',
+    bg: 'Background',
+    transparent: 'Transparent bg (PNG)',
+    downloadPng: 'Download PNG',
+    downloadJpg: 'Download JPG',
+    newImage: 'New Image',
+    step1: 'Upload or drag and drop an image',
+    step2: 'Set shadow color, blur, angle and distance',
+    step3: 'Adjust opacity and padding so the shadow is not clipped',
+    step4: 'Download as PNG (transparent) or JPG (filled)',
+  },
+  zh: {
+    toolTitle: '图片添加投影工具',
+    toolDesc: '在线为图片添加投影（阴影）。阴影跟随主体真实形状，可调整颜色、模糊、角度、距离、透明度和留白。免费，浏览器本地处理。',
+    selectBtn: '选择图片',
+    dropzone: '拖拽图片到此处或点击上传',
+    angle: '角度',
+    dist: '距离',
+    blur: '模糊',
+    opacity: '透明度',
+    pad: '留白',
+    color: '阴影颜色',
+    bg: '背景色',
+    transparent: '透明背景（PNG）',
+    downloadPng: '下载 PNG',
+    downloadJpg: '下载 JPG',
+    newImage: '换张图片',
+    step1: '上传或拖拽图片到页面',
+    step2: '设置阴影颜色、模糊、角度和距离',
+    step3: '调整透明度和留白，避免阴影被裁切',
+    step4: '下载为 PNG（透明）或 JPG（填充）',
+  }
+});
+
+const { $, t } = GZ;
+let origImg = null;
+let dims = { w: 0, h: 0 };
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+
+function loadImage(file){
+  const r=new FileReader();
+  r.onload=e=>{origImg=new Image();origImg.onload=()=>{
+    const maxSide=1400;let s=1;
+    if(Math.max(origImg.width,origImg.height)>maxSide)s=maxSide/Math.max(origImg.width,origImg.height);
+    dims.w=Math.round(origImg.width*s);dims.h=Math.round(origImg.height*s);
+    $('#controls').style.display='block';$('#dropzone').style.display='none';render();
+  };origImg.src=e.target.result;};
+  r.readAsDataURL(file);
+}
+
+function hexToRgba(hex,a){
+  const n=parseInt(hex.slice(1),16);
+  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+}
+
+function render(){
+  if(!origImg)return;
+  const w=dims.w,h=dims.h,pad=+$('#pad').value;
+  const outW=w+pad*2,outH=h+pad*2;
+  canvas.width=outW;canvas.height=outH;
+  ctx.clearRect(0,0,outW,outH);
+  if(!$('#transparent').checked){ctx.fillStyle=$('#bg-color').value;ctx.fillRect(0,0,outW,outH);}
+
+  const dist=+$('#dist').value;
+  const ang=(+$('#angle').value)*Math.PI/180;
+  const dx=Math.cos(ang)*dist, dy=Math.sin(ang)*dist;
+  const blur=+$('#blur').value;
+  const opa=(+$('#opacity').value)/100;
+
+  // Native canvas drop shadow — respects the image alpha shape
+  ctx.save();
+  ctx.shadowColor=hexToRgba($('#color').value,opa);
+  ctx.shadowBlur=blur;
+  ctx.shadowOffsetX=dx;
+  ctx.shadowOffsetY=dy;
+  ctx.drawImage(origImg,pad,pad,w,h);
+  ctx.restore();
+}
+
+function download(type){
+  if(!origImg)return;
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL(type==='jpg'?'image/jpeg':'image/png',0.92);
+  a.download='image-with-shadow.'+(type==='jpg'?'jpg':'png');a.click();
+}
+
+function upd(){['angle','dist','blur','opacity','pad'].forEach(id=>{$('#'+id+'-val').textContent=$('#'+id).value+(id==='angle'?'°':id==='opacity'?'%':'');});render();}
+['angle','dist','blur','opacity','pad'].forEach(id=>$('#'+id).addEventListener('input',upd));
+$('#color').addEventListener('input',render);
+$('#bg-color').addEventListener('input',render);
+$('#transparent').onchange=()=>{$('#bg-color').disabled=$('#transparent').checked;render();};
+$('#bg-color').disabled=true;
+
+$('#select-btn').textContent=t('selectBtn');$('#dropzone-text').textContent=t('dropzone');
+$('#lbl-angle').textContent=t('angle');$('#lbl-dist').textContent=t('dist');$('#lbl-blur').textContent=t('blur');
+$('#lbl-opacity').textContent=t('opacity');$('#lbl-pad').textContent=t('pad');$('#lbl-color').textContent=t('color');
+$('#lbl-bg').textContent=t('bg');$('#lbl-transparent').textContent=t('transparent');
+
+$('#dropzone').onclick=()=>$('#file-input').click();
+$('#file-input').onchange=e=>{if(e.target.files[0])loadImage(e.target.files[0]);};
+['dragover'].forEach(ev=>$('#dropzone').addEventListener(ev,e=>{e.preventDefault();$('#dropzone').classList.add('dragover');}));
+['dragleave','drop'].forEach(ev=>$('#dropzone').addEventListener(ev,e=>{e.preventDefault();$('#dropzone').classList.remove('dragover');}));
+$('#dropzone').addEventListener('drop',e=>{if(e.dataTransfer.files[0])loadImage(e.dataTransfer.files[0]);});
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="download('png')">${t('downloadPng')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="download('jpg')">${t('downloadJpg')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('dropzone').style.display='block';document.getElementById('controls').style.display='none';">${t('newImage')}</button>`;
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖼️', href:'/image/add-border.html', name:'Add Border'},
+    {icon:'🌚', href:'/image/vignette.html', name:'Vignette'},
+    {icon:'🔠', href:'/image/add-text-to-image.html', name:'Add Text to Image'},
+    {icon:'🔘', href:'/image/round-corners.html', name:'Round Corners'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
