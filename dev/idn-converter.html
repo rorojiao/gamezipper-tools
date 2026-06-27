@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>IDN / Punycode Converter - International Domain Names | GameZipper Tools</title>
+  <meta name="description" content="Free online IDN and Punycode converter. Convert internationalized domain names (IDN) between Unicode and ASCII xn-- Punycode (RFC 3492). Encode and decode full hostnames label by label — runs entirely in your browser, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/idn-converter.html">
+  <meta property="og:title" content="IDN / Punycode Converter - International Domain Names | GameZipper Tools">
+  <meta property="og:description" content="Free online IDN and Punycode converter. Convert internationalized domain names between Unicode and ASCII xn-- Punycode (RFC 3492). Encode and decode hostnames — browser-based, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/idn-converter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="IDN / Punycode Converter - International Domain Names | GameZipper Tools">
+<meta name="twitter:description" content="Free online IDN / Punycode converter. Convert internationalized domain names between Unicode and xn-- Punycode. Browser-based, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.55;min-height:120px}
+#status{margin-top:8px;font-size:.85rem}
+.opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:.8rem;color:var(--text2)}
+.opt-row label{display:inline-flex;align-items:center;gap:5px}
+.punycode{color:#61afef}.ascii{color:var(--gz-success)}
+.dir-box{display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:.8rem;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IDN / Punycode Converter","description":"Free online IDN and Punycode converter. Convert internationalized domain names (IDN) between Unicode and ASCII xn-- Punycode (RFC 3492). Encode and decode full hostnames label by label — runs entirely in your browser, no upload.","url":"https://tools.gamezipper.com/dev/idn-converter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Punycode and an IDN domain?", "acceptedAnswer": {"@type": "Answer", "text": "Punycode (RFC 3492) is an encoding that represents Unicode text using only the ASCII letters, digits and hyphen allowed in DNS. An Internationalized Domain Name (IDN) like example.中国 is stored in DNS as its Punycode form example.xn--fiqs8s, prefixed with xn--, so older DNS infrastructure can still resolve it."}}, {"@type": "Question", "name": "How does the conversion work for a full hostname?", "acceptedAnswer": {"@type": "Answer", "text": "Hostnames are converted label by label. Each label separated by a dot is encoded or decoded independently. Labels that are already pure ASCII (like example) are left untouched; only labels containing non-ASCII characters get the xn-- prefix."}}, {"@type": "Question", "name": "Is my domain name sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The entire Punycode encode/decode runs locally in your browser following RFC 3492. Nothing is uploaded, so it is safe to test internal or private domain names."}}, {"@type": "Question", "name": "Why does my xn-- label not decode?", "acceptedAnswer": {"@type": "Answer", "text": "The input must be a valid ACE (ASCII-Compatible Encoding) label starting with the xn-- prefix and ending with valid base-36 digits and hyphens. The tool reports a clear error if a label is malformed or fails the Punycode integrity check."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/idn-converter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/idn-converter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/idn-converter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="dir-box" id="dirbox"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="8" spellcheck="false" style="width:100%;font-family:monospace;font-size:.82em"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'IDN / Punycode Converter',
+    toolDesc: 'Convert internationalized domain names (IDN) between Unicode and ASCII xn-- Punycode (RFC 3492). Encodes and decodes full hostnames label by label — entirely in your browser.',
+    toAscii: 'Unicode → Punycode (xn--)',
+    toUnicode: 'Punycode (xn--) → Unicode',
+    convert: 'Convert',
+    lblIn: 'Input',
+    lblOut: 'Output',
+    empty: 'Type or paste a domain name.',
+    done: '✓ Converted',
+    invalid: '✗ Conversion error',
+    step1: 'Pick a direction: Unicode → Punycode or the reverse',
+    step2: 'Type or paste one domain per line in the input area',
+    step3: 'Click Convert — each label is processed independently',
+    step4: 'Click Copy to copy the result',
+  },
+  zh: {
+    toolTitle: 'IDN / Punycode 转换器',
+    toolDesc: '在 Unicode 与 ASCII xn-- Punycode（RFC 3492）之间转换国际化域名（IDN）。逐标签编解码完整主机名 — 完全在浏览器本地运行。',
+    toAscii: 'Unicode → Punycode (xn--)',
+    toUnicode: 'Punycode (xn--) → Unicode',
+    convert: '转换',
+    lblIn: '输入',
+    lblOut: '输出',
+    empty: '请输入或粘贴域名。',
+    done: '✓ 已转换',
+    invalid: '✗ 转换出错',
+    step1: '选择方向：Unicode → Punycode 或反向',
+    step2: '在输入区逐行输入或粘贴域名',
+    step3: '点击「转换」— 每个标签独立处理',
+    step4: '点击「复制」复制结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let dir = 'encode'; // encode = Unicode->Punycode
+
+// ---- RFC 3492 Punycode (pure JS) ----
+const BASE = 36, TMIN = 1, TMAX = 26, SKEW = 38, DAMP = 700, INITIAL_BIAS = 72, INITIAL_N = 0x80, DELIMITER = '-';
+
+function adapt(delta, numpoints, firsttime){
+  delta = firsttime ? Math.floor(delta/DAMP) : delta >> 1;
+  delta += Math.floor(delta/numpoints);
+  let k = 0;
+  while(delta > ((BASE - TMIN) * TMAX) >> 1){ delta = Math.floor(delta/(BASE - TMIN)); k += BASE; }
+  return k + Math.floor((BASE - TMIN + 1) * delta / (delta + SKEW));
+}
+
+function digitToBasic(d){ return d < 26 ? d + 97 : d - 26 + 48; } // a-z 0-9
+function basicToDigit(c){
+  if(c >= 97 && c <= 122) return c - 97;       // a-z
+  if(c >= 48 && c <= 57) return c - 48 + 26;   // 0-9
+  throw new Error('Invalid Punycode digit');
+}
+
+function punycodeEncode(input){
+  // input: array of UTF-32 code points
+  const output = [];
+  let n = INITIAL_N, delta = 0, bias = INITIAL_BIAS;
+  // output basic code points first
+  const basic = input.filter(cp => cp < 0x80);
+  for(const b of basic) output.push(String.fromCharCode(b));
+  let h = basic.length, b = basic.length;
+  if(b > 0) output.push(DELIMITER);
+  while(h < input.length){
+    let m = Infinity;
+    for(const cp of input) if(cp >= n && cp < m) m = cp;
+    delta += (m - n) * (h + 1);
+    n = m;
+    for(const cp of input){
+      if(cp < n){ delta++; if(delta === 0) throw new Error('Punycode overflow (delta)'); }
+      if(cp === n){
+        let q = delta;
+        for(let k = BASE; ; k += BASE){
+          const t = k <= bias ? TMIN : (k >= bias + TMAX ? TMAX : k - bias);
+          if(q < t) break;
+          output.push(String.fromCharCode(digitToBasic(t + (q - t) % (BASE - t))));
+          q = Math.floor((q - t) / (BASE - t));
+        }
+        output.push(String.fromCharCode(digitToBasic(q)));
+        bias = adapt(delta, h + 1, h === b);
+        delta = 0; h++;
+      }
+    }
+    delta++; n++;
+  }
+  return output.join('');
+}
+
+function punycodeDecode(input){
+  const output = [];
+  let n = INITIAL_N, i = 0, bias = INITIAL_BIAS;
+  // find last delimiter
+  let basicEnd = input.lastIndexOf(DELIMITER);
+  if(basicEnd < 0) basicEnd = 0;
+  for(let j = 0; j < basicEnd; j++){
+    const c = input.charCodeAt(j);
+    if(c >= 0x80) throw new Error('Non-ASCII in Punycode input');
+    output.push(c);
+  }
+  let idx = basicEnd > 0 ? basicEnd + 1 : 0;
+  if(basicEnd === 0 && input.charAt(0) === DELIMITER) idx = 1;
+  while(idx < input.length){
+    const oldi = i;
+    let w = 1;
+    for(let k = BASE; ; k += BASE){
+      if(idx >= input.length) throw new Error('Malformed Punycode (truncated)');
+      const digit = basicToDigit(input.charCodeAt(idx++));
+      i += digit * w;
+      const t = k <= bias ? TMIN : (k >= bias + TMAX ? TMAX : k - bias);
+      if(digit < t) break;
+      w *= (BASE - t);
+    }
+    const out = output.length + 1;
+    bias = adapt(i - oldi, out, oldi === 0);
+    n += Math.floor(i / out);
+    i %= out;
+    output.splice(i, 0, n);
+    i++;
+  }
+  return output;
+}
+
+// Convert a JS string into an array of UTF-32 code points
+function toCodePoints(str){
+  const cps = [];
+  for(const ch of str) cps.push(ch.codePointAt(0));
+  return cps;
+}
+function fromCodePoints(cps){ return cps.map(cp => String.fromCodePoint(cp)).join(''); }
+
+function isPureAscii(s){ return /^[\x00-\x7F]*$/.test(s); }
+function isAceLabel(s){ return /^xn--/i.test(s); }
+
+function encodeLabel(label){
+  if(isPureAscii(label)) return label;
+  return 'xn--' + punycodeEncode(toCodePoints(label));
+}
+function decodeLabel(label){
+  if(!isAceLabel(label)) return label;
+  try{
+    return fromCodePoints(punycodeDecode(label.slice(4)));
+  }catch(e){
+    throw new Error(`Cannot decode "${label}": ${e.message}`);
+  }
+}
+
+function doConvert(){
+  const raw = $('#input').value;
+  if(!raw.trim()){ $('#status').innerHTML=''; $('#output').textContent=''; return; }
+  const lines = raw.split('\n');
+  const out = [];
+  const errors = [];
+  for(const line of lines){
+    const trimmed = line.trim();
+    if(!trimmed){ out.push(''); continue; }
+    // strip scheme/path, keep host
+    let host = trimmed;
+    try{
+      if(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(host) || host.includes('/')){
+        const u = new URL(host.indexOf('://')>=0 ? host : 'http://' + host);
+        host = u.hostname;
+      }
+    }catch(e){ /* treat as plain domain */ }
+    try{
+      const labels = host.split('.');
+      const newLabels = labels.map(lbl => dir === 'encode' ? encodeLabel(lbl) : decodeLabel(lbl));
+      out.push(newLabels.join('.'));
+    }catch(e){
+      errors.push(e.message);
+      out.push('⚠ ' + e.message);
+    }
+  }
+  const result = out.join('\n');
+  $('#output').innerHTML = highlightHost(result);
+  if(errors.length){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}: ${errors[0]}</span>`;
+  } else {
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')}</span>`;
+  }
+}
+
+function highlightHost(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/(xn--[A-Za-z0-9-]+)/g,'<span class="punycode">$1</span>');
+}
+
+function loadExample(){
+  if(dir === 'encode'){
+    $('#input').value = 'münchen.de\n中国.cn\n日本.jp\ngamezipper.com\nrésumé.online';
+  } else {
+    $('#input').value = 'xn--mnchen-3ya.de\nxn--fiqs8s.cn\nxn--wgv71a119e.jp\ngamezipper.com\nxn--rsum-bpad.example';
+  }
+  doConvert();
+}
+
+function setDir(d){
+  dir = d;
+  // swap labels
+  const lblIn = $('#lbl-in-out-wrap');
+  doConvert();
+}
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';doConvert()">${t('clear')}</button>`;
+
+$('#dirbox').innerHTML = `
+  <label><input type="radio" name="dir" value="encode" checked onchange="dir='encode';loadExample();"> ${t('toAscii')}</label>
+  <label><input type="radio" name="dir" value="decode" onchange="dir='decode';loadExample();"> ${t('toUnicode')}</label>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'🔗', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

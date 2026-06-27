@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>JWT Signature Verifier - Verify HS256/HS384/HS512 Tokens | GameZipper Tools</title>
+  <meta name="description" content="Free online JWT signature verifier. Decode and verify JSON Web Token signatures for HS256, HS384 and HS512 using your shared secret. Inspect header, payload, expiry and claims — runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/jwt-verify.html">
+  <meta property="og:title" content="JWT Signature Verifier - Verify HS256/HS384/HS512 Tokens | GameZipper Tools">
+  <meta property="og:description" content="Free online JWT signature verifier. Decode and verify JSON Web Token signatures for HS256, HS384 and HS512. Inspect header, payload, expiry and claims in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/jwt-verify.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JWT Signature Verifier - Verify HS256/HS384/HS512 Tokens | GameZipper Tools">
+<meta name="twitter:description" content="Free online JWT signature verifier. Decode and verify HS256/HS384/HS512 tokens with your secret. Inspect claims and expiry — browser-based, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+#output{font-family:monospace;font-size:.8em;line-height:1.5;min-height:120px}
+.jwtpart{margin-bottom:14px}
+.jwtpart h4{margin:0 0 4px;font-size:.85rem;color:var(--text2)}
+.jwt-json{white-space:pre-wrap;word-break:break-word;background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:10px}
+.jwt-claim{display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;border-radius:6px;font-size:.78rem}
+.ok{background:rgba(40,200,120,.18);color:var(--gz-success);border:1px solid var(--gz-success)}
+.bad{background:rgba(220,80,90,.18);color:var(--gz-accent);border:1px solid var(--gz-accent)}
+.warn{background:rgba(230,180,40,.16);color:#e6b428;border:1px solid #e6b428}
+.jk{color:#e94560}.js{color:var(--gz-success)}.jn{color:#61afef}.jb{color:#d19a66}.jnu{color:#888}
+.opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:.8rem;color:var(--text2)}
+.opt-row label{display:inline-flex;align-items:center;gap:5px}
+.secret{width:100%;max-width:420px;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-family:monospace;font-size:.82em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JWT Signature Verifier","description":"Free online JWT signature verifier. Decode and verify JSON Web Token signatures for HS256, HS384 and HS512 using your shared secret. Inspect header, payload, expiry and claims — runs entirely in your browser.","url":"https://tools.gamezipper.com/dev/jwt-verify.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does JWT signature verification work?", "acceptedAnswer": {"@type": "Answer", "text": "A JWT is three base64url-encoded parts joined by dots: header.payload.signature. For HMAC algorithms (HS256, HS384, HS512) the signature is HMAC-SHA(secret, base64url(header) + '.' + base64url(payload)). Verification recomputes that HMAC using your secret and checks that it matches the token's signature byte-for-byte."}}, {"@type": "Question", "name": "Can this tool verify RS256 or asymmetric JWTs?", "acceptedAnswer": {"@type": "Answer", "text": "This verifier supports symmetric HMAC algorithms (HS256, HS384, HS512) using a shared secret. Asymmetric algorithms like RS256 or ES256 require a public key; you can still use the tool in decode-only mode to inspect the header and payload of any JWT regardless of algorithm."}}, {"@type": "Question", "name": "Is my JWT or secret sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All decoding and HMAC computation happens locally in your browser with the Web Crypto API. Your token and secret never leave your device, so it is safe to verify production tokens here."}}, {"@type": "Question", "name": "What does the expiry check show?", "acceptedAnswer": {"@type": "Answer", "text": "The tool reads the standard registered claims exp (expiry), nbf (not-before) and iat (issued-at) and tells you whether the token is currently valid, already expired, or not yet active, along with the exact timestamps."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jwt-verify.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jwt-verify.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jwt-verify.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="6" spellcheck="false" style="width:100%;font-family:monospace;font-size:.78em"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JWT Signature Verifier',
+    toolDesc: 'Decode and verify JSON Web Token signatures for HS256, HS384 and HS512 using your shared secret. Inspect the header, payload, expiry and registered claims — entirely in your browser.',
+    verify: 'Verify',
+    decodeOnly: 'Decode only (no secret)',
+    secret: 'Shared secret (HMAC key)',
+    lblIn: 'JWT token',
+    lblOut: 'Decoded & verified',
+    empty: 'Paste a JWT (three dot-separated base64url parts).',
+    invalid: '✗ Invalid JWT',
+    sigValid: '✓ Signature valid',
+    sigInvalid: '✗ Signature does NOT match',
+    algoUnsupported: 'Algorithm not supported for verification (decode-only). Enter secret to verify HS256/HS384/HS512.',
+    noSecret: 'Enter a secret to verify the signature.',
+    notExpired: 'Not expired',
+    expired: 'EXPIRED',
+    notYetValid: 'Not yet valid',
+    noExp: 'No expiry (exp) claim',
+    issuedAt: 'Issued',
+    header: 'Header',
+    payload: 'Payload',
+    signature: 'Signature',
+    step1: 'Paste your JWT into the input area',
+    step2: 'Type your shared secret, or tick "Decode only" to skip verification',
+    step3: 'Click Verify to check the HMAC signature and decode the claims',
+    step4: 'Review the header, payload and expiry status on the right',
+  },
+  zh: {
+    toolTitle: 'JWT 签名校验器',
+    toolDesc: '使用共享密钥解码并校验 HS256、HS384、HS512 的 JSON Web Token 签名。查看头部、负载、过期时间和注册声明 — 完全在浏览器本地运行。',
+    verify: '校验',
+    decodeOnly: '仅解码（不校验）',
+    secret: '共享密钥（HMAC 密钥）',
+    lblIn: 'JWT Token',
+    lblOut: '解码与校验结果',
+    empty: '请粘贴 JWT（三段以点分隔的 base64url 字符串）。',
+    invalid: '✗ JWT 无效',
+    sigValid: '✓ 签名有效',
+    sigInvalid: '✗ 签名不匹配',
+    algoUnsupported: '该算法不支持校验（仅解码）。输入密钥可校验 HS256/HS384/HS512。',
+    noSecret: '请输入密钥以校验签名。',
+    notExpired: '未过期',
+    expired: '已过期',
+    notYetValid: '尚未生效',
+    noExp: '无过期（exp）声明',
+    issuedAt: '签发时间',
+    header: '头部',
+    payload: '负载',
+    signature: '签名',
+    step1: '将 JWT 粘贴到输入区',
+    step2: '输入共享密钥，或勾选「仅解码」跳过校验',
+    step3: '点击「校验」检查 HMAC 签名并解码声明',
+    step4: '在右侧查看头部、负载和过期状态',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let decodeOnly = false;
+
+const SUPPORTED = ['HS256','HS384','HS512'];
+const SHA = {'HS256':'SHA-256','HS384':'SHA-384','HS512':'SHA-512'};
+
+function b64urlDecode(str){
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while(str.length % 4) str += '=';
+  return atob(str);
+}
+function b64urlToBytes(str){
+  const bin = b64urlDecode(str);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+function strToBytes(s){ return new TextEncoder().encode(s); }
+
+function highlightJSON(json){
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"\s*:)/g,'<span class="jk">$1</span>')
+    .replace(/:\s*("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")/g,': <span class="js">$1</span>')
+    .replace(/:\s*(-?\d+(\.\d+)?([eE][+-]?\d+)?)/g,': <span class="jn">$1</span>')
+    .replace(/:\s*(true|false)/g,': <span class="jb">$1</span>')
+    .replace(/:\s*(null)/g,': <span class="jnu">$1</span>');
+}
+
+function prettyHeader(obj){ return highlightJSON(JSON.stringify(obj,null,2)); }
+function decodeClaims(s){ try{ return JSON.parse(b64urlDecode(s)); }catch(e){ return null; } }
+
+function timeClaim(obj, key){
+  if(typeof obj[key] !== 'number') return null;
+  return new Date(obj[key]*1000);
+}
+
+async function verifyHMAC(signingInput, sigBytes, alg, secret){
+  const keyData = strToBytes(secret);
+  const key = await crypto.subtle.importKey('raw', keyData, {name:'HMAC', hash:SHA[alg]}, false, ['sign']);
+  const mac = new Uint8Array(await crypto.subtle.sign('HMAC', key, strToBytes(signingInput)));
+  if(mac.length !== sigBytes.length) return false;
+  let diff = 0;
+  for(let i=0;i<mac.length;i++) diff |= mac[i] ^ sigBytes[i];
+  return diff === 0;
+}
+
+async function doVerify(){
+  const raw = $('#input').value.trim();
+  if(!raw){ $('#status').innerHTML=''; $('#output').innerHTML=''; return; }
+  const parts = raw.split('.');
+  if(parts.length !== 3){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')} — expected 3 parts, got ${parts.length}.</span>`;
+    $('#output').innerHTML='';
+    return;
+  }
+  const [h,p,s] = parts;
+  const header = decodeClaims(h);
+  const payload = decodeClaims(p);
+  if(!header || !payload){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')} — header or payload is not valid JSON.</span>`;
+    $('#output').innerHTML='';
+    return;
+  }
+  const alg = header.alg || 'none';
+
+  // Claims analysis
+  const now = Date.now();
+  const claims = [];
+  const exp = timeClaim(payload,'exp');
+  const nbf = timeClaim(payload,'nbf');
+  const iat = timeClaim(payload,'iat');
+  if(exp){
+    const ok = now < exp.getTime();
+    claims.push(`<span class="jwt-claim ${ok?'ok':'bad'}">${t(ok?'notExpired':'expired')} · ${exp.toISOString()}</span>`);
+  } else {
+    claims.push(`<span class="jwt-claim warn">${t('noExp')}</span>`);
+  }
+  if(nbf){
+    const ok = now >= nbf.getTime();
+    claims.push(`<span class="jwt-claim ${ok?'ok':'bad'}">${t(ok?'notExpired':'notYetValid')} · ${nbf.toISOString()}</span>`);
+  }
+  if(iat){
+    claims.push(`<span class="jwt-claim ok">${t('issuedAt')} · ${iat.toISOString()}</span>`);
+  }
+
+  // Signature verification
+  let sigState = '';
+  let canVerify = SUPPORTED.includes(alg);
+  if(decodeOnly){
+    sigState = `<span class="jwt-claim warn">Decode-only — signature not checked</span>`;
+  } else if(!canVerify){
+    sigState = `<span class="jwt-claim warn">${t('algoUnsupported')}</span>`;
+  } else {
+    const secret = $('#secret').value;
+    if(!secret){
+      sigState = `<span class="jwt-claim warn">${t('noSecret')}</span>`;
+    } else {
+      try{
+        const sigBytes = b64urlToBytes(s);
+        const ok = await verifyHMAC(h + '.' + p, sigBytes, alg, secret);
+        sigState = `<span class="jwt-claim ${ok?'ok':'bad'}">${t(ok?'sigValid':'sigInvalid')} · ${alg}</span>`;
+      }catch(e){
+        sigState = `<span class="jwt-claim bad">${t('sigInvalid')} · ${e.message}</span>`;
+      }
+    }
+  }
+
+  const sigPreview = s.length > 40 ? s.slice(0,40) + '…' : s;
+
+  $('#output').innerHTML = `
+    <div class="jwtpart"><h4>${t('header')} · alg=${alg}</h4><div class="jwt-json">${prettyHeader(header)}</div></div>
+    <div class="jwtpart"><h4>${t('payload')}</h4><div class="jwt-json">${prettyHeader(payload)}</div></div>
+    <div class="jwtpart"><h4>${t('signature')}</h4><div class="jwt-json">${sigPreview}</div></div>
+    <div class="jwtpart"><h4>Claims &amp; status</h4>${sigState} ${claims.join(' ')}</div>`;
+
+  $('#status').innerHTML = decodeOnly || !canVerify
+    ? `<span style="color:var(--text2)">Decoded · ${alg}</span>`
+    : (sigState.includes('ok') ? `<span style="color:var(--gz-success)">${t('sigValid')}</span>` : `<span style="color:var(--gz-accent)">Check status above</span>`);
+}
+
+function loadExample(){
+  // A real HS256 token signed with secret "gamezipper-secret":
+  $('#input').value = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkdhbWVaaXBwZXIiLCJpYXQiOjE3MTAwMDAwMDAsImV4cCI6OTk5OTk5OTk5OSwiYWRtaW4iOnRydWV9.jj4Aa9Bc-fKE PLACEHOLDER';
+  // Provide a properly-formed example header/payload (signature will not match — that is expected in decode-only)
+  const enc = b => btoa(JSON.stringify(b)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const header = enc({alg:'HS256',typ:'JWT'});
+  const payload = enc({sub:'1234567890',name:'GameZipper',iat:1710000000,exp:9999999999,admin:true});
+  // compute a real signature so example verifies with the right secret
+  $('#input').value = header + '.' + payload + '.';
+  // We'll compute the signature client-side and append
+  (async () => {
+    const secret = 'gamezipper-secret';
+    const key = await crypto.subtle.importKey('raw', strToBytes(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+    const mac = new Uint8Array(await crypto.subtle.sign('HMAC', key, strToBytes(header+'.'+payload)));
+    let bin=''; for(const b of mac) bin += String.fromCharCode(b);
+    const sig = btoa(bin).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+    $('#input').value = header + '.' + payload + '.' + sig;
+    $('#secret').value = secret;
+    doVerify();
+  })();
+}
+
+$('#input').addEventListener('input', doVerify);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doVerify()">${t('verify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';doVerify()">${t('clear')}</button>`;
+
+$('#opts').innerHTML = `
+  <label style="flex:1 1 100%">${t('secret')}: <input id="secret" class="secret" type="text" placeholder="your-hmac-secret" oninput="doVerify()"></label>
+  <label><input type="checkbox" onchange="decodeOnly=this.checked;$('#secret').disabled=this.checked;doVerify()"> ${t('decodeOnly')}</label>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎫', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔐', href:'/dev/hmac.html', name:'HMAC Generator'},
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Gen'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
