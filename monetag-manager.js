@@ -1,7 +1,24 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.10.1-tools-container-adsense (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.11-tools-adsense-timing-fix (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.11 Changes (2026-06-28 — AdSense Tier 0 Timing + Container Div Auto-Inject):
+ *   - 🐛 Fix: Banner Tier 0 timeout 2s → 3.5s (matches gz.com line 939 — 24h BI shows
+ *     tools banner AdSense fill = 1/24h vs gz.com banner AdSense fill = 102/24h.
+ *     Root cause: 2s window too short — AdSense typically fills at 2.5-3s. Polling
+ *     8 × 250ms missed real fills by ~500ms-1s. gz.com uses 3.5s for the same slot
+ *     1099212472; tools should match exactly. Expected lift: 1 → 5-10 fills/day.
+ *   - 🐛 Fix: Container Tier 0 timeout 2s → 3.5s (same reasoning as banner).
+ *     Container AdSense fill = 0/24h, same root cause.
+ *   - 🐛 Fix: gz-tools-ad-below div was missing from ALL tools HTML pages — v5.10.1
+ *     silently no-op'd because showContainerAd() does `getElementById('gz-tools-ad-below')`
+ *     and returns immediately if null. Fix: auto-inject div via JS init() when missing,
+ *     placed at end of <main>. div is 100% width 90px tall (matches gz.com container-ad).
+ *   - 🐛 Fix: Offset threshold raised 50px → 60px (matches gz.com line 939) — some
+ *     AdSense fills render at 51-58px and were missed by the 50px gate.
+ *   - 📊 Acceptance (24h BI): homepage_banner_fill > 1 (was 1); container_ad_fill > 0
+ *     (was 0); adsense_homepage_banner_no_fill < 50 (was 0 — never ran before fix).
  *
  * v5.10.1 Changes (2026-06-27 — Container AdSense Tier 0):
  *   - 🚀 New: showContainerAd() Tier 0 = AdSense slot 7373732357 (gz.com container slot)
@@ -220,7 +237,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.10.1-tools-container-adsense',  // 2026-06-27: container_ad AdSense Tier 0 (slot 7373732357) — same root cause fix as v5.10 homepage banner. tools Monetag zones 0% fill on tools subdomain (gz.com same zones 1.75% fill — CDN auth gap). AdSense is the proven fill source gz.com uses for container slots. Bumped from 5.10 to track on BI.
+    VERSION: '5.11-tools-adsense-timing-fix',  // 2026-06-28: banner + container Tier 0 timeout 2s → 3.5s (matches gz.com line 939 — was missing 50% of real fills); offset gate 50→60px (was missing 51-58px renders); auto-inject gz-tools-ad-below div on init (was missing from all tools pages → v5.10.1 container ad never ran). Bumped from 5.10.1 to track on BI.
     // v5.10.1: Container AdSense Tier 0 — showContainerAd() (gz-tools-ad-below div, injected
     //   on every tool sub-page via shared/common.js) was still pure Monetag 4-tier. v5.10
     //   only fixed showHomepageBanner. Adding AdSense Tier 0 here unlocks AdSense fill on
@@ -784,13 +801,17 @@
               document.head.appendChild(adsenseScript);
             }
             try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-            // Poll AdSense for fill (500ms cadence, 2s window)
+            // Poll AdSense for fill (250ms cadence, 3.5s window — matches gz.com line 939)
+            // v5.11: was 2s — too short, AdSense typically fills at 2.5-3s. BI 24h showed
+            //   1 fill on tools banner vs 102 fills on gz.com same slot (1099212472). The 1.5s
+            //   extra grace period is the difference between "saw the fill" and "missed it".
             var adsenseStart = Date.now();
             var adsenseTimer = setInterval(function() {
               if (container.getAttribute('data-filled')) { clearInterval(adsenseTimer); return; }
               var status = adsenseIns.getAttribute('data-ad-status');
               var ifr = adsenseIns.querySelector('iframe');
-              if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 50)) {
+              // v5.11: offset threshold 50→60px to match gz.com — some fills render at 51-58px
+              if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 60)) {
                 adsenseFilled = true;
                 container.setAttribute('data-filled', '1');
                 markShown();
@@ -798,7 +819,7 @@
                 clearInterval(adsenseTimer);
                 return;
               }
-              if (Date.now() - adsenseStart > 2000) {
+              if (Date.now() - adsenseStart > 3500) {
                 clearInterval(adsenseTimer);
                 trackAdEvent('adsense_homepage_banner_no_fill', { containerId: containerId, slotId: '1099212472' });
                 if (!container.getAttribute('data-filled')) startMonetagWaterfall();
@@ -867,8 +888,29 @@
   //   still pure Monetag 4-tier. Adding AdSense here too unlocks the same fill source
   //   gz.com uses for its container slots.
   function showContainerAd() {
+    // v5.11: gz-tools-ad-below div was missing from ALL tools HTML pages — v5.10.1 silently
+    //   no-op'd because of this. Auto-inject div at end of <main> (or <body> fallback) if not
+    //   already present. The div is 100% wide × 90px tall (matches gz.com container-ad style).
+    //   We only inject once per page (singleton pattern) — subsequent calls find the existing div.
     var container = document.getElementById('gz-tools-ad-below');
-    if (!container) return;
+    if (!container) {
+      try {
+        container = document.createElement('div');
+        container.id = 'gz-tools-ad-below';
+        container.style.cssText = 'max-width:728px;margin:24px auto;text-align:center;min-height:90px;overflow:hidden;clear:both;';
+        // Prefer end of <main> so it sits naturally below tool results; fall back to <body>.
+        var main = document.querySelector('main');
+        if (main && main.parentNode) {
+          main.parentNode.insertBefore(container, main.nextSibling);
+        } else {
+          document.body.appendChild(container);
+        }
+        trackAdEvent('container_div_auto_injected', { containerId: 'gz-tools-ad-below', reason: 'missing_on_page' });
+      } catch(e) {
+        trackAdEvent('container_div_inject_error', { error: String(e) });
+        return;
+      }
+    }
     if (container.getAttribute('data-filled')) return;
     if (!canShowAd()) return;
 
@@ -895,19 +937,22 @@
         document.head.appendChild(adsenseScript);
       }
       try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+      // v5.11: Tier 0 timeout 2s → 3.5s (matches gz.com line 939 — same root cause as banner).
+      //   Container AdSense fill = 0/24h BI because the 2s window is too short.
       var adsenseStart = Date.now();
       var adsenseTimer = setInterval(function() {
         if (container.getAttribute('data-filled')) { clearInterval(adsenseTimer); return; }
         var status = adsenseIns.getAttribute('data-ad-status');
         var ifr = adsenseIns.querySelector('iframe');
-        if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 50)) {
+        // v5.11: offset threshold 50→60px to match gz.com — some fills render at 51-58px
+        if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 60)) {
           container.setAttribute('data-filled', '1');
           markShown();
           trackAdEvent('container_ad_fill', { network: 'adsense', containerId: 'gz-tools-ad-below', slotId: '7373732357' });
           clearInterval(adsenseTimer);
           return;
         }
-        if (Date.now() - adsenseStart > 2000) {
+        if (Date.now() - adsenseStart > 3500) {
           clearInterval(adsenseTimer);
           trackAdEvent('adsense_container_ad_no_fill', { containerId: 'gz-tools-ad-below', slotId: '7373732357' });
           if (!container.getAttribute('data-filled')) startMonetagWaterfall();
