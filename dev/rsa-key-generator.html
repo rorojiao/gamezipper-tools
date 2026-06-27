@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>RSA Key Generator - Generate RSA Public/Private Key Pair Online | GameZipper Tools</title>
+  <meta name="description" content="Free online RSA key pair generator. Create RSA 2048, 3072 and 4096 bit public/private key pairs in PEM format for SSH, OpenSSL, JWT signing and more. 100% in-browser using Web Crypto API, nothing uploaded.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/rsa-key-generator.html">
+  <meta property="og:title" content="RSA Key Generator - Generate RSA Public/Private Key Pair Online | GameZipper Tools">
+  <meta property="og:description" content="Generate RSA 2048/3072/4096 bit public/private key pairs in PEM format. Web Crypto API, runs in your browser, nothing uploaded.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/rsa-key-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="RSA Key Generator - Generate RSA Public/Private Key Pair Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}
+.opt-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:4px}
+.opt-card label{font-size:.75em;opacity:.85}
+.opt-card select,.opt-card input{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:.85em;font-family:inherit}
+.key-block{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:10px;margin:10px 0}
+.key-block h3{margin:0 0 6px;font-size:.9em;display:flex;align-items:center;justify-content:space-between}
+.key-block textarea{width:100%;height:160px;font-family:monospace;font-size:.78em;background:transparent;border:none;color:var(--text);resize:vertical;white-space:pre;word-break:break-all;padding:0}
+.status{font-size:.85em;margin-top:8px}
+.status.ok{color:#10b981}.status.err{color:#ef4444}
+.note{font-size:.82em;opacity:.85;margin-top:14px;line-height:1.55}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"RSA Key Generator","description":"Generate RSA 2048/3072/4096 bit public/private key pairs in PEM format. Web Crypto API, runs in your browser, nothing uploaded.","url":"https://tools.gamezipper.com/dev/rsa-key-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an RSA key pair?", "acceptedAnswer": {"@type": "Answer", "text": "RSA is an asymmetric encryption algorithm that uses two mathematically linked keys: a public key that anyone can use to encrypt data or verify signatures, and a private key that only the owner holds to decrypt data or sign messages. The security comes from the difficulty of factoring the product of two large prime numbers."}}, {"@type": "Question", "name": "What RSA key size should I use?", "acceptedAnswer": {"@type": "Answer", "text": "2048 bits is the current minimum recommended by NIST and is acceptable through 2030. 3072 bits provides a comfortable safety margin and 4096 bits is the most secure mainstream option, though it is slower. For new production systems, 3072 or 4096 bits is recommended."}}, {"@type": "Question", "name": "Are the generated keys private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The keys are generated entirely in your browser using the Web Crypto API. The private key never leaves your device — it is not uploaded to any server, logged, or stored. Always keep your private key safe and never share it."}}, {"@type": "Question", "name": "What can I use RSA keys for?", "acceptedAnswer": {"@type": "Answer", "text": "RSA keys are used for TLS/SSL certificates, SSH authentication (though SSH typically uses ed25519 or RSA-SHA2), JWT signing (RS256), email encryption (PGP/GPG), code signing, document signing and protecting symmetric keys in hybrid encryption schemes."}}, {"@type": "Question", "name": "Why does generation sometimes take a few seconds?", "acceptedAnswer": {"@type": "Answer", "text": "Generating an RSA key requires finding large prime numbers through repeated random testing. 4096-bit keys can take several seconds even on modern hardware. The browser is doing real cryptographic work, not loading anything from a network."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/rsa-key-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/rsa-key-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/rsa-key-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="opt-grid">
+      <div class="opt-card"><label data-i18n="keySize"></label>
+        <select id="keySize"><option value="2048" selected>RSA-2048</option><option value="3072">RSA-3072</option><option value="4096">RSA-4096</option></select>
+      </div>
+      <div class="opt-card"><label data-i18n="format"></label>
+        <select id="format"><option value="pkcs8" selected>PKCS#8 (PEM)</option><option value="spki">SPKI public + PKCS#8 private</option></select>
+      </div>
+    </div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="status" id="status"></div>
+    <div id="output"></div>
+    <p class="note" id="privacyNote"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'RSA Key Pair Generator',
+    toolDesc: 'Generate RSA 2048 / 3072 / 4096 bit public/private key pairs in PEM format. Powered by Web Crypto API — runs entirely in your browser, nothing uploaded.',
+    keySize: 'Key size',
+    format: 'Output format',
+    generate: 'Generate Key Pair',
+    publicKey: 'Public Key (PEM)',
+    privateKey: 'Private Key (PEM)',
+    copy: 'Copy',
+    downloadBoth: 'Download Both (.zip-free)',
+    downloadPub: 'Download public.pem',
+    downloadPriv: 'Download private.pem',
+    generating: 'Generating RSA key pair… this may take a few seconds for larger keys',
+    done: '✓ Key pair generated',
+    err: '✗ Error',
+    step1: 'Choose a key size — 2048 minimum, 4096 for max security',
+    step2: 'Click Generate Key Pair — the browser creates the keys locally',
+    step3: 'Copy or download the public and private PEM keys',
+    step4: 'Keep your private key safe — it can never be recovered if lost',
+    warning: '⚠️ Never share your private key. Anyone with the private key can decrypt your data or impersonate you.',
+    privacyNote: '🔒 Keys are generated 100% in your browser via the Web Crypto API. Nothing is uploaded to any server, ever.',
+    stats: 'Stats',
+  },
+  zh: {
+    toolTitle: 'RSA 密钥对生成器',
+    toolDesc: '生成 RSA 2048 / 3072 / 4096 位公钥/私钥对，输出 PEM 格式。基于 Web Crypto API — 完全浏览器本地运行，绝不上传。',
+    keySize: '密钥长度',
+    format: '输出格式',
+    generate: '生成密钥对',
+    publicKey: '公钥（PEM）',
+    privateKey: '私钥（PEM）',
+    copy: '复制',
+    downloadBoth: '打包下载',
+    downloadPub: '下载 public.pem',
+    downloadPriv: '下载 private.pem',
+    generating: '正在生成 RSA 密钥对…较大的密钥可能需要几秒',
+    done: '✓ 密钥对已生成',
+    err: '✗ 错误',
+    step1: '选择密钥长度 — 至少 2048，最高安全选 4096',
+    step2: '点击「生成密钥对」— 浏览器在本地生成密钥',
+    step3: '复制或下载公钥和私钥 PEM 文件',
+    step4: '妥善保管私钥 — 一旦丢失无法恢复',
+    warning: '⚠️ 切勿分享你的私钥。任何持有私钥的人都能解密你的数据或冒充你的身份。',
+    privacyNote: '🔒 密钥通过 Web Crypto API 在浏览器中 100% 本地生成，永远不会上传到任何服务器。',
+    stats: '统计',
+  }
+});
+
+document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = GZ.t(el.dataset.i18n));
+const { $, copyText, t } = GZ;
+$('#privacyNote').textContent = t('privacyNote');
+
+function abToPem(ab, label) {
+  const bytes = new Uint8Array(ab);
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  const b64 = btoa(bin);
+  const lines = b64.match(/.{1,64}/g).join('\n');
+  return `-----BEGIN ${label}-----\n${lines}\n-----END ${label}-----`;
+}
+
+function download(filename, content) {
+  const blob = new Blob([content], { type: 'application/x-pem-file' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+let lastPub = '', lastPriv = '';
+
+async function generateKeys() {
+  $('#status').className = 'status';
+  $('#status').textContent = t('generating');
+  $('#output').innerHTML = '';
+  try {
+    const bits = +$('#keySize').value;
+    const start = performance.now();
+    const keyPair = await crypto.subtle.generateKey(
+      { name: 'RSA-OAEP', modulusLength: bits, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+      true,
+      ['encrypt', 'decrypt']
+    );
+    const elapsed = ((performance.now() - start) / 1000).toFixed(2);
+
+    const pubSpki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    const privPkcs8 = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+    const pubPem = abToPem(pubSpki, 'PUBLIC KEY');
+    const privPem = abToPem(privPkcs8, 'PRIVATE KEY');
+    lastPub = pubPem; lastPriv = privPem;
+
+    $('#output').innerHTML = `
+      <div class="key-block">
+        <h3>🔓 ${t('publicKey')} <button class="gz-btn gz-btn-secondary" style="font-size:.7em;padding:3px 8px" onclick="copyText(lastPub)">📋 ${t('copy')}</button></h3>
+        <textarea readonly spellcheck="false">${pubPem}</textarea>
+        <div style="margin-top:6px"><button class="gz-btn gz-btn-secondary" style="font-size:.75em;padding:4px 10px" onclick="download('public.pem', lastPub)">⬇️ ${t('downloadPub')}</button></div>
+      </div>
+      <div class="key-block">
+        <h3>🔐 ${t('privateKey')} <button class="gz-btn gz-btn-secondary" style="font-size:.7em;padding:3px 8px" onclick="copyText(lastPriv)">📋 ${t('copy')}</button></h3>
+        <textarea readonly spellcheck="false">${privPem}</textarea>
+        <div style="margin-top:6px"><button class="gz-btn gz-btn-secondary" style="font-size:.75em;padding:4px 10px" onclick="download('private.pem', lastPriv)">⬇️ ${t('downloadPriv')}</button></div>
+      </div>
+      <p class="note">⚠️ ${t('warning')}</p>`;
+    $('#status').className = 'status ok';
+    $('#status').textContent = `${t('done')} — RSA-${bits} in ${elapsed}s`;
+  } catch(e) {
+    $('#status').className = 'status err';
+    $('#status').textContent = `${t('err')}: ${e.message}`;
+  }
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="generateKeys()">🔑 ${t('generate')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/aes.html', name:'AES Encrypt/Decrypt'},
+    {icon:'#️⃣', href:'/dev/hmac.html', name:'HMAC Generator'},
+    {icon:'🎫', href:'/dev/jwt-debugger.html', name:'JWT Debugger'},
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

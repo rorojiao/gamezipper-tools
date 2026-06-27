@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>JavaScript Console Online - Run JS in Browser | GameZipper Tools</title>
+  <meta name="description" content="Free online JavaScript console and REPL. Write and run JavaScript code directly in your browser with live output, console.log capture, error reporting and command history. No setup, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/js-console.html">
+  <meta property="og:title" content="JavaScript Console Online - Run JS in Browser | GameZipper Tools">
+  <meta property="og:description" content="Free online JavaScript console and REPL. Run JS code in your browser with live output, console.log capture and error reporting. No setup, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/js-console.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JavaScript Console Online - Run JS in Browser | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.editor{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.editor{grid-template-columns:1fr}}
+.editor textarea{width:100%;height:280px;font-family:monospace;font-size:.86em;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:10px;padding:.8rem;color:var(--text);resize:vertical;line-height:1.5;tab-size:2}
+.editor textarea:focus{outline:none;border-color:var(--accent)}
+.console-out{background:#0a0a0a;border:1px solid var(--border);border-radius:10px;height:280px;overflow:auto;padding:.6rem .8rem;font-family:monospace;font-size:.83em;line-height:1.5}
+.log-line{padding:2px 0;border-bottom:1px dashed rgba(255,255,255,.05);white-space:pre-wrap;word-break:break-word}
+.log-line.error{color:#ef4444}.log-line.warn{color:#f59e0b}.log-line.info{color:#3b82f6}
+.log-line.result{color:#10b981}.log-line.sys{color:#888;font-style:italic}
+.log-meta{opacity:.45;font-size:.85em;margin-right:6px}
+.label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:.8em;opacity:.85}
+.examples{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.ex-btn{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:.78em;color:var(--text)}
+.ex-btn:hover{border-color:var(--accent);color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JavaScript Console","description":"Free online JavaScript console and REPL. Run JS code in your browser with live output, console.log capture and error reporting. No setup, no upload.","url":"https://tools.gamezipper.com/dev/js-console.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an online JavaScript console?", "acceptedAnswer": {"@type": "Answer", "text": "It is a REPL (Read-Eval-Print Loop) that lets you write and execute JavaScript code directly in your browser without installing Node.js or any IDE. You type code, click Run, and see the output and any console.log messages instantly."}}, {"@type": "Question", "name": "Can I use the browser APIs like fetch and DOM?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The code runs in the same browser context as the page itself, so window, document, fetch, localStorage, crypto, Math, JSON and all other browser APIs are available. Network requests via fetch will follow the browser's CORS rules."}}, {"@type": "Question", "name": "Is my code private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All code is evaluated locally in your browser using a sandboxed Function constructor. Nothing you type is uploaded to any server. The tool works fully offline once the page has loaded."}}, {"@type": "Question", "name": "Why does my infinite loop freeze the page?", "acceptedAnswer": {"@type": "Answer", "text": "JavaScript is single-threaded, so a true infinite loop will block the page. If this happens, simply reload the page. For long-running code, prefer async patterns with setTimeout or await new Promise(r => setTimeout(r))."}}, {"@type": "Question", "name": "How is this different from my browser's DevTools console?", "acceptedAnswer": {"@type": "Answer", "text": "It offers a cleaner writing experience with a dedicated editor, captured console output, persistent history and ready-to-use examples. It is great for quick experiments, snippet testing, learning and debugging small algorithms — without opening DevTools."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/js-console.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/js-console.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/js-console.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="examples" id="examples"></div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="editor">
+      <div>
+        <div class="label-row"><span data-i18n="codeEditor"></span></div>
+        <textarea id="code" spellcheck="false" autocomplete="off"></textarea>
+      </div>
+      <div>
+        <div class="label-row"><span data-i18n="output"></span><span id="memUsage" style="opacity:.6"></span></div>
+        <div class="console-out" id="output"></div>
+      </div>
+    </div>
+    <p style="font-size:.8em;opacity:.7;margin-top:10px" id="hint"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JavaScript Console & REPL',
+    toolDesc: 'Write and run JavaScript directly in your browser. Captures console.log, errors and return values — no setup, no upload, works offline.',
+    codeEditor: 'JavaScript code (Ctrl/Cmd+Enter to run)',
+    output: 'Output',
+    run: 'Run ▶',
+    clear: 'Clear',
+    loadExample: 'Load Example',
+    clearOutput: 'Clear Output',
+    hint: '💡 Tip: Use Ctrl/Cmd+Enter to run. console.log, console.error, console.warn and console.info are all captured. async/await works.',
+    ready: '✓ Console ready',
+    step1: 'Type or paste JavaScript in the editor on the left',
+    step2: 'Click Run (or press Ctrl/Cmd+Enter) to execute',
+    step3: 'Output, console.log messages and errors appear on the right',
+    step4: 'Use the example buttons to try common snippets',
+  },
+  zh: {
+    toolTitle: 'JavaScript 控制台 / REPL',
+    toolDesc: '直接在浏览器中编写并运行 JavaScript。捕获 console.log、错误和返回值 — 无需安装、不上传、可离线使用。',
+    codeEditor: 'JavaScript 代码（Ctrl/Cmd+Enter 运行）',
+    output: '输出',
+    run: '运行 ▶',
+    clear: '清空',
+    loadExample: '加载示例',
+    clearOutput: '清空输出',
+    hint: '💡 提示：按 Ctrl/Cmd+Enter 运行。console.log、console.error、console.warn 和 console.info 都会被捕获，支持 async/await。',
+    ready: '✓ 控制台就绪',
+    step1: '在左侧编辑器中输入或粘贴 JavaScript',
+    step2: '点击「运行」（或按 Ctrl/Cmd+Enter）执行',
+    step3: '输出、日志和错误将显示在右侧',
+    step4: '点击示例按钮试用常见代码片段',
+  }
+});
+
+document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = GZ.t(el.dataset.i18n));
+const { $, t } = GZ;
+$('#hint').textContent = t('hint');
+
+const examples = [
+  { name: 'Hello', code: `console.log('Hello, World!');\nconst sum = (a, b) => a + b;\nconsole.log('2 + 3 =', sum(2, 3));` },
+  { name: 'Array map', code: `const nums = [1, 2, 3, 4, 5];\nconst doubled = nums.map(n => n * 2);\nconsole.log('Original:', nums);\nconsole.log('Doubled:', doubled);\nconsole.log('Sum:', nums.reduce((a, b) => a + b, 0));` },
+  { name: 'Promise/async', code: `async function demo() {\n  console.log('start');\n  await new Promise(r => setTimeout(r, 500));\n  console.log('after 500ms');\n  return Math.random();\n}\ndemo().then(n => console.log('random:', n));` },
+  { name: 'JSON', code: `const data = { name: 'GameZipper', tools: 2700, free: true };\nconst json = JSON.stringify(data, null, 2);\nconsole.log(json);\nconsole.log('Parsed back:', JSON.parse(json));` },
+  { name: 'Date', code: `const now = new Date();\nconsole.log('Now:', now.toISOString());\nconsole.log('Day:', now.toLocaleDateString('en-US', { weekday: 'long' }));\nconsole.log('Unix:', Math.floor(now.getTime() / 1000));` },
+  { name: 'Math', code: `console.log('π =', Math.PI);\nconsole.log('e =', Math.E);\nconsole.log('random():', Math.random());\nconsole.log('sqrt(2):', Math.sqrt(2));\nconsole.log('2^10:', 2 ** 10);` },
+  { name: 'Regex', code: `const text = 'Contact: support@example.com or sales@test.org';\nconst emails = text.match(/\\b[\\w.-]+@[\\w.-]+\\.\\w+\\b/g);\nconsole.log('Found emails:', emails);` },
+  { name: 'Crypto', code: `(async () => {\n  const data = new TextEncoder().encode('hello');\n  const hash = await crypto.subtle.digest('SHA-256', data);\n  const hex = [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2,'0')).join('');\n  console.log('SHA-256(hello) =', hex);\n})();` },
+];
+
+$('#examples').innerHTML = examples.map((e, i) =>
+  `<button class="ex-btn" onclick="loadExample(${i})">📦 ${e.name}</button>`
+).join('');
+
+function loadExample(i) {
+  $('#code').value = examples[i].code;
+}
+
+let history = [];
+
+function fmtValue(v, depth) {
+  if (depth > 4) return '…';
+  if (v === null) return 'null';
+  if (v === undefined) return 'undefined';
+  const t = typeof v;
+  if (t === 'string') return depth === 0 ? v : JSON.stringify(v);
+  if (t === 'number' || t === 'boolean' || t === 'bigint') return String(v);
+  if (t === 'symbol') return v.toString();
+  if (t === 'function') return `ƒ ${v.name || 'anonymous'}()`;
+  if (v instanceof Error) return `${v.name}: ${v.message}`;
+  if (v instanceof Date) return v.toISOString();
+  if (v instanceof RegExp) return v.toString();
+  if (v instanceof Promise) return 'Promise { <pending> }';
+  if (Array.isArray(v)) {
+    const items = v.slice(0, 50).map(x => fmtValue(x, depth + 1));
+    return `[${items.join(', ')}${v.length > 50 ? ', …' : ''}]`;
+  }
+  if (t === 'object') {
+    try {
+      const entries = Object.entries(v).slice(0, 50).map(([k, x]) => `${k}: ${fmtValue(x, depth + 1)}`);
+      return `{ ${entries.join(', ')}${Object.keys(v).length > 50 ? ', …' : ''} }`;
+    } catch { return String(v); }
+  }
+  return String(v);
+}
+
+function now() {
+  const d = new Date();
+  return d.toTimeString().substr(0, 8);
+}
+
+function appendLine(text, cls) {
+  const out = $('#output');
+  const div = document.createElement('div');
+  div.className = 'log-line ' + (cls || '');
+  div.innerHTML = `<span class="log-meta">${now()}</span>${text.replace(/</g,'&lt;')}`;
+  out.appendChild(div);
+  out.scrollTop = out.scrollHeight;
+}
+
+// Capture console
+const origLog = console.log, origErr = console.error, origWarn = console.warn, origInfo = console.info;
+function patchedConsole(type, cls) {
+  return function(...args) {
+    const text = args.map(a => fmtValue(a, 0)).join(' ');
+    appendLine(text, cls);
+    origLog.apply(console, [`${type.toUpperCase()}:`, ...args]);
+  };
+}
+console.log = patchedConsole('log', '');
+console.error = patchedConsole('error', 'error');
+console.warn = patchedConsole('warn', 'warn');
+console.info = patchedConsole('info', 'info');
+
+appendLine(t('ready'), 'sys');
+
+function runCode() {
+  const code = $('#code').value;
+  if (!code.trim()) return;
+  history.push(code);
+  appendLine(`▶ ${code.split('\n').length} line(s)`, 'sys');
+  try {
+    // Wrap in async function so await works at top level
+    const wrapped = `return (async () => {\n${code}\n})();`;
+    const fn = new Function(wrapped);
+    const result = fn();
+    if (result instanceof Promise) {
+      result.then(v => {
+        if (v !== undefined) appendLine(`⟶ ${fmtValue(v, 0)}`, 'result');
+      }).catch(e => appendLine(`✗ Uncaught (promise): ${e && e.message || e}`, 'error'));
+    } else if (result !== undefined) {
+      appendLine(`⟶ ${fmtValue(result, 0)}`, 'result');
+    }
+    if (performance.memory) {
+      $('#memUsage').textContent = `mem: ${(performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1)} MB`;
+    }
+  } catch(e) {
+    appendLine(`✗ ${e.name}: ${e.message}`, 'error');
+  }
+}
+
+function clearAll() {
+  $('#code').value = '';
+  $('#code').focus();
+}
+
+function clearOutput() {
+  $('#output').innerHTML = '';
+  appendLine(t('ready'), 'sys');
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="runCode()">▶ ${t('run')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearOutput()">🧹 ${t('clearOutput')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">🗑 ${t('clear')}</button>`;
+
+// Keyboard: Ctrl/Cmd+Enter to run
+$('#code').addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runCode();
+  }
+  // Tab inserts 2 spaces instead of focus change
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const ta = e.target;
+    const s = ta.selectionStart, en = ta.selectionEnd;
+    ta.value = ta.value.substring(0, s) + '  ' + ta.value.substring(en);
+    ta.selectionStart = ta.selectionEnd = s + 2;
+  }
+});
+
+// Load default example
+$('#code').value = examples[0].code;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💻', href:'/dev/code-editor.html', name:'Code Editor'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔐', href:'/dev/aes.html', name:'AES Encrypt'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
