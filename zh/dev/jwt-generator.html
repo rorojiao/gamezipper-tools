@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JWT 令牌生成器（签名） - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用 HS256 / HS384 / HS512（HMAC）或 RS256（RSA）签名 JSON Web Token。设置声明、过期时间并实时预览编码后的令牌 — 完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/jwt-generator.html">
+  <meta property="og:title" content="JWT 令牌生成器（签名）">
+  <meta property="og:description" content="使用 HS256 / HS384 / HS512（HMAC）或 RS256（RSA）签名 JSON Web Token。设置声明、过期时间并实时预览编码后的令牌 — 完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/jwt-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JWT 令牌生成器（签名）">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0}
+.opt-card{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:4px}
+.opt-card label{font-size:.75em;opacity:.85}
+.opt-card select,.opt-card input{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:.85em;font-family:inherit}
+textarea{width:100%;font-family:monospace;font-size:.84em;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:.8rem;color:var(--text);resize:vertical;line-height:1.5}
+.token-out{background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:12px;font-family:monospace;font-size:.82em;word-break:break-all;line-height:1.55;min-height:60px}
+.tok-h{color:#f59e0b}.tok-p{color:#10b981}.tok-s{color:#3b82f6}
+.status{font-size:.85em;margin-top:8px}
+.status.ok{color:#10b981}.status.err{color:#ef4444}
+.note{font-size:.82em;opacity:.85;margin-top:12px;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JWT Generator","description":"Generate and sign JWT tokens with HS256/384/512 or RS256. Live preview, copy, debug. Web Crypto API, runs in your browser, nothing uploaded.","url": "https://tools.gamezipper.com/zh/dev/jwt-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a JWT?", "acceptedAnswer": {"@type": "Answer", "text": "JWT (JSON Web Token, RFC 7519) is a compact, URL-safe way to represent claims between two parties. It consists of three Base64URL-encoded parts separated by dots: header.payload.signature. JWTs are commonly used for authentication and information exchange in web APIs."}}, {"@type": "Question", "name": "What's the difference between HS256 and RS256?", "acceptedAnswer": {"@type": "Answer", "text": "HS256 (HMAC-SHA256) is symmetric — the same secret key signs and verifies the token, so both parties must share the secret. RS256 (RSA-SHA256) is asymmetric — a private key signs and a public key verifies, so the verifying party never needs the signing key. RS256 is preferred for distributed systems."}}, {"@type": "Question", "name": "How should I set the expiration (exp)?", "acceptedAnswer": {"@type": "Answer", "text": "The exp claim is a NumericDate — seconds since the Unix epoch (1970-01-01 UTC). Short-lived tokens (5-60 minutes) paired with refresh tokens are best practice. Never use long expirations for access tokens, and always include exp to prevent replay attacks."}}, {"@type": "Question", "name": "Are JWTs encrypted?", "acceptedAnswer": {"@type": "Answer", "text": "No. Standard JWTs (JWS) are signed but not encrypted — anyone who has the token can read its payload by Base64-decoding it. For confidentiality use JWE (JSON Web Encryption), or never put sensitive data in a JWT payload."}}, {"@type": "Question", "name": "Is my secret safe here?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Signing happens entirely in your browser via the Web Crypto API. Your secret or private key is never uploaded to any server. For real production secrets, prefer generating them in a secure backend."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jwt-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jwt-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jwt-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="opt-grid">
+      <div class="opt-card"><label data-i18n="algorithm"></label>
+        <select id="alg" onchange="onAlgChange()"><option value="HS256" selected>HS256</option><option value="HS384">HS384</option><option value="HS512">HS512</option><option value="RS256">RS256</option></select>
+      </div>
+      <div class="opt-card"><label data-i18n="expIn"></label>
+        <select id="expIn">
+          <option value="300">5 minutes</option>
+          <option value="900">15 minutes</option>
+          <option value="3600" selected>1 hour</option>
+          <option value="21600">6 hours</option>
+          <option value="86400">24 hours</option>
+          <option value="604800">7 days</option>
+          <option value="0">No expiration</option>
+        </select>
+      </div>
+    </div>
+    <div class="opt-card" id="secretCard" style="grid-column:1/-1"><label data-i18n="secret"></label>
+      <input type="text" id="secret" placeholder="your-256-bit-secret">
+    </div>
+    <div class="opt-card" id="privKeyCard" style="grid-column:1/-1;display:none"><label data-i18n="privKey"></label>
+      <textarea id="privKey" rows="5" spellcheck="false" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
+    </div>
+    <label style="margin-top:8px;display:block" data-i18n="payload"></label>
+    <textarea id="payload" rows="8" spellcheck="false"></textarea>
+    <div class="gz-toolbar" id="toolbar" style="margin-top:10px"></div>
+    <div class="status" id="status"></div>
+    <label style="margin-top:14px;display:block" data-i18n="token"></label>
+    <div class="token-out" id="tokenOut"><span id="tokenHtml"></span></div>
+    <p class="note" id="note"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JWT Generator (Sign Tokens)',
+    toolDesc: 'Sign JSON Web Tokens with HS256 / HS384 / HS512 (HMAC) or RS256 (RSA). Set claims, expiration and live-preview the encoded token — 100% in your browser.',
+    algorithm: 'Algorithm',
+    expIn: 'Expiration (exp)',
+    secret: 'Secret key (for HMAC)',
+    privKey: 'RSA private key (PEM, for RS256)',
+    payload: 'Payload (JSON claims)',
+    token: 'Signed JWT',
+    generate: 'Sign Token',
+    copy: 'Copy Token',
+    loadExample: 'Load Example',
+    clear: 'Clear',
+    jsonErr: '✗ Payload is not valid JSON',
+    ok: '✓ Token signed',
+    err: '✗ Error',
+    missingSecret: 'Please provide a secret key',
+    missingPrivKey: 'Please provide an RSA private key in PEM format',
+    step1: 'Choose an algorithm (HS256 for HMAC with a shared secret, RS256 for RSA)',
+    step2: 'Enter your secret or RSA private key and edit the JSON payload',
+    step3: 'Click Sign Token — the JWT is computed locally with Web Crypto',
+    step4: 'Copy the token and verify it with the matching JWT Debugger',
+    note: '🔒 Signing happens entirely in your browser via the Web Crypto API. Your secret or private key is never uploaded.',
+  },
+  zh: {
+    toolTitle: 'JWT 令牌生成器（签名）',
+    toolDesc: '使用 HS256 / HS384 / HS512（HMAC）或 RS256（RSA）签名 JSON Web Token。设置声明、过期时间并实时预览编码后的令牌 — 完全在浏览器中运行。',
+    algorithm: '算法',
+    expIn: '过期时间（exp）',
+    secret: '密钥（用于 HMAC）',
+    privKey: 'RSA 私钥（PEM，用于 RS256）',
+    payload: 'Payload（JSON 声明）',
+    token: '已签名 JWT',
+    generate: '签名生成',
+    copy: '复制令牌',
+    loadExample: '加载示例',
+    clear: '清空',
+    jsonErr: '✗ Payload 不是有效的 JSON',
+    ok: '✓ 令牌已签名',
+    err: '✗ 错误',
+    missingSecret: '请提供密钥',
+    missingPrivKey: '请提供 PEM 格式的 RSA 私钥',
+    step1: '选择算法（HS256 用共享密钥的 HMAC，RS256 用 RSA）',
+    step2: '输入密钥或 RSA 私钥，并编辑 JSON payload',
+    step3: '点击「签名生成」— JWT 在本地通过 Web Crypto 计算',
+    step4: '复制令牌并使用对应的 JWT 调试器验证',
+    note: '🔒 签名完全在浏览器中通过 Web Crypto API 完成。你的密钥或私钥永远不会被上传。',
+  }
+});
+
+document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = GZ.t(el.dataset.i18n));
+const { $, copyText, t } = GZ;
+$('#note').textContent = t('note');
+
+const enc = new TextEncoder();
+
+function b64url(input) {
+  let str;
+  if (typeof input === 'string') {
+    str = btoa(unescape(encodeURIComponent(input)));
+  } else {
+    const bytes = new Uint8Array(input);
+    let bin = '';
+    bytes.forEach(b => bin += String.fromCharCode(b));
+    str = btoa(bin);
+  }
+  return str.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function pemToArrayBuffer(pem) {
+  const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function onAlgChange() {
+  const alg = $('#alg').value;
+  $('#secretCard').style.display = alg.startsWith('HS') ? '' : 'none';
+  $('#privKeyCard').style.display = alg.startsWith('RS') ? '' : 'none';
+}
+
+function getPayload() {
+  const txt = $('#payload').value.trim();
+  const obj = JSON.parse(txt);
+  const expIn = +$('#expIn').value;
+  if (expIn > 0) obj.exp = Math.floor(Date.now() / 1000) + expIn;
+  if (!obj.iat) obj.iat = Math.floor(Date.now() / 1000);
+  return obj;
+}
+
+async function sign() {
+  try {
+    const alg = $('#alg').value;
+    const payload = getPayload();
+
+    const header = { alg, typ: 'JWT', kid: undefined };
+    delete header.kid;
+    const headerB64 = b64url(JSON.stringify(header));
+    const payloadB64 = b64url(JSON.stringify(payload));
+    const signingInput = `${headerB64}.${payloadB64}`;
+    const data = enc.encode(signingInput);
+
+    let sig;
+    if (alg.startsWith('HS')) {
+      const secret = $('#secret').value;
+      if (!secret) throw new Error(t('missingSecret'));
+      const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: { name: `SHA-${alg.slice(2)}` } }, false, ['sign']);
+      sig = await crypto.subtle.sign('HMAC', key, data);
+    } else if (alg === 'RS256') {
+      const pem = $('#privKey').value.trim();
+      if (!pem) throw new Error(t('missingPrivKey'));
+      const key = await crypto.subtle.importKey('pkcs8', pemToArrayBuffer(pem), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+      sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, data);
+    }
+
+    const sigB64 = b64url(sig);
+    const token = `${signingInput}.${sigB64}`;
+
+    $('#tokenHtml').innerHTML = `<span class="tok-h">${headerB64}</span>.<span class="tok-p">${payloadB64}</span>.<span class="tok-s">${sigB64}</span>`;
+    window._lastToken = token;
+    $('#status').className = 'status ok';
+    $('#status').textContent = t('ok');
+  } catch(e) {
+    if (e instanceof SyntaxError) {
+      $('#status').className = 'status err';
+      $('#status').textContent = t('jsonErr') + ': ' + e.message;
+    } else {
+      $('#status').className = 'status err';
+      $('#status').textContent = `${t('err')}: ${e.message}`;
+    }
+  }
+}
+
+function loadExample() {
+  $('#payload').value = JSON.stringify({
+    sub: '1234567890',
+    name: 'John Doe',
+    role: 'admin',
+    iss: 'gamezipper-tools',
+    aud: 'api.example.com',
+  }, null, 2);
+  $('#secret').value = 'my-super-secret-key-2026';
+  onAlgChange();
+  sign();
+}
+
+function clearAll() {
+  $('#payload').value = '';
+  $('#tokenHtml').textContent = '';
+  $('#status').textContent = '';
+  window._lastToken = '';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="sign()">✍️ ${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText(window._lastToken || '')">📋 ${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">📥 ${t('loadExample')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">🗑 ${t('clear')}</button>`;
+
+loadExample();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎫', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🕵️', href:'/dev/jwt-debugger.html', name:'JWT Debugger'},
+    {icon:'#️⃣', href:'/dev/hmac.html', name:'HMAC Generator'},
+    {icon:'🔑', href:'/dev/rsa-key-generator.html', name:'RSA Key Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

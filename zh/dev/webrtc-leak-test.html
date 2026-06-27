@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>WebRTC 泄漏检测 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="检测你的真实本地与公网 IP 是否通过 WebRTC 泄漏 — 即使在使用 VPN 时。完全在浏览器内运行，绝不上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/webrtc-leak-test.html">
+  <meta property="og:title" content="WebRTC 泄漏检测">
+  <meta property="og:description" content="检测你的真实本地与公网 IP 是否通过 WebRTC 泄漏 — 即使在使用 VPN 时。完全在浏览器内运行，绝不上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/webrtc-leak-test.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="WebRTC 泄漏检测">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.result-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin:10px 0}
+.result-card h3{margin:0 0 6px;font-size:1em}
+.ip-list{list-style:none;padding:0;margin:6px 0 0;font-family:monospace;font-size:.95em}
+.ip-list li{padding:4px 0;border-bottom:1px dashed var(--border);display:flex;justify-content:space-between;gap:8px;word-break:break-all}
+.ip-list li:last-child{border-bottom:none}
+.ip-list .ip{font-weight:700}
+.ip-type{font-size:.7em;opacity:.7;background:var(--glass2);padding:2px 8px;border-radius:8px;white-space:nowrap}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.8em;font-weight:700}
+.badge.ok{background:rgba(16,185,129,.18);color:#10b981}
+.badge.warn{background:rgba(245,158,11,.18);color:#f59e0b}
+.badge.err{background:rgba(239,68,68,.18);color:#ef4444}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.note{font-size:.82em;opacity:.85;margin-top:14px;line-height:1.55}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"WebRTC Leak Test","description":"Free WebRTC leak test — check if your real local and public IP address is exposed through WebRTC. Detect IP leaks while using VPN or proxy. Runs 100% in your browser.","url": "https://tools.gamezipper.com/zh/dev/webrtc-leak-test.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a WebRTC leak?", "acceptedAnswer": {"@type": "Answer", "text": "A WebRTC leak happens when your browser exposes your real local or public IP address through the WebRTC API, even when you are connected to a VPN or proxy. Websites can use this to bypass the VPN and identify your true network location."}}, {"@type": "Question", "name": "How does this WebRTC leak test work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool uses your browser's RTCPeerConnection API to gather ICE candidates from public STUN servers (Google's free STUN). It then parses the candidates and displays any local or server-reflexive (public) IP addresses that WebRTC can see. Nothing is sent to our servers — the entire test runs in your browser."}}, {"@type": "Question", "name": "Is my real IP leaking?", "acceptedAnswer": {"@type": "Answer", "text": "If the test shows a public IPv4 or IPv6 address that does not match your VPN's expected exit IP, your real address may be leaking. Modern browsers also reveal a private local IP (often as a .local mDNS hostname); that alone is normal and not dangerous."}}, {"@type": "Question", "name": "How do I fix a WebRTC leak?", "acceptedAnswer": {"@type": "Answer", "text": "Most desktop browsers let you disable WebRTC entirely (in Firefox: about:config → media.peerconnection.enabled = false). Many VPN apps include built-in WebRTC leak protection. Some browsers (Brave, hardened Firefox) mask the local IP automatically using mDNS."}}, {"@type": "Question", "name": "Is this test private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The test only talks to public Google STUN servers to gather ICE candidates. No IP address, fingerprint or result is ever sent to tools.gamezipper.com or stored anywhere — your data stays in your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/webrtc-leak-test.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/webrtc-leak-test.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/webrtc-leak-test.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="status"></div>
+    <div id="results"></div>
+    <div id="rawCandidates" style="margin-top:18px"></div>
+    <p class="note" id="privacyNote"></p>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'WebRTC Leak Test',
+    toolDesc: 'Check if your real local and public IP address is leaking through WebRTC — even when using a VPN. 100% in-browser, nothing is uploaded.',
+    runTest: 'Run WebRTC Leak Test',
+    rerun: 'Re-run Test',
+    testing: 'Gathering ICE candidates…',
+    browserSupport: 'Your browser does not support WebRTC (RTCPeerConnection). Try Chrome, Firefox, Edge or Safari.',
+    noCandidates: 'No ICE candidates were gathered. WebRTC may be disabled, blocked by an extension, or your network blocks STUN.',
+    publicIPs: 'Public IP addresses (visible to websites)',
+    localIPs: 'Local / private IP addresses',
+    noPublicFound: 'No public IP exposed via WebRTC — your VPN / browser is correctly hiding it.',
+    noLocalFound: 'No local IP exposed (modern browsers may mask it as .local mDNS).',
+    leakSummary: 'Leak summary',
+    realIpLeak: '⚠️ A public IP address is exposed via WebRTC. If it is not your VPN exit IP, your real address may be leaking.',
+    noLeak: '✓ No public IP leak detected via WebRTC.',
+    rawCandidates: 'Raw ICE candidates',
+    showRaw: 'Show raw candidates',
+    hideRaw: 'Hide raw candidates',
+    typeLocal: 'host (local)',
+    typeSrflx: 'server-reflexive (public)',
+    typeRelay: 'relay',
+    typeHost: 'host',
+    privacyNote: '🔒 Privacy: this test runs entirely in your browser. It only contacts public Google STUN servers (stun.l.google.com) to gather ICE candidates — no IP, result or fingerprint is ever sent to tools.gamezipper.com or stored anywhere.',
+    step1: 'Click "Run WebRTC Leak Test" — the tool connects to public STUN servers',
+    step2: 'The browser gathers ICE candidates, which can reveal local and public IPs',
+    step3: 'Review the public IPs shown — if they don\'t match your VPN, you may be leaking',
+    step4: 'To fix a leak, disable WebRTC in your browser or enable leak protection in your VPN app',
+  },
+  zh: {
+    toolTitle: 'WebRTC 泄漏检测',
+    toolDesc: '检测你的真实本地与公网 IP 是否通过 WebRTC 泄漏 — 即使在使用 VPN 时。完全在浏览器内运行，绝不上传。',
+    runTest: '开始 WebRTC 泄漏检测',
+    rerun: '重新检测',
+    testing: '正在收集 ICE 候选地址…',
+    browserSupport: '你的浏览器不支持 WebRTC（RTCPeerConnection）。请使用 Chrome、Firefox、Edge 或 Safari。',
+    noCandidates: '未收集到 ICE 候选地址。WebRTC 可能被禁用、被扩展拦截，或你的网络屏蔽了 STUN。',
+    publicIPs: '公网 IP 地址（对网站可见）',
+    localIPs: '本地 / 内网 IP 地址',
+    noPublicFound: '未通过 WebRTC 暴露公网 IP — 你的 VPN / 浏览器已正确隐藏。',
+    noLocalFound: '未暴露本地 IP（现代浏览器可能将其隐藏为 .local mDNS）。',
+    leakSummary: '泄漏总结',
+    realIpLeak: '⚠️ WebRTC 暴露了公网 IP。如果该 IP 不是你的 VPN 出口 IP，你的真实地址可能正在泄漏。',
+    noLeak: '✓ 未检测到 WebRTC 公网 IP 泄漏。',
+    rawCandidates: '原始 ICE 候选地址',
+    showRaw: '显示原始候选',
+    hideRaw: '隐藏原始候选',
+    typeLocal: '主机（本地）',
+    typeSrflx: '服务器反射（公网）',
+    typeRelay: '中继',
+    typeHost: '主机',
+    privacyNote: '🔒 隐私：此检测完全在浏览器内运行。仅会连接公共 Google STUN 服务器（stun.l.google.com）以收集 ICE 候选地址 — 任何 IP、结果或指纹都不会发送到 tools.gamezipper.com，也不会被存储。',
+    step1: '点击「开始 WebRTC 泄漏检测」— 工具会连接公共 STUN 服务器',
+    step2: '浏览器收集 ICE 候选地址，其中可能包含本地和公网 IP',
+    step3: '查看显示的公网 IP — 若与你的 VPN 不一致，可能存在泄漏',
+    step4: '修复泄漏：在浏览器中禁用 WebRTC，或在 VPN 应用中开启泄漏保护',
+  }
+});
+
+const { $, t } = GZ;
+$('#privacyNote').textContent = t('privacyNote');
+
+function isPrivateIP(ip) {
+  if (!ip) return false;
+  if (ip.endsWith('.local') || ip.includes('.local')) return true;
+  if (/^10\./.test(ip)) return true;
+  if (/^192\.168\./.test(ip)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return true;
+  if (/^169\.254\./.test(ip)) return true;
+  if (/^127\./.test(ip)) return true;
+  if (/^fc00:/i.test(ip) || /^fe80:/i.test(ip) || /^::1$/.test(ip)) return true;
+  return false;
+}
+
+function parseCandidateIP(cand) {
+  // candidate:842163049 1 udp 1677729535 1.2.3.4 64737 typ srflx raddr 192.168.1.5 ...
+  const m = cand.candidate.match(/(\d{1,3}(?:\.\d{1,3}){3}|[a-f0-9:]+:[a-f0-9:]+|[a-z0-9.-]+\.local)\s+(\d+)\s+typ\s+(\S+)/i);
+  if (m) return { ip: m[1], port: m[2], type: m[3] };
+  return null;
+}
+
+async function runLeakTest() {
+  $('#status').innerHTML = `<span class="badge warn"><span class="spinner"></span>${t('testing')}</span>`;
+  $('#results').innerHTML = '';
+  $('#rawCandidates').innerHTML = '';
+
+  if (typeof RTCPeerConnection === 'undefined' && typeof webkitRTCPeerConnection === 'undefined') {
+    $('#status').innerHTML = `<span class="badge err">${t('browserSupport')}</span>`;
+    return;
+  }
+
+  const RTC = window.RTCPeerConnection || window.webkitRTCPeerConnection;
+  const servers = { iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+  ]};
+  const pc = new RTC(servers);
+  const candidates = [];
+  let rawCands = [];
+
+  try { pc.createDataChannel('leaktest'); } catch(e) {}
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate && e.candidate.candidate) {
+      rawCands.push(e.candidate.candidate);
+      const parsed = parseCandidateIP(e.candidate);
+      if (parsed) candidates.push(parsed);
+    }
+  };
+
+  try {
+    const offer = await pc.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
+    await pc.setLocalDescription(offer);
+  } catch(e) {
+    $('#status').innerHTML = `<span class="badge err">${e.message}</span>`;
+    pc.close();
+    return;
+  }
+
+  // Wait until ICE gathering completes (or timeout)
+  await new Promise(resolve => {
+    const start = Date.now();
+    const check = setInterval(() => {
+      if (pc.iceGatheringState === 'complete' || Date.now() - start > 8000) {
+        clearInterval(check);
+        resolve();
+      }
+    }, 200);
+  });
+  pc.close();
+
+  if (!candidates.length) {
+    $('#status').innerHTML = `<span class="badge warn">${t('noCandidates')}</span>`;
+    return;
+  }
+
+  // De-duplicate by ip+type
+  const seen = new Set();
+  const unique = [];
+  candidates.forEach(c => {
+    const k = c.ip + '|' + c.type;
+    if (!seen.has(k)) { seen.add(k); unique.push(c); }
+  });
+
+  const publicIPs = unique.filter(c => c.type === 'srflx');
+  const localIPs = unique.filter(c => c.type === 'host');
+
+  let html = '';
+
+  // Leak summary
+  if (publicIPs.length) {
+    html += `<div class="result-card"><h3>${t('leakSummary')}</h3><span class="badge err">${t('realIpLeak')}</span></div>`;
+  } else {
+    html += `<div class="result-card"><h3>${t('leakSummary')}</h3><span class="badge ok">${t('noLeak')}</span></div>`;
+  }
+
+  // Public IPs
+  html += `<div class="result-card"><h3>${t('publicIPs')}</h3>`;
+  if (publicIPs.length) {
+    html += '<ul class="ip-list">';
+    publicIPs.forEach(c => {
+      html += `<li><span class="ip">${c.ip}</span><span class="ip-type">${t('typeSrflx')}</span></li>`;
+    });
+    html += '</ul>';
+  } else {
+    html += `<p style="margin:6px 0;opacity:.85">${t('noPublicFound')}</p>`;
+  }
+  html += '</div>';
+
+  // Local IPs
+  html += `<div class="result-card"><h3>${t('localIPs')}</h3>`;
+  if (localIPs.length) {
+    html += '<ul class="ip-list">';
+    localIPs.forEach(c => {
+      const priv = isPrivateIP(c.ip);
+      html += `<li><span class="ip">${c.ip}</span><span class="ip-type">${priv ? '🔒 ' + t('typeLocal') : '⚠️ ' + t('typeHost')}</span></li>`;
+    });
+    html += '</ul>';
+  } else {
+    html += `<p style="margin:6px 0;opacity:.85">${t('noLocalFound')}</p>`;
+  }
+  html += '</div>';
+
+  $('#results').innerHTML = html;
+  $('#status').innerHTML = `<span class="badge ok">✓ ${t('testing').replace('…','')}done — ${unique.length} candidate(s)</span>`;
+
+  // Raw candidates toggle
+  $('#rawCandidates').innerHTML = `
+    <button class="gz-btn gz-btn-secondary" id="rawToggle">${t('showRaw')}</button>
+    <pre id="rawPre" style="display:none;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px;font-size:.78em;overflow:auto;max-height:300px;white-space:pre-wrap;word-break:break-all">${rawCands.map(s => s.replace(/</g,'&lt;')).join('\n')}</pre>`;
+  $('#rawToggle').addEventListener('click', () => {
+    const pre = $('#rawPre');
+    const btn = $('#rawToggle');
+    if (pre.style.display === 'none') {
+      pre.style.display = 'block';
+      btn.textContent = t('hideRaw');
+    } else {
+      pre.style.display = 'none';
+      btn.textContent = t('showRaw');
+    }
+  });
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="runLeakTest()">🛡️ ${t('runTest')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'What Is My IP'},
+    {icon:'🔍', href:'/dev/browser-fingerprint.html', name:'Browser Fingerprint'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
