@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>ICS 日历事件生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="为 Outlook、Apple 日历和 Google 日历创建 .ics 日历事件文件。支持标题、时间、地点、描述和重复规则 — 100% 浏览器本地运行，无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/ics-generator.html">
+  <meta property="og:title" content="ICS 日历事件生成器 - 免费在线工具">
+  <meta property="og:description" content="为 Outlook、Apple 日历和 Google 日历创建 .ics 日历事件文件。支持标题、时间、地点、描述和重复规则 — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/ics-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ICS 日历事件生成器 - 免费在线工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.ics-form{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:1rem 0}
+.ics-form .full{grid-column:1/-1}
+.ics-form label{font-size:.85em;font-weight:600;display:block;margin-bottom:4px}
+.ics-form input[type=text],.ics-form input[type=date],.ics-form input[type=time],.ics-form input[type=number],.ics-form textarea,.ics-form select{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-text);font-family:inherit;font-size:.95em;box-sizing:border-box}
+.ics-form textarea{min-height:80px;resize:vertical;font-family:monospace}
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.8em;line-height:1.5}
+.gz-row-inline{display:flex;gap:8px;align-items:center}
+.gz-row-inline input[type=checkbox]{width:18px;height:18px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"ICS Calendar Event Generator","description":"Create .ics calendar event files for Outlook, Apple Calendar and Google Calendar. Title, dates, location, description, attendees and recurrence — 100% browser-based, no signup.","url":"https://tools.gamezipper.com/ics-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an .ics file?","acceptedAnswer":{"@type":"Answer","text":"An .ics (iCalendar) file is a universal calendar event format supported by Outlook, Apple Calendar, Google Calendar and most scheduling apps. Opening it adds the event to your calendar."}},{"@type":"Question","name":"How do I add an event to my calendar?","acceptedAnswer":{"@type":"Answer","text":"Fill in the event details, click Generate, then click Download .ics. Open the downloaded file and your default calendar app will import it."}},{"@type":"Question","name":"Can I create recurring events?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose Daily, Weekly, Monthly or Yearly recurrence and an optional end date. The tool generates the correct RRULE in the .ics file."}},{"@type":"Question","name":"Does this work for different time zones?","acceptedAnswer":{"@type":"Answer","text":"Yes. Pick a UTC offset (or leave it at your local zone). The event time is exported as a fixed UTC offset so it appears correctly in any calendar app."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/ics-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/ics-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/ics-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="ics-form">
+      <div class="full">
+        <label id="lblTitle"></label>
+        <input type="text" id="evTitle" placeholder="Quarterly Team Sync">
+      </div>
+      <div>
+        <label id="lblStart"></label>
+        <input type="date" id="evDateStart">
+        <input type="time" id="evTimeStart" style="margin-top:6px" value="09:00">
+      </div>
+      <div>
+        <label id="lblEnd"></label>
+        <input type="date" id="evDateEnd">
+        <input type="time" id="evTimeEnd" style="margin-top:6px" value="10:00">
+      </div>
+      <div class="full gz-row-inline">
+        <input type="checkbox" id="evAllDay" onchange="toggleAllDay()">
+        <label for="evAllDay" id="lblAllDay" style="margin:0;cursor:pointer"></label>
+      </div>
+      <div class="full">
+        <label id="lblLoc"></label>
+        <input type="text" id="evLoc" placeholder="Zoom / Conference Room B / 123 Main St">
+      </div>
+      <div class="full">
+        <label id="lblDesc"></label>
+        <textarea id="evDesc" placeholder="Agenda, dial-in info, notes..."></textarea>
+      </div>
+      <div>
+        <label id="lblTz"></label>
+        <select id="evTz">
+          <option value="local">Local (auto)</option>
+          <option value="-12:00">UTC-12:00</option>
+          <option value="-08:00">UTC-08:00 (PST)</option>
+          <option value="-07:00">UTC-07:00 (MST/PDT)</option>
+          <option value="-06:00">UTC-06:00 (CST)</option>
+          <option value="-05:00">UTC-05:00 (EST)</option>
+          <option value="-03:00">UTC-03:00 (BRT)</option>
+          <option value="+00:00">UTC+00:00 (GMT)</option>
+          <option value="+01:00">UTC+01:00 (CET)</option>
+          <option value="+02:00">UTC+02:00 (EET)</option>
+          <option value="+03:00">UTC+03:00 (MSK)</option>
+          <option value="+05:30">UTC+05:30 (IST)</option>
+          <option value="+07:00">UTC+07:00 (ICT)</option>
+          <option value="+08:00">UTC+08:00 (CST)</option>
+          <option value="+09:00">UTC+09:00 (JST)</option>
+          <option value="+10:00">UTC+10:00 (AEST)</option>
+          <option value="+12:00">UTC+12:00 (NZST)</option>
+        </select>
+      </div>
+      <div>
+        <label id="lblRrule"></label>
+        <select id="evFreq">
+          <option value="NONE" id="optNone"></option>
+          <option value="DAILY" id="optDaily"></option>
+          <option value="WEEKLY" id="optWeekly"></option>
+          <option value="MONTHLY" id="optMonthly"></option>
+          <option value="YEARLY" id="optYearly"></option>
+        </select>
+      </div>
+      <div>
+        <label id="lblUntil"></label>
+        <input type="date" id="evUntil">
+      </div>
+      <div>
+        <label id="lblReminder"></label>
+        <select id="evReminder">
+          <option value="0" id="optNoRem"></option>
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+          <option value="1440">1 day</option>
+        </select>
+      </div>
+      <div class="full">
+        <label id="lblOutput"></label>
+        <div class="gz-output" id="output" style="min-height:160px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{
+    toolTitle:'ICS Calendar Event Generator',
+    toolDesc:'Create .ics calendar event files for Outlook, Apple Calendar and Google Calendar. Title, dates, location, description, attendees and recurrence — 100% browser-based.',
+    lblTitle:'Event title *',
+    lblStart:'Start',
+    lblEnd:'End',
+    lblAllDay:'All-day event',
+    lblLoc:'Location',
+    lblDesc:'Description / notes',
+    lblTz:'Time zone',
+    lblRrule:'Repeat',
+    lblUntil:'Repeat until (optional)',
+    lblReminder:'Reminder',
+    lblOutput:'Generated .ics output',
+    optNone:'Does not repeat',
+    optDaily:'Daily',
+    optWeekly:'Weekly',
+    optMonthly:'Monthly',
+    optYearly:'Yearly',
+    optNoRem:'No reminder',
+    generate:'Generate',
+    download:'Download .ics',
+    copy:'Copy',
+    clear:'Clear',
+    titleRequired:'Please enter an event title.',
+    downloaded:'Downloaded event.ics',
+    step1:'Enter the event title and pick start/end dates and times',
+    step2:'Add an optional location, description and reminder',
+    step3:'Choose a time zone and recurrence if the event repeats',
+    step4:'Click Generate, then Download .ics to add to your calendar',
+  },
+  zh:{
+    toolTitle:'ICS 日历事件生成器',
+    toolDesc:'为 Outlook、Apple 日历和 Google 日历创建 .ics 日历事件文件。支持标题、时间、地点、描述、参与者和重复规则 — 100% 浏览器本地运行。',
+    lblTitle:'事件标题 *',
+    lblStart:'开始',
+    lblEnd:'结束',
+    lblAllDay:'全天事件',
+    lblLoc:'地点',
+    lblDesc:'描述 / 备注',
+    lblTz:'时区',
+    lblRrule:'重复',
+    lblUntil:'重复截止（可选）',
+    lblReminder:'提醒',
+    lblOutput:'生成的 .ics 内容',
+    optNone:'不重复',
+    optDaily:'每天',
+    optWeekly:'每周',
+    optMonthly:'每月',
+    optYearly:'每年',
+    optNoRem:'无提醒',
+    generate:'生成',
+    download:'下载 .ics',
+    copy:'复制',
+    clear:'清空',
+    titleRequired:'请输入事件标题。',
+    downloaded:'已下载 event.ics',
+    step1:'填写事件标题，选择开始和结束的日期与时间',
+    step2:'可选填写地点、描述和提醒',
+    step3:'选择时区，如需重复可选重复频率',
+    step4:'点击「生成」后点击「下载 .ics」导入日历',
+  }
+});
+const {$,t,copyText}=GZ;
+
+// Set defaults — start = today 9:00, end = today 10:00
+(function initDefaults(){
+  const today=new Date();
+  const iso=today.toISOString().slice(0,10);
+  $('#evDateStart').value=iso;
+  $('#evDateEnd').value=iso;
+})();
+
+function toggleAllDay(){
+  const ad=$('#evAllDay').checked;
+  $('#evTimeStart').style.display=ad?'none':'block';
+  $('#evTimeEnd').style.display=ad?'none':'block';
+  $('#evTz').closest('div').style.display=ad?'none':'block';
+}
+
+function pad(n){return String(n).padStart(2,'0');}
+
+// Convert local datetime string + offset to ICS UTC format: 20260101T090000Z or with offset
+function toICSDate(dateStr, timeStr, allDay, tz){
+  if(allDay){
+    return {date: dateStr.replace(/-/g,''), isUTC:false, time:''};
+  }
+  // We produce floating local time but with TZID if local selected; otherwise fixed offset
+  const datePart=dateStr.replace(/-/g,'');
+  const timePart=(timeStr||'00:00').replace(':','')+'00';
+  if(tz==='local'){
+    return {date: datePart+'T'+timePart, isUTC:false, time:''};
+  }
+  // Build UTC via Date object
+  // Combine dateStr + timeStr - interpret as being in chosen tz offset
+  // Use Date.UTC then subtract offset
+  const [y,m,d]=dateStr.split('-').map(Number);
+  const [hh,mm]=(timeStr||'00:00').split(':').map(Number);
+  const sign=tz[0]; const off=tz.slice(1);
+  const [oh,om]=off.split(':').map(Number);
+  const offsetMinutes=(sign==='-'?-1:1)*(oh*60+om);
+  const utcMs=Date.UTC(y,m-1,d,hh,mm)-offsetMinutes*60000;
+  const u=new Date(utcMs);
+  const us=`${u.getUTCFullYear()}${pad(u.getUTCMonth()+1)}${pad(u.getUTCDate())}T${pad(u.getUTCHours())}${pad(u.getUTCMinutes())}${pad(u.getUTCSeconds())}Z`;
+  return {date: us, isUTC:true, time:''};
+}
+
+function escICS(s){
+  return String(s||'')
+    .replace(/\\/g,'\\\\')
+    .replace(/;/g,'\\;')
+    .replace(/,/g,'\\,')
+    .replace(/\n/g,'\\n');
+}
+
+function foldICS(line){
+  // RFC 5545 line folding — break at 75 octets
+  if(line.length<=75) return line;
+  const out=[line.slice(0,75)];
+  let rest=line.slice(75);
+  while(rest.length>73){ out.push(' '+rest.slice(0,73)); rest=rest.slice(73); }
+  if(rest.length) out.push(' '+rest);
+  return out.join('\r\n');
+}
+
+function generateICS(){
+  const title=$('#evTitle').value.trim();
+  if(!title){alert(t('titleRequired'));return;}
+  const allDay=$('#evAllDay').checked;
+  const tz=$('#evTz').value;
+  const start=toICSDate($('#evDateStart').value, $('#evTimeStart').value, allDay, tz);
+  const end=toICSDate($('#evDateEnd').value, $('#evTimeEnd').value, allDay, tz);
+  // Safety: if end before start, swap
+  const dtStart=start.date;
+  const dtEnd=end.date;
+  const freq=$('#evFreq').value;
+  const until=$('#evUntil').value;
+  const reminder=parseInt($('#evReminder').value);
+  const loc=$('#evLoc').value;
+  const desc=$('#evDesc').value;
+  const stamp=new Date();
+  const dtstamp=`${stamp.getUTCFullYear()}${pad(stamp.getUTCMonth()+1)}${pad(stamp.getUTCDate())}T${pad(stamp.getUTCHours())}${pad(stamp.getUTCMinutes())}${pad(stamp.getUTCSeconds())}Z`;
+  const uid=`${Date.now()}-${Math.random().toString(36).slice(2,8)}@tools.gamezipper.com`;
+
+  const lines=[
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//GameZipper Tools//ICS Generator//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:'+uid,
+    'DTSTAMP:'+dtstamp,
+  ];
+  if(allDay){
+    lines.push('DTSTART;VALUE=DATE:'+dtStart);
+    const e = new Date($('#evDateEnd').value);
+    e.setDate(e.getDate()+1);
+    const nextDay=e.toISOString().slice(0,10).replace(/-/g,'');
+    lines.push('DTEND;VALUE=DATE:'+nextDay);
+  } else if(tz==='local'){
+    lines.push('DTSTART:'+dtStart);
+    lines.push('DTEND:'+dtEnd);
+  } else {
+    lines.push('DTSTART:'+dtStart);
+    lines.push('DTEND:'+dtEnd);
+  }
+  if(freq!=='NONE'){
+    let rrule='RRULE:FREQ='+freq;
+    if(freq==='WEEKLY') rrule+=';BYDAY='+['SU','MO','TU','WE','TH','FR','SA'][new Date($('#evDateStart').value+'T00:00').getDay()];
+    if(until) rrule+=';UNTIL='+until.replace(/-/g,'')+'T235959Z';
+    lines.push(rrule);
+  }
+  if(loc) lines.push(foldICS('LOCATION:'+escICS(loc)));
+  if(desc) lines.push(foldICS('DESCRIPTION:'+escICS(desc)));
+  lines.push(foldICS('SUMMARY:'+escICS(title)));
+  if(reminder>0){
+    lines.push('BEGIN:VALARM');
+    lines.push('ACTION:DISPLAY');
+    lines.push(foldICS('DESCRIPTION:'+escICS(title)));
+    lines.push('TRIGGER:-PT'+reminder+'M');
+    lines.push('END:VALARM');
+  }
+  lines.push('END:VEVENT');
+  lines.push('END:VCALENDAR');
+
+  const ics=lines.join('\r\n');
+  $('#output').textContent=ics;
+  return ics;
+}
+
+function downloadICS(){
+  const ics=generateICS();
+  if(!ics) return;
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='event.ics';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  GZ.showToast('✓ '+t('downloaded'));
+}
+
+// labels
+$('#lblTitle').textContent=t('lblTitle');
+$('#lblStart').textContent=t('lblStart');
+$('#lblEnd').textContent=t('lblEnd');
+$('#lblAllDay').textContent=t('lblAllDay');
+$('#lblLoc').textContent=t('lblLoc');
+$('#lblDesc').textContent=t('lblDesc');
+$('#lblTz').textContent=t('lblTz');
+$('#lblRrule').textContent=t('lblRrule');
+$('#lblUntil').textContent=t('lblUntil');
+$('#lblReminder').textContent=t('lblReminder');
+$('#lblOutput').textContent=t('lblOutput');
+$('#optNone').textContent=t('optNone');
+$('#optDaily').textContent=t('optDaily');
+$('#optWeekly').textContent=t('optWeekly');
+$('#optMonthly').textContent=t('optMonthly');
+$('#optYearly').textContent=t('optYearly');
+$('#optNoRem').textContent=t('optNoRem');
+
+$('#toolbar').innerHTML=`<button class="gz-btn" onclick="generateICS()">${t('generate')}</button>
+<button class="gz-btn gz-btn-secondary" onclick="downloadICS()">${t('download')}</button>
+<button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+<button class="gz-btn gz-btn-secondary" onclick="$('#output').textContent='';$('#evTitle').value='';$('#evLoc').value='';$('#evDesc').value=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({category:'text',titleKey:'toolTitle',descKey:'toolDesc',howToSteps:['step1','step2','step3','step4'],related:[
+  {icon:'📅',href:'/calc/date-calculator.html',name:'Date Calculator'},
+  {icon:'🌍',href:'/convert/timezone.html',name:'Time Zone Converter'},
+  {icon:'⏰',href:'/dev/timestamp.html',name:'Timestamp Converter'},
+  {icon:'🗺️',href:'/seo/sitemap-generator.html',name:'Sitemap Generator'},
+]});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
