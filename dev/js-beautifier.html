@@ -173,6 +173,7 @@ function beautifyJS(src, opts){
         if (src[j] === '\n' && q !== '`'){ j++; continue; }
         j++;
       }
+      if (buf && /[A-Za-z0-9_$]/.test(buf.slice(-1))) addSpace();
       buf += src.slice(i, j);
       i = j;
       lastNonSpace = 'str';
@@ -211,6 +212,7 @@ function beautifyJS(src, opts){
         if ((src[j] === '+' || src[j] === '-') && j > i && src[j-1] !== 'e' && src[j-1] !== 'E') break;
         j++;
       }
+      if (buf && /[A-Za-z_$]/.test(buf.slice(-1))) addSpace();
       buf += src.slice(i, j);
       i = j;
       lastNonSpace = 'num';
@@ -222,7 +224,9 @@ function beautifyJS(src, opts){
       let j = i;
       while (j < n && /[A-Za-z0-9_$]/.test(src[j])) j++;
       const word = src.slice(i, j);
-      if (buf && !/[\s(]$/.test(buf)) addSpace();
+      // Insert a separating space only when the previous char was a value token
+      // (identifier/number/closing bracket) — never after ., (, =, operators, etc.
+      if (buf && /[A-Za-z0-9_$)\]]$/.test(buf)) addSpace();
       buf += word;
       i = j;
       lastNonSpace = word;
@@ -372,13 +376,25 @@ function minifyJS(src){
   return out.trim();
 }
 
+const HIGHLIGHT_KW = new Set('function return if else for while do switch case break continue new var let const class extends super this typeof instanceof in of delete void throw try catch finally async await yield import export default from as static get set null undefined true false'.split(' '));
+
 function highlight(js){
-  return js.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/(\/\/[^\n]*)/g, '<span class="js-com">$1</span>')
-    .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="js-com">$1</span>')
-    .replace(/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)/g, '<span class="js-str">$1</span>')
-    .replace(/\b(\d[\d.eExXbBoOaAfF_+-]*)\b/g, '<span class="js-num">$1</span>')
-    .replace(/\b(function|return|if|else|for|while|do|switch|case|break|continue|new|var|let|const|class|extends|super|this|typeof|instanceof|in|of|delete|void|throw|try|catch|finally|async|await|yield|import|export|default|from|as|static|get|set|null|undefined|true|false)\b/g, '<span class="js-kw">$1</span>');
+  // Single-pass tokenizer — never re-scans inserted spans, so no double-replacement corruption.
+  let out = '';
+  const n = js.length;
+  let i = 0;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const span = (cls, s) => '<span class="'+cls+'">'+esc(s)+'</span>';
+  while (i < n){
+    const c = js[i], c2 = js[i+1];
+    if (c === '/' && c2 === '/'){ let e = js.indexOf('\n', i); if (e === -1) e = n; out += span('js-com', js.slice(i, e)); i = e; continue; }
+    if (c === '/' && c2 === '*'){ let e = js.indexOf('*/', i+2); if (e === -1) e = n; else e += 2; out += span('js-com', js.slice(i, e)); i = e; continue; }
+    if (c === '"' || c === "'" || c === '`'){ const q = c; let j = i+1; while (j < n){ if (js[j] === '\\'){ j += 2; continue; } if (js[j] === q){ j++; break; } j++; } out += span('js-str', js.slice(i, j)); i = j; continue; }
+    if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(c2))){ let j = i; while (j < n && /[0-9a-fA-FxXoObBeE._]/.test(js[j])) j++; out += span('js-num', js.slice(i, j)); i = j; continue; }
+    if (/[A-Za-z_$]/.test(c)){ let j = i; while (j < n && /[A-Za-z0-9_$]/.test(js[j])) j++; const w = js.slice(i, j); out += HIGHLIGHT_KW.has(w) ? span('js-kw', w) : esc(w); i = j; continue; }
+    out += esc(c); i++;
+  }
+  return out;
 }
 
 function getOpts(){
@@ -393,18 +409,17 @@ function doBeautify(){
   const inp = $('#input').value;
   if (!inp.trim()){ $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`; $('#output').innerHTML=''; return; }
   const out = beautifyJS(inp, getOpts());
-  $('#output').innerHTML = highlight(escapeForAttr(out));
+  $('#output').innerHTML = highlight(out);
   window._jsOut = out;
   $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')} · ${out.split('\n').length} lines</span>`;
 }
-function escapeForAttr(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function doMinify(){
   const inp = $('#input').value;
   if (!inp.trim()){ $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`; $('#output').innerHTML=''; return; }
   const out = minifyJS(inp);
   window._jsOut = out;
-  $('#output').innerHTML = highlight(escapeForAttr(out));
+  $('#output').innerHTML = highlight(out);
   $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('minified')} · ${out.length} chars</span>`;
 }
 
