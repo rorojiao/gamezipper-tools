@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Connection String Parser - MongoDB / PostgreSQL / MySQL / Redis URI | GameZipper Tools</title>
+  <meta name="description" content="Free online database connection string parser. Break down MongoDB, PostgreSQL, MySQL, Redis, MSSQL and JDBC URIs into scheme, user, password, host, port, database and query params. 100% browser-only, secrets never uploaded.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/connection-string-parser.html">
+  <meta property="og:title" content="Connection String Parser - MongoDB / PostgreSQL / MySQL / Redis URI | GameZipper Tools">
+  <meta property="og:description" content="Free online database connection string parser. Decode MongoDB, PostgreSQL, MySQL, Redis, MSSQL and JDBC URIs into components. Browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/connection-string-parser.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Connection String Parser - MongoDB / PostgreSQL / MySQL / Redis URI | GameZipper Tools">
+<meta name="twitter:description" content="Free online database connection string parser. Decode MongoDB, PostgreSQL, MySQL, Redis, MSSQL and JDBC URIs into components. Browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+#output{font-size:.85em;line-height:1.55;min-height:160px}
+.grid{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin-top:6px;font-family:monospace}
+.grid .k{color:var(--accent);font-weight:600}
+.grid .v{color:var(--text);word-break:break-all}
+.tag{display:inline-block;padding:3px 10px;border-radius:14px;font-size:.78rem;margin:2px 5px 2px 0;background:var(--glass2);border:1px solid var(--border)}
+.tag.ok{background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.4);color:#2ecc71}
+.tag.warn{background:rgba(233,69,96,.12);border-color:rgba(233,69,96,.4);color:var(--gz-accent)}
+.field label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:4px}
+.field input,.field textarea{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-family:monospace;font-size:.85em;box-sizing:border-box}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Connection String Parser","description":"Free online database connection string parser. Break down MongoDB, PostgreSQL, MySQL, Redis, MSSQL and JDBC URIs into scheme, user, password, host, port, database and query params. 100% browser-only, secrets never uploaded.","url":"https://tools.gamezipper.com/dev/connection-string-parser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What connection string formats are supported?","acceptedAnswer":{"@type":"Answer","text":"MongoDB (mongodb and mongodb+srv schemes), PostgreSQL (postgres and postgresql), MySQL, Redis (redis and rediss for TLS), Microsoft SQL Server (mssql and sqlserver), ClickHouse, AMQP, and generic JDBC URLs. The scheme is detected automatically."}},{"@type":"Question","name":"Are my database credentials uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. Parsing runs entirely in your browser using the URL and String APIs. Nothing in your connection string ever leaves your device, so it is safe to paste a real URI with username and password."}},{"@type":"Question","name":"How are special characters in passwords handled?","acceptedAnswer":{"@type":"Answer","text":"Special characters such as @, /, : and # in usernames or passwords must be percent-encoded (for example p@ss becomes p%40ss). This tool decodes percent-encoded values for display so you can verify them."}},{"@type":"Question","name":"What is the difference between mongodb and mongodb+srv?","acceptedAnswer":{"@type":"Answer","text":"The mongodb+srv scheme uses a DNS SRV record to discover the list of replica-set hosts, so the URI contains a single hostname and no port. The plain mongodb scheme lists every host and port explicitly."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/connection-string-parser.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/connection-string-parser.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/connection-string-parser.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="field"><label id="lbl-in"></label><textarea id="input" rows="5" spellcheck="false" placeholder="mongodb+srv://user:pass@cluster0.x.mongodb.net/mydb?retryWrites=true&w=majority"></textarea></div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Database Connection String Parser',
+    toolDesc: 'Decode MongoDB, PostgreSQL, MySQL, Redis, MSSQL, AMQP and JDBC connection URIs into scheme, username, password, hosts, port, database and query parameters. Pure browser — secrets never uploaded.',
+    parse: 'Parse',
+    lblIn: 'Connection string / URI',
+    lblOut: 'Parsed components',
+    empty: 'Paste a database connection string on the left.',
+    invalid: 'Could not parse — check the URI syntax.',
+    detected: 'Detected',
+    scheme: 'Scheme',
+    user: 'Username',
+    pass: 'Password',
+    host: 'Host',
+    port: 'Port',
+    hosts: 'Hosts',
+    db: 'Database / path',
+    params: 'Query params',
+    mask: 'Hide password',
+    jdbcDriver: 'JDBC driver',
+    none: '(none)',
+    masked: '•••••',
+    step1: 'Paste a connection URI (mongodb, postgres, mysql, redis, mssql, jdbc)',
+    step2: 'The scheme is auto-detected',
+    step3: 'Click Parse to split it into components',
+    step4: 'Toggle "Hide password" if you need to share the output',
+  },
+  zh: {
+    toolTitle: '数据库连接字符串解析器',
+    toolDesc: '解码 MongoDB、PostgreSQL、MySQL、Redis、MSSQL、AMQP 和 JDBC 连接 URI，拆分为协议、用户名、密码、主机、端口、数据库和查询参数。纯浏览器，密码绝不上传。',
+    parse: '解析',
+    lblIn: '连接字符串 / URI',
+    lblOut: '解析组件',
+    empty: '在左侧粘贴数据库连接字符串。',
+    invalid: '无法解析 — 请检查 URI 语法。',
+    detected: '已识别',
+    scheme: '协议',
+    user: '用户名',
+    pass: '密码',
+    host: '主机',
+    port: '端口',
+    hosts: '主机列表',
+    db: '数据库 / 路径',
+    params: '查询参数',
+    mask: '隐藏密码',
+    jdbcDriver: 'JDBC 驱动',
+    none: '（无）',
+    masked: '•••••',
+    step1: '粘贴连接 URI（mongodb、postgres、mysql、redis、mssql、jdbc）',
+    step2: '自动识别协议',
+    step3: '点击「解析」拆分组件',
+    step4: '如需分享结果可勾选「隐藏密码」',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let masked = false;
+
+const SCHEME_DB = {
+  'mongodb': 'MongoDB', 'mongodb+srv': 'MongoDB Atlas (SRV)',
+  'postgres': 'PostgreSQL', 'postgresql': 'PostgreSQL',
+  'mysql': 'MySQL', 'mariadb': 'MariaDB',
+  'redis': 'Redis', 'rediss': 'Redis (TLS)',
+  'mssql': 'SQL Server', 'sqlserver': 'SQL Server (ADO)',
+  'clickhouse': 'ClickHouse', 'cassandra': 'Cassandra',
+  'amqp': 'AMQP', 'amqps': 'AMQP (TLS)',
+  'jdbc': 'JDBC'
+};
+const DEFAULT_PORTS = {
+  'mongodb': 27017, 'mongodb+srv': null,
+  'postgres': 5432, 'postgresql': 5432,
+  'mysql': 3306, 'mariadb': 3306,
+  'redis': 6379, 'rediss': 6379,
+  'mssql': 1433, 'sqlserver': 1433,
+  'clickhouse': 8123, 'cassandra': 9042,
+  'amqp': 5672, 'amqps': 5671
+};
+
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function decode(s){ try { return decodeURIComponent(s); } catch(_) { return s; } }
+
+function parseJdbc(uri){
+  // jdbc:postgresql://host:port/db?params  OR  jdbc:oracle:thin:@host:port:sid
+  const m = uri.match(/^jdbc:([^:]+):(.*)$/);
+  if(!m) return null;
+  const driver = m[1];
+  const rest = m[2];
+  // strip optional "thin:@" etc.
+  const cleaned = rest.replace(/^thin:@?/, '').replace(/^@/, '');
+  // If it now looks like //host:port/db, parse with synthetic scheme
+  if(cleaned.startsWith('//')){
+    try{
+      const u = new URL('postgresql:' + cleaned);
+      return {
+        detected: 'JDBC (' + driver + ')',
+        jdbcDriver: driver,
+        scheme: 'jdbc:' + driver,
+        user: decode(u.username), pass: decode(u.password),
+        hosts: [{ host: u.hostname, port: u.port || DEFAULT_PORTS[driver] || '' }],
+        db: decode(u.pathname).replace(/^\//, ''),
+        params: Object.fromEntries(u.searchParams)
+      };
+    }catch(_){}
+  }
+  // oracle thin:@host:port:sid style
+  const om = cleaned.match(/^([^:/?#]+):(\d+)(?::([^/?#]*))?/);
+  if(om){
+    return {
+      detected: 'JDBC (' + driver + ')',
+      jdbcDriver: driver,
+      scheme: 'jdbc:' + driver,
+      user: '', pass: '',
+      hosts: [{ host: om[1], port: om[2] }],
+      db: om[3] || '',
+      params: {}
+    };
+  }
+  return { detected: 'JDBC (' + driver + ')', jdbcDriver: driver, scheme: 'jdbc:' + driver, user:'', pass:'', hosts:[], db:'', params:{} };
+}
+
+function parseConn(uri){
+  uri = uri.trim();
+  if(!uri) return null;
+  if(uri.startsWith('jdbc:')) return parseJdbc(uri);
+  let u;
+  try { u = new URL(uri); }
+  catch(_) { return { error: true }; }
+
+  const scheme = u.protocol.replace(/:$/, '');
+  const detected = SCHEME_DB[scheme] || scheme.toUpperCase();
+  const defaultPort = DEFAULT_PORTS[scheme];
+
+  // Multi-host: mongodb://h1:1,h2:2,h3:3/db?...  — URL only keeps h1; reconstruct from raw
+  let hosts = [];
+  const authIdx = uri.indexOf('://');
+  if(authIdx >= 0){
+    const afterScheme = uri.slice(authIdx + 3);
+    const slash = afterScheme.indexOf('/');
+    const q = afterScheme.indexOf('?');
+    let end = afterScheme.length;
+    if(slash >= 0) end = Math.min(end, slash);
+    if(q >= 0) end = Math.min(end, q);
+    const hostPart = afterScheme.slice(0, end);
+    // hostPart may contain user:pass@ before hosts
+    const at = hostPart.lastIndexOf('@');
+    const hostList = at >= 0 ? hostPart.slice(at + 1) : hostPart;
+    hosts = hostList.split(',').map(h => {
+      const [host, port] = h.split(':');
+      return { host: decode(host), port: port ? decode(port) : (defaultPort || '') };
+    });
+  }
+  if(hosts.length === 0) hosts = [{ host: u.hostname, port: u.port || defaultPort || '' }];
+
+  const params = {};
+  u.searchParams.forEach((v,k) => params[k] = v);
+
+  return {
+    detected,
+    scheme,
+    user: decode(u.username),
+    pass: decode(u.password),
+    hosts,
+    db: decode(u.pathname).replace(/^\//, ''),
+    params
+  };
+}
+
+function doParse(){
+  const raw = $('#input').value;
+  if(!raw.trim()){
+    $('#output').innerHTML = '<span style="color:var(--text3)">' + t('empty') + '</span>';
+    $('#status').innerHTML = '';
+    return;
+  }
+  const r = parseConn(raw);
+  if(!r){ $('#output').innerHTML = '<span style="color:var(--text3)">' + t('empty') + '</span>'; $('#status').innerHTML=''; return; }
+  if(r.error){
+    $('#output').innerHTML = '<span style="color:var(--gz-accent)">' + t('invalid') + '</span>';
+    $('#status').innerHTML = '<span style="color:var(--gz-accent)">✗ ' + t('invalid') + '</span>';
+    return;
+  }
+  const showPass = masked ? t('masked') : (r.pass === '' ? t('none') : escapeHtml(r.pass));
+  let hostRows = '';
+  if(r.hosts.length === 1){
+    hostRows = '<span class="k">' + t('host') + '</span><span class="v">' + escapeHtml(r.hosts[0].host || t('none')) + '</span>' +
+               '<span class="k">' + t('port') + '</span><span class="v">' + escapeHtml(r.hosts[0].port || t('none')) + '</span>';
+  } else {
+    hostRows = '<span class="k">' + t('hosts') + '</span><span class="v">' +
+      r.hosts.map(h => escapeHtml(h.host) + (h.port ? ':' + escapeHtml(h.port) : '')).join('<br>') + '</span>';
+  }
+  let paramRows = '';
+  if(Object.keys(r.params).length){
+    paramRows = '<span class="k">' + t('params') + '</span><span class="v">' +
+      Object.entries(r.params).map(([k,v]) => escapeHtml(k) + ' = ' + escapeHtml(v)).join('<br>') + '</span>';
+  }
+  let jdbcRow = r.jdbcDriver ? '<span class="k">' + t('jdbcDriver') + '</span><span class="v">' + escapeHtml(r.jdbcDriver) + '</span>' : '';
+
+  $('#output').innerHTML =
+    '<div style="margin-bottom:8px"><span class="tag ok">' + t('detected') + ': ' + escapeHtml(r.detected) + '</span>' +
+      (r.scheme === 'redis' || r.scheme === 'rediss' || r.scheme === 'amqps' || r.params['ssl'] === 'true' ? '<span class="tag info">TLS</span>' : '') +
+      (r.user ? '<span class="tag info">auth</span>' : '') + '</div>' +
+    '<div class="grid">' +
+      '<span class="k">' + t('scheme') + '</span><span class="v">' + escapeHtml(r.scheme) + '</span>' +
+    jdbcRow +
+    '<span class="k">' + t('user') + '</span><span class="v">' + (r.user ? escapeHtml(r.user) : t('none')) + '</span>' +
+    '<span class="k">' + t('pass') + '</span><span class="v">' + showPass + '</span>' +
+    hostRows +
+    '<span class="k">' + t('db') + '</span><span class="v">' + (r.db ? escapeHtml(r.db) : t('none')) + '</span>' +
+    paramRows +
+    '</div>';
+  $('#status').innerHTML = '<span style="color:var(--gz-success)">✓ ' + escapeHtml(r.detected) + ' · ' + r.hosts.length + ' host(s)</span>';
+}
+
+function loadExample(){
+  $('#input').value = 'mongodb+srv://demo_user:S3cr3t%40pass@cluster0.abcd1.mongodb.net/production?retryWrites=true&w=majority&appName=myapp';
+  doParse();
+}
+
+$('#toolbar').innerHTML =
+  '<button class="gz-btn" onclick="doParse()">' + t('parse') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="loadExample()">' + t('example') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="$(\'#input\').value=\'\';doParse()">' + t('clear') + '</button>' +
+  '<label style="font-size:.8rem;color:var(--text2);display:inline-flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onchange="masked=this.checked;doParse()" style="accent-color:var(--accent)"> ' + t('mask') + '</label>';
+
+$('#input').addEventListener('input', doParse);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Gen'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
