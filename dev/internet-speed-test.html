@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Internet Speed Test - Free Online Download & Latency Test | GameZipper Tools</title>
+  <meta name="description" content="Free internet speed test — measure download speed, latency (ping), jitter and connection quality right in your browser. No app install, no upload to our servers. Uses Cloudflare's public endpoint.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/internet-speed-test.html">
+  <meta property="og:title" content="Internet Speed Test - Free Online Download & Latency Test | GameZipper Tools">
+  <meta property="og:description" content="Free internet speed test — measure download speed, latency (ping), jitter and connection quality right in your browser. No app install, no upload to our servers.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/internet-speed-test.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Internet Speed Test - Free Online Download & Latency Test | GameZipper Tools">
+<meta name="twitter:description" content="Free internet speed test — measure download speed, latency (ping), jitter and connection quality right in your browser. No app install.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.gz-speed-gauge{position:relative;width:260px;height:130px;margin:10px auto 0;overflow:hidden}
+.gz-speed-gauge svg{width:100%;height:100%}
+.gz-speed-readout{text-align:center;margin-top:-30px}
+.gz-speed-readout .val{font-size:2.6rem;font-weight:900;color:var(--gz-accent,#4ecdc4);line-height:1}
+.gz-speed-readout .unit{font-size:.95rem;opacity:.7;margin-left:4px}
+.gz-speed-readout .label{font-size:.85rem;opacity:.6;margin-top:2px}
+.gz-speed-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:18px 0}
+.gz-speed-tile{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.gz-speed-tile .num{font-size:1.5rem;font-weight:800;color:var(--gz-accent2,#ff6b6b)}
+.gz-speed-tile .lbl{font-size:.78rem;opacity:.65;margin-top:2px}
+.gz-log{font-family:monospace;font-size:.78rem;background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:160px;overflow:auto;margin-top:8px;opacity:.85;line-height:1.6}
+.gz-log div{white-space:pre-wrap;word-break:break-word}
+#gaugeArc{transition:stroke-dashoffset .25s ease-out}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Internet Speed Test","description":"Free internet speed test — measure download speed, latency (ping), jitter and connection quality right in your browser. No app install, no upload to our servers.","url":"https://tools.gamezipper.com/dev/internet-speed-test.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does this internet speed test work?", "acceptedAnswer": {"@type": "Answer", "text": "It downloads several chunks of data from Cloudflare's public speed-test endpoint (speed.cloudflare.com) and measures how many megabits per second your connection sustained. It also fires small requests to measure latency and jitter. Everything runs in your browser."}}, {"@type": "Question", "name": "Why does my result differ from other speed tests?", "acceptedAnswer": {"@type": "Answer", "text": "Speed depends on the server location, time of day, device, Wi-Fi vs. ethernet, and how busy your network is. Different test providers use different servers, so numbers naturally vary by 10–20%."}}, {"@type": "Question", "name": "Does it measure upload speed?", "acceptedAnswer": {"@type": "Answer", "text": "This browser-only test focuses on download throughput, latency and jitter. True upload tests require a dedicated server endpoint, so they are out of scope for a private, no-upload tool."}}, {"@type": "Question", "name": "Is my data sent to GameZipper?", "acceptedAnswer": {"@type": "Answer", "text": "No. Test traffic goes to Cloudflare's public endpoint and back to your browser. GameZipper never receives your test data, IP address or results."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/internet-speed-test.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/internet-speed-test.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/internet-speed-test.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-speed-gauge">
+      <svg viewBox="0 0 260 140" aria-hidden="true">
+        <path d="M20,130 A110,110 0 0,1 240,130" fill="none" stroke="var(--border,#333)" stroke-width="14" stroke-linecap="round"/>
+        <path id="gaugeArc" d="M20,130 A110,110 0 0,1 240,130" fill="none" stroke="var(--gz-accent,#4ecdc4)" stroke-width="14" stroke-linecap="round" stroke-dasharray="345.6" stroke-dashoffset="345.6"/>
+      </svg>
+      <div class="gz-speed-readout">
+        <span class="val" id="speedVal">0</span><span class="unit">Mbps</span>
+        <div class="label" id="speedLabel"></div>
+      </div>
+    </div>
+    <div class="gz-speed-grid">
+      <div class="gz-speed-tile"><div class="num" id="pingVal">—</div><div class="lbl" id="pingLbl"></div></div>
+      <div class="gz-speed-tile"><div class="num" id="jitterVal">—</div><div class="lbl" id="jitterLbl"></div></div>
+      <div class="gz-speed-tile"><div class="num" id="effVal">—</div><div class="lbl" id="effLbl"></div></div>
+      <div class="gz-speed-tile"><div class="num" id="ispVal">—</div><div class="lbl" id="ispLbl"></div></div>
+    </div>
+    <div class="gz-log" id="log"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Internet Speed Test',
+    toolDesc: 'Measure your download speed, latency (ping), jitter and effective connection type right in the browser. No app, no upload to our servers.',
+    start: 'Start Test',
+    stop: 'Stop',
+    running: 'Testing…',
+    speedLabel: 'Download speed',
+    pingLbl: 'Latency (ping)',
+    jitterLbl: 'Jitter',
+    effLbl: 'Effective type',
+    ispLbl: 'Connection',
+    step1: 'Close streaming apps and big downloads for the most accurate result',
+    step2: 'Click Start Test — downloads run for several seconds',
+    step3: 'Watch the live gauge and per-tile stats update in real time',
+    step4: 'Compare ping, jitter and effective type to gauge quality',
+    logStart: '→ Starting speed test…',
+    logPing: '→ Measuring latency…',
+    logPingDone: (n)=>`→ Latency: ${n} ms`,
+    logDown: '→ Measuring download speed…',
+    logDownChunk: (n)=>`→ Chunk ${n} done`,
+    logDone: (n)=>`✓ Done — ${n} Mbps`,
+    logAbort: '⏹ Test stopped',
+    logErr: (e)=>`✗ Error: ${e}`,
+    na: 'n/a',
+    finished: 'Test complete',
+  },
+  zh: {
+    toolTitle: '网速测试 / Internet Speed Test',
+    toolDesc: '在浏览器中测量下载速度、延迟（Ping）、抖动和有效连接类型。无需安装应用，不上传到我们的服务器。',
+    start: '开始测试',
+    stop: '停止',
+    running: '测试中…',
+    speedLabel: '下载速度',
+    pingLbl: '延迟（Ping）',
+    jitterLbl: '抖动',
+    effLbl: '有效类型',
+    ispLbl: '连接',
+    step1: '关闭视频流和大下载以获得最准确的结果',
+    step2: '点击「开始测试」— 下载会持续数秒',
+    step3: '实时观察仪表盘和各项数据更新',
+    step4: '对比 Ping、抖动和有效类型评估网络质量',
+    logStart: '→ 开始测速…',
+    logPing: '→ 测量延迟…',
+    logPingDone: (n)=>`→ 延迟：${n} 毫秒`,
+    logDown: '→ 测量下载速度…',
+    logDownChunk: (n)=>`→ 第 ${n} 块完成`,
+    logDone: (n)=>`✓ 完成 — ${n} Mbps`,
+    logAbort: '⏹ 测试已停止',
+    logErr: (e)=>`✗ 错误：${e}`,
+    na: '—',
+    finished: '测试完成',
+  }
+});
+
+const { $, t } = GZ;
+const ENDPOINT = 'https://speed.cloudflare.com/__down?bytes=';
+const CHUNK_BYTES = 10 * 1024 * 1024; // 10 MB per chunk
+const CHUNK_COUNT = 8;                 // up to 80 MB total
+const PING_COUNT = 6;
+let running = false;
+let abortCtrl = null;
+
+function setGauge(mbps){
+  const v = Math.max(0, Math.min(mbps, 1000));
+  // 0 Mbps = full offset (345.6), 1000 Mbps = zero offset
+  const frac = Math.min(v/1000, 1);
+  const off = 345.6 * (1 - frac);
+  document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', off.toFixed(1));
+  $('#speedVal').textContent = v < 10 ? v.toFixed(1) : Math.round(v);
+}
+
+function logLine(s){
+  const div = document.createElement('div');
+  div.textContent = s;
+  $('#log').appendChild(div);
+  $('#log').scrollTop = $('#log').scrollHeight;
+}
+function clearLog(){ $('#log').innerHTML = ''; }
+
+async function measurePing(){
+  const samples = [];
+  for (let i = 0; i < PING_COUNT && running; i++){
+    const a = performance.now();
+    try {
+      await fetch(ENDPOINT + '0&cb=' + Math.random(), {cache:'no-store', signal: abortCtrl.signal});
+      samples.push(performance.now() - a);
+    } catch(e){ if(e.name==='AbortError') return null; }
+  }
+  if(!samples.length) return null;
+  samples.sort((a,b)=>a-b);
+  const median = samples[Math.floor(samples.length/2)];
+  // jitter = mean absolute difference between consecutive samples
+  let jd=0,c=0;
+  for(let i=1;i<samples.length;i++){ jd+=Math.abs(samples[i]-samples[i-1]); c++; }
+  const jitter = c? jd/c : 0;
+  return {median, jitter};
+}
+
+async function measureDownload(){
+  let totalBytes = 0;
+  let startTime = performance.now();
+  let lastUpdate = startTime;
+  for(let i=0; i<CHUNK_COUNT && running; i++){
+    try{
+      const resp = await fetch(ENDPOINT + CHUNK_BYTES + '&cb=' + Math.random(), {cache:'no-store', signal: abortCtrl.signal});
+      const reader = resp.body.getReader();
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        totalBytes += value.length;
+        const now = performance.now();
+        if(now - lastUpdate > 120){
+          const mbps = (totalBytes*8) / ((now-startTime)/1000) / 1e6;
+          setGauge(mbps);
+          lastUpdate = now;
+        }
+      }
+      logLine(t('logDownChunk')(i+1));
+    }catch(e){ if(e.name==='AbortError') break; else { logLine(t('logErr')(e.message)); break; } }
+  }
+  const elapsed = (performance.now()-startTime)/1000;
+  return (totalBytes*8) / elapsed / 1e6; // Mbps
+}
+
+function fillConnectionInfo(){
+  const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if(c){
+    $('#effVal').textContent = (c.effectiveType || t('na')).toUpperCase();
+    $('#ispVal').textContent = c.downlink ? (c.downlink + ' Mbps') : t('na');
+  } else {
+    $('#effVal').textContent = t('na');
+    $('#ispVal').textContent = t('na');
+  }
+}
+
+async function runTest(){
+  if(running){ stopTest(); return; }
+  running = true; abortCtrl = new AbortController();
+  $('#toolbar').querySelector('button').textContent = t('stop');
+  clearLog(); setGauge(0);
+  $('#pingVal').textContent='—'; $('#jitterVal').textContent='—';
+  logLine(t('logStart'));
+
+  // 1. latency
+  logLine(t('logPing'));
+  const p = await measurePing();
+  if(!running){ finishAborted(); return; }
+  if(p){
+    $('#pingVal').textContent = Math.round(p.median);
+    $('#jitterVal').textContent = Math.round(p.jitter);
+    logLine(t('logPingDone')(Math.round(p.median)));
+  }
+
+  // 2. download
+  logLine(t('logDown'));
+  const mbps = await measureDownload();
+  if(!running){ finishAborted(); return; }
+  setGauge(mbps);
+  logLine(t('logDone')(mbps<10?mbps.toFixed(1):Math.round(mbps)));
+  $('#status').innerHTML = `<span style="color:var(--gz-success,#00d672)">${t('finished')}: ${mbps<10?mbps.toFixed(1):Math.round(mbps)} Mbps</span>`;
+  running = false;
+  $('#toolbar').querySelector('button').textContent = t('start');
+}
+
+function stopTest(){
+  if(abortCtrl) abortCtrl.abort();
+  running = false;
+}
+function finishAborted(){
+  logLine(t('logAbort'));
+  $('#toolbar').querySelector('button').textContent = t('start');
+}
+
+fillConnectionInfo();
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="runTest()">${t('start')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP Address'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+    {icon:'⚡', href:'/dev/web-vitals.html', name:'Web Vitals'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
