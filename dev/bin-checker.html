@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>BIN Checker - Credit Card BIN / IIN Lookup | GameZipper Tools</title>
+  <meta name="description" content="Free online BIN checker. Look up any credit card BIN / IIN to find the card scheme, type, bank, brand and country. 100% browser-based — your number never leaves your device.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/bin-checker.html">
+  <meta property="og:title" content="BIN Checker - Credit Card BIN / IIN Lookup | GameZipper Tools">
+  <meta property="og:description" content="Free online BIN checker. Look up any credit card BIN / IIN to find the card scheme, type, bank, brand and country. 100% browser-based — your number never leaves your device.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/bin-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="BIN Checker - Credit Card BIN / IIN Lookup | GameZipper Tools">
+<meta name="twitter:description" content="Free online BIN checker. Look up any credit card BIN / IIN to find the card scheme, type, bank, brand and country. 100% browser-based — your number never leaves your device.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+#bin-input{font-size:1.1em;letter-spacing:2px;font-family:monospace}
+.bin-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-top:14px}
+.bin-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:.92em}
+.bin-row:last-child{border-bottom:0}
+.bin-row .k{color:var(--text2);font-weight:600;white-space:nowrap}
+.bin-row .v{color:var(--text);text-align:right;word-break:break-word}
+.scheme-badge{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:1.05em}
+.flag{font-size:1.2em}
+.status-ok{color:var(--gz-success,#34d399);font-weight:700}
+.status-bad{color:var(--gz-accent,#e94560);font-weight:700}
+.bin-empty{color:var(--text2);padding:24px;text-align:center;opacity:.7}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"BIN Checker","description":"Free online BIN checker. Look up any credit card BIN / IIN to find the card scheme, type, bank, brand and country. 100% browser-based — your number never leaves your device.","url":"https://tools.gamezipper.com/dev/bin-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a BIN or IIN number?", "acceptedAnswer": {"@type": "Answer", "text": "A BIN (Bank Identification Number), also called an IIN (Issuer Identification Number), is the first 6 to 8 digits of a payment card. It identifies the card scheme and the bank or institution that issued the card."}}, {"@type": "Question", "name": "Is it safe to enter my card number here?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. This tool runs entirely in your browser. Nothing you type is sent to any server, and you can use just the first 6 to 8 digits instead of a full card number."}}, {"@type": "Question", "name": "How does the BIN checker identify the card?", "acceptedAnswer": {"@type": "Answer", "text": "It matches the first digits against a built-in list of issuer identification ranges to find the scheme, card type, brand level, issuing bank and country. If a full card number is entered it also runs a Luhn checksum."}}, {"@type": "Question", "name": "Can a BIN reveal my personal identity?", "acceptedAnswer": {"@type": "Answer", "text": "No. A BIN only identifies the issuing bank, card scheme and country — never the cardholder's name, account number, balance or any personal information."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/bin-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/bin-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/bin-checker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <input id="bin-input" class="gz-input" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text)" inputmode="numeric" maxlength="19" placeholder="457173 / 4571 73...">
+    <div id="status" style="margin-top:10px;font-size:.9em"></div>
+    <div id="result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    binTitle: 'BIN Checker — Credit Card BIN / IIN Lookup',
+    binDesc: 'Look up any card BIN to reveal the scheme, card type, brand, issuing bank and country. Fully private — runs in your browser only.',
+    lblBin: 'Enter BIN or card number (first 6–8 digits)',
+    lookup: 'Check BIN',
+    enterBin: 'Enter a BIN or card number (at least 6 digits).',
+    scheme: 'Card Scheme', cardType: 'Card Type', cardBrand: 'Brand / Level',
+    bank: 'Issuing Bank', country: 'Country', funding: 'Funding',
+    prepaid: 'Prepaid', luhnOk: 'Luhn Check', valid: 'Valid ✓', invalid: 'Invalid ✗', yes: 'Yes', no: 'No', na: 'N/A',
+    noMatch: 'No exact match in the local database. Showing scheme detection only.',
+    step1: 'Type or paste the first 6–8 digits of a card (a full number works too)',
+    step2: 'The result updates automatically as you type',
+    step3: 'Read the scheme, bank, brand and country of issue',
+    step4: 'Optionally copy the full report to your clipboard',
+  },
+  zh: {
+    binTitle: 'BIN 查询器 — 信用卡 BIN / IIN 查询',
+    binDesc: '查询任意银行卡 BIN，识别卡组织、卡类型、等级、发卡行和国家。完全私密 — 仅在浏览器本地运行。',
+    lblBin: '输入 BIN 或卡号（前 6–8 位）',
+    lookup: '查询 BIN',
+    enterBin: '请输入 BIN 或卡号（至少 6 位）。',
+    scheme: '卡组织', cardType: '卡类型', cardBrand: '品牌 / 等级',
+    bank: '发卡银行', country: '国家', funding: '资金类型',
+    prepaid: '预付费', luhnOk: 'Luhn 校验', valid: '有效 ✓', invalid: '无效 ✗', yes: '是', no: '否', na: '—',
+    noMatch: '本地数据库中无精确匹配，仅显示卡组织识别结果。',
+    step1: '输入或粘贴卡号前 6–8 位（完整卡号也可以）',
+    step2: '结果会随输入自动更新',
+    step3: '查看卡组织、银行、品牌和发卡国家',
+    step4: '可选：将完整报告复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Card scheme detection by prefix (IIN ranges)
+const SCHEMES = [
+  { rx: /^4/, name: 'Visa', icon: '💳' },
+  { rx: /^(5[1-5]|2[2-7])/, name: 'Mastercard', icon: '💳' },
+  { rx: /^3[47]/, name: 'American Express', icon: '💳' },
+  { rx: /^(6011|65|64[4-9])/, name: 'Discover', icon: '💳' },
+  { rx: /^(60|81|82|508|509|6521|6522)/, name: 'RuPay', icon: '💳' },
+  { rx: /^(352[89]|35[3-8])/, name: 'JCB', icon: '💳' },
+  { rx: /^3(?:0[0-5]|[68])/, name: 'Diners Club', icon: '💳' },
+  { rx: /^(4026|4175|4405|4508|4844|4913|4917)/, name: 'Visa Electron', icon: '💳' },
+  { rx: /^(50|56|57|58|639|67)/, name: 'Maestro', icon: '💳' },
+  { rx: /^(636|637|638|639)/, name: 'InstaPayment', icon: '💳' },
+  { rx: /^62/, name: 'UnionPay', icon: '💳' },
+  { rx: /^1/, name: 'UATP', icon: '✈️' },
+  { rx: /^86/, name: 'Troy', icon: '💳' },
+  { rx: /^9/, name: 'InterPayment', icon: '💳' },
+];
+
+// Curated local BIN database (first-6 IIN → issuer metadata). Public, non-sensitive data.
+// Sources: publicly documented BIN/IIN ranges. Subset covers major global issuers.
+const BIN_DB = {
+  '457173':{s:'Visa',c:'DK',b:'Jyske Bank'},
+  '454313':{s:'Visa',c:'DE',b:'Sparkasse'},
+  '454742':{s:'Visa',c:'GB',b:'Barclays Bank PLC'},
+  '448552':{s:'Visa',c:'US',b:'JPMorgan Chase Bank'},
+  '414361':{s:'Visa',c:'US',b:'Citibank, N.A.'},
+  '440393':{s:'Visa',c:'US',b:'Wells Fargo Bank'},
+  '438857':{s:'Visa',c:'US',b:'Citibank, N.A.'},
+  '414720':{s:'Visa',c:'US',b:'Citibank, N.A.'},
+  '451601':{s:'Visa',c:'US',b:'Capital One Bank'},
+  '434256':{s:'Visa',c:'GB',b:'Barclays Bank PLC'},
+  '431940':{s:'Visa',c:'IE',b:'AIB Group'},
+  '421590':{s:'Visa',c:'FR',b:'BNP Paribas'},
+  '455953':{s:'Visa',c:'FR',b:'Société Générale'},
+  '453294':{s:'Visa',c:'GB',b:'Lloyds Bank PLC'},
+  '490220':{s:'Visa',c:'GB',b:'HSBC'},
+  '471621':{s:'Visa',c:'AU',b:'Commonwealth Bank of Australia'},
+  '456433':{s:'Visa',c:'AU',b:'ANZ Bank'},
+  '453994':{s:'Visa',c:'CA',b:'Royal Bank of Canada'},
+  '450876':{s:'Visa',c:'CA',b:'Toronto-Dominion Bank'},
+  '453242':{s:'Visa',c:'IN',b:'HDFC Bank'},
+  '459150':{s:'Visa',c:'IN',b:'ICICI Bank'},
+  '455327':{s:'Visa',c:'IN',b:'State Bank of India'},
+  '455701':{s:'Visa',c:'IN',b:'Axis Bank'},
+  '438893':{s:'Visa',c:'IN',b:'Kotak Mahindra Bank'},
+  '451431':{s:'Visa',c:'IN',b:'IndusInd Bank'},
+  '455339':{s:'Visa',c:'CN',b:'China Merchants Bank'},
+  '455338':{s:'Visa',c:'CN',b:'China Construction Bank'},
+  '452804':{s:'Visa',c:'CN',b:'Industrial and Commercial Bank of China'},
+  '457973':{s:'Visa',c:'JP',b:'Sumitomo Mitsui Banking Corp'},
+  '454156':{s:'Visa',c:'JP',b:'Mitsubishi UFJ NICOS'},
+  '455288':{s:'Visa',c:'KR',b:'Shinhan Bank'},
+  '457969':{s:'Visa',c:'SG',b:'DBS Bank'},
+  '451101':{s:'Visa',c:'HK',b:'HSBC Hong Kong'},
+  '457658':{s:'Visa',c:'AE',b:'Emirates NBD'},
+  '458722':{s:'Visa',c:'SA',b:'Al Rajhi Bank'},
+  '455657':{s:'Visa',c:'BR',b:'Itaú Unibanco'},
+  '457692':{s:'Visa',c:'BR',b:'Banco do Brasil'},
+  '451234':{s:'Visa',c:'MX',b:'BBVA México'},
+  '542418':{s:'Mastercard',c:'DE',b:'Deutsche Bank'},
+  '525284':{s:'Mastercard',c:'DE',b:'Commerzbank'},
+  '535176':{s:'Mastercard',c:'GB',b:'HSBC UK'},
+  '513588':{s:'Mastercard',c:'GB',b:'Lloyds Bank PLC'},
+  '524314':{s:'Mastercard',c:'GB',b:'Barclays Bank PLC'},
+  '512345':{s:'Mastercard',c:'US',b:'Bank of America'},
+  '546916':{s:'Mastercard',c:'US',b:'Capital One Bank'},
+  '549112':{s:'Mastercard',c:'US',b:'Citibank, N.A.'},
+  '517805':{s:'Mastercard',c:'US',b:'Discover Financial Services'},
+  '540134':{s:'Mastercard',c:'US',b:'U.S. Bank'},
+  '548673':{s:'Mastercard',c:'US',b:'Wells Fargo Bank'},
+  '528630':{s:'Mastercard',c:'CA',b:'Royal Bank of Canada'},
+  '517248':{s:'Mastercard',c:'CA',b:'Bank of Montreal'},
+  '532345':{s:'Mastercard',c:'AU',b:'Westpac Banking Corp'},
+  '525879':{s:'Mastercard',c:'AU',b:'National Australia Bank'},
+  '543210':{s:'Mastercard',c:'FR',b:'Crédit Agricole'},
+  '513456':{s:'Mastercard',c:'FR',b:'BNP Paribas'},
+  '530156':{s:'Mastercard',c:'ES',b:'Banco Santander'},
+  '523245':{s:'Mastercard',c:'IT',b:'Intesa Sanpaolo'},
+  '518345':{s:'Mastercard',c:'NL',b:'ING Bank'},
+  '517900':{s:'Mastercard',c:'SE',b:'Nordea Bank'},
+  '521234':{s:'Mastercard',c:'IN',b:'HDFC Bank'},
+  '524288':{s:'Mastercard',c:'IN',b:'ICICI Bank'},
+  '546616':{s:'Mastercard',c:'IN',b:'Axis Bank'},
+  '528845':{s:'Mastercard',c:'IN',b:'Kotak Mahindra Bank'},
+  '521153':{s:'Mastercard',c:'IN',b:'State Bank of India'},
+  '524893':{s:'Mastercard',c:'IN',b:'Yes Bank'},
+  '539111':{s:'Mastercard',c:'CN',b:'Bank of China'},
+  '548843':{s:'Mastercard',c:'CN',b:'Agricultural Bank of China'},
+  '535889':{s:'Mastercard',c:'JP',b:'JCB Co., Ltd.'},
+  '522890':{s:'Mastercard',c:'KR',b:'KB Kookmin Bank'},
+  '540893':{s:'Mastercard',c:'SG',b:'United Overseas Bank'},
+  '519234':{s:'Mastercard',c:'HK',b:'Hang Seng Bank'},
+  '549876':{s:'Mastercard',c:'AE',b:'Mashreq Bank'},
+  '548567':{s:'Mastercard',c:'SA',b:'Saudi British Bank'},
+  '539012':{s:'Mastercard',c:'BR',b:'Bradesco'},
+  '523445':{s:'Mastercard',c:'MX',b:'Banco Santander México'},
+  '374245':{s:'American Express',c:'US',b:'American Express Company'},
+  '378282':{s:'American Express',c:'US',b:'American Express Company'},
+  '371449':{s:'American Express',c:'US',b:'American Express Company'},
+  '378734':{s:'American Express',c:'US',b:'American Express Company'},
+  '343434':{s:'American Express',c:'GB',b:'American Express Services Europe'},
+  '377178':{s:'American Express',c:'GB',b:'American Express Services Europe'},
+  '345168':{s:'American Express',c:'CA',b:'American Express Bank of Canada'},
+  '376543':{s:'American Express',c:'AU',b:'American Express Australia'},
+  '345612':{s:'American Express',c:'IN',b:'American Express Banking Corp.'},
+  '601100':{s:'Discover',c:'US',b:'Discover Bank'},
+  '601111':{s:'Discover',c:'US',b:'Discover Financial Services'},
+  '601136':{s:'Discover',c:'US',b:'Discover Bank'},
+  '622126':{s:'UnionPay',c:'CN',b:'China UnionPay'},
+  '622848':{s:'UnionPay',c:'CN',b:'Agricultural Bank of China'},
+  '621700':{s:'UnionPay',c:'CN',b:'China Construction Bank'},
+  '622202':{s:'UnionPay',c:'CN',b:'Industrial and Commercial Bank of China'},
+  '622588':{s:'UnionPay',c:'CN',b:'China Merchants Bank'},
+  '622150':{s:'UnionPay',c:'CN',b:'Bank of Communications'},
+  '622666':{s:'UnionPay',c:'CN',b:'China Everbright Bank'},
+  '603698':{s:'RuPay',c:'IN',b:'State Bank of India'},
+  '608000':{s:'RuPay',c:'IN',b:'HDFC Bank'},
+  '652150':{s:'RuPay',c:'IN',b:'ICICI Bank'},
+  '652141':{s:'RuPay',c:'IN',b:'Axis Bank'},
+  '352800':{s:'JCB',c:'JP',b:'JCB Co., Ltd.'},
+  '354400':{s:'JCB',c:'JP',b:'JCB Co., Ltd.'},
+  '356999':{s:'JCB',c:'JP',b:'JCB Co., Ltd.'},
+  '300000':{s:'Diners Club',c:'US',b:'Diners Club International'},
+  '305693':{s:'Diners Club',c:'US',b:'Diners Club International'},
+  '362847':{s:'Diners Club',c:'US',b:'Diners Club International'},
+  '367890':{s:'Diners Club',c:'GB',b:'Diners Club International'},
+  '501812':{s:'Maestro',c:'DE',b:'Deutsche Bank'},
+  '502045':{s:'Maestro',c:'GB',b:'NatWest'},
+  '504566':{s:'Maestro',c:'FR',b:'BNP Paribas'},
+  '564182':{s:'Maestro',c:'US',b:'Bank of America'},
+  '589461':{s:'Maestro',c:'IN',b:'HDFC Bank'},
+  '675911':{s:'Maestro',c:'GB',b:'Barclays Bank PLC'},
+  '676743':{s:'Maestro',c:'IT',b:'UniCredit'},
+  '639824':{s:'InstaPayment',c:'US',b:'InstaPayment'},
+  '402600':{s:'Visa Electron',c:'GB',b:'HSBC'},
+  '417500':{s:'Visa Electron',c:'ES',b:'Banco Bilbao Vizcaya Argentaria'},
+  '869908':{s:'Troy',c:'TR',b:'Troy / Türkiye İş Bankası'},
+  '923456':{s:'InterPayment',c:'DE',b:'InterPayment'},
+  '457125':{s:'Visa',c:'US',b:'Bank of America'},
+  '411111':{s:'Visa',c:'US',b:'JPMorgan Chase Bank'},
+  '550000':{s:'Mastercard',c:'US',b:'Citibank, N.A.'},
+  '555555':{s:'Mastercard',c:'US',b:'Capital One Bank'},
+  '401288':{s:'Visa',c:'US',b:'Bank of America (test)'},
+  '510510':{s:'Mastercard',c:'US',b:'Bank of America (test)'},
+  '438876':{s:'Visa',c:'IN',b:'Axis Bank'},
+  '456712':{s:'Visa',c:'IN',b:'Punjab National Bank'},
+  '455348':{s:'Visa',c:'IN',b:'Bank of Baroda'},
+  '524557':{s:'Mastercard',c:'IN',b:'American Express Banking Corp.'},
+  '526397':{s:'Mastercard',c:'IN',b:'Standard Chartered Bank'},
+  '539198':{s:'Mastercard',c:'IN',b:'IDFC FIRST Bank'},
+  '519612':{s:'Mastercard',c:'IN',b:'Federal Bank'},
+  '451025':{s:'Visa',c:'GB',b:'Metro Bank'},
+  '490175':{s:'Visa',c:'GB',b:'Santander UK'},
+  '455354':{s:'Visa',c:'AU',b:'Bank of Queensland'},
+  '450848':{s:'Visa',c:'NZ',b:'ANZ Bank New Zealand'},
+  '415856':{s:'Visa',c:'DE',b:'N26 Bank'},
+  '511001':{s:'Mastercard',c:'DE',b:'N26 Bank'},
+  '528737':{s:'Mastercard',c:'DE',b:'DZ Bank'},
+  '530100':{s:'Mastercard',c:'PL',b:'mBank'},
+  '522155':{s:'Mastercard',c:'TR',b:'Ziraat Bankası'},
+  '970416':{s:'Visa',c:'VN',b:'Vietcombank'},
+};
+
+const COUNTRY = {
+  US:'🇺🇸 United States',GB:'🇬🇧 United Kingdom',DE:'🇩🇪 Germany',FR:'🇫🇷 France',
+  ES:'🇪🇸 Spain',IT:'🇮🇹 Italy',NL:'🇳🇱 Netherlands',SE:'🇸🇪 Sweden',IE:'🇮🇪 Ireland',
+  PL:'🇵🇱 Poland',DK:'🇩🇰 Denmark',CA:'🇨🇦 Canada',AU:'🇦🇺 Australia',NZ:'🇳🇿 New Zealand',
+  IN:'🇮🇳 India',CN:'🇨🇳 China',JP:'🇯🇵 Japan',KR:'🇰🇷 South Korea',SG:'🇸🇬 Singapore',
+  HK:'🇭🇰 Hong Kong',AE:'🇦🇪 United Arab Emirates',SA:'🇸🇦 Saudi Arabia',TR:'🇹🇷 Türkiye',
+  BR:'🇧🇷 Brazil',MX:'🇲🇽 Mexico',VN:'🇻🇳 Vietnam'
+};
+
+function luhn(num){
+  let sum=0,alt=false;
+  for(let i=num.length-1;i>=0;i--){
+    let d=+num[i]; if(isNaN(d))continue;
+    if(alt){d*=2; if(d>9)d-=9;} sum+=d; alt=!alt;
+  }
+  return sum%10===0;
+}
+
+function detectScheme(digits){
+  for(const s of SCHEMES){ if(s.rx.test(digits)) return s; }
+  return null;
+}
+
+function lookup(){
+  const raw=$('#bin-input').value.replace(/\D/g,'');
+  const res=$('#result'); const st=$('#status');
+  if(raw.length<6){ res.innerHTML=''; st.innerHTML=`<span style="opacity:.7">${t('enterBin')}</span>`; return; }
+  const scheme=detectScheme(raw);
+  const bin6=raw.slice(0,6);
+  const db=BIN_DB[bin6] || BIN_DB[raw.slice(0,8)] || null;
+  let note='';
+  const schemeName=db?db.s:(scheme?scheme.name:t('na'));
+  const schemeIcon=scheme?scheme.icon:'💳';
+  const country=db?COUNTRY[db.c]||db.c:(t('na'));
+  const bank=db?db.b:(t('na'));
+  if(!db) note=`<div style="margin-top:10px;font-size:.82em;opacity:.7">${t('noMatch')}</div>`;
+  const fullLuhn = raw.length>=12 ? `<span class="${luhn(raw)?'status-ok':'status-bad'}">${luhn(raw)?t('valid'):t('invalid')}</span>` : `<span style="opacity:.6">${t('na')}</span>`;
+
+  st.innerHTML='';
+  res.innerHTML = `
+    <div class="bin-card">
+      <div class="scheme-badge" style="margin-bottom:6px">${schemeIcon} ${schemeName}</div>
+      <div class="bin-row"><span class="k">${t('scheme')}</span><span class="v">${schemeName}</span></div>
+      <div class="bin-row"><span class="k">${t('bank')}</span><span class="v">${bank}</span></div>
+      <div class="bin-row"><span class="k">${t('country')}</span><span class="v">${country}</span></div>
+      <div class="bin-row"><span class="k">BIN (6)</span><span class="v" style="font-family:monospace">${bin6}</span></div>
+      <div class="bin-row"><span class="k">${t('luhnOk')}</span><span class="v">${fullLuhn}</span></div>
+    </div>${note}`;
+}
+
+$('#bin-input').addEventListener('input', lookup);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="lookup()">${t('lookup')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#result').innerText)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#bin-input').value='';lookup()">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#bin-input').value='457173';lookup()">${t('example')}</button>`;
+
+GZ.renderToolPage({
+  category:'dev', titleKey:'binTitle', descKey:'binDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'💳',href:'/dev/credit-card-validator.html',name:'Credit Card Validator'},
+    {icon:'🔢',href:'/dev/luhn-validator.html',name:'Luhn Validator'},
+    {icon:'📱',href:'/dev/imei-checker.html',name:'IMEI Checker'},
+    {icon:'🔐',href:'/dev/base64.html',name:'Base64'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Meeting Planner - Time Zone Meeting Finder | GameZipper Tools</title>
+  <meta name="description" content="Free meeting planner across time zones. Pick a date, add multiple cities and instantly see a color-coded hour grid that highlights the best overlapping working hours for your team. Runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/meeting-planner.html">
+  <meta property="og:title" content="Meeting Planner - Time Zone Meeting Finder | GameZipper Tools">
+  <meta property="og:description" content="Free meeting planner across time zones. Pick a date, add multiple cities and instantly see a color-coded hour grid that highlights the best overlapping working hours for your team. Runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/meeting-planner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Meeting Planner - Time Zone Meeting Finder | GameZipper Tools">
+<meta name="twitter:description" content="Free meeting planner across time zones. Pick a date, add multiple cities and instantly see a color-coded hour grid that highlights the best overlapping working hours for your team. Runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.mp-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.mp-controls input[type=date]{padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text);font-size:.95em}
+.mp-controls select{padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text);font-size:.92em;max-width:300px}
+.tz-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}
+.tz-chip{display:inline-flex;align-items:center;gap:6px;background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:.85em}
+.tz-chip .x{cursor:pointer;color:var(--gz-accent,#e94560);font-weight:700;margin-left:4px}
+table.mp-grid{width:100%;border-collapse:collapse;font-size:.82em;margin-top:6px}
+table.mp-grid th,table.mp-grid td{border:1px solid var(--border);padding:6px 4px;text-align:center;white-space:nowrap}
+table.mp-grid thead th{position:sticky;top:0;background:var(--glass);z-index:1}
+table.mp-grid td.hour{font-weight:600}
+.h-best{background:rgba(52,211,153,.22)}
+.h-good{background:rgba(110,168,254,.16)}
+.h-ok{background:rgba(255,217,61,.12)}
+.h-bad{background:rgba(233,69,96,.10);color:var(--text2)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8em;margin-top:12px;opacity:.85}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--border)}
+.best-pick{margin-top:16px;padding:12px 16px;background:var(--glass);border:1px solid var(--border);border-radius:12px;font-size:.9em}
+.best-pick b{color:var(--accent,#6ea8fe)}
+@media(max-width:640px){table.mp-grid{font-size:.72em}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Meeting Planner","description":"Free meeting planner across time zones. Pick a date, add multiple cities and instantly see a color-coded hour grid that highlights the best overlapping working hours for your team. Runs in your browser.","url":"https://tools.gamezipper.com/convert/meeting-planner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the meeting planner find overlapping hours?", "acceptedAnswer": {"@type": "Answer", "text": "For every hour of the day it computes the local time in each selected time zone, then colors hours green when everyone is within standard working hours (9:00–17:00), blue for near-working hours and dim for early morning or late night."}}, {"@type": "Question", "name": "Do I need an account or sign-in?", "acceptedAnswer": {"@type": "Answer", "text": "No. The planner works instantly in your browser with no sign-up. Your chosen cities and date are never sent to a server."}}, {"@type": "Question", "name": "Does it handle daylight saving time?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Times are computed with your browser's full time zone database for the selected date, so daylight saving transitions are applied automatically for each location."}}, {"@type": "Question", "name": "Can I share a chosen meeting time with my team?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool shows each participant's local time for the best slot, so you can copy that summary and paste it into a calendar invite or chat message."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/meeting-planner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/meeting-planner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/meeting-planner.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mp-controls">
+      <label><span id="lbl-date"></span> <input type="date" id="date"></label>
+      <select id="tz-add"></select>
+      <button class="gz-btn" id="btn-add"></button>
+    </div>
+    <div class="tz-chips" id="chips"></div>
+    <div id="grid-wrap"></div>
+    <div class="legend" id="legend"></div>
+    <div class="best-pick" id="best"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    mpTitle: 'Meeting Planner — Time Zone Overlap Finder',
+    mpDesc: 'Pick a date and add the cities of everyone joining. The color-coded grid shows each hour in every time zone and highlights the best overlapping working hours for your meeting.',
+    date: 'Date', addCity: 'Add a city', addBtn: 'Add', remove: 'remove',
+    yourZone: 'My time zone', hourLbl: 'Zone / Hour (UTC)', refresh: 'Refresh',
+    legendBest: 'Everyone working (9–17)', legendGood: 'Mostly working', legendOk: 'Borderline', legendBad: 'Asleep / off-hours',
+    bestSlot: 'Recommended meeting slot', bestAt: 'around', bestLocal: 'your local time',
+    noBest: 'No perfect overlap. The least-bad hour is highlighted in blue above.',
+    step1: 'Choose the meeting date',
+    step2: 'Add a city for each participant (your zone is included by default)',
+    step3: 'Read the grid: green hours are good for everyone',
+    step4: 'Use the recommended slot or copy the summary to your invite',
+  },
+  zh: {
+    mpTitle: '会议时间规划 — 多时区重叠查找',
+    mpDesc: '选择日期，添加所有参会者所在城市。彩色网格显示每个时区的每个小时，并高亮最适合开会的工作时间重叠段。',
+    date: '日期', addCity: '添加城市', addBtn: '添加', remove: '移除',
+    yourZone: '我的时区', hourLbl: '时区 / 小时 (UTC)', refresh: '刷新',
+    legendBest: '全员在工作时间（9–17）', legendGood: '多数人在工作', legendOk: '勉强可接受', legendBad: '休息 / 非工作时间',
+    bestSlot: '推荐会议时段', bestAt: '约', bestLocal: '你的本地时间',
+    noBest: '没有完美重叠。上方蓝色为相对最佳时段。',
+    step1: '选择会议日期',
+    step2: '为每位参会者添加城市（默认包含你的时区）',
+    step3: '查看网格：绿色时段表示所有人都合适',
+    step4: '采用推荐时段或复制摘要到邀请',
+  }
+});
+
+const { $, t } = GZ;
+
+// Curated list of major world cities with IANA time zones
+const CITIES = [
+  {c:'UTC', z:'UTC', f:'🌍 UTC'},
+  {c:'New York', z:'America/New_York', f:'🇺🇸 New York'},
+  {c:'Los Angeles', z:'America/Los_Angeles', f:'🇺🇸 Los Angeles'},
+  {c:'Chicago', z:'America/Chicago', f:'🇺🇸 Chicago'},
+  {c:'Denver', z:'America/Denver', f:'🇺🇸 Denver'},
+  {c:'Toronto', z:'America/Toronto', f:'🇨🇦 Toronto'},
+  {c:'Vancouver', z:'America/Vancouver', f:'🇨🇦 Vancouver'},
+  {c:'Mexico City', z:'America/Mexico_City', f:'🇲🇽 Mexico City'},
+  {c:'São Paulo', z:'America/Sao_Paulo', f:'🇧🇷 São Paulo'},
+  {c:'Buenos Aires', z:'America/Argentina/Buenos_Aires', f:'🇦🇷 Buenos Aires'},
+  {c:'Bogotá', z:'America/Bogota', f:'🇨🇴 Bogotá'},
+  {c:'London', z:'Europe/London', f:'🇬🇧 London'},
+  {c:'Dublin', z:'Europe/Dublin', f:'🇮🇪 Dublin'},
+  {c:'Lisbon', z:'Europe/Lisbon', f:'🇵🇹 Lisbon'},
+  {c:'Paris', z:'Europe/Paris', f:'🇫🇷 Paris'},
+  {c:'Berlin', z:'Europe/Berlin', f:'🇩🇪 Berlin'},
+  {c:'Madrid', z:'Europe/Madrid', f:'🇪🇸 Madrid'},
+  {c:'Rome', z:'Europe/Rome', f:'🇮🇹 Rome'},
+  {c:'Amsterdam', z:'Europe/Amsterdam', f:'🇳🇱 Amsterdam'},
+  {c:'Stockholm', z:'Europe/Stockholm', f:'🇸🇪 Stockholm'},
+  {c:'Warsaw', z:'Europe/Warsaw', f:'🇵🇱 Warsaw'},
+  {c:'Istanbul', z:'Europe/Istanbul', f:'🇹🇷 Istanbul'},
+  {c:'Moscow', z:'Europe/Moscow', f:'🇷🇺 Moscow'},
+  {c:'Athens', z:'Europe/Athens', f:'🇬🇷 Athens'},
+  {c:'Cairo', z:'Africa/Cairo', f:'🇪🇬 Cairo'},
+  {c:'Lagos', z:'Africa/Lagos', f:'🇳🇬 Lagos'},
+  {c:'Johannesburg', z:'Africa/Johannesburg', f:'🇿🇦 Johannesburg'},
+  {c:'Nairobi', z:'Africa/Nairobi', f:'🇰🇪 Nairobi'},
+  {c:'Dubai', z:'Asia/Dubai', f:'🇦🇪 Dubai'},
+  {c:'Tehran', z:'Asia/Tehran', f:'🇮🇷 Tehran'},
+  {c:'Karachi', z:'Asia/Karachi', f:'🇵🇰 Karachi'},
+  {c:'Delhi', z:'Asia/Kolkata', f:'🇮🇳 New Delhi'},
+  {c:'Mumbai', z:'Asia/Kolkata', f:'🇮🇳 Mumbai'},
+  {c:'Dhaka', z:'Asia/Dhaka', f:'🇧🇩 Dhaka'},
+  {c:'Bangkok', z:'Asia/Bangkok', f:'🇹🇭 Bangkok'},
+  {c:'Jakarta', z:'Asia/Jakarta', f:'🇮🇩 Jakarta'},
+  {c:'Singapore', z:'Asia/Singapore', f:'🇸🇬 Singapore'},
+  {c:'Kuala Lumpur', z:'Asia/Kuala_Lumpur', f:'🇲🇾 Kuala Lumpur'},
+  {c:'Hong Kong', z:'Asia/Hong_Kong', f:'🇭🇰 Hong Kong'},
+  {c:'Shanghai', z:'Asia/Shanghai', f:'🇨🇳 Shanghai'},
+  {c:'Beijing', z:'Asia/Shanghai', f:'🇨🇳 Beijing'},
+  {c:'Taipei', z:'Asia/Taipei', f:'🇹🇼 Taipei'},
+  {c:'Manila', z:'Asia/Manila', f:'🇵🇭 Manila'},
+  {c:'Seoul', z:'Asia/Seoul', f:'🇰🇷 Seoul'},
+  {c:'Tokyo', z:'Asia/Tokyo', f:'🇯🇵 Tokyo'},
+  {c:'Sydney', z:'Australia/Sydney', f:'🇦🇺 Sydney'},
+  {c:'Melbourne', z:'Australia/Melbourne', f:'🇦🇺 Melbourne'},
+  {c:'Perth', z:'Australia/Perth', f:'🇦🇺 Perth'},
+  {c:'Auckland', z:'Pacific/Auckland', f:'🇳🇿 Auckland'},
+  {c:'Honolulu', z:'Pacific/Honolulu', f:'🇺🇸 Honolulu'},
+];
+
+// Detect user's local zone
+const USER_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+let zones = [USER_ZONE]; // list of IANA zone ids
+
+function cityForZone(z){
+  const c = CITIES.find(x=>x.z===z);
+  return c?c.f:(z.includes('/')?z.split('/').pop().replace(/_/g,' '):z);
+}
+
+function fmtTime(date, zone){
+  return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:zone}).format(date);
+}
+function hourInZone(baseUTC, zone){
+  // baseUTC is a Date at given hour; return the local hour number (0-23) in zone
+  const parts = new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:zone}).formatToParts(baseUTC);
+  const hp = parts.find(p=>p.type==='hour');
+  return parseInt((hp&&hp.value)||'0',10)%24;
+}
+function zoneOffsetLabel(zone, base){
+  // returns like "UTC+5:30" for the given date
+  const dtf = new Intl.DateTimeFormat('en-US',{timeZone:zone,timeZoneName:'shortOffset'});
+  const parts = dtf.formatToParts(base);
+  const tz = parts.find(p=>p.type==='timeZoneName');
+  return tz?tz.value:'';
+}
+
+function renderChips(){
+  $('#chips').innerHTML = zones.map((z,i)=>`<span class="tz-chip">${cityForZone(z)} <small style="opacity:.6">${z}</small>${zones.length>1?`<span class="x" onclick="removeZone(${i})">✕</span>`:''}</span>`).join('');
+}
+
+function score(hour){
+  if(hour>=9 && hour<=17) return 3; // best (working hours)
+  if((hour>=7 && hour<9)||(hour>17 && hour<=21)) return 2; // good
+  if((hour>=6 && hour<7)||(hour>21 && hour<=23)) return 1; // ok
+  return 0; // bad (night)
+}
+
+function renderGrid(){
+  const dateStr=$('#date').value || new Date().toISOString().slice(0,10);
+  const base = new Date(dateStr+'T00:00:00Z');
+  const wrap=$('#grid-wrap');
+  if(zones.length<2){ wrap.innerHTML=''; $('#best').innerHTML=''; return; }
+
+  // Build a row per zone; columns 0-23 (UTC hours)
+  // Compute score per UTC hour across all zones
+  const hourScores=[];
+  for(let h=0;h<24;h++){
+    const t=new Date(base); t.setUTCHours(h);
+    const sc=zones.map(z=>score(hourInZone(t,z)));
+    const min=Math.min(...sc);
+    hourScores.push({h, min, sum:sc.reduce((a,b)=>a+b,0)});
+  }
+  const cls = s=> s>=3?'h-best':(s>=2?'h-good':(s>=1?'h-ok':'h-bad'));
+
+  let html='<table class="mp-grid"><thead><tr><th>'+t('hourLbl')+'</th>';
+  for(let h=0;h<24;h++){ html+=`<th class="${cls(hourScores[h].min)}">${String(h).padStart(2,'0')}</th>`; }
+  html+='</tr></thead><tbody>';
+  for(const z of zones){
+    html+=`<tr><td class="hour">${cityForZone(z)}<br><small style="opacity:.6;font-weight:400">${zoneOffsetLabel(z, base)}</small></td>`;
+    for(let h=0;h<24;h++){
+      const t=new Date(base); t.setUTCHours(h);
+      const lh=hourInZone(t,z);
+      html+=`<td class="${cls(hourScores[h].min)}">${String(lh).padStart(2,'0')}</td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+
+  // Best slot
+  const best=hourScores.slice().sort((a,b)=> b.min-a.min || b.sum-a.sum)[0];
+  const slotTime=new Date(base); slotTime.setUTCHours(best.h);
+  const localStr = zones.map(z=>`${cityForZone(z)}: ${fmtTime(slotTime,z)}`).join(' · ');
+  if(best.min>=3){
+    $('#best').innerHTML=`<b>${t('bestSlot')}:</b> ${t('bestAt')} <b>UTC ${String(best.h).padStart(2,'0')}:00</b> — ${localStr}`;
+  } else if(best.min>=2){
+    $('#best').innerHTML=`<b>${t('bestSlot')}:</b> ${t('bestAt')} <b>UTC ${String(best.h).padStart(2,'0')}:00</b> — ${localStr}`;
+  } else {
+    $('#best').innerHTML=`<b>${t('bestSlot')}:</b> ${t('bestAt')} <b>UTC ${String(best.h).padStart(2,'0')}:00</b> — ${localStr}<br><span style="opacity:.7">${t('noBest')}</span>`;
+  }
+}
+
+window.removeZone=function(i){ if(zones.length>1){ zones.splice(i,1); renderChips(); renderGrid(); } };
+
+function addZone(){
+  const sel=$('#tz-add');
+  const z=sel.value;
+  if(z && !zones.includes(z)){ zones.push(z); renderChips(); renderGrid(); }
+}
+
+function setupAddSelect(){
+  const sel=$('#tz-add');
+  sel.innerHTML='<option value="">'+t('addCity')+'</option>' +
+    CITIES.map(c=>`<option value="${c.z}">${c.f}</option>`).join('');
+}
+
+$('#btn-add').textContent=t('addBtn');
+$('#lbl-date').textContent=t('date')+':';
+$('#date').value=new Date().toISOString().slice(0,10);
+$('#legend').innerHTML=`
+  <span><span class="swatch h-best"></span> ${t('legendBest')}</span>
+  <span><span class="swatch h-good"></span> ${t('legendGood')}</span>
+  <span><span class="swatch h-ok"></span> ${t('legendOk')}</span>
+  <span><span class="swatch h-bad"></span> ${t('legendBad')}</span>`;
+
+$('#btn-add').addEventListener('click', addZone);
+$('#date').addEventListener('change', renderGrid);
+$('#tz-add').addEventListener('change', addZone);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="renderGrid()">↻ ${t('refresh')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#grid-wrap').innerText + '\\n' + $('#best').innerText)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="zones=['${USER_ZONE}'];renderChips();renderGrid()">${t('clear')}</button>`;
+
+setupAddSelect();
+renderChips();
+renderGrid();
+
+GZ.renderToolPage({
+  category:'convert', titleKey:'mpTitle', descKey:'mpDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🌍',href:'/convert/world-clock.html',name:'World Clock'},
+    {icon:'🕐',href:'/convert/time-zone-converter.html',name:'Time Zone Converter'},
+    {icon:'📅',href:'/ics-generator.html',name:'ICS Calendar Generator'},
+    {icon:'⏰',href:'/calc/alarm-clock.html',name:'Alarm Clock'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

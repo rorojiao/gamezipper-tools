@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Device Info Tool - Browser, Screen & Hardware Info | GameZipper Tools</title>
+  <meta name="description" content="Free device information tool. See your screen resolution, viewport, pixel ratio, browser, OS, CPU cores, device memory, GPU, timezone, language, battery and more — all detected locally in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/device-info.html">
+  <meta property="og:title" content="Device Info Tool - Browser, Screen & Hardware Info | GameZipper Tools">
+  <meta property="og:description" content="Free device information tool. See your screen resolution, viewport, pixel ratio, browser, OS, CPU cores, device memory, GPU, timezone, language, battery and more — all detected locally in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/device-info.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Device Info Tool - Browser, Screen & Hardware Info | GameZipper Tools">
+<meta name="twitter:description" content="Free device information tool. See your screen resolution, viewport, pixel ratio, browser, OS, CPU cores, device memory, GPU, timezone, language, battery and more — all detected locally in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px}
+.info-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+.info-card h3{margin:0 0 10px;font-size:.95rem;color:var(--accent,#6ea8fe);display:flex;align-items:center;gap:8px}
+.info-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:.85em}
+.info-row:last-child{border-bottom:0}
+.info-row .k{color:var(--text2);white-space:nowrap}
+.info-row .v{color:var(--text);text-align:right;word-break:break-word;font-family:monospace;font-size:.92em}
+.val-bad{color:var(--gz-accent,#e94560)}
+.val-good{color:var(--gz-success,#34d399)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Device Info Tool","description":"Free device information tool. See your screen resolution, viewport, pixel ratio, browser, OS, CPU cores, device memory, GPU, timezone, language, battery and more — all detected locally in your browser.","url":"https://tools.gamezipper.com/dev/device-info.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What information does the device info tool show?", "acceptedAnswer": {"@type": "Answer", "text": "It shows your screen resolution, viewport size, device pixel ratio, color depth, orientation, browser name and version, operating system, CPU core count, device memory, GPU vendor and renderer, timezone, languages, network connection type, touch support and battery status when available."}}, {"@type": "Question", "name": "Is my data sent anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every value is read directly from your browser's own APIs and rendered on this page. Nothing is uploaded, stored or transmitted to any server."}}, {"@type": "Question", "name": "Why does it show a different screen resolution than my monitor?", "acceptedAnswer": {"@type": "Answer", "text": "Browsers report the CSS pixel resolution affected by your device pixel ratio, display scaling and zoom level, not the raw hardware pixels. The tool shows both so you can tell them apart."}}, {"@type": "Question", "name": "Can I use this to debug responsive design?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Designers and developers use the live viewport size, pixel ratio, orientation and touch-point data to verify how a layout behaves on the current device in real time."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/device-info.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/device-info.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/device-info.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="info"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    devTitle: 'Device Info Tool — Browser, Screen & Hardware',
+    devDesc: 'Instantly see your screen resolution, viewport, pixel ratio, browser, OS, CPU, memory, GPU, timezone and more. Everything is detected locally — nothing leaves your browser.',
+    screen: '🖥️ Display & Screen', browser: '🌐 Browser & Engine', os: '💻 System & OS',
+    hw: '⚙️ Hardware', net: '📡 Network', locale: '🌍 Locale & Time', touch: '👆 Touch & Input', power: '🔋 Battery',
+    screenRes: 'Screen Resolution', viewport: 'Viewport (CSS px)', avail: 'Available Area', dpr: 'Device Pixel Ratio',
+    colorDepth: 'Color Depth', colorGamut: 'Color Gamut', orient: 'Orientation', aspect: 'Aspect Ratio',
+    hdr: 'HDR', refresh: 'Max Refresh (approx)', innerWH:'Window Inner',
+    ua: 'User Agent', browser: 'Browser', engine: 'Engine', lang: 'Browser Language', langs: 'Languages',
+    cookies: 'Cookies', online: 'Online', doNotTrack: 'Do Not Track', pdfView: 'PDF Viewer', webdriver: 'Automation',
+    platform: 'Platform', osName: 'OS', arch: 'Architecture', cpuArch:'CPU Architecture', osBits:'OS Bits',
+    cores: 'CPU Cores', memory: 'Device Memory (GB)', gpuVendor: 'GPU Vendor', gpu: 'GPU Renderer',
+    connType: 'Connection Type', downlink: 'Downlink (Mbps)', rtt: 'RTT (ms)', saveData: 'Save-Data',
+    tz: 'Time Zone', tzOffset: 'UTC Offset', date: 'Local Date', locale: 'Locale',
+    touchPoints: 'Touch Points', touchSup: 'Touch Support', maxTouch: 'Max Touch', pointer: 'Pointer Type', stylus:'Stylus',
+    batLevel: 'Battery Level', charging: 'Charging', discharging: 'Discharging Time',
+    yes: 'Yes', no: 'No', unknown: 'Unknown', na: '—', copied: 'Copied!', refresh: 'Refresh',
+    step1: 'Open the page — your device is detected automatically',
+    step2: 'Browse the cards: Display, Browser, System, Hardware, Network, Locale',
+    step3: 'Resize the window to see viewport, aspect ratio and orientation update live',
+    step4: 'Copy the full report with one click for debugging or support tickets',
+  },
+  zh: {
+    devTitle: '设备信息工具 — 浏览器、屏幕与硬件',
+    devDesc: '即时查看你的屏幕分辨率、视口、像素比、浏览器、系统、CPU、内存、GPU、时区等。全部本地检测，无任何数据离开浏览器。',
+    screen: '🖥️ 显示与屏幕', browser: '🌐 浏览器与引擎', os: '💻 系统与操作系统',
+    hw: '⚙️ 硬件', net: '📡 网络', locale: '🌍 区域与时间', touch: '👆 触控与输入', power: '🔋 电池',
+    screenRes: '屏幕分辨率', viewport: '视口（CSS 像素）', avail: '可用区域', dpr: '设备像素比',
+    colorDepth: '色深', colorGamut: '色域', orient: '屏幕方向', aspect: '宽高比',
+    hdr: 'HDR', refresh: '最大刷新率（约）', innerWH:'窗口内部尺寸',
+    ua: 'User Agent', browser: '浏览器', engine: '引擎', lang: '浏览器语言', langs: '语言列表',
+    cookies: 'Cookie', online: '在线状态', doNotTrack: '请勿追踪', pdfView: 'PDF 查看器', webdriver: '自动化',
+    platform: '平台', osName: '操作系统', arch: '架构', cpuArch:'CPU 架构', osBits:'系统位数',
+    cores: 'CPU 核心数', memory: '设备内存（GB）', gpuVendor: 'GPU 厂商', gpu: 'GPU 型号',
+    connType: '连接类型', downlink: '下行速率 (Mbps)', rtt: 'RTT (ms)', saveData: '省流模式',
+    tz: '时区', tzOffset: 'UTC 偏移', date: '本地日期', locale: '区域设置',
+    touchPoints: '触控点数', touchSup: '触控支持', maxTouch: '最大触控', pointer: '指针类型', stylus:'触控笔',
+    batLevel: '电量', charging: '充电中', discharging: '可放电时间',
+    yes: '是', no: '否', unknown: '未知', na: '—', copied: '已复制！', refresh: '刷新',
+    step1: '打开页面 — 自动检测你的设备',
+    step2: '浏览卡片：显示、浏览器、系统、硬件、网络、区域',
+    step3: '调整窗口大小，可看到视口、宽高比和屏幕方向实时变化',
+    step4: '一键复制完整报告，用于调试或提交工单',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const na = t('na');
+
+function val(v, cls){ return `<span class="v ${cls||''}">${(v===undefined||v===null||v==='')?na:v}</span>`; }
+function yn(b){ return b?t('yes'):t('no'); }
+function row(k, v, cls){ return `<div class="info-row"><span class="k">${k}</span>${val(v, cls)}</div>`; }
+
+// Browser/engine detection from UA
+function detectBrowser(){
+  const ua=navigator.userAgent;
+  let b='Unknown', e='Unknown';
+  if(/Edg\//.test(ua)){ b='Microsoft Edge'; }
+  else if(/OPR\/|Opera/.test(ua)){ b='Opera'; }
+  else if(/SamsungBrowser/.test(ua)){ b='Samsung Internet'; }
+  else if(/Firefox\//.test(ua)){ b='Firefox'; }
+  else if(/Chrome\//.test(ua)){ b='Chrome'; }
+  else if(/Safari\//.test(ua)){ b='Safari'; }
+  const m=ua.match(/(Edg|OPR|Firefox|Chrome|Version|Safari)\/(\d+[\.\d]*)/);
+  const ver = b==='Edge'? (ua.match(/Edg\/([\d.]+)/)||[])[1]
+    : b==='Opera'? (ua.match(/OPR\/([\d.]+)/)||[])[1]
+    : b==='Firefox'? (ua.match(/Firefox\/([\d.]+)/)||[])[1]
+    : b==='Chrome'? (ua.match(/Chrome\/([\d.]+)/)||[])[1]
+    : b==='Safari'? (ua.match(/Version\/([\d.]+)/)||ua.match(/Safari\/([\d.]+)/)||[])[1]
+    : (m&&m[2])||'';
+  if(/Gecko\/|Firefox/.test(ua) && !/like Gecko/.test(navigator.userAgent.toLowerCase().replace('like gecko','')) || /Firefox/.test(ua)) e='Gecko';
+  if(/AppleWebKit/.test(ua)) e=/Chrome/.test(ua)?'Blink':'WebKit';
+  return {name:b, version:ver, engine:e};
+}
+
+function detectOS(){
+  const ua=navigator.userAgent, p=navigator.platform||'', uaData=navigator.userAgentData;
+  let os='Unknown';
+  if(/Windows NT 10/.test(ua)) os='Windows 10/11';
+  else if(/Windows NT 6\.3/.test(ua)) os='Windows 8.1';
+  else if(/Windows NT 6\.2/.test(ua)) os='Windows 8';
+  else if(/Windows NT 6\.1/.test(ua)) os='Windows 7';
+  else if(/Windows/.test(ua)) os='Windows';
+  else if(/Android (\d+)/.test(ua)) os='Android '+((ua.match(/Android (\d+[\.\d]*)/)||[])[1]||'');
+  else if(/iPhone|iPad|iPod/.test(ua)) os='iOS '+((ua.match(/OS (\d+[_\d]*)/)||[])[1]||'').replace(/_/g,'.');
+  else if(/Mac OS X/.test(ua)) os='macOS '+((ua.match(/Mac OS X (\d+[_\d]*)/)||[])[1]||'').replace(/_/g,'.');
+  else if(/Linux/.test(ua)) os='Linux';
+  else if(/CrOS/.test(ua)) os='Chrome OS';
+  const arch=(uaData&&uaData.architecture)||(/WOW64|Win64|x64/.test(ua)?'x86_64':(/arm|aarch/i.test(ua)?'arm':''));
+  return {os, platform:p, arch};
+}
+
+function gpuInfo(){
+  try{
+    const c=document.createElement('canvas');
+    const gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+    if(!gl) return {vendor:na, renderer:na};
+    const ext=gl.getExtension('WEBGL_debug_renderer_info');
+    return {
+      vendor: ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL):gl.getParameter(gl.VENDOR),
+      renderer: ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)
+    };
+  }catch(e){ return {vendor:na, renderer:na}; }
+}
+
+function gcd(a,b){return b?gcd(b,a%b):a;}
+
+function card(title, icon, rows){
+  return `<div class="info-card"><h3>${title}</h3>${rows.join('')}</div>`;
+}
+
+let batteryObj=null;
+function fetchBattery(){
+  if(navigator.getBattery){
+    navigator.getBattery().then(b=>{
+      batteryObj=b;
+      render();
+      b.addEventListener('levelchange', render);
+      b.addEventListener('chargingchange', render);
+    }).catch(()=>{});
+  }
+}
+
+function render(){
+  const scr=screen, w=window, nav=navigator;
+  const br=detectBrowser(), osi=detectOS(), gpu=gpuInfo();
+  const conn=nav.connection||nav.mozConnection||nav.webkitConnection||{};
+  const dpr=window.devicePixelRatio||1;
+  const physW=Math.round(scr.width*dpr), physH=Math.round(scr.height*dpr);
+  const aw=scr.availWidth, ah=scr.availHeight;
+  const cd=scr.colorDepth;
+  const orient = (scr.orientation&&scr.orientation.type)|| (w.innerHeight>w.innerWidth?'portrait':'landscape');
+  const g=gcd(scr.width,scr.height);
+  let gamut = na;
+  try {
+    if (w.matchMedia('(color-gamut: rec2020)').matches) gamut = 'Rec. 2020';
+    else if (w.matchMedia('(color-gamut: p3)').matches) gamut = 'Display P3';
+    else if (w.matchMedia('(color-gamut: srgb)').matches) gamut = 'sRGB';
+  } catch (e) { gamut = na; }
+  const hdr = (w.matchMedia&&(w.matchMedia('(dynamic-range: high)').matches?'HDR':'SDR'))||na;
+  let refresh=na;
+  try{ refresh=(w.screen.isExtended!==undefined?'multi-monitor ':'')+refresh; }catch(e){}
+  if(w.devicePixelRatio && scr.refreshRate) refresh=scr.refreshRate;
+
+  const cards=[];
+  cards.push(card(t('screen'),'🖥️',[
+    row(t('screenRes'), `${scr.width} × ${scr.height} ${dpr!==1?`(${physW} × ${physH} @${dpr}x)`:''}`),
+    row(t('viewport'), `${w.innerWidth} × ${w.innerHeight}`),
+    row(t('innerWH'), `${document.documentElement.clientWidth} × ${document.documentElement.clientHeight} (doc)`),
+    row(t('avail'), `${aw} × ${ah}`),
+    row(t('dpr'), dpr),
+    row(t('colorDepth'), cd+'-bit'),
+    row(t('colorGamut'), gamut),
+    row(t('hdr'), hdr),
+    row(t('orient'), orient),
+    row(t('aspect'), g?`${scr.width/g}:${scr.height/g}`:na),
+  ]));
+
+  cards.push(card(t('browser'),'🌐',[
+    row(t('browser'), br.name+' '+(br.version||'')),
+    row(t('engine'), br.engine),
+    row(t('lang'), nav.language||na),
+    row(t('langs'), nav.languages?(nav.languages.join(', ')):na),
+    row(t('cookies'), yn(nav.cookieEnabled)),
+    row(t('online'), yn(nav.onLine), nav.onLine?'val-good':'val-bad'),
+    row(t('doNotTrack'), nav.doNotTrack==null?na:yn(nav.doNotTrack==='1')),
+    row(t('pdfView'), yn(nav.pdfViewerEnabled!==undefined?nav.pdfViewerEnabled:true)),
+    row(t('webdriver'), yn(!!nav.webdriver), nav.webdriver?'val-bad':'val-good'),
+    row(t('ua'), nav.userAgent),
+  ]));
+
+  cards.push(card(t('os'),'💻',[
+    row(t('osName'), osi.os),
+    row(t('platform'), osi.platform),
+    row(t('arch'), osi.arch||na),
+    row(t('cpuArch'), nav.userAgentData?(nav.userAgentData.architecture||na):(na)),
+    row(t('locale'), Intl.DateTimeFormat().resolvedOptions().locale),
+  ]));
+
+  cards.push(card(t('hw'),'⚙️',[
+    row(t('cores'), nav.hardwareConcurrency||na),
+    row(t('memory'), nav.deviceMemory!=null?nav.deviceMemory:na),
+    row(t('gpuVendor'), gpu.vendor),
+    row(t('gpu'), gpu.renderer),
+  ]));
+
+  cards.push(card(t('net'),'📡',[
+    row(t('connType'), conn.effectiveType||conn.type||na),
+    row(t('downlink'), conn.downlink!=null?conn.downlink:na),
+    row(t('rtt'), conn.rtt!=null?conn.rtt:na),
+    row(t('saveData'), conn.saveData!=null?yn(conn.saveData):na),
+  ]));
+
+  const off=-new Date().getTimezoneOffset();
+  cards.push(card(t('locale'),'🌍',[
+    row(t('tz'), Intl.DateTimeFormat().resolvedOptions().timeZone),
+    row(t('tzOffset'), (off>=0?'+':'')+String(Math.floor(Math.abs(off)/60)).padStart(2,'0')+':'+String(Math.abs(off)%60).padStart(2,'0')),
+    row(t('date'), new Date().toString()),
+  ]));
+
+  const maxTouch=nav.maxTouchPoints||0;
+  cards.push(card(t('touch'),'👆',[
+    row(t('touchSup'), yn(('ontouchstart' in window)||maxTouch>0)),
+    row(t('touchPoints'), maxTouch),
+    row(t('pointer'), nav.pointerCapabilities?JSON.stringify(nav.pointerCapabilities):na),
+    row(t('stylus'), yn(w.matchMedia&&w.matchMedia('(any-pointer: fine)').matches?true:false)),
+  ]));
+
+  if(batteryObj){
+    cards.push(card(t('power'),'🔋',[
+      row(t('batLevel'), Math.round(batteryObj.level*100)+'%', batteryObj.level<0.2?'val-bad':'val-good'),
+      row(t('charging'), yn(batteryObj.charging)),
+      row(t('discharging'), batteryObj.dischargingTime!=null&&isFinite(batteryObj.dischargingTime)?Math.round(batteryObj.dischargingTime/60)+' min':na),
+    ]));
+  }
+
+  $('#info').innerHTML = `<div class="info-grid">${cards.join('')}</div>`;
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="render()">↻ ${t('refresh')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($('#info').innerText)">${t('copy')}</button>`;
+
+window.addEventListener('resize', render);
+window.addEventListener('orientationchange', render);
+
+GZ.renderToolPage({
+  category:'dev', titleKey:'devTitle', descKey:'devDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🌐',href:'/dev/browser-info.html',name:'Browser Info'},
+    {icon:'🖥️',href:'/dev/screen-resolution.html',name:'Screen Resolution'},
+    {icon:'👆',href:'/dev/user-agent-parser.html',name:'User Agent Parser'},
+    {icon:'#️⃣',href:'/dev/hash.html',name:'Hash Generator'},
+  ]
+});
+fetchBattery();
+render();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
