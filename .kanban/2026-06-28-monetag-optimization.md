@@ -74,3 +74,23 @@
 ## Commits
 - `d594fa96` (2026-06-28 18:58:56 +0800) — bundled v5.5.5 + cache bumps across 3028 HTML files
 - `0a33cc11` (2026-06-28 19:02:27 +0800) — tunnel URL rotation (自动 watchdog)
+## 24h Acceptance SQL Query
+
+```sql
+-- Run 2026-06-29 19:00 CST to check v5.5.5 acceptance
+SELECT
+  json_extract(meta, '$.t') AS ad_type,
+  json_extract(meta, '$.slotId') AS slot,
+  json_extract(meta, '$.containerId') AS container,
+  COUNT(*) AS n,
+  COUNT(DISTINCT vid) AS uv
+FROM events
+WHERE event='gz_ad_event'
+  AND site='tools.gamezipper.com'
+  AND json_extract(meta, '$.network')='adsense'
+  AND ts > datetime('now','-1 day')
+GROUP BY ad_type, slot, container
+ORDER BY n DESC;
+```
+
+Expected: at least 1 row with `slot='1099212472'` and `n > 0` (a fill event).
