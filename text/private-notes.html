@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Private Encrypted Notes — AES-256 Secure Notebook | GameZipper Tools</title>
+  <meta name="description" content="Write and store private notes encrypted with AES-256 in your browser. Set a master password, create encrypted notes, search and export — 100% client-side, nothing ever uploaded.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/private-notes.html">
+  <meta property="og:title" content="Private Encrypted Notes — AES-256 Secure Notebook | GameZipper Tools">
+  <meta property="og:description" content="Write and store private notes encrypted with AES-256 in your browser. Set a master password, create encrypted notes, search and export — 100% client-side, nothing ever uploaded.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/private-notes.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Private Encrypted Notes — AES-256 Secure Notebook | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+#pn-lock{max-width:400px;margin:20px auto;text-align:center;padding:20px;background:var(--glass);border:1px solid var(--border);border-radius:12px}
+#pn-lock input{width:100%;margin:6px 0;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--gz-text)}
+#pn-app{display:none}
+#pn-layout{display:flex;gap:12px;margin-top:10px;min-height:400px}
+#pn-sidebar{width:220px;flex-shrink:0}
+@media(max-width:700px){#pn-layout{flex-direction:column}#pn-sidebar{width:100%}}
+#pn-list{list-style:none;padding:0;margin:0;max-height:380px;overflow-y:auto}
+#pn-list li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:.85em;border:1px solid transparent;display:flex;justify-content:space-between;align-items:center;gap:6px}
+#pn-list li.active{background:var(--glass2);border-color:var(--gz-accent)}
+#pn-list li:hover{background:var(--glass2)}
+#pn-editor{flex:1;display:flex;flex-direction:column}
+#pn-title-in{background:var(--glass2);border:1px solid var(--border);color:var(--gz-text);border-radius:8px;padding:8px;font-size:1em;margin-bottom:6px;width:100%}
+#pn-body{flex:1;min-height:300px;background:var(--glass2);border:1px solid var(--border);color:var(--gz-text);border-radius:8px;padding:10px;font-family:inherit;font-size:.9em;resize:vertical;width:100%;box-sizing:border-box}
+#pn-search{width:100%;margin-bottom:6px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--glass2);color:var(--gz-text)}
+.pn-del{background:none;border:none;color:var(--gz-accent);cursor:pointer;font-size:.9em;opacity:.6}
+.pn-del:hover{opacity:1}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Private Encrypted Notes","description":"Write and store private notes encrypted with AES-256 in your browser. Set a master password, create encrypted notes, search and export — 100% client-side, nothing ever uploaded.","url":"https://tools.gamezipper.com/text/private-notes.html","applicationCategory":"Security","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Are my notes really encrypted?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Notes are encrypted with AES-256-GCM using the Web Crypto API before being saved to your browser local storage. Without your master password, the ciphertext cannot be decrypted."}}, {"@type": "Question", "name": "What happens if I forget my master password?", "acceptedAnswer": {"@type": "Answer", "text": "Your notes cannot be recovered. The encryption key is derived from your password, so if you forget it the data is permanently unreadable. Choose a password you will remember or store it in a password manager."}}, {"@type": "Question", "name": "Is any data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All encryption, decryption and storage happen locally in your browser. Your notes never leave your device."}}, {"@type": "Question", "name": "Can I export my encrypted notes?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can export the encrypted vault as a JSON file for backup. The backup stays encrypted and can only be read with your master password."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/private-notes.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/private-notes.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/private-notes.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="pn-lock">
+      <p id="pn-lock-msg" style="margin:0 0 10px;font-size:.9em"></p>
+      <input id="pn-pw" type="password" placeholder="">
+      <button class="gz-btn" id="pn-unlock-btn" style="width:100%;margin-top:6px"></button>
+    </div>
+    <div id="pn-app">
+      <div id="pn-layout">
+        <div id="pn-sidebar">
+          <input id="pn-search" type="text" placeholder="">
+          <ul id="pn-list"></ul>
+        </div>
+        <div id="pn-editor">
+          <input id="pn-title-in" placeholder="">
+          <textarea id="pn-body" placeholder=""></textarea>
+        </div>
+      </div>
+      <div id="status"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Private Encrypted Notes',
+    toolDesc: 'Store private notes encrypted with AES-256 entirely in your browser. Set a master password — nothing is ever uploaded.',
+    newNote: '+ New Note',
+    lock: 'Lock',
+    exportVault: 'Export Vault',
+    importVault: 'Import Vault',
+    deleteNote: 'Delete',
+    step1: 'Set a master password — this encrypts and decrypts your notes',
+    step2: 'Click "+ New Note", add a title and body, and it auto-saves encrypted',
+    step3: 'Use search to find notes by title',
+    step4: 'Export an encrypted backup, or click Lock to require the password again',
+    lockMsgFirst: 'Set a master password to create your encrypted vault:',
+    lockMsgExisting: 'Enter your master password to unlock your vault:',
+    unlock: 'Unlock',
+    titlePh: 'Note title…',
+    bodyPh: 'Write your private note here…',
+    searchPh: 'Search notes…',
+    pwMismatch: 'Wrong password. Could not decrypt the vault.',
+  },
+  zh: {
+    toolTitle: '加密私密笔记',
+    toolDesc: '使用 AES-256 在浏览器中加密存储私密笔记。设置主密码 — 数据绝不上传。',
+    newNote: '+ 新建笔记',
+    lock: '锁定',
+    exportVault: '导出保险箱',
+    importVault: '导入保险箱',
+    deleteNote: '删除',
+    step1: '设置主密码 — 用于加密和解密你的笔记',
+    step2: '点击「+ 新建笔记」，添加标题和正文，自动加密保存',
+    step3: '使用搜索按标题查找笔记',
+    step4: '导出加密备份，或点击「锁定」重新要求输入密码',
+    lockMsgFirst: '设置主密码以创建加密保险箱：',
+    lockMsgExisting: '输入主密码以解锁保险箱：',
+    unlock: '解锁',
+    titlePh: '笔记标题…',
+    bodyPh: '在这里写下你的私密笔记…',
+    searchPh: '搜索笔记…',
+    pwMismatch: '密码错误，无法解密保险箱。',
+  }
+});
+
+const { $, t } = GZ;
+const lang = GZI18n.getLang();
+const STORE_KEY = 'gz-private-notes-vault';
+
+let vault = null; // { salt, iv, ct } or null
+let notes = [];   // decrypted notes
+let currentIdx = -1;
+let key = null;
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// --- Crypto helpers (Web Crypto API, AES-GCM) ---
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+}
+
+function bufToB64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function b64ToBuf(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer; }
+
+async function encryptNotes() {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(notes)));
+  const salt = vault.salt;
+  vault = { salt, iv: bufToB64(iv), ct: bufToB64(ct) };
+  localStorage.setItem(STORE_KEY, JSON.stringify(vault));
+}
+
+async function tryUnlock(password) {
+  const existing = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+  if (!existing) {
+    // first time: create vault
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    key = await deriveKey(password, salt);
+    vault = { salt: bufToB64(salt), iv: '', ct: '' };
+    notes = [];
+    await encryptNotes();
+    return true;
+  }
+  try {
+    const salt = new Uint8Array(b64ToBuf(existing.salt));
+    key = await deriveKey(password, salt);
+    const iv = b64ToBuf(existing.iv);
+    const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, b64ToBuf(existing.ct));
+    notes = JSON.parse(new TextDecoder().decode(dec));
+    vault = existing;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// --- UI ---
+function renderList(filter = '') {
+  const ul = $('#pn-list');
+  const filtered = notes.map((n, i) => ({ ...n, _i: i })).filter(n => !filter || n.title.toLowerCase().includes(filter.toLowerCase()));
+  ul.innerHTML = filtered.length ? filtered.map(n => `
+    <li class="${n._i === currentIdx ? 'active' : ''}" onclick="selectNote(${n._i})">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n.title || '(untitled)')}</span>
+      <button class="pn-del" onclick="event.stopPropagation();delNote(${n._i})">✕</button>
+    </li>`).join('') : `<li style="opacity:.5;cursor:default">${lang === 'zh' ? '暂无笔记' : 'No notes yet'}</li>`;
+}
+
+function selectNote(i) {
+  currentIdx = i;
+  $('#pn-title-in').value = notes[i].title;
+  $('#pn-body').value = notes[i].body;
+  renderList($('#pn-search').value);
+}
+
+function newNote() {
+  notes.unshift({ title: '', body: '' });
+  currentIdx = 0;
+  selectNote(0);
+  encryptNotes();
+}
+
+async function delNote(i) {
+  notes.splice(i, 1);
+  if (currentIdx >= notes.length) currentIdx = notes.length - 1;
+  if (currentIdx >= 0) selectNote(currentIdx); else { $('#pn-title-in').value = ''; $('#pn-body').value = ''; }
+  renderList($('#pn-search').value);
+  await encryptNotes();
+}
+
+let saveTimer = null;
+function scheduleSave() {
+  if (currentIdx < 0) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    notes[currentIdx].title = $('#pn-title-in').value;
+    notes[currentIdx].body = $('#pn-body').value;
+    await encryptNotes();
+    renderList($('#pn-search').value);
+  }, 400);
+}
+
+function exportVault() {
+  const blob = new Blob([JSON.stringify(vault)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'private-notes-vault.json';
+  a.click();
+}
+
+function importVault() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = async () => {
+      try {
+        const data = JSON.parse(r.result);
+        localStorage.setItem(STORE_KEY, JSON.stringify(data));
+        alert(lang === 'zh' ? '已导入加密备份。请重新输入主密码解锁。' : 'Encrypted backup imported. Re-enter your master password to unlock.');
+        lockApp();
+      } catch (e) { alert('Invalid vault file'); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+function lockApp() {
+  vault = null; notes = []; key = null; currentIdx = -1;
+  $('#pn-app').style.display = 'none';
+  $('#pn-lock').style.display = 'block';
+  $('#pn-pw').value = '';
+  $('#pn-lock-msg').textContent = JSON.parse(localStorage.getItem(STORE_KEY) || 'null') ? t('lockMsgExisting') : t('lockMsgFirst');
+}
+
+// Init lock screen
+$('#pn-lock-msg').textContent = JSON.parse(localStorage.getItem(STORE_KEY) || 'null') ? t('lockMsgExisting') : t('lockMsgFirst');
+$('#pn-pw').placeholder = lang === 'zh' ? '主密码' : 'Master password';
+$('#pn-unlock-btn').textContent = t('unlock');
+$('#pn-search').placeholder = t('searchPh');
+$('#pn-title-in').placeholder = t('titlePh');
+$('#pn-body').placeholder = t('bodyPh');
+
+$('#pn-unlock-btn').onclick = async () => {
+  const pw = $('#pn-pw').value;
+  if (!pw) return;
+  const ok = await tryUnlock(pw);
+  if (ok) {
+    $('#pn-lock').style.display = 'none';
+    $('#pn-app').style.display = 'block';
+    $('#toolbar').innerHTML = `
+      <button class="gz-btn" onclick="newNote()">${t('newNote')}</button>
+      <button class="gz-btn gz-btn-secondary" onclick="exportVault()">${t('exportVault')}</button>
+      <button class="gz-btn gz-btn-secondary" onclick="importVault()">${t('importVault')}</button>
+      <button class="gz-btn gz-btn-secondary" onclick="lockApp()">${t('lock')}</button>`;
+    if (notes.length === 0) newNote();
+    else selectNote(0);
+    renderList();
+  } else {
+    alert(t('pwMismatch'));
+    $('#pn-pw').value = '';
+  }
+};
+
+$('#pn-pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#pn-unlock-btn').click(); });
+$('#pn-search').addEventListener('input', e => renderList(e.target.value));
+$('#pn-title-in').addEventListener('input', scheduleSave);
+$('#pn-body').addEventListener('input', scheduleSave);
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📒', href:'/text/sticky-notes.html', name:'Sticky Notes'},
+    {icon:'📝', href:'/text/notepad.html', name:'Online Notepad'},
+    {icon:'✅', href:'/text/todo.html', name:'To-Do List'},
+    {icon:'🔐', href:'/dev/password-generator.html', name:'Password Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
