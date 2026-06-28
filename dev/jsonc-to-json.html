@@ -1,0 +1,198 @@
+<!DOCTYPE html><html lang="en"><head>
+
+<title>JSONC to JSON Converter (JSON with Comments) - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert JSONC (JSON with comments) to standard JSON. Strip // and /* */ comments and trailing commas to produce valid JSON. For VS Code tsconfig.json, .eslintrc, settings.json. Free, private, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/jsonc-to-json.html">
+  <meta property="og:title" content="JSONC to JSON Converter (JSON with Comments) - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert JSONC (JSON with comments) to standard JSON. Strip // and /* */ comments and trailing commas. For VS Code tsconfig.json, settings.json. Free, private, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/jsonc-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSONC to JSON Converter (JSON with Comments) - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert JSONC (JSON with comments) to standard JSON. Strip comments and trailing commas. Free, private, browser-only.">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script><script src="/shared/common.js?v=20260628812"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:100px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSONC to JSON Converter","description":"Convert JSONC (JSON with comments) to standard JSON. Strip // and /* */ comments and trailing commas to produce valid JSON. For VS Code tsconfig.json, .eslintrc, settings.json. Free, private, browser-only.","url":"https://tools.gamezipper.com/dev/jsonc-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is JSONC?","acceptedAnswer":{"@type":"Answer","text":"JSONC stands for JSON with Comments. It is a superset of JSON that allows single-line (//) and multi-line (/* */) comments and trailing commas. It is used by VS Code in settings.json, tsconfig.json, and .eslintrc files."}},{"@type":"Question","name":"How does JSONC to JSON conversion work?","acceptedAnswer":{"@type":"Answer","text":"The tool parses your JSONC text, carefully removing only comments that are not inside string values, then strips trailing commas. The result is re-serialized as valid standard JSON that any JSON parser can read."}},{"@type":"Question","name":"Will it break string values containing // or /*?","acceptedAnswer":{"@type":"Answer","text":"No. The parser tracks whether it is inside a single- or double-quoted string and never strips comment-like sequences that appear inside string literals."}},{"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser using JavaScript. Your JSONC text never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jsonc-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jsonc-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jsonc-to-json.html">
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSONC to JSON Converter',
+    toolDesc: 'Convert JSONC (JSON with comments) to standard JSON. Strip // and /* */ comments and trailing commas. Perfect for VS Code settings.json, tsconfig.json and .eslintrc.',
+    lblIn: 'Input JSONC',
+    lblOut: 'Output JSON',
+    convert: 'Convert',
+    indent: 'spaces',
+    valid: '✓ Converted to valid JSON',
+    invalid: '✗ Error',
+    step1: 'Paste your JSONC (JSON with comments) in the input area',
+    step2: 'Click Convert to strip comments and trailing commas',
+    step3: 'Copy the resulting standard JSON',
+  },
+  zh: {
+    toolTitle: 'JSONC 转 JSON 转换器',
+    toolDesc: '将 JSONC（带注释的 JSON）转换为标准 JSON。移除 // 和 /* */ 注释及尾逗号。适用于 VS Code settings.json、tsconfig.json 和 .eslintrc。',
+    lblIn: '输入 JSONC',
+    lblOut: '输出 JSON',
+    convert: '转换',
+    indent: '空格',
+    valid: '✓ 已转换为有效 JSON',
+    invalid: '✗ 错误',
+    step1: '在输入区粘贴 JSONC（带注释的 JSON）',
+    step2: '点击「转换」移除注释和尾逗号',
+    step3: '复制生成的标准 JSON',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let indent = 2;
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function stripJsonC(text) {
+  let result = '';
+  let i = 0;
+  const len = text.length;
+  while (i < len) {
+    const ch = text[i];
+    const next = text[i+1];
+    // Single-line comment
+    if (ch === '/' && next === '/') {
+      i += 2;
+      while (i < len && text[i] !== '\n') i++;
+      continue;
+    }
+    // Multi-line comment
+    if (ch === '/' && next === '*') {
+      i += 2;
+      while (i < len && !(text[i] === '*' && text[i+1] === '/')) i++;
+      i += 2;
+      continue;
+    }
+    // String literal — copy as-is
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      result += ch;
+      i++;
+      while (i < len) {
+        if (text[i] === '\\') { result += text[i] + (text[i+1]||''); i += 2; continue; }
+        result += text[i];
+        if (text[i] === quote) { i++; break; }
+        i++;
+      }
+      continue;
+    }
+    result += ch;
+    i++;
+  }
+  // Remove trailing commas (commas followed by optional whitespace then } or ])
+  result = result.replace(/,(\s*[\]}])/g, '$1');
+  return result;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const cleaned = stripJsonC(inp);
+    const obj = JSON.parse(cleaned);
+    const formatted = JSON.stringify(obj, null, indent);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+  } catch(e) {
+    const msg = e.message;
+    const posMatch = msg.match(/position (\d+)/);
+    let info = `<span style="color:var(--gz-accent)">${t('invalid')}: ${msg}</span>`;
+    if (posMatch) {
+      const pos = parseInt(posMatch[1]);
+      const before = inp.substring(0, pos);
+      const line = before.split('\n').length;
+      const col = pos - before.lastIndexOf('\n');
+      info += ` <span style="opacity:.7">(Line ${line}, Col ${col})</span>`;
+    }
+    $('#status').innerHTML = info;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${msg}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `{
+  // VS Code settings.json
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,  // trailing comment
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+  }, /* trailing comma above */
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+  },
+}`;
+  doConvert();
+}
+
+function doClear() { $('#input').value=''; $('#output').innerHTML=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="indent=+this.value;doConvert()">
+    <option value="2">2 ${t('indent')}</option>
+    <option value="4">4 ${t('indent')}</option>
+    <option value="0">Minified</option>
+  </select>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🗜️', href:'/dev/json-minifier.html', name:'JSON Minifier'},
+    {icon:'🆔', href:'/dev/json5-to-json.html', name:'JSON5 to JSON'},
+    {icon:'📄', href:'/dev/json-schema.html', name:'JSON Schema'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body></html>
