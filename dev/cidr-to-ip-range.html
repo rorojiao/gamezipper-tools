@@ -246,73 +246,53 @@ function cidrToRange(text){
 }
 
 // ---------- reverse: range → CIDR ----------
+// BigInt-based for both IPv4 (32-bit) and IPv6 (128-bit) — uniform algorithm.
+function ipStrToBig(s){
+  if(isIpv4(s)) return BigInt(ipv4ToInt(s));
+  return ipv6ToBigInt(s);
+}
+function bigToIpStr(big, v4){
+  if(v4){
+    const n = Number(big & 0xFFFFFFFFn);
+    return intToIpv4(n >>> 0);
+  }
+  return compressIpv6(big);
+}
+// count trailing zero bits of a BigInt (0 → maxBits)
+function trailingZeros(big, maxBits){
+  if(big === 0n) return maxBits;
+  let c = 0;
+  while(c < maxBits && (big & 1n) === 0n){ big >>= 1n; c++; }
+  return c;
+}
+// bit length of a BigInt (0 → 0): smallest n with 2^n > big
+function bitLen(big){
+  if(big <= 0n) return 0;
+  let c = 0, d = big;
+  while(d > 0n){ d >>= 1n; c++; }
+  return c;
+}
+
 function rangeToCidr(firstStr, lastStr){
-  // detect family from first
   const v4 = isIpv4(firstStr);
   if(v4 !== isIpv4(lastStr)) throw new Error('mixed versions');
-  let first, last;
-  if(v4){
-    first = ipv4ToInt(firstStr);
-    last = ipv4ToInt(lastStr);
-    if(first > last){ const t2=first; first=last; last=t2; }
-  } else {
-    first = ipv6ToBigInt(firstStr);
-    last = ipv6ToBigInt(lastStr);
-    if(first > last){ const t2=first; first=last; last=t2; }
-  }
-  const blocks = [];
+  let first = ipStrToBig(firstStr);
+  let last = ipStrToBig(lastStr);
+  if(first > last){ const t2=first; first=last; last=t2; }
   const maxPrefix = v4 ? 32 : 128;
-  const max = v4 ? 4294967295 : ((1n<<128n)-1n);
-  // iterative algorithm
-  while(true){
-    if(v4 && first > 4294967295) break;
-    if(!v4 && first > max) break;
-    // max block size that starts at first and does not exceed last
-    let hostBits = 0;
-    // first, smallest set bit of first (or maxPrefix)
-    let vary = 0;
-    if(first === 0n || first === 0){
-      vary = v4 ? 32 : 128;
-    } else {
-      if(v4){
-        vary = 31 - Math.floor(Math.log2(first & 0xFFFFFFFF));
-      } else {
-        // count trailing zero bits in BigInt
-        let f = first, c = 0;
-        while(f > 0n && (f & 1n) === 0n){ f >>= 1n; c++; }
-        vary = c;
-        if(vary > 128) vary = 128;
-      }
-    }
-    // diff = last - first; how many trailing ones can we set?
-    let diff;
-    if(v4){ diff = last - first; } else { diff = last - first; }
-    let diffBits;
-    if(diff === 0n || diff === 0){
-      diffBits = 0;
-    } else {
-      if(v4){
-        diffBits = Math.floor(Math.log2(diff)) + 1;
-      } else {
-        let d = diff, c = 0;
-        while(d > 0n){ d >>= 1n; c++; }
-        diffBits = c;
-      }
-    }
-    hostBits = Math.min(vary, diffBits - 1);
-    if(hostBits < 0) hostBits = 0;
+  const blocks = [];
+  let guard = 0;
+  while(first <= last){
+    if(++guard > 8192) break;
+    const vary = trailingZeros(first, maxPrefix);
+    const diff = last - first;
+    // largest block size = 2^k where 2^k <= diff+1  =>  k = bitLen(diff+1) - 1
+    const k = bitLen(diff + 1n) - 1;
+    const hostBits = Math.min(vary, Number(k));
     const prefix = maxPrefix - hostBits;
-    if(v4){
-      const blockSize = Math.pow(2, hostBits);
-      blocks.push(intToIpv4(first)+'/'+prefix);
-      first += blockSize;
-      if(first > last || blocks.length > 4096) break;
-    } else {
-      const blockSize = 1n << BigInt(hostBits);
-      blocks.push(compressIpv6(first)+'/'+prefix);
-      first += blockSize;
-      if(first > last || blocks.length > 4096) break;
-    }
+    const blockSize = 1n << BigInt(hostBits);
+    blocks.push(bigToIpStr(first, v4) + '/' + prefix);
+    first += blockSize;
   }
   return blocks;
 }
