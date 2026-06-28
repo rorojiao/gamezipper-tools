@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>SPF Record Checker - Validate SPF DNS Records | GameZipper Tools</title>
+  <meta name="description" content="Free online SPF record checker. Look up the SPF (Sender Policy Framework) TXT record for any domain, parse every mechanism (ip4, ip6, a, mx, include, ~all/-all), count DNS lookups and flag the 10-lookup limit risk. 100% in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/spf-checker.html">
+  <meta property="og:title" content="SPF Record Checker - Validate SPF DNS Records | GameZipper Tools">
+  <meta property="og:description" content="Look up and validate the SPF TXT record for any domain. Parse ip4, ip6, a, mx, include and the all qualifier, count DNS lookups against the 10-lookup limit. Free, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/spf-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SPF Record Checker - Validate SPF DNS Records | GameZipper Tools">
+<meta name="twitter:description" content="Look up and validate the SPF TXT record for any domain. Parse every mechanism, count DNS lookups against the 10-lookup limit. Free, browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260627554"></script>
+<style>
+.field{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.field input[type=text]{flex:1;min-width:200px;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px;font-family:monospace;font-size:.9em}
+.raw{margin-top:12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:monospace;font-size:.85em;word-break:break-all;color:var(--text)}
+.raw .k{color:var(--text3);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+.score{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-weight:700;font-size:.9rem;margin-top:8px}
+.score.none{background:rgba(233,69,96,.15);color:var(--gz-accent)}
+.score.bad{background:rgba(233,69,96,.15);color:var(--gz-accent)}
+.score.ok{background:rgba(255,193,7,.15);color:#ffc107}
+.score.good{background:rgba(46,204,113,.15);color:#2ecc71}
+.mech-list{margin-top:12px;display:grid;grid-template-columns:1fr;gap:6px}
+.mech{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:monospace;font-size:.85rem;display:flex;gap:10px;align-items:flex-start}
+.mech .q{flex:0 0 auto;padding:2px 8px;border-radius:6px;font-weight:700;font-size:.78rem}
+.mech .q.pass{background:rgba(46,204,113,.15);color:#2ecc71}
+.mech .q.neutral{background:rgba(255,193,7,.15);color:#ffc107}
+.mech .q.fail{background:rgba(233,69,96,.15);color:var(--gz-accent)}
+.mech .q.softfail{background:rgba(255,193,7,.15);color:#ffc107}
+.mech .q.info{background:rgba(97,175,239,.15);color:#61afef}
+.mech .body{flex:1;word-break:break-all}
+.mech .body .desc{font-family:sans-serif;font-size:.75rem;color:var(--text3);margin-top:3px;line-height:1.4}
+.lookup-box{margin-top:12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.lookup-bar{flex:1;min-width:160px;height:10px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden}
+.lookup-bar > div{height:100%;background:linear-gradient(90deg,#2ecc71,#ffc107,#e94560);transition:width .3s}
+.recs{margin-top:12px}
+.rec{background:var(--glass2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:.85rem;color:var(--text2)}
+.rec.good{border-left-color:#2ecc71}
+.rec.warn{border-left-color:#ffc107}
+.rec.bad{border-left-color:var(--gz-accent)}
+#status{margin-top:10px;font-size:.88rem}
+.busy{opacity:.6;pointer-events:none}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SPF Record Checker","description":"Free online SPF record checker. Look up the SPF TXT record for any domain, parse every mechanism (ip4, ip6, a, mx, include, ~all/-all), count DNS lookups against the 10-lookup limit and flag spoofing risks. 100% in your browser.","url":"https://tools.gamezipper.com/dev/spf-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an SPF record?", "acceptedAnswer": {"@type": "Answer", "text": "SPF (Sender Policy Framework) is a DNS TXT record starting with v=spf1 that lists the mail servers allowed to send email on behalf of your domain. Receiving servers check it to decide whether to accept, mark or reject mail claiming to be from you."}}, {"@type": "Question", "name": "What does the ~all / -all / ?all qualifier mean?", "acceptedAnswer": {"@type": "Answer", "text": "The all mechanism ends the record. -all is a hard fail (reject spoofed mail), ~all is a soft fail (usually mark as spam), +all allows everything (effectively disables SPF) and ?all is neutral. Best practice for production is -all; ~all is a safe transitional step."}}, {"@type": "Question", "name": "What is the SPF 10-lookup limit?", "acceptedAnswer": {"@type": "Answer", "text": "RFC 7208 says a receiver must do at most 10 DNS queries when evaluating SPF. Each include, a, mx, exists and ptr mechanism counts as one (nested includes count too). Exceeding 10 causes SPF to return PermError, so your mail may fail authentication even when it is legitimate."}}, {"@type": "Question", "name": "Does this checker send my domain to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The DNS lookup is sent directly from your browser to the public Cloudflare DNS-over-HTTPS resolver. Only the domain name is queried, just like any normal DNS request."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/spf-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/spf-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/spf-checker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="field">
+      <input type="text" id="domain" spellcheck="false" autocomplete="off" placeholder="example.com">
+      <button class="gz-btn" id="checkBtn"></button>
+      <button class="gz-btn gz-btn-secondary" id="exampleBtn"></button>
+    </div>
+    <div id="status"></div>
+    <div id="result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SPF Record Checker',
+    toolDesc: 'Look up and validate the SPF TXT record for any domain. Parse every mechanism (ip4, ip6, a, mx, include, all), count DNS lookups against the RFC 7208 10-lookup limit, and flag spoofing risks. 100% in your browser via DNS-over-HTTPS.',
+    check: 'Check SPF',
+    example: 'Example',
+    needDomain: 'Enter a domain name (e.g. github.com).',
+    querying: 'Querying SPF record for',
+    notFound: 'No SPF record found for this domain.',
+    found: 'SPF record found',
+    scoreNone: '✗ No SPF — spoofed mail will not be blocked',
+    scoreBad: '⚠ SPF allows everything (+all) — effectively disabled',
+    scoreOk: '⚠ SPF soft fail (~all) — spoofed mail may still arrive',
+    scoreGood: '✓ SPF hard fail (-all) — recommended enforcement',
+    lookupCount: 'DNS lookups used',
+    lookupOver: 'Over the 10-lookup limit — SPF will return PermError!',
+    mechanisms: 'Mechanisms',
+    recommendations: 'Recommendations',
+    multiRecords: 'Warning: multiple SPF records found. RFC 7208 allows only one — receivers will treat this as PermError.',
+    netError: 'Could not reach the DNS resolver. Check your network or try again.',
+    step1: 'Type a domain name (no https://, no trailing slash)',
+    step2: 'Click Check SPF to look up the TXT record',
+    step3: 'Review the parsed mechanisms and DNS lookup count',
+    step4: 'Apply the recommendations to tighten your email authentication',
+  },
+  zh: {
+    toolTitle: 'SPF 记录检查器',
+    toolDesc: '查询并校验任意域名的 SPF TXT 记录。解析每个机制（ip4、ip6、a、mx、include、all），统计 DNS 查询次数是否超过 RFC 7208 的 10 次上限，并标记冒充风险。通过 DNS-over-HTTPS 在浏览器本地运行。',
+    check: '检查 SPF',
+    example: '示例',
+    needDomain: '请输入域名（例如 github.com）。',
+    querying: '正在查询 SPF 记录：',
+    notFound: '未找到该域名的 SPF 记录。',
+    found: '已找到 SPF 记录',
+    scoreNone: '✗ 未配置 SPF — 冒充邮件不会被拦截',
+    scoreBad: '⚠ SPF 允许全部（+all）— 等于禁用',
+    scoreOk: '⚠ SPF 软失败（~all）— 冒充邮件仍可能送达',
+    scoreGood: '✓ SPF 硬失败（-all）— 推荐的强制策略',
+    lookupCount: '已使用 DNS 查询次数',
+    lookupOver: '超过 10 次查询上限 — SPF 将返回 PermError！',
+    mechanisms: '机制',
+    recommendations: '改进建议',
+    multiRecords: '警告：发现多条 SPF 记录。RFC 7208 只允许一条 — 接收方将视为 PermError。',
+    netError: '无法连接 DNS 解析器。请检查网络后重试。',
+    step1: '输入域名（不含 https:// 和末尾斜杠）',
+    step2: '点击「检查 SPF」查询 TXT 记录',
+    step3: '查看解析的机制和 DNS 查询次数',
+    step4: '根据建议收紧邮件身份验证配置',
+  }
+});
+
+const { $, t } = GZ;
+
+const MECH_DOCS = {
+  ip4: {en:'Allow mail from this IPv4 network.', zh:'允许来自该 IPv4 网络的邮件。'},
+  ip6: {en:'Allow mail from this IPv6 network.', zh:'允许来自该 IPv6 网络的邮件。'},
+  a:   {en:'Allow the A/AAAA records of the domain (or the host given).', zh:'允许该域名（或指定主机）的 A/AAAA 记录。'},
+  mx:  {en:'Allow the MX servers of the domain (or the host given).', zh:'允许该域名（或指定主机）的 MX 服务器。'},
+  include:{en:'Include the SPF record of another domain.', zh:'引入另一个域名的 SPF 记录。'},
+  exists:{en:'Allow if the given name resolves to any address.', zh:'若指定名称能解析出任意地址则允许。'},
+  ptr: {en:'Reverse-DNS check. Deprecated and slow.', zh:'反向 DNS 检查。已弃用且缓慢。'},
+  all: {en:'Default rule for everything else.', zh:'对其他所有情况的默认规则。'},
+  redirect:{en:'Replace this SPF record with another domain\'s.', zh:'用另一个域名的 SPF 记录替换当前记录。'},
+  exp: {en:'Explanation string shown on failure.', zh:'失败时显示的解释字符串。'},
+};
+
+// qualifier mapping for the all mechanism
+function qualClass(q){
+  if(q === '+') return 'pass';
+  if(q === '-') return 'fail';
+  if(q === '~') return 'softfail';
+  return 'neutral'; // ? or none
+}
+
+async function fetchTxt(name){
+  const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=TXT`, {
+    headers: { 'accept':'application/dns-json' }
+  });
+  if(!res.ok) throw new Error('http '+res.status);
+  const data = await res.json();
+  const answers = (data.Answer || []).filter(a => a.type === 16);
+  return answers.map(a => {
+    let v = a.data;
+    if(v.startsWith('"')) v = v.slice(1);
+    if(v.endsWith('"')) v = v.slice(0,-1);
+    return v;
+  });
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function parseSpf(record){
+  // split on whitespace, skip v=
+  const tokens = record.trim().split(/\s+/).filter(Boolean);
+  const mechs = [];
+  let lookups = 0;
+  for(let i=0;i<tokens.length;i++){
+    const tok = tokens[i];
+    if(/^v=spf/i.test(tok)) continue;
+    // qualifier prefix
+    let q = '';
+    let rest = tok;
+    if(/^[+\-~?]/.test(rest)){ q = rest[0]; rest = rest.slice(1); }
+    // split mechanism name and value
+    const colon = rest.indexOf(':');
+    const eq = rest.indexOf('=');
+    let name, val='';
+    if(colon >= 0){ name = rest.slice(0,colon).toLowerCase(); val = rest.slice(colon+1); }
+    else if(eq >= 0 && (rest.slice(0,eq)==='redirect'||rest.slice(0,eq)==='exp')){ name = rest.slice(0,eq).toLowerCase(); val = rest.slice(eq+1); }
+    else { name = rest.toLowerCase(); }
+    if(name === 'include' || name === 'a' || name === 'mx' || name === 'exists' || name === 'ptr') lookups++;
+    if(name === 'include' && !q) q = '+'; // implicit pass for include
+    mechs.push({ q, name, val, raw: tok });
+  }
+  return { mechs, lookups };
+}
+
+async function doCheck(){
+  const domain = $('#domain').value.trim().toLowerCase().replace(/^https?:\/\//,'').replace(/\/.*$/,'').replace(/^www\./,'');
+  if(!domain){ $('#status').textContent = t('needDomain'); $('#result').innerHTML=''; return; }
+  const btn = $('#checkBtn');
+  btn.classList.add('busy');
+  $('#status').innerHTML = `<span style="color:var(--text3)">${t('querying')} <strong>${esc(domain)}</strong> …</span>`;
+  $('#result').innerHTML = '';
+  try{
+    const records = (await fetchTxt(domain)).filter(r => /^v=spf1/i.test(r));
+    if(!records.length){
+      $('#status').innerHTML = `<span class="score none">${t('scoreNone')}</span>`;
+      $('#result').innerHTML = `
+        <div class="recs">
+          <div class="rec bad">Publish a TXT record on <strong>${esc(domain)}</strong> starting with <code>v=spf1</code> listing your authorized senders.</div>
+          <div class="rec warn">End the record with <code>~all</code> (soft fail) at first, then tighten to <code>-all</code> once you have monitored your mail flow.</div>
+        </div>`;
+      btn.classList.remove('busy');
+      return;
+    }
+    const raw = records[0];
+    const { mechs, lookups } = parseSpf(raw);
+    const lang = ()=> GZI18n && window.__gzLang === 'zh' ? 'zh' : 'en';
+
+    // find the all mechanism
+    const allMech = mechs.find(m => m.name === 'all');
+    let scoreClass, scoreText;
+    if(allMech){
+      const qc = qualClass(allMech.q);
+      if(qc === 'fail'){ scoreClass='good'; scoreText=t('scoreGood'); }
+      else if(qc === 'softfail'){ scoreClass='ok'; scoreText=t('scoreOk'); }
+      else if(qc === 'pass'){ scoreClass='bad'; scoreText=t('scoreBad'); }
+      else { scoreClass='bad'; scoreText=t('scoreBad'); }
+    } else {
+      scoreClass='ok'; scoreText=t('scoreOk');
+    }
+
+    // recs
+    const recs = [];
+    if(!allMech) recs.push({c:'warn', t:'No <code>all</code> mechanism. The default is <code>?all</code> (neutral). Add an explicit <code>-all</code> or <code>~all</code> at the end.'});
+    else if(allMech.q === '+') recs.push({c:'bad', t:'<code>+all</code> allows any sender — this defeats SPF. Switch to <code>-all</code> (hard fail).'});
+    else if(allMech.q === '~') recs.push({c:'warn', t:'<code>~all</code> is a soft fail. After monitoring your mail for a few weeks, tighten to <code>-all</code>.'});
+    else if(allMech.q === '?') recs.push({c:'warn', t:'<code>?all</code> is neutral and does nothing. Use <code>-all</code> to enforce.'});
+    if(lookups > 10) recs.push({c:'bad', t:`SPF uses <strong>${lookups}</strong> DNS lookups — over the RFC 7208 limit of 10. Receivers will return PermError. Flatten nested <code>include</code> chains with an SPF flattening service (SPF Macro / DMARC digest).`});
+    else if(lookups >= 8) recs.push({c:'warn', t:`${lookups} of 10 DNS lookups used — close to the limit. Avoid adding more <code>include</code> records.`});
+    if(mechs.some(m => m.name === 'ptr')) recs.push({c:'warn', t:'The <code>ptr</code> mechanism is deprecated, slow and unreliable. Remove it.'});
+    if(records.length > 1) recs.push({c:'bad', t:t('multiRecords')});
+    if(allMech && allMech.q === '-' && lookups <= 10) recs.push({c:'good', t:'SPF is enforced with a hard fail and within the lookup budget.'});
+
+    const lang2 = GZI18n && window.__gzLang === 'zh' ? 'zh' : 'en';
+    const mechCards = mechs.map(m=>{
+      const q = m.q || (m.name === 'all' ? '?' : '+');
+      const cls = m.name === 'all' ? qualClass(m.q) : 'info';
+      const doc = MECH_DOCS[m.name] ? MECH_DOCS[m.name][lang2] : '';
+      return `<div class="mech">
+        <span class="q ${cls}">${esc(q)}</span>
+        <div class="body">
+          <strong>${esc(m.name)}</strong>${m.val?': '+esc(m.val):''}
+          ${doc?`<div class="desc">${doc}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+    const lookupPct = Math.min(100, lookups*10);
+    const lookupColor = lookups > 10 ? 'var(--gz-accent)' : lookups >= 8 ? '#ffc107' : '#2ecc71';
+
+    $('#status').innerHTML = `<span class="score ${scoreClass}">${scoreText}</span>`;
+    $('#result').innerHTML = `
+      <div class="raw"><span class="k">${t('found')} @ ${esc(domain)}</span>${esc(raw)}</div>
+      <div class="lookup-box">
+        <span style="font-size:.82rem;color:var(--text2)">${t('lookupCount')}</span>
+        <div class="lookup-bar"><div style="width:${lookupPct}%;background:${lookupColor}"></div></div>
+        <strong style="color:${lookupColor}">${lookups} / 10</strong>
+      </div>
+      ${lookups>10?`<div style="margin-top:6px;color:var(--gz-accent);font-size:.85rem;font-weight:700">⚠ ${t('lookupOver')}</div>`:''}
+      <h3 style="margin:18px 0 0;font-size:1rem">${t('mechanisms')}</h3>
+      <div class="mech-list">${mechCards}</div>
+      ${recs.length?`<h3 style="margin:18px 0 0;font-size:1rem">${t('recommendations')}</h3><div class="recs">${recs.map(r=>`<div class="rec ${r.c}">${r.t}</div>`).join('')}</div>`:''}`;
+  }catch(e){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${t('netError')} (${esc(e.message)})</span>`;
+    $('#result').innerHTML='';
+  }
+  btn.classList.remove('busy');
+}
+
+function loadExample(){ $('#domain').value='github.com'; doCheck(); }
+
+$('#domain').addEventListener('keydown', e=>{ if(e.key==='Enter') doCheck(); });
+$('#checkBtn').onclick = doCheck;
+$('#exampleBtn').onclick = loadExample;
+
+$('#toolbar').innerHTML = '';
+$('#checkBtn').textContent = t('check');
+$('#exampleBtn').textContent = t('example');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🛡️', href:'/dev/dmarc-checker.html', name:'DMARC Checker'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📧', href:'/dev/email-header-analyzer.html', name:'Email Header Analyzer'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
