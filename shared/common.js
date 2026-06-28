@@ -1,4 +1,12 @@
 /* GameZipper Tools — Common JS — tunnel: garden-cricket-aged-depends
+ * v5.5.5-tools-after-related-slot (2026-06-28, kanban t_56c2ae7d 📈 Monetag优化):
+ *   Inject a 3rd AdSense `<ins>` slot (`gz-tools-after-related-slot`) right after the
+ *   `.gz-related` section on tool sub-pages. Uses proven gz.com banner slot 1099212472
+ *   (92 banner_fill events 24h on gz.com) via IntersectionObserver lazy-load. Position is
+ *   highest-CTR on tool pages (after related-tools list, before games cross-promo strip).
+ *   Mirrors gamezipper.com homepage banner pattern: explicit slot ID beats "auto" on low-volume
+ *   subdomains. Auto-injects only on tool pages (path starts with /<cat>/), skips hubs.
+ *   Idempotent — if already injected (e.g. shared/common.js re-evaluation), skip.
  * v5.5.4-tools-platform-account (2026-06-27, P0 task t_5e438852):
  *   Inject <meta name="google-adsense-platform-account" content="ca-pub-8346383990981353">
  *   at parse time. AdSense Auto Ads REQUIRES this meta to register the publisher
@@ -58,7 +66,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://investigated-foster-entity-interest.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://analytical-momentum-inner-painted.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
@@ -173,6 +181,66 @@ const GZ = (function(){
     adBelow.id = 'gz-tools-ad-below';
     adBelow.style.cssText = 'min-height:100px;margin:20px auto;max-width:728px;text-align:center';
     document.body.appendChild(adBelow);
+
+    // v5.5.5 (2026-06-28): Inject `gz-tools-after-related-slot` — a 3rd AdSense
+    //   `<ins>` slot positioned RIGHT AFTER the `.gz-related` section, BEFORE the
+    //   games cross-promo strip. Position rationale:
+    //     - After related-tools list (user just finished scanning alternative tools)
+    //     - Before "Take a Break — Play Free Games" strip (last chance to grab
+    //       ad attention before user navigates away)
+    //     - Both gz.com and tools see highest CTR here (banner_fill = 92/24h on gz.com
+    //       homepage bottom-banner, equivalent position).
+    //   Slot choice: explicit 1099212472 (gz.com's proven banner slot) instead of
+    //     "auto" — auto has 0/24h fill on tools subdomain (BI data). Explicit slot
+    //     IDs give AdSense a fixed inventory target rather than asking it to choose
+    //     for a low-volume subdomain.
+    //   Lazy-load: IntersectionObserver 200px rootMargin — only fetch when user
+    //     scrolls near the slot (saves bandwidth on quick bounces).
+    //   Skip on hub pages (already has gz-home-banner + gz-home-banner-2 = 3 banners,
+    //     adding a 4th would over-saturate the page).
+    //   Idempotent: checks for existing id="gz-tools-after-related-slot" first.
+    //   Defensive: IntersectionObserver fallback → immediate push for older browsers.
+    if (location.pathname.indexOf('/', 1) > 1 && !document.getElementById('gz-tools-after-related-slot')) {
+      try {
+        var slotWrapper = document.createElement('div');
+        slotWrapper.id = 'gz-tools-after-related-slot';
+        slotWrapper.className = 'gz-ad-after-related-wrapper';
+        slotWrapper.style.cssText = 'max-width:728px;min-height:100px;margin:24px auto;text-align:center;clear:both;overflow:hidden';
+        var slotIns = document.createElement('ins');
+        slotIns.className = 'adsbygoogle';
+        slotIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden';
+        slotIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
+        slotIns.setAttribute('data-ad-slot', '1099212472');
+        slotIns.setAttribute('data-ad-format', 'auto');
+        slotIns.setAttribute('data-full-width-responsive', 'false');
+        slotIns.setAttribute('data-gz-after-related', '1');
+        slotWrapper.appendChild(slotIns);
+        // Place after .gz-related if present, else append to body as fallback
+        var related = document.querySelector('.gz-related');
+        if (related && related.parentNode) {
+          related.parentNode.insertBefore(slotWrapper, related.nextSibling);
+        } else {
+          document.body.appendChild(slotWrapper);
+        }
+        // Lazy-load via IntersectionObserver — only request ad when 200px from viewport
+        if (typeof IntersectionObserver !== 'undefined') {
+          var io = new IntersectionObserver(function(entries) {
+            for (var j = 0; j < entries.length; j++) {
+              if (entries[j].isIntersecting) {
+                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+                io.unobserve(slotWrapper);
+              }
+            }
+          }, { rootMargin: '200px 0px' });
+          io.observe(slotWrapper);
+        } else {
+          // Older browser fallback — request immediately
+          try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+        }
+      } catch(e) {
+        // Silent fail — never break page render for an ad slot
+      }
+    }
 
     const linkStyle = 'background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)';
     const gameLinks = picked.map(function(g){return '<a href="https://gamezipper.com'+g.u+'" style="'+linkStyle+'">'+g.e+' '+g.n+'</a>';}).join('');
