@@ -120,16 +120,16 @@ const GZ = (function(){
   }
 
   const CATEGORIES = [
-    { id: 'text', icon: '📝', path: '/text/' },
-    { id: 'dev', icon: '💻', path: '/dev/' },
-    { id: 'color', icon: '🎨', path: '/color/' },
-    { id: 'image', icon: '🖼️', path: '/image/' },
-    { id: 'css', icon: '✨', path: '/css-tools/' },
-    { id: 'convert', icon: '🔄', path: '/convert/' },
-    { id: 'fortune', icon: '🔮', path: '/fortune/' },
-    { id: 'calc', icon: '🧮', path: '/calc/' },
-    { id: 'seo', icon: '🔍', path: '/seo/' },
-    { id: 'fun', icon: '🎲', path: '/fun/' },
+    { id: 'text', icon: '📝', path: '/?cat=text' },
+    { id: 'dev', icon: '💻', path: '/?cat=dev' },
+    { id: 'color', icon: '🎨', path: '/?cat=color' },
+    { id: 'image', icon: '🖼️', path: '/?cat=image' },
+    { id: 'css', icon: '✨', path: '/?cat=css' },
+    { id: 'convert', icon: '🔄', path: '/?cat=convert' },
+    { id: 'fortune', icon: '🔮', path: '/?cat=fortune' },
+    { id: 'calc', icon: '🧮', path: '/?cat=calc' },
+    { id: 'seo', icon: '🔍', path: '/?cat=seo' },
+    { id: 'fun', icon: '🎲', path: '/?cat=fun' },
   ];
 
   function renderHeader(activeCat) {
