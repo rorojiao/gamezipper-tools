@@ -3,6 +3,21 @@
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
  *
+ * v5.12 Changes (2026-06-29 — Dead-Zone Cull, parallel to gz.com v5.10):
+ *   - 🪦 Cull: 11012010, 11012011, 11012009 marked DEAD. BI 7d: 11012010=0/132 loads (0%,
+ *     mostly 530 CDN errors per load_error events), 11012011=0/72 (15 load_errors),
+ *     11012009=0/35 (1 load_error). ONLY 11012002 (inpagePushGz, cross-deployed from
+ *     gz.com) has produced any fill on tools (1 fill / 110 loads 7d = 0.9%).
+ *   - Load savings: ~240 ad-provider.js loads in 7d (~35/day, 1k/month of wasted
+ *     bandwidth + IP reputation risk). gz.com v5.10 dead-zone cull deployed same
+ *     day, recovered 100% fill rate on the only working zone (11012002) for gz.com
+ *     (5.9% fill rate now, vs 1.75% pre-cull).
+ *   - All Monetag loadZone() calls now reject dead zones immediately (no script
+ *     load, no backoff noise). Re-enable by removing from deadZones array.
+ *   - For tools, this concentrates all impression attempts on the ONE working zone.
+ *     If 11012002 fill rate stays 0.9% on tools, we'll need to investigate whether
+ *     tools subdomain has AdSense quality score issue (separate task).
+ *
  * v5.11 Changes (2026-06-28 — AdSense Tier 0 Timing + Container Div Auto-Inject):
  *   - 🐛 Fix: Banner Tier 0 timeout 2s → 3.5s (matches gz.com line 939 — 24h BI shows
  *     tools banner AdSense fill = 1/24h vs gz.com banner AdSense fill = 102/24h.
@@ -237,7 +252,14 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.11-tools-adsense-timing-fix',  // 2026-06-28: banner + container Tier 0 timeout 2s → 3.5s (matches gz.com line 939 — was missing 50% of real fills); offset gate 50→60px (was missing 51-58px renders); auto-inject gz-tools-ad-below div on init (was missing from all tools pages → v5.10.1 container ad never ran). Bumped from 5.10.1 to track on BI.
+    VERSION: '5.12-tools-dead-zone-cull',  // 2026-06-29: dead-zone cull (11012009/10/11 = 0% fill 7d); concentrates all Monetag attempts on 11012002 (only working zone). Bumped from 5.11 to track on BI.
+    // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
+    //   11012010 (inpagePush): 0/132 loads (0%)
+    //   11012011 (vignette):    0/72 loads (0%)
+    //   11012009 (popunder):    0/35 loads (0%)
+    //   11012002 (inpagePushGz): 1/110 loads = 0.9% (only working zone — keep alive)
+    // Re-enable any zone by removing from this array (gz.com pattern).
+    deadZones: [11012009, 11012010, 11012011],
     // v5.10.1: Container AdSense Tier 0 — showContainerAd() (gz-tools-ad-below div, injected
     //   on every tool sub-page via shared/common.js) was still pure Monetag 4-tier. v5.10
     //   only fixed showHomepageBanner. Adding AdSense Tier 0 here unlocks AdSense fill on
@@ -641,6 +663,15 @@
 
   function loadZone(zoneId, targetEl) {
     return new Promise(function(resolve, reject) {
+      // v5.12: dead-zone cull — skip 0% fill zones immediately (no script load,
+      // no event-tracking overhead). Re-enable by removing from deadZones array.
+      // Parallel fix to gz.com v5.10 (which recovered 100% fill rate on the
+      // only working zone after culling the dead ones).
+      if (CONFIG.deadZones && CONFIG.deadZones.indexOf(zoneId) !== -1) {
+        trackAdEvent('dead_zone_skip', { zoneId: zoneId });
+        reject(new Error('dead_zone_culled'));
+        return;
+      }
       // v5.5.2: primary zone kill switch — manually disable a zone when its
       // CDN edge is failing (e.g. 530 Origin DNS Error from a.magsrv.com).
       // Look up which primary slot this zone corresponds to.
