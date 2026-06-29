@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>INI Formatter & Validator - Free Online Tool | GameZipper Tools</title>
+<meta name="description" content="Format, beautify and validate INI configuration files online. Free INI formatter — clean up spacing, sort sections, and check syntax instantly in your browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/ini-formatter.html">
+<meta property="og:title" content="INI Formatter & Validator - Free Online Tool | GameZipper Tools">
+<meta property="og:description" content="Format, beautify and validate INI configuration files online. Free INI formatter — clean up spacing, sort sections, and check syntax instantly in your browser.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/ini-formatter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="INI Formatter & Validator - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.6}
+.ini-section{color:#e94560;font-weight:bold}
+.ini-key{color:#61afef}
+.ini-value{color:#00d672}
+.ini-comment{color:#888;font-style:italic}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"INI Formatter & Validator","description":"Format, beautify and validate INI configuration files online. Free INI formatter — clean up spacing, sort sections, and check syntax instantly in your browser.","url":"https://tools.gamezipper.com/dev/ini-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an INI file?", "acceptedAnswer": {"@type": "Answer", "text": "An INI file is a configuration file format with a simple structure of sections enclosed in square brackets and key=value pairs. It is commonly used by Windows applications, Git config, and many desktop tools."}}, {"@type": "Question", "name": "How do I format an INI file?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your INI content into the input area and click Format. The tool will normalize spacing around the equals sign, align values, and optionally sort sections and keys for cleaner readability."}}, {"@type": "Question", "name": "Can I validate INI syntax?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The formatter automatically parses your INI file and reports syntax errors such as unclosed section headers or malformed key-value pairs."}}, {"@type": "Question", "name": "Is my INI data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing happens entirely in your browser. No configuration data is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ini-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ini-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ini-formatter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" placeholder="[database]&#10;host=localhost&#10;port=5432"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'INI Formatter & Validator',
+    toolDesc: 'Format, beautify and validate INI configuration files. Normalize spacing, align values, sort sections and check syntax instantly.',
+    format: 'Format', sortSections: 'Sort sections', sortKeys: 'Sort keys', alignValues: 'Align values',
+    validIni: '✓ Valid INI', invalidIni: '✗ Invalid INI', sections: 'sections', keys: 'keys',
+    step1: 'Paste your INI configuration into the input area',
+    step2: 'Toggle options: sort sections, sort keys, or align values',
+    step3: 'Click Format to beautify with syntax highlighting',
+    step4: 'Copy the clean, formatted result to your clipboard',
+  },
+  zh: {
+    toolTitle: 'INI 格式化工具',
+    toolDesc: '格式化、美化和验证 INI 配置文件。规范化空格、对齐值、排序节并即时检查语法。',
+    format: '格式化', sortSections: '排序节', sortKeys: '排序键', alignValues: '对齐值',
+    validIni: '✓ INI 有效', invalidIni: '✗ INI 无效', sections: '个节', keys: '个键',
+    step1: '在输入区粘贴 INI 配置内容',
+    step2: '切换选项：排序节、排序键或对齐值',
+    step3: '点击「格式化」美化并高亮显示',
+    step4: '将整洁的格式化结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseINI(text) {
+  const lines = text.split('\n');
+  const result = []; // [{type:'comment'|'section'|'kv', ...}]
+  const errors = [];
+  let currentSection = null;
+
+  lines.forEach((rawLine, idx) => {
+    const line = rawLine.trim();
+    if (!line) { result.push({type:'blank'}); return; }
+    if (line.startsWith(';') || line.startsWith('#')) {
+      result.push({type:'comment', text: line}); return;
+    }
+    const secMatch = line.match(/^\[(.+)\]$/);
+    if (secMatch) {
+      currentSection = secMatch[1].trim();
+      result.push({type:'section', name: currentSection}); return;
+    }
+    const kvMatch = line.match(/^([^=]+)=(.*)$/);
+    if (kvMatch) {
+      result.push({type:'kv', key: kvMatch[1].trim(), value: kvMatch[2].trim(), section: currentSection}); return;
+    }
+    errors.push(`Line ${idx+1}: invalid syntax`);
+  });
+  return { result, errors };
+}
+
+function formatINI(text) {
+  const { result, errors } = parseINI(text);
+  if (errors.length) throw new Error(errors[0]);
+
+  let entries = result;
+
+  if ($('#sortSecChk')?.checked) {
+    // Group by section preserving leading comments/blanks structure minimally
+    const ordered = [];
+    const globalEntries = entries.filter(e => e.type === 'comment' || e.type === 'blank' || (e.type === 'kv' && !e.section));
+    const sections = {};
+    let curSec = null;
+    entries.forEach(e => {
+      if (e.type === 'section') { curSec = e.name; sections[curSec] = sections[curSec] || []; sections[curSec].push(e); }
+      else if (e.type === 'kv' && e.section && curSec) { sections[curSec].push(e); }
+    });
+    // Output global entries first (no section), then sorted sections
+    ordered.push(...globalEntries);
+    Object.keys(sections).sort((a,b) => a.localeCompare(b)).forEach(name => {
+      let items = sections[name];
+      if ($('#sortKeyChk')?.checked) {
+        const header = items.find(e => e.type === 'section');
+        const kvs = items.filter(e => e.type === 'kv').sort((a,b) => a.key.localeCompare(b.key));
+        const comments = items.filter(e => e.type === 'comment' || e.type === 'blank');
+        items = [header, ...kvs];
+      }
+      ordered.push(...items);
+    });
+    entries = ordered.filter(e => e.type !== 'blank' || true); // keep blanks
+  } else if ($('#sortKeyChk')?.checked) {
+    // Sort keys within each section without moving sections
+    const grouped = [];
+    let currentGroup = [];
+    entries.forEach(e => {
+      if (e.type === 'section') {
+        if (currentGroup.length) { grouped.push(currentGroup); }
+        currentGroup = [e];
+      } else {
+        currentGroup.push(e);
+      }
+    });
+    if (currentGroup.length) grouped.push(currentGroup);
+    grouped.forEach(g => {
+      const header = g.find(e => e.type === 'section');
+      const kvs = g.filter(e => e.type === 'kv').sort((a,b) => a.key.localeCompare(b.key));
+      const others = g.filter(e => e.type !== 'kv' && e.type !== ('section'));
+      // Reconstruct: comments before first section stay, then header, then sorted kvs
+      const beforeHeader = header ? g.slice(0, g.indexOf(header)) : [];
+      const newGroup = header ? [...beforeHeader, header, ...kvs] : [...kvs];
+      // Replace in place
+      const startIdx = grouped.indexOf(g);
+      grouped[startIdx] = newGroup;
+    });
+    entries = grouped.flat();
+  }
+
+  // Calculate alignment width
+  let maxKeyLen = 0;
+  if ($('#alignChk')?.checked) {
+    entries.forEach(e => { if (e.type === 'kv') maxKeyLen = Math.max(maxKeyLen, e.key.length); });
+  }
+
+  const output = entries.map(e => {
+    if (e.type === 'blank') return '';
+    if (e.type === 'comment') return e.text;
+    if (e.type === 'section') return `[${e.name}]`;
+    if (e.type === 'kv') {
+      const key = $('#alignChk')?.checked ? e.key.padEnd(maxKeyLen) : e.key;
+      return `${key} = ${e.value}`;
+    }
+    return '';
+  }).join('\n');
+
+  const stats = { sections: entries.filter(e => e.type === 'section').length, keys: entries.filter(e => e.type === 'kv').length };
+  return { output, stats };
+}
+
+function highlightINI(text) {
+  return escHtml(text).split('\n').map(line => {
+    if (/^\s*[;#]/.test(line)) return `<span class="ini-comment">${line}</span>`;
+    if (/^\s*\[.+\]/.test(line)) return `<span class="ini-section">${line}</span>`;
+    return line.replace(/^(\s*)([^=\s]+)(\s*=\s*)(.*)$/, (m, sp, key, eq, val) =>
+      `${sp}<span class="ini-key">${key}</span>${eq}<span class="ini-value">${val}</span>`);
+  }).join('\n');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function doFormat() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const { output, stats } = formatINI(inp);
+    $('#output').innerHTML = highlightINI(output);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validIni')}: ${stats.sections} ${t('sections')}, ${stats.keys} ${t('keys')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidIni')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${escHtml(e.message)}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = '; Database configuration\n[database]\nhost=localhost\nport=5432\ndbname=myapp\n\n[server]\nhost=0.0.0.0\nport=3000\n# Enable debug mode\ndebug=true';
+  doFormat();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">✨ ${t('format')}</button>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="sortSecChk"> ${t('sortSections')}</label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="sortKeyChk"> ${t('sortKeys')}</label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="alignChk" checked> ${t('alignValues')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📝', href:'/dev/yaml.html', name:'YAML Formatter'},
+    {icon:'🔧', href:'/dev/toml-validator.html', name:'TOML Validator'},
+    {icon:'⚙️', href:'/dev/env-editor.html', name:'ENV Editor'},
+    {icon:'🗃️', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

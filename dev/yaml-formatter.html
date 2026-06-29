@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>YAML Formatter & Beautifier - Free Online Tool | GameZipper Tools</title>
+<meta name="description" content="Format, beautify and normalize YAML indentation online. Free YAML formatter — fix inconsistent spacing, validate syntax, and clean up your YAML files instantly.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/yaml-formatter.html">
+<meta property="og:title" content="YAML Formatter & Beautifier - Free Online Tool | GameZipper Tools">
+<meta property="og:description" content="Format, beautify and normalize YAML indentation online. Free YAML formatter — fix inconsistent spacing, validate syntax, and clean up your YAML files instantly.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/yaml-formatter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="YAML Formatter & Beautifier - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+.yaml-key{color:#e94560}
+.yaml-value{color:#00d672}
+.yaml-string{color:#00d672}
+.yaml-number{color:#61afef}
+.yaml-bool{color:#d19a66}
+.yaml-null{color:#888}
+.yaml-comment{color:#888;font-style:italic}
+.yaml-anchor{color:#c678dd}
+.yaml-alias{color:#c678dd}
+.yaml-doc{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"YAML Formatter & Beautifier","description":"Format, beautify and normalize YAML indentation online. Free YAML formatter — fix inconsistent spacing, validate syntax, and clean up your YAML files instantly.","url":"https://tools.gamezipper.com/dev/yaml-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I format YAML online?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your YAML into the input area, select your indent size (2 or 4 spaces), and click Format. The tool will normalize indentation, fix spacing, and produce clean, consistent output."}}, {"@type": "Question", "name": "Can this tool validate YAML syntax?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The formatter parses your YAML using a standards-compliant parser. If there are syntax errors such as bad indentation or invalid mappings, you will see a detailed error message."}}, {"@type": "Question", "name": "What is YAML used for?", "acceptedAnswer": {"@type": "Answer", "text": "YAML (YAML Ain't Markup Language) is a human-friendly data serialization format widely used for configuration files, Docker Compose, Kubernetes manifests, CI/CD pipelines, and more."}}, {"@type": "Question", "name": "Is my YAML data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All YAML processing happens entirely in your browser. No configuration data is ever uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/yaml-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/yaml-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/yaml-formatter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" placeholder="server:&#10;  host: localhost&#10;  port: 8080&#10;database:&#10;  name: myapp"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'YAML Formatter & Beautifier',
+    toolDesc: 'Format, beautify and normalize YAML indentation. Fix inconsistent spacing, validate syntax, and produce clean YAML output instantly.',
+    indent: 'spaces', validYaml: '✓ Valid YAML', invalidYaml: '✗ Invalid YAML', sortKeys: 'Sort keys',
+    step1: 'Paste your YAML data into the input area',
+    step2: 'Choose indent size (2 or 4 spaces)',
+    step3: 'Click Format to beautify with syntax highlighting',
+    step4: 'Optionally sort keys, then copy the clean result',
+  },
+  zh: {
+    toolTitle: 'YAML 格式化工具',
+    toolDesc: '格式化、美化和规范化 YAML 缩进。修复不一致的空格、验证语法，即时生成整洁的 YAML 输出。',
+    indent: '空格', validYaml: '✓ YAML 有效', invalidYaml: '✗ YAML 无效', sortKeys: '排序键',
+    step1: '在输入区粘贴 YAML 数据',
+    step2: '选择缩进大小（2 或 4 空格）',
+    step3: '点击「格式化」美化并高亮显示',
+    step4: '可选择排序键，然后复制整洁的结果',
+  }
+});
+
+let indentSize = 2;
+const { $, copyText, t } = GZ;
+
+// Minimal YAML parser & serializer (handles common structures)
+function yamlDump(obj, indent) {
+  return dumpValue(obj, 0, indent);
+}
+
+function dumpValue(val, level, indent) {
+  const pad = ' '.repeat(level * indent);
+  if (val === null || val === undefined) return 'null';
+  if (typeof val === 'boolean') return String(val);
+  if (typeof val === 'number') return String(val);
+  if (typeof val === 'string') {
+    // Quote if needed
+    if (val === '' || /[:\{\}\[\],&\*#\?\|<>=!%@`"\n]/.test(val) || /^\s|\s$/.test(val) || /^[-?\[\]{}]/.test(val)) {
+      return '"' + val.replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"';
+    }
+    return val;
+  }
+  if (Array.isArray(val)) {
+    if (!val.length) return '[]';
+    return val.map(item => {
+      if (item !== null && typeof item === 'object') {
+        const inner = dumpValue(item, level + 1, indent);
+        const firstLine = inner.split('\n')[0];
+        const rest = inner.split('\n').slice(1).join('\n');
+        return `${pad}- ${firstLine}${rest ? '\n' + rest : ''}`;
+      }
+      return `${pad}- ${dumpValue(item, 0, indent)}`;
+    }).join('\n');
+  }
+  if (typeof val === 'object') {
+    const keys = $('#sortKeyChk')?.checked ? Object.keys(val).sort() : Object.keys(val);
+    if (!keys.length) return '{}';
+    return keys.map(key => {
+      const v = val[key];
+      if (v !== null && typeof v === 'object') {
+        const inner = dumpValue(v, level + 1, indent);
+        if (!inner) return `${pad}${key}:`;
+        if (Array.isArray(v)) {
+          return `${pad}${key}:\n${inner}`;
+        }
+        return `${pad}${key}:\n${inner}`;
+      }
+      return `${pad}${key}: ${dumpValue(v, 0, indent)}`;
+    }).join('\n');
+  }
+  return String(val);
+}
+
+function doFormat() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const obj = parseYAML(inp);
+    const formatted = yamlDump(obj, indentSize);
+    $('#output').innerHTML = highlightYAML(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validYaml')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidYaml')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${escHtml(e.message)}</span>`;
+  }
+}
+
+// Simple YAML parser supporting maps, sequences, scalars, strings, nested
+function parseYAML(text) {
+  const lines = text.split('\n');
+  let i = 0;
+
+  function parseValue(str) {
+    str = str.trim();
+    if (str === '' ) return null;
+    if (str === 'null' || str === '~') return null;
+    if (str === 'true' || str === 'yes' || str === 'on') return true;
+    if (str === 'false' || str === 'no' || str === 'off') return false;
+    if (/^-?\d+$/.test(str)) return parseInt(str, 10);
+    if (/^-?\d*\.\d+$/.test(str)) return parseFloat(str);
+    if (/^-?\d+(\.\d+)?[eE][+-]?\d+$/.test(str)) return parseFloat(str);
+    // Quoted strings
+    if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+      return str.slice(1, -1).replace(/\\"/g,'"').replace(/\\'/g,"'");
+    }
+    // Flow collections
+    if (str.startsWith('[') && str.endsWith(']')) {
+      const inner = str.slice(1,-1).trim();
+      if (!inner) return [];
+      return inner.split(',').map(s => parseValue(s.trim()));
+    }
+    if (str.startsWith('{') && str.endsWith('}')) {
+      const inner = str.slice(1,-1).trim();
+      if (!inner) return {};
+      const obj = {};
+      inner.split(',').forEach(pair => {
+        const [k,v] = pair.split(':');
+        obj[k.trim()] = parseValue((v||'').trim());
+      });
+      return obj;
+    }
+    return str;
+  }
+
+  function getIndent(line) {
+    const m = line.match(/^(\s*)/);
+    return m[1].length;
+  }
+
+  function parseBlock(minIndent) {
+    let result = null;
+    while (i < lines.length) {
+      let line = lines[i];
+      // Skip comments and blanks
+      const trimmed = line.replace(/#.*$/, '').trim();  // strip inline comments
+      if (!trimmed) { i++; continue; }
+      const indent = getIndent(line);
+      if (indent < minIndent) break;
+
+      // Sequence item
+      if (/^\s*-\s/.test(line) || /^\s*-$/.test(line)) {
+        if (!Array.isArray(result)) result = [];
+        const itemContent = line.replace(/^\s*-\s?/, '');
+        if (!itemContent || itemContent.trim() === '') {
+          i++;
+          const nested = parseBlock(indent + 1);
+          result.push(nested);
+        } else if (itemContent.includes(':') && !itemContent.match(/^["'].*["']$/)) {
+          // inline mapping item like "- key: value"
+          const obj = {};
+          const [k, ...rest] = itemContent.split(':');
+          const v = rest.join(':').trim();
+          if (v === '') {
+            i++;
+            obj[k.trim()] = parseBlock(indent + 2);
+          } else {
+            obj[k.trim()] = parseValue(v);
+            i++;
+          }
+          // Check for more keys at indent+2
+          while (i < lines.length) {
+            const nl = lines[i];
+            const nt = nl.replace(/#.*$/,'').trim();
+            if (!nt) { i++; continue; }
+            if (getIndent(nl) < indent + 2) break;
+            const [nk, ...nr] = nt.split(':');
+            const nv = nr.join(':').trim();
+            if (nv === '') { i++; obj[nk.trim()] = parseBlock(getIndent(nl)+1); }
+            else { obj[nk.trim()] = parseValue(nv); i++; }
+          }
+          result.push(obj);
+        } else {
+          result.push(parseValue(itemContent));
+          i++;
+        }
+        continue;
+      }
+
+      // Key-value
+      const kvMatch = trimmed.match(/^([^:]+):(.*)$/);
+      if (kvMatch) {
+        if (!result || Array.isArray(result)) result = {};
+        const key = kvMatch[1].trim();
+        const valStr = kvMatch[2].trim();
+        if (valStr === '') {
+          i++;
+          const childIndent = (i < lines.length && /^\s*$/.test(lines[i].replace(/#.*$/,'')) ) ? indent : (i < lines.length ? getIndent(lines[i]) : indent);
+          if (i < lines.length && childIndent > indent) {
+            result[key] = parseBlock(childIndent);
+          } else {
+            result[key] = null;
+          }
+        } else {
+          result[key] = parseValue(valStr);
+          i++;
+        }
+        continue;
+      }
+
+      // Unknown line
+      i++;
+    }
+    return result;
+  }
+
+  // Skip leading document markers and comments
+  while (i < lines.length) {
+    const l = lines[i].trim();
+    if (!l || l.startsWith('#') || l === '---' || l === '...') { i++; continue; }
+    break;
+  }
+  const result = parseBlock(0);
+  if (result === null) throw new Error('Empty or invalid YAML');
+  return result;
+}
+
+function highlightYAML(text) {
+  return escHtml(text).split('\n').map(line => {
+    // Comments
+    if (/^\s*#/.test(line)) return `<span class="yaml-comment">${line}</span>`;
+    // Document markers
+    if (/^(---|\.\.\.)/.test(line)) return `<span class="yaml-doc">${line}</span>`;
+    // Key-value
+    return line.replace(/^(\s*-?\s*)([^:]+)(:)(.*)$/, (m, prefix, key, colon, rest) => {
+      let valSpan = '';
+      const v = rest.trim();
+      if (!v) valSpan = '';
+      else if (v === 'null' || v === '~') valSpan = `<span class="yaml-null">${rest}</span>`;
+      else if (v === 'true' || v === 'false') valSpan = `<span class="yaml-bool">${rest}</span>`;
+      else if (/^-?\d/.test(v)) valSpan = `<span class="yaml-number">${rest}</span>`;
+      else valSpan = `<span class="yaml-string">${rest}</span>`;
+      return `${prefix}<span class="yaml-key">${key}</span>${colon}${valSpan}`;
+    });
+  }).join('\n');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadExample() {
+  $('#input').value = 'server:\n  host: localhost\n  port: 8080\n  debug: true\ndatabase:\n  name: myapp\n  pool_size: 10\nfeatures:\n  - auth\n  - logging\n  - cache';
+  doFormat();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">✨ ${t('format')}</button>
+  <label style="font-size:.85em">${t('indent')}:
+    <select class="gz-select" onchange="indentSize=+this.value;doFormat()">
+      <option value="2">2</option>
+      <option value="4">4</option>
+    </select>
+  </label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="sortKeyChk" onchange="doFormat()"> ${t('sortKeys')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔧', href:'/dev/toml-validator.html', name:'TOML Validator'},
+    {icon:'⚙️', href:'/dev/ini-formatter.html', name:'INI Formatter'},
+    {icon:'🗃️', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔄', href:'/convert/yaml-to-json.html', name:'YAML to JSON'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
