@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>CSV 拆分器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将大型 CSV 拆分为多个小文件 — 按每个文件的行数、按文件数量，或按某列的唯一值。每个分片保留表头。免费、私密、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/csv-splitter.html">
+  <meta property="og:title" content="CSV 拆分器">
+  <meta property="og:description" content="将大型 CSV 拆分为多个小文件 — 按每个文件的行数、按文件数量，或按某列的唯一值。每个分片保留表头。免费、私密、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/csv-splitter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV 拆分器">
+<meta name="twitter:description" content="将大型 CSV 拆分为多个小文件 — 按每个文件的行数、按文件数量，或按某列的唯一值。每个分片保留表头。免费、私密、浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;max-height:320px;overflow:auto}
+#status{margin-top:8px;font-size:.85em}
+.split-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0}
+.split-in{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.split-in label{display:block;font-size:.75em;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.split-in input,.split-in select{width:100%;padding:8px 10px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:.95em;font-family:inherit}
+.mode-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.mode-tabs button{flex:1;min-width:120px}
+.mode-tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.file-card{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:6px 0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.file-card .info{flex:1;min-width:0}
+.file-card .fname{font-weight:600;font-size:.9em;word-break:break-all}
+.file-card .fmeta{font-size:.78em;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV Splitter","description":"Split a large CSV file into smaller files online for free. Split by number of rows, number of files, or by unique values in a column. 100% browser-based — no upload, no signup.","url": "https://tools.gamezipper.com/zh/convert/csv-splitter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I split a large CSV file into smaller files?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSV into the input area, choose a split mode (by rows per file, by number of files, or by unique values in a column), and click Split. Each chunk keeps the original header row. You can preview each file and download them individually or all at once."}}, {"@type": "Question", "name": "Is my CSV data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All splitting happens entirely in your browser. Your CSV data is never uploaded to any server — everything runs locally on your device."}}, {"@type": "Question", "name": "Does each split file keep the header row?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. When the 'First row is header' option is enabled (the default), the header row is automatically added to the top of every split file so each one is a valid, standalone CSV."}}, {"@type": "Question", "name": "What is the maximum CSV size I can split?", "acceptedAnswer": {"@type": "Answer", "text": "Because the tool runs in your browser, the practical limit depends on your device's memory. Most modern browsers can comfortably handle CSV files up to 50–100 MB. For extremely large files, splitting by a high row count works best."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-splitter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-splitter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-splitter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+
+    <div class="mode-tabs" id="modeTabs">
+      <button class="gz-btn gz-btn-secondary active" data-mode="rows" id="btn-rows"></button>
+      <button class="gz-btn gz-btn-secondary" data-mode="files" id="btn-files"></button>
+      <button class="gz-btn gz-btn-secondary" data-mode="column" id="btn-column"></button>
+    </div>
+
+    <div class="split-grid">
+      <div class="split-in">
+        <label id="lbl-value"></label>
+        <input type="number" id="splitValue" value="100" min="1">
+      </div>
+      <div class="split-in" id="colWrap" style="display:none">
+        <label id="lbl-col"></label>
+        <select id="splitCol"></select>
+      </div>
+      <div class="split-in">
+        <label id="lbl-delim"></label>
+        <select id="delim">
+          <option value="auto" selected>Auto</option>
+          <option value=",">Comma (,)</option>
+          <option value=";">Semicolon (;)</option>
+          <option value="tab">Tab</option>
+          <option value="|">Pipe (|)</option>
+        </select>
+      </div>
+      <div class="split-in">
+        <label id="lbl-header"></label>
+        <select id="hasHeader">
+          <option value="1" selected id="opt-yes"></option>
+          <option value="0" id="opt-no"></option>
+        </select>
+      </div>
+    </div>
+
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="id,name,email,country&#10;1,Alice,alice@mail.com,US&#10;2,Bob,bob@mail.com,UK&#10;3,Carol,carol@mail.com,US&#10;..."></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+    <div id="filesList"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV Splitter',
+    toolDesc: 'Split a large CSV into smaller files — by rows per file, by number of files, or by unique values in a column. Each chunk keeps the header. Free, private, browser-only.',
+    modeRows: 'Rows per file',
+    modeFiles: 'Number of files',
+    modeColumn: 'By column value',
+    lblValue: 'Value',
+    lblCol: 'Column',
+    lblDelim: 'Delimiter',
+    lblHeader: 'First row is header',
+    lblIn: 'CSV Input',
+    lblOut: 'Preview (first chunk)',
+    optYes: 'Yes',
+    optNo: 'No',
+    split: 'Split CSV',
+    example: 'Example',
+    clear: 'Clear',
+    downloadAll: 'Download All (.zip)',
+    download: 'Download',
+    noData: 'Paste some CSV data first.',
+    result: (n, r) => `✓ Split into ${n} file(s), ${r} data row(s) total`,
+    step1: 'Paste your CSV data into the input area',
+    step2: 'Choose a split mode: rows per file, number of files, or by column value',
+    step3: 'Click Split — each chunk keeps the header row',
+    step4: 'Preview, then download individual files or all at once',
+  },
+  zh: {
+    toolTitle: 'CSV 拆分器',
+    toolDesc: '将大型 CSV 拆分为多个小文件 — 按每个文件的行数、按文件数量，或按某列的唯一值。每个分片保留表头。免费、私密、浏览器本地运行。',
+    modeRows: '每个文件的行数',
+    modeFiles: '文件数量',
+    modeColumn: '按列的值',
+    lblValue: '数值',
+    lblCol: '列',
+    lblDelim: '分隔符',
+    lblHeader: '首行为表头',
+    lblIn: 'CSV 输入',
+    lblOut: '预览（第一个分片）',
+    optYes: '是',
+    optNo: '否',
+    split: '拆分 CSV',
+    example: '示例',
+    clear: '清空',
+    downloadAll: '下载全部（.zip）',
+    download: '下载',
+    noData: '请先粘贴 CSV 数据。',
+    result: (n, r) => `✓ 拆分为 ${n} 个文件，共 ${r} 行数据`,
+    step1: '将 CSV 数据粘贴到输入区',
+    step2: '选择拆分模式：每个文件的行数、文件数量，或按列的值',
+    step3: '点击拆分 — 每个分片都会保留表头',
+    step4: '预览后，可单独下载文件或一次性下载全部',
+  }
+});
+
+let mode = 'rows';
+let lastChunks = [];
+const { $, copyText, t } = GZ;
+
+function detectDelim(text) {
+  if (text.includes('\t')) return '\t';
+  const firstLine = text.split('\n')[0] || '';
+  const semi = (firstLine.match(/;/g) || []).length;
+  const pipe = (firstLine.match(/\|/g) || []).length;
+  const comma = (firstLine.match(/,/g) || []).length;
+  if (semi > comma && semi > pipe) return ';';
+  if (pipe > comma && pipe > semi) return '|';
+  return ',';
+}
+
+function parseCSV(text, delim) {
+  const rows = [];
+  let row = [], cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') { if (inQ && text[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (c === delim && !inQ) { row.push(cur); cur = ''; }
+    else if (c === '\n' && !inQ) { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else if (c === '\r') { /* skip */ }
+    else cur += c;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.length > 1 || (r.length === 1 && r[0] !== ''));
+}
+
+function toCSV(rows, delim) {
+  return rows.map(r => r.map(v => {
+    const s = String(v == null ? '' : v);
+    return (s.includes(delim) || s.includes('"') || s.includes('\n') || s.includes('\r')) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(delim)).join('\n');
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updateColOptions(header) {
+  const sel = $('#splitCol');
+  sel.innerHTML = header.map((h, i) => `<option value="${i}">${escapeHtml(h) || 'Col ' + i}</option>`).join('');
+}
+
+function doSplit() {
+  const raw = $('#input').value;
+  if (!raw.trim()) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noData')}</span>`; return; }
+  const delimSel = $('#delim').value;
+  const delim = delimSel === 'auto' ? detectDelim(raw) : (delimSel === 'tab' ? '\t' : delimSel);
+  const hasHeader = $('#hasHeader').value === '1';
+  const rows = parseCSV(raw, delim);
+  if (!rows.length) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noData')}</span>`; return; }
+
+  const header = hasHeader ? rows[0] : null;
+  const data = hasHeader ? rows.slice(1) : rows;
+
+  if (mode === 'column') {
+    const colIdx = parseInt($('#splitCol').value) || 0;
+    const groups = {};
+    const order = [];
+    data.forEach(r => {
+      const key = r[colIdx] != null ? r[colIdx] : '';
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(r);
+    });
+    lastChunks = order.map(key => {
+      const safe = String(key).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40) || 'empty';
+      return { name: `chunk_${safe}.csv`, rows: header ? [header, ...groups[key]] : groups[key] };
+    });
+  } else {
+    const val = Math.max(1, parseInt($('#splitValue').value) || 1);
+    let perFile, numFiles;
+    if (mode === 'rows') { perFile = val; numFiles = Math.ceil(data.length / perFile); }
+    else { numFiles = val; perFile = Math.ceil(data.length / numFiles); }
+    lastChunks = [];
+    for (let i = 0; i < numFiles; i++) {
+      const slice = data.slice(i * perFile, (i + 1) * perFile);
+      if (!slice.length) break;
+      lastChunks.push({ name: `chunk_${i + 1}_of_${numFiles}.csv`, rows: header ? [header, ...slice] : slice });
+    }
+  }
+
+  // Preview first chunk
+  if (lastChunks.length) {
+    const preview = toCSV(lastChunks[0].rows.slice(0, 50), delim);
+    $('#output').textContent = preview + (lastChunks[0].rows.length > 50 ? '\n... (' + lastChunks[0].rows.length + ' rows)' : '');
+  }
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('result', lastChunks.length, data.length)}</span>`;
+  renderFiles(delim);
+}
+
+function renderFiles(delim) {
+  const wrap = $('#filesList');
+  if (!lastChunks.length) { wrap.innerHTML = ''; return; }
+  let html = '';
+  lastChunks.forEach((chunk, i) => {
+    const dataRows = chunk.rows.length - ($('#hasHeader').value === '1' ? 1 : 0);
+    const sizeKB = (new Blob([toCSV(chunk.rows, delim)]).size / 1024).toFixed(1);
+    html += `<div class="file-card">
+      <div class="info">
+        <div class="fname">${escapeHtml(chunk.name)}</div>
+        <div class="fmeta">${chunk.rows.length} rows · ${dataRows} data · ${sizeKB} KB</div>
+      </div>
+      <button class="gz-btn gz-btn-secondary" onclick="downloadChunk(${i})">${t('download')}</button>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+}
+
+function downloadChunk(i) {
+  const delimSel = $('#delim').value;
+  const delim = delimSel === 'auto' ? detectDelim($('#input').value) : (delimSel === 'tab' ? '\t' : delimSel);
+  const chunk = lastChunks[i];
+  if (!chunk) return;
+  const blob = new Blob([toCSV(chunk.rows, delim)], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = chunk.name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadAllZip() {
+  if (!lastChunks.length) return;
+  const delimSel = $('#delim').value;
+  const delim = delimSel === 'auto' ? detectDelim($('#input').value) : (delimSel === 'tab' ? '\t' : delimSel);
+  // Minimal client-side zip via JSZip if available, else download sequentially
+  if (window.JSZip) {
+    const zip = new JSZip();
+    lastChunks.forEach(c => zip.file(c.name, toCSV(c.rows, delim)));
+    zip.generateAsync({ type: 'blob' }).then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'csv_chunks.zip';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  } else {
+    // Fallback: download each with small delay
+    lastChunks.forEach((_, i) => setTimeout(() => downloadChunk(i), i * 300));
+  }
+}
+
+function loadExample() {
+  $('#input').value = 'id,name,email,country,score\n1,Alice,alice@mail.com,US,95\n2,Bob,bob@mail.com,UK,88\n3,Carol,carol@mail.com,US,72\n4,Dave,dave@mail.com,DE,91\n5,Eve,eve@mail.com,US,85\n6,Frank,frank@mail.com,UK,79\n7,Grace,grace@mail.com,DE,93\n8,Heidi,heidi@mail.com,US,87';
+  // Update column options
+  const d = detectDelim($('#input').value);
+  const rows = parseCSV($('#input').value, d);
+  updateColOptions(rows[0]);
+  doSplit();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; $('#filesList').innerHTML = ''; lastChunks = []; }
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('#modeTabs button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  $('#colWrap').style.display = m === 'column' ? '' : 'none';
+  const v = $('#splitValue');
+  if (m === 'rows') { v.value = v.value || 100; }
+  else if (m === 'files') { v.value = v.value || 3; }
+}
+
+// Init labels and tabs
+$('#btn-rows').textContent = t('modeRows');
+$('#btn-files').textContent = t('modeFiles');
+$('#btn-column').textContent = t('modeColumn');
+$('#lbl-value').textContent = t('lblValue');
+$('#lbl-col').textContent = t('lblCol');
+$('#lbl-delim').textContent = t('lblDelim');
+$('#lbl-header').textContent = t('lblHeader');
+$('#opt-yes').textContent = t('optYes');
+$('#opt-no').textContent = t('optNo');
+$('#lbl-in').textContent = t('lblIn');
+$('#lbl-out').textContent = t('lblOut');
+
+document.querySelectorAll('#modeTabs button').forEach(b => {
+  b.addEventListener('click', () => { setMode(b.dataset.mode); doSplit(); });
+});
+
+// Update col options on input change
+$('#input').addEventListener('input', () => {
+  const d = $('#delim').value === 'auto' ? detectDelim($('#input').value) : ($('#delim').value === 'tab' ? '\t' : $('#delim').value);
+  const rows = parseCSV($('#input').value, d);
+  if (rows.length) updateColOptions(rows[0]);
+});
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doSplit()">${t('split')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="downloadAllZip()">${t('downloadAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+// Load JSZip dynamically for the "Download All" feature
+if (!window.JSZip) {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+  s.defer = true;
+  document.head.appendChild(s);
+}
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/convert/csv-joiner.html', name:'CSV Joiner'},
+    {icon:'📋', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📊', href:'/convert/csv-to-markdown.html', name:'CSV to Markdown'},
+    {icon:'🔀', href:'/convert/csv-transpose.html', name:'CSV Transpose'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
