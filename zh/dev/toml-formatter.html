@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>TOML 格式化工具 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="格式化、美化和验证 TOML 配置文件。规范化空格、对齐值、排序表并即时检查语法。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/toml-formatter.html">
+<meta property="og:title" content="TOML 格式化工具">
+<meta property="og:description" content="格式化、美化和验证 TOML 配置文件。规范化空格、对齐值、排序表并即时检查语法。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/toml-formatter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TOML 格式化工具">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.6}
+.toml-table{color:#e94560;font-weight:bold}
+.toml-key{color:#61afef}
+.toml-string{color:#00d672}
+.toml-number{color:#d19a66}
+.toml-bool{color:#c678dd}
+.toml-comment{color:#888;font-style:italic}
+.toml-date{color:#56b6c2}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"TOML Formatter & Beautifier","description":"Format, beautify and validate TOML configuration files online. Free TOML formatter — normalize spacing, sort tables, and check syntax instantly in your browser.","url": "https://tools.gamezipper.com/zh/dev/toml-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a TOML file?", "acceptedAnswer": {"@type": "Answer", "text": "TOML (Tom's Obvious Minimal Language) is a configuration file format designed to be human-readable. It is used by Rust's Cargo, Python's pyproject.toml, and many modern tools as a cleaner alternative to INI."}}, {"@type": "Question", "name": "How do I format a TOML file?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your TOML into the input area and click Format. The tool normalizes spacing around the equals sign, aligns values, and optionally sorts tables and keys for maximum readability."}}, {"@type": "Question", "name": "Can I validate TOML syntax?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The formatter parses your TOML and reports syntax errors such as malformed tables, invalid keys, or unclosed strings with helpful messages."}}, {"@type": "Question", "name": "Is my TOML data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing happens entirely in your browser. No configuration data is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/toml-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/toml-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/toml-formatter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" placeholder="[package]&#10;name = \"myapp\"&#10;version = \"1.0.0\"&#10;&#10;[dependencies]&#10;serde = \"1.0\""></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'TOML Formatter & Beautifier',
+    toolDesc: 'Format, beautify and validate TOML configuration files. Normalize spacing, align values, sort tables and check syntax instantly.',
+    format: 'Format', sortTables: 'Sort tables', sortKeys: 'Sort keys', alignValues: 'Align values',
+    validToml: '✓ Valid TOML', invalidToml: '✗ Invalid TOML', tables: 'tables', keys: 'keys',
+    step1: 'Paste your TOML configuration into the input area',
+    step2: 'Toggle options: sort tables, sort keys, or align values',
+    step3: 'Click Format to beautify with syntax highlighting',
+    step4: 'Copy the clean, formatted result to your clipboard',
+  },
+  zh: {
+    toolTitle: 'TOML 格式化工具',
+    toolDesc: '格式化、美化和验证 TOML 配置文件。规范化空格、对齐值、排序表并即时检查语法。',
+    format: '格式化', sortTables: '排序表', sortKeys: '排序键', alignValues: '对齐值',
+    validToml: '✓ TOML 有效', invalidToml: '✗ TOML 无效', tables: '个表', keys: '个键',
+    step1: '在输入区粘贴 TOML 配置内容',
+    step2: '切换选项：排序表、排序键或对齐值',
+    step3: '点击「格式化」美化并高亮显示',
+    step4: '将整洁的格式化结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseTOML(text) {
+  const lines = text.split('\n');
+  const result = []; // ordered list of entries
+  const errors = [];
+
+  lines.forEach((rawLine, idx) => {
+    const line = rawLine.trim();
+    if (!line) { result.push({type:'blank'}); return; }
+    if (line.startsWith('#')) { result.push({type:'comment', text: line}); return; }
+
+    // Table header [section] or [section.subsection]
+    const tableMatch = line.match(/^\[([^\]]+)\]$/);
+    if (tableMatch) {
+      result.push({type:'table', name: tableMatch[1].trim()});
+      return;
+    }
+
+    // Array of tables [[section]]
+    const arrTableMatch = line.match(/^\[\[([^\]]+)\]\]$/);
+    if (arrTableMatch) {
+      result.push({type:'arraytable', name: arrTableMatch[1].trim()});
+      return;
+    }
+
+    // Key = value
+    const kvMatch = line.match(/^([^=\s]+)\s*=\s*(.*)$/);
+    if (kvMatch) {
+      result.push({type:'kv', key: kvMatch[1], rawValue: kvMatch[2], line: idx+1});
+      return;
+    }
+
+    errors.push(`Line ${idx+1}: invalid TOML syntax`);
+  });
+
+  return { result, errors };
+}
+
+function formatTOMLValue(raw) {
+  // Keep the value as-is but trim trailing comments nicely
+  return raw.replace(/(#.*)$/, ' $1').trim();
+}
+
+function doFormat() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const { result, errors } = parseTOML(inp);
+    if (errors.length) throw new Error(errors[0]);
+
+    let entries = result;
+
+    if ($('#sortTabChk')?.checked) {
+      // Separate top-level key-values, comments before first table, then sorted tables
+      const before = [];
+      const tables = {};
+      let order = [];
+      let seenTable = false;
+      entries.forEach(e => {
+        if ((e.type === 'table' || e.type === 'arraytable') && !seenTable) seenTable = true;
+        if (!seenTable) { before.push(e); return; }
+        if (e.type === 'table' || e.type === 'arraytable') {
+          if (!tables[e.name]) { tables[e.name] = []; order.push(e.name); }
+          tables[e.name].push(e);
+        } else if (order.length) {
+          tables[order[order.length-1]].push(e);
+        }
+      });
+      entries = [...before];
+      Object.keys(tables).sort((a,b) => a.localeCompare(b)).forEach(name => {
+        let items = tables[name];
+        if ($('#sortKeyChk')?.checked) {
+          const header = items.find(e => e.type === 'table' || e.type === 'arraytable');
+          const kvs = items.filter(e => e.type === 'kv').sort((a,b) => a.key.localeCompare(b.key));
+          items = [header, ...kvs];
+        }
+        entries.push(...items);
+      });
+    } else if ($('#sortKeyChk')?.checked) {
+      // Sort keys within each table without moving tables
+      const grouped = [];
+      let cur = [];
+      entries.forEach(e => {
+        if (e.type === 'table' || e.type === 'arraytable') {
+          if (cur.length) grouped.push(cur);
+          cur = [e];
+        } else {
+          cur.push(e);
+        }
+      });
+      if (cur.length) grouped.push(cur);
+      grouped.forEach(g => {
+        const headerIdx = g.findIndex(e => e.type === 'table' || e.type === 'arraytable');
+        const header = headerIdx >= 0 ? g[headerIdx] : null;
+        const kvs = g.filter(e => e.type === 'kv').sort((a,b) => a.key.localeCompare(b.key));
+        const idx = grouped.indexOf(g);
+        grouped[idx] = header ? [header, ...kvs] : kvs;
+      });
+      entries = grouped.flat();
+    }
+
+    // Alignment
+    let maxKeyLen = 0;
+    if ($('#alignChk')?.checked) {
+      entries.forEach(e => { if (e.type === 'kv') maxKeyLen = Math.max(maxKeyLen, e.key.length); });
+    }
+
+    const output = entries.map(e => {
+      if (e.type === 'blank') return '';
+      if (e.type === 'comment') return e.text;
+      if (e.type === 'table') return `[${e.name}]`;
+      if (e.type === 'arraytable') return `[[${e.name}]]`;
+      if (e.type === 'kv') {
+        const key = $('#alignChk')?.checked ? e.key.padEnd(maxKeyLen) : e.key;
+        return `${key} = ${formatTOMLValue(e.rawValue)}`;
+      }
+      return '';
+    }).join('\n');
+
+    $('#output').innerHTML = highlightTOML(output);
+    const tableCount = entries.filter(e => e.type === 'table' || e.type === 'arraytable').length;
+    const keyCount = entries.filter(e => e.type === 'kv').length;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validToml')}: ${tableCount} ${t('tables')}, ${keyCount} ${t('keys')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidToml')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${escHtml(e.message)}</span>`;
+  }
+}
+
+function highlightTOML(text) {
+  return escHtml(text).split('\n').map(line => {
+    if (/^\s*#/.test(line)) return `<span class="toml-comment">${line}</span>`;
+    if (/^\s*\[\[.+\]\]/.test(line)) return `<span class="toml-table">${line}</span>`;
+    if (/^\s*\[.+\]/.test(line)) return `<span class="toml-table">${line}</span>`;
+    return line.replace(/^(\s*)([^=\s]+)(\s*=\s*)(.*)$/, (m, sp, key, eq, val) => {
+      let vSpan = val;
+      if (/^(true|false)/.test(val.trim())) vSpan = `<span class="toml-bool">${val}</span>`;
+      else if (/^-?\d/.test(val.trim())) vSpan = `<span class="toml-number">${val}</span>`;
+      else if (/^["']/.test(val.trim())) vSpan = `<span class="toml-string">${val}</span>`;
+      else if (/^\d{4}-\d{2}-\d{2}/.test(val.trim())) vSpan = `<span class="toml-date">${val}</span>`;
+      return `${sp}<span class="toml-key">${key}</span>${eq}${vSpan}`;
+    });
+  }).join('\n');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadExample() {
+  $('#input').value = '[package]\nname = "myapp"\nversion = "1.0.0"\nedition = "2021"\n\n[dependencies]\nserde = "1.0"\ntokio = { version = "1", features = ["full"] }\n\n[profile.release]\nopt-level = 3\nlto = true';
+  doFormat();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">✨ ${t('format')}</button>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="sortTabChk"> ${t('sortTables')}</label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="sortKeyChk"> ${t('sortKeys')}</label>
+  <label style="display:flex;align-items:center;gap:4px;font-size:.85em"><input type="checkbox" id="alignChk" checked> ${t('alignValues')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📝', href:'/dev/yaml-formatter.html', name:'YAML Formatter'},
+    {icon:'⚙️', href:'/dev/ini-formatter.html', name:'INI Formatter'},
+    {icon:'✅', href:'/dev/toml-validator.html', name:'TOML Validator'},
+    {icon:'🔄', href:'/convert/json-to-toml.html', name:'JSON to TOML'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
