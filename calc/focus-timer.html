@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Focus Timer - Deep Work & Concentration Timer | GameZipper Tools</title>
+  <meta name="description" content="Free focus timer for deep work — Pomodoro, 52/17, custom focus sessions with ambient white noise, break reminders and session stats. Beat distractions, 100% in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/focus-timer.html">
+  <meta property="og:title" content="Focus Timer - Deep Work & Concentration Timer | GameZipper Tools">
+  <meta property="og:description" content="Free focus timer for deep work — Pomodoro, 52/17, custom focus sessions with ambient white noise, break reminders and session stats. Beat distractions, 100% in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/focus-timer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Focus Timer - Deep Work & Concentration Timer | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+.timer-display{text-align:center;padding:30px 0}
+.timer-circle{width:280px;height:280px;margin:0 auto;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:conic-gradient(var(--ring-color,#4ecdc4) calc(var(--progress,0)*1%), rgba(128,128,128,.15) 0);position:relative;transition:background .3s}
+.timer-circle::before{content:'';position:absolute;width:240px;height:240px;border-radius:50%;background:var(--gz-bg,#0f0f1e)}
+.timer-inner{position:relative;z-index:1}
+.timer-time{font-size:3.6em;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-2px;line-height:1}
+.timer-label{font-size:.9em;text-transform:uppercase;letter-spacing:3px;opacity:.6;margin-top:6px}
+.phase-focus .timer-time{color:var(--gz-accent,#4ecdc4)}
+.phase-break .timer-time{color:#ff6b6b}
+.timer-controls{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.timer-controls button{padding:12px 28px;font-size:1em;border-radius:10px;cursor:pointer;border:none;font-weight:600}
+.btn-primary{background:var(--gz-accent,#4ecdc4);color:#000}
+.btn-secondary{background:rgba(128,128,128,.2);color:var(--gz-text,#eee)}
+.preset-row{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.preset-row button{padding:8px 16px;border-radius:8px;border:1px solid var(--gz-border,#333);background:transparent;color:var(--gz-text,#eee);cursor:pointer;font-size:.9em}
+.preset-row button.active{background:var(--gz-accent,#4ecdc4);color:#000;border-color:var(--gz-accent,#4ecdc4)}
+.session-stats{display:flex;justify-content:center;gap:30px;margin-top:20px;font-size:.9em}
+.session-stats b{font-size:1.4em;display:block;color:var(--gz-accent,#4ecdc4)}
+.noise-toggle{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.noise-toggle button{padding:8px 14px;border-radius:8px;border:1px solid var(--gz-border,#333);background:transparent;color:var(--gz-text,#eee);cursor:pointer;font-size:.85em}
+.noise-toggle button.active{background:rgba(78,205,196,.2);border-color:var(--gz-accent,#4ecdc4)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Focus Timer","description":"Free focus timer for deep work — Pomodoro, 52/17, custom focus sessions with ambient white noise, break reminders and session stats. Beat distractions, 100% in your browser.","url":"https://tools.gamezipper.com/calc/focus-timer.html","applicationCategory":"Productivity","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What focus techniques can I use?", "acceptedAnswer": {"@type": "Answer", "text": "Choose from Pomodoro (25/5), 52/17 deep work, 90-minute ultradian, or fully custom focus and break durations. Switch presets any time — the timer adapts instantly."}}, {"@type": "Question", "name": "Does the timer work offline?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Once the page loads, the focus timer runs entirely in your browser with no internet connection needed. Your session stats are saved locally in localStorage."}}, {"@type": "Question", "name": "What ambient sounds are available?", "acceptedAnswer": {"@type": "Answer", "text": "Built-in white noise, brown noise and a soft ticking sound are generated using the Web Audio API — no audio files needed. Toggle them on or off during focus sessions."}}, {"@type": "Question", "name": "Will the timer notify me when a session ends?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. A gentle chime plays when each focus or break session ends, and the page title updates with the countdown so you can keep the timer in a background tab."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/focus-timer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/focus-timer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/focus-timer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="preset-row" id="presets"></div>
+    <div class="timer-display phase-focus" id="phase-wrap">
+      <div class="timer-circle" id="circle">
+        <div class="timer-inner">
+          <div class="timer-time" id="time">25:00</div>
+          <div class="timer-label" id="phase-label"></div>
+        </div>
+      </div>
+    </div>
+    <div class="noise-toggle" id="noise-row"></div>
+    <div class="timer-controls">
+      <button class="btn-primary" id="start-btn" onclick="toggleTimer()"></button>
+      <button class="btn-secondary" id="reset-btn" onclick="resetTimer()"></button>
+      <button class="btn-secondary" id="skip-btn" onclick="skipPhase()"></button>
+    </div>
+    <div class="session-stats">
+      <div><b id="stat-focus">0</b><span id="stat-focus-lbl"></span></div>
+      <div><b id="stat-sessions">0</b><span id="stat-sessions-lbl"></span></div>
+      <div><b id="stat-minutes">0</b><span id="stat-minutes-lbl"></span></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Focus Timer',
+    toolDesc: 'Deep work focus timer with Pomodoro, 52/17 and custom sessions. Ambient white noise, session stats and break reminders — beat distractions, 100% in your browser.',
+    pomodoro: 'Pomodoro 25/5',
+    deep: '52/17 Deep Work',
+    ultradian: '90-min Ultradian',
+    custom: 'Custom',
+    focusLabel: 'FOCUS',
+    breakLabel: 'BREAK',
+    start: 'Start',
+    pause: 'Pause',
+    resume: 'Resume',
+    reset: 'Reset',
+    skip: 'Skip',
+    focusDone: 'Focus sessions',
+    sessionsLbl: 'Total rounds',
+    minutesLbl: 'Minutes focused',
+    whiteNoise: '🌧 White Noise',
+    brownNoise: '🌧 Brown Noise',
+    tick: '⏱ Tick',
+    off: '🔇 Off',
+    step1: 'Pick a focus preset or set custom durations',
+    step2: 'Press Start to begin your focus session',
+    step3: 'Optionally turn on ambient white noise to block distractions',
+    step4: 'Take the scheduled break when the chime sounds',
+  },
+  zh: {
+    toolTitle: '专注计时器',
+    toolDesc: '深度工作专注计时器，支持番茄钟、52/17 法则和自定义时长。内置白噪音、会话统计和休息提醒 — 远离干扰，浏览器本地运行。',
+    pomodoro: '番茄 25/5',
+    deep: '52/17 深度工作',
+    ultradian: '90 分钟超日节律',
+    custom: '自定义',
+    focusLabel: '专注',
+    breakLabel: '休息',
+    start: '开始',
+    pause: '暂停',
+    resume: '继续',
+    reset: '重置',
+    skip: '跳过',
+    focusDone: '专注次数',
+    sessionsLbl: '总轮数',
+    minutesLbl: '专注分钟',
+    whiteNoise: '🌧 白噪音',
+    brownNoise: '🌧 棕噪音',
+    tick: '⏱ 滴答',
+    off: '🔇 关闭',
+    step1: '选择一个专注模式或自定义时长',
+    step2: '点击「开始」进入专注会话',
+    step3: '可选开启白噪音屏蔽干扰',
+    step4: '听到提示音时按计划休息',
+  }
+});
+
+const { $, t } = GZ;
+
+const PRESETS = {
+  pomodoro: { focus: 25, break: 5, label: 'pomodoro' },
+  deep:     { focus: 52, break: 17, label: 'deep' },
+  ultradian:{ focus: 90, break: 20, label: 'ultradian' },
+  custom:   { focus: 45, break: 10, label: 'custom' },
+};
+
+let state = {
+  preset: 'pomodoro',
+  mode: 'focus',
+  remaining: 25 * 60,
+  running: false,
+  sessions: 0,
+  focusCount: 0,
+  totalMinutes: 0,
+  intervalId: null,
+  noise: 'off',
+};
+
+function loadStats() {
+  try {
+    const s = JSON.parse(localStorage.getItem('gz_focus_stats') || '{}');
+    state.focusCount = s.focusCount || 0;
+    state.totalMinutes = s.totalMinutes || 0;
+    state.sessions = s.sessions || 0;
+  } catch(e) {}
+}
+function saveStats() {
+  localStorage.setItem('gz_focus_stats', JSON.stringify({
+    focusCount: state.focusCount, totalMinutes: state.totalMinutes, sessions: state.sessions
+  }));
+}
+
+function fmt(sec) {
+  const m = Math.floor(sec/60), s = sec%60;
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function render() {
+  const p = PRESETS[state.preset];
+  const total = (state.mode === 'focus' ? p.focus : p.break) * 60;
+  const progress = (1 - state.remaining/total) * 100;
+  $('#circle').style.setProperty('--progress', progress);
+  $('#circle').style.setProperty('--ring-color', state.mode === 'focus' ? 'var(--gz-accent,#4ecdc4)' : '#ff6b6b');
+  $('#time').textContent = fmt(state.remaining);
+  $('#phase-label').textContent = state.mode === 'focus' ? t('focusLabel') : t('breakLabel');
+  $('#phase-wrap').className = 'timer-display phase-' + state.mode;
+  $('#start-btn').textContent = state.running ? t('pause') : (state.remaining < total ? t('resume') : t('start'));
+  $('#stat-focus').textContent = state.focusCount;
+  $('#stat-sessions').textContent = state.sessions;
+  $('#stat-minutes').textContent = state.totalMinutes;
+  $('#stat-focus-lbl').textContent = t('focusDone');
+  $('#stat-sessions-lbl').textContent = t('sessionsLbl');
+  $('#stat-minutes-lbl').textContent = t('minutesLbl');
+  document.title = (state.running ? fmt(state.remaining) + ' · ' : '') + t('toolTitle');
+  // update preset buttons
+  document.querySelectorAll('#presets button').forEach(b => {
+    b.classList.toggle('active', b.dataset.p === state.preset);
+  });
+  document.querySelectorAll('#noise-row button').forEach(b => {
+    b.classList.toggle('active', b.dataset.n === state.noise);
+  });
+}
+
+function toggleTimer() {
+  state.running = !state.running;
+  if (state.running) {
+    if (state.noise !== 'off') startNoise(state.noise);
+    state.intervalId = setInterval(tick, 1000);
+  } else {
+    stopNoise();
+    clearInterval(state.intervalId);
+  }
+  render();
+}
+
+function tick() {
+  state.remaining--;
+  if (state.remaining <= 0) {
+    playChime();
+    const p = PRESETS[state.preset];
+    if (state.mode === 'focus') {
+      state.focusCount++;
+      state.totalMinutes += p.focus;
+      state.sessions++;
+      state.mode = 'break';
+      state.remaining = p.break * 60;
+    } else {
+      state.mode = 'focus';
+      state.remaining = p.focus * 60;
+    }
+    saveStats();
+    if (state.noise !== 'off') startNoise(state.noise);
+  }
+  render();
+}
+
+function resetTimer() {
+  state.running = false;
+  clearInterval(state.intervalId);
+  stopNoise();
+  const p = PRESETS[state.preset];
+  state.mode = 'focus';
+  state.remaining = p.focus * 60;
+  render();
+}
+
+function skipPhase() {
+  const p = PRESETS[state.preset];
+  if (state.mode === 'focus') {
+    state.mode = 'break';
+    state.remaining = p.break * 60;
+  } else {
+    state.mode = 'focus';
+    state.remaining = p.focus * 60;
+  }
+  render();
+}
+
+function setPreset(key) {
+  state.preset = key;
+  resetTimer();
+}
+
+// Audio
+let audioCtx = null, noiseNode = null;
+function ensureCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function startNoise(type) {
+  stopNoise();
+  const ctx = ensureCtx();
+  const bufferSize = 2 * ctx.sampleRate;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  if (type === 'brown') {
+    let last = 0;
+    for (let i=0;i<bufferSize;i++){const w=Math.random()*2-1;last=(last+0.02*w)/1.02;data[i]=last*3.5;}
+  } else if (type === 'white') {
+    for (let i=0;i<bufferSize;i++) data[i] = Math.random()*2-1;
+  } else if (type === 'tick') {
+    // tick handled separately with oscillator interval
+  }
+  if (type === 'tick') {
+    state.tickId = setInterval(()=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.frequency.value=1000;o.connect(g);g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.08,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.05);
+      o.start();o.stop(ctx.currentTime+0.05);
+    },1000);
+    return;
+  }
+  noiseNode = ctx.createBufferSource();
+  noiseNode.buffer = buffer; noiseNode.loop = true;
+  const gain = ctx.createGain();
+  gain.gain.value = type === 'brown' ? 0.15 : 0.08;
+  noiseNode.connect(gain); gain.connect(ctx.destination);
+  noiseNode.start();
+}
+function stopNoise() {
+  if (noiseNode) { try { noiseNode.stop(); } catch(e){} noiseNode = null; }
+  if (state.tickId) { clearInterval(state.tickId); state.tickId = null; }
+}
+function setNoise(type) {
+  if (state.noise === type) type = 'off';
+  state.noise = type;
+  if (state.running && type !== 'off') startNoise(type); else stopNoise();
+  render();
+}
+function playChime() {
+  const ctx = ensureCtx();
+  [880, 1100].forEach((freq,i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = freq; o.type = 'sine';
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0, ctx.currentTime + i*0.15);
+    g.gain.linearRampToValueAtTime(0.2, ctx.currentTime + i*0.15 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.15 + 0.6);
+    o.start(ctx.currentTime + i*0.15); o.stop(ctx.currentTime + i*0.15 + 0.6);
+  });
+}
+
+// Build presets & noise buttons
+$('#presets').innerHTML = Object.keys(PRESETS).map(k =>
+  `<button data-p="${k}" onclick="setPreset('${k}')">${t(PRESETS[k].label)}</button>`
+).join('');
+$('#noise-row').innerHTML = ['whiteNoise','brownNoise','tick','off'].map(k => {
+  const v = k === 'off' ? 'off' : k.replace('Noise','').toLowerCase();
+  return `<button data-n="${v}" onclick="setNoise('${v}')">${t(k)}</button>`;
+}).join('');
+$('#start-btn').textContent = t('start');
+$('#reset-btn').textContent = t('reset');
+$('#skip-btn').textContent = t('skip');
+
+loadStats();
+render();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
