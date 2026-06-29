@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>CIDR 转 IP 范围转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 CIDR 表示法（IPv4 或 IPv6）转换为起始/终止 IP、可用主机范围和地址总数。反向模式可将 IP 范围转回 CIDR 块。100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/cidr-to-ip-range.html">
+  <meta property="og:title" content="CIDR 转 IP 范围转换器">
+  <meta property="og:description" content="将 CIDR 表示法（IPv4 或 IPv6）转换为起始/终止 IP、可用主机范围和地址总数。反向模式可将 IP 范围转回 CIDR 块。100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/cidr-to-ip-range.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CIDR 转 IP 范围转换器">
+<meta name="twitter:description" content="将 CIDR 表示法（IPv4 或 IPv6）转换为起始/终止 IP、可用主机范围和地址总数。反向模式可将 IP 范围转回 CIDR 块。100% 浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:4px}
+.field input[type=text]{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-family:monospace;font-size:.85em;box-sizing:border-box}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+.result-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.result-card .k{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.result-card .v{font-family:monospace;font-size:.92rem;word-break:break-all;color:var(--text)}
+.result-card .v.big{font-size:1.05rem;font-weight:700;color:var(--accent)}
+.full-row{grid-column:1/-1}
+#status{margin-top:10px;font-size:.88rem}
+.mode-tabs{display:inline-flex;gap:4px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:10px}
+.mode-tabs button{padding:6px 14px;border:none;background:transparent;color:var(--text2);border-radius:7px;cursor:pointer;font-size:.85em}
+.mode-tabs button.active{background:var(--accent);color:#fff}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CIDR to IP Range Converter","description":"Free online CIDR to IP Range converter. Turn CIDR notation into first/last IP, host range and total address count for IPv4 and IPv6. Reverse mode converts an IP range back to CIDR blocks. 100% in your browser.","url": "https://tools.gamezipper.com/zh/dev/cidr-to-ip-range.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is CIDR notation?", "acceptedAnswer": {"@type": "Answer", "text": "CIDR (Classless Inter-Domain Routing) notation appends a slash and prefix length to an IP address, for example 192.168.1.0/24. The prefix length says how many leading bits are the fixed network portion; the remaining bits are host bits that vary across the range."}}, {"@type": "Question", "name": "How do I convert CIDR to an IP range?", "acceptedAnswer": {"@type": "Answer", "text": "Keep the first prefix-length bits of the address and set every remaining host bit to 0 to get the first (network) IP. Set every host bit to 1 to get the last (broadcast) IP. The host range excludes the all-zeros and all-ones addresses on IPv4."}}, {"@type": "Question", "name": "How many usable hosts are in a CIDR block?", "acceptedAnswer": {"@type": "Answer", "text": "For an IPv4 /n block the usable host count is 2^(32-n) minus 2 (the network and broadcast addresses). For /31 and /32 there is no host overhead. For IPv6 every address is usable, so the count is exactly 2^(128-n)."}}, {"@type": "Question", "name": "Does this tool support IPv6?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. It accepts full, compressed or mixed IPv6 notation such as 2001:db8::/32 and returns the first and last address, the total address count and both compressed and expanded forms."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/cidr-to-ip-range.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/cidr-to-ip-range.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/cidr-to-ip-range.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-tabs" id="modeTabs"></div>
+    <div class="field"><label id="lbl-in"></label><input type="text" id="input" spellcheck="false" autocomplete="off"></div>
+    <div id="results"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CIDR to IP Range Converter',
+    toolDesc: 'Convert CIDR notation (IPv4 or IPv6) into first/last IP, host range and total address count. Reverse mode turns an IP range back into CIDR blocks. Runs 100% in your browser.',
+    modeCidr: 'CIDR → Range',
+    modeRange: 'Range → CIDR',
+    lblInCidr: 'CIDR notation  (e.g. 192.168.1.0/24 or 2001:db8::/32)',
+    lblInRange: 'IP range  (first - last, e.g. 10.0.0.0 - 10.0.0.255)',
+    convert: 'Convert',
+    clear: 'Clear',
+    example: 'Example',
+    needInput: 'Enter a CIDR block or IP range.',
+    firstIp: 'First IP (network)',
+    lastIp: 'Last IP (broadcast)',
+    hostRange: 'Usable host range',
+    totalAddrs: 'Total addresses',
+    usableHosts: 'Usable hosts',
+    prefix: 'Prefix length',
+    expanded: 'Expanded form',
+    compressed: 'Compressed form',
+    ipVersion: 'IP version',
+    blocks: 'CIDR blocks',
+    binaryNet: 'Network (binary)',
+    noCidr: 'No valid CIDR representation found.',
+    step1: 'Pick a mode — CIDR to range, or range to CIDR',
+    step2: 'Type the CIDR block (192.168.1.0/24) or the first-last range',
+    step3: 'Click Convert to see first/last IP, host range and counts',
+    step4: 'Use Copy on any value to grab it',
+  },
+  zh: {
+    toolTitle: 'CIDR 转 IP 范围转换器',
+    toolDesc: '将 CIDR 表示法（IPv4 或 IPv6）转换为起始/终止 IP、可用主机范围和地址总数。反向模式可将 IP 范围转回 CIDR 块。100% 浏览器本地运行。',
+    modeCidr: 'CIDR → 范围',
+    modeRange: '范围 → CIDR',
+    lblInCidr: 'CIDR 表示法（例如 192.168.1.0/24 或 2001:db8::/32）',
+    lblInRange: 'IP 范围（首 - 尾，例如 10.0.0.0 - 10.0.0.255）',
+    convert: '转换',
+    clear: '清空',
+    example: '示例',
+    needInput: '请输入 CIDR 块或 IP 范围。',
+    firstIp: '起始 IP（网络地址）',
+    lastIp: '终止 IP（广播地址）',
+    hostRange: '可用主机范围',
+    totalAddrs: '地址总数',
+    usableHosts: '可用主机数',
+    prefix: '前缀长度',
+    expanded: '完整展开形式',
+    compressed: '压缩形式',
+    ipVersion: 'IP 版本',
+    blocks: 'CIDR 块',
+    binaryNet: '网络地址（二进制）',
+    noCidr: '未找到有效的 CIDR 表示。',
+    step1: '选择模式 — CIDR 转范围，或范围转 CIDR',
+    step2: '输入 CIDR 块（192.168.1.0/24）或首-尾范围',
+    step3: '点击「转换」查看起始/终止 IP、主机范围和数量',
+    step4: '点击任意值旁的「复制」即可复制',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'cidr';
+
+// ---------- IPv4 helpers ----------
+function ipv4ToInt(s){
+  const m = s.trim().split('.');
+  if(m.length !== 4) throw new Error('bad IPv4');
+  let n = 0;
+  for(const p of m){
+    if(!/^\d+$/.test(p)) throw new Error('bad IPv4');
+    const v = +p;
+    if(v < 0 || v > 255) throw new Error('bad IPv4');
+    n = n*256 + v;
+  }
+  return n >>> 0;
+}
+function intToIpv4(n){ n >>>= 0; return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.'); }
+
+// ---------- IPv6 helpers ----------
+function ipv6ToBigInt(s){
+  s = s.trim();
+  // strip zone id
+  s = s.replace(/%.*$/,'');
+  if(s === '::') s = '0::0';
+  // handle :: compression
+  let parts;
+  if(s.includes('::')){
+    const [head, tail] = s.split('::');
+    const headGroups = head ? head.split(':').filter(Boolean) : [];
+    const tailGroups = tail ? tail.split(':').filter(Boolean) : [];
+    const missing = 8 - headGroups.length - tailGroups.length;
+    if(missing < 0) throw new Error('bad IPv6');
+    parts = [...headGroups, ...Array(missing).fill('0'), ...tailGroups];
+  } else {
+    parts = s.split(':');
+  }
+  if(parts.length !== 8) throw new Error('bad IPv6');
+  let big = 0n;
+  for(const g of parts){
+    if(!/^[0-9a-fA-F]{1,4}$/.test(g)) throw new Error('bad IPv6');
+    big = (big << 16n) + BigInt(parseInt(g,16));
+  }
+  return big;
+}
+function bigIntToIpv6Expanded(big){
+  const groups = [];
+  for(let i=7;i>=0;i--){
+    groups.push(((big >> BigInt(i*16)) & 0xFFFFn).toString(16));
+  }
+  return groups.join(':');
+}
+function compressIpv6(big){
+  const groups = [];
+  for(let i=7;i>=0;i--){
+    groups.push(((big >> BigInt(i*16)) & 0xFFFFn).toString(16));
+  }
+  // find longest run of zeros
+  let bestStart=-1, bestLen=0, curStart=-1, curLen=0;
+  for(let i=0;i<groups.length;i++){
+    if(groups[i] === '0'){
+      if(curStart < 0) curStart = i;
+      curLen++;
+      if(curLen > bestLen){ bestLen = curLen; bestStart = curStart; }
+    } else {
+      curStart = -1; curLen = 0;
+    }
+  }
+  if(bestLen < 2) return groups.join(':');
+  const before = groups.slice(0, bestStart).join(':');
+  const after = groups.slice(bestStart + bestLen).join(':');
+  return `${before}::${after}`;
+}
+
+function isIpv4(s){ return s.includes('.') && !s.includes(':'); }
+
+// ---------- main: CIDR → range ----------
+function cidrToRange(text){
+  const idx = text.lastIndexOf('/');
+  if(idx < 0) throw new Error('missing /');
+  const ipPart = text.slice(0, idx).trim();
+  const prefixStr = text.slice(idx+1).trim();
+  if(!/^\d+$/.test(prefixStr)) throw new Error('bad prefix');
+  const prefix = +prefixStr;
+
+  if(isIpv4(ipPart)){
+    if(prefix < 0 || prefix > 32) throw new Error('bad prefix');
+    const base = ipv4ToInt(ipPart);
+    // mask network portion
+    const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+    const network = (base & mask) >>> 0;
+    const hostBits = 32 - prefix;
+    const total = Math.pow(2, hostBits);
+    const broadcast = prefix === 0 ? 0xFFFFFFFF : (network | (0xFFFFFFFF >>> prefix)) >>> 0;
+    // usable hosts: exclude network + broadcast for /0..30
+    let usable, firstHost, lastHost;
+    if(prefix >= 31){ usable = total; firstHost = network; lastHost = broadcast; }
+    else { usable = Math.max(0, total - 2); firstHost = prefix===0 ? 1 : (network + 1) >>> 0; lastHost = prefix===0 ? 0xFFFFFFFE : (broadcast - 1) >>> 0; }
+    const binary = network.toString(2).padStart(32,'0').match(/.{8}/g).join('.');
+    return [
+      {k:'ipVersion', v:'IPv4', full:false},
+      {k:'prefix', v:'/'+prefix+' ('+prefix+' network bits, '+hostBits+' host bits)', full:false},
+      {k:'firstIp', v:intToIpv4(network), full:false, big:true},
+      {k:'lastIp', v:intToIpv4(broadcast), full:false, big:true},
+      {k:'hostRange', v: prefix>=31 ? intToIpv4(firstHost)+' — '+intToIpv4(lastHost) : (usable? intToIpv4(firstHost)+' — '+intToIpv4(lastHost) : '—'), full:true},
+      {k:'totalAddrs', v: total.toLocaleString(), full:false},
+      {k:'usableHosts', v: usable.toLocaleString(), full:false},
+      {k:'binaryNet', v: binary, full:true},
+    ];
+  } else {
+    if(prefix < 0 || prefix > 128) throw new Error('bad prefix');
+    const base = ipv6ToBigInt(ipPart);
+    const mask = prefix === 0 ? 0n : ((1n << BigInt(prefix)) - 1n) << BigInt(128 - prefix);
+    const network = base & mask;
+    const hostBits = 128 - prefix;
+    const total = 1n << BigInt(hostBits);
+    const broadcast = prefix === 0 ? ((1n<<128n)-1n) : (network | ((1n << BigInt(hostBits)) - 1n));
+    return [
+      {k:'ipVersion', v:'IPv6', full:false},
+      {k:'prefix', v:'/'+prefix+' ('+prefix+' network bits, '+hostBits+' host bits)', full:false},
+      {k:'firstIp', v:compressIpv6(network), full:false, big:true},
+      {k:'lastIp', v:compressIpv6(broadcast), full:false, big:true},
+      {k:'compressed', v:compressIpv6(network)+' — '+compressIpv6(broadcast), full:true},
+      {k:'expanded', v:bigIntToIpv6Expanded(network)+' — '+bigIntToIpv6Expanded(broadcast), full:true},
+      {k:'totalAddrs', v: total.toString(), full:false},
+      {k:'usableHosts', v: total.toString()+'  (all addresses are usable)', full:false},
+    ];
+  }
+}
+
+// ---------- reverse: range → CIDR ----------
+// BigInt-based for both IPv4 (32-bit) and IPv6 (128-bit) — uniform algorithm.
+function ipStrToBig(s){
+  if(isIpv4(s)) return BigInt(ipv4ToInt(s));
+  return ipv6ToBigInt(s);
+}
+function bigToIpStr(big, v4){
+  if(v4){
+    const n = Number(big & 0xFFFFFFFFn);
+    return intToIpv4(n >>> 0);
+  }
+  return compressIpv6(big);
+}
+// count trailing zero bits of a BigInt (0 → maxBits)
+function trailingZeros(big, maxBits){
+  if(big === 0n) return maxBits;
+  let c = 0;
+  while(c < maxBits && (big & 1n) === 0n){ big >>= 1n; c++; }
+  return c;
+}
+// bit length of a BigInt (0 → 0): smallest n with 2^n > big
+function bitLen(big){
+  if(big <= 0n) return 0;
+  let c = 0, d = big;
+  while(d > 0n){ d >>= 1n; c++; }
+  return c;
+}
+
+function rangeToCidr(firstStr, lastStr){
+  const v4 = isIpv4(firstStr);
+  if(v4 !== isIpv4(lastStr)) throw new Error('mixed versions');
+  let first = ipStrToBig(firstStr);
+  let last = ipStrToBig(lastStr);
+  if(first > last){ const t2=first; first=last; last=t2; }
+  const maxPrefix = v4 ? 32 : 128;
+  const blocks = [];
+  let guard = 0;
+  while(first <= last){
+    if(++guard > 8192) break;
+    const vary = trailingZeros(first, maxPrefix);
+    const diff = last - first;
+    // largest block size = 2^k where 2^k <= diff+1  =>  k = bitLen(diff+1) - 1
+    const k = bitLen(diff + 1n) - 1;
+    const hostBits = Math.min(vary, Number(k));
+    const prefix = maxPrefix - hostBits;
+    const blockSize = 1n << BigInt(hostBits);
+    blocks.push(bigToIpStr(first, v4) + '/' + prefix);
+    first += blockSize;
+  }
+  return blocks;
+}
+
+function renderResults(rows){
+  const grid = rows.map(r => `
+    <div class="result-card ${r.full?'full-row':''}">
+      <div class="k">${t(r.k)}</div>
+      <div class="v ${r.big?'big':''}">${r.v}</div>
+    </div>`).join('');
+  $('#results').innerHTML = `<div class="result-grid">${grid}</div>`;
+  // attach copy handlers
+  document.querySelectorAll('#results .v').forEach(v => {
+    v.style.cursor = 'pointer';
+    v.title = 'Click to copy';
+    v.onclick = () => copyText(v.textContent);
+  });
+}
+
+function doConvert(){
+  const text = $('#input').value.trim();
+  if(!text){ $('#status').textContent = t('needInput'); $('#results').innerHTML=''; return; }
+  try{
+    if(mode === 'cidr'){
+      renderResults(cidrToRange(text));
+      $('#status').textContent = '';
+    } else {
+      // range mode: split on " - " or "-"
+      let parts = text.split(/\s*-\s*|\s+to\s+/i).map(s=>s.trim());
+      if(parts.length !== 2) throw new Error('need first - last');
+      const blocks = rangeToCidr(parts[0], parts[1]);
+      if(!blocks.length){ $('#status').textContent = t('noCidr'); $('#results').innerHTML=''; return; }
+      renderResults([
+        {k:'blocks', v: blocks.join('\n'), full:true, big:true},
+        {k:'usableHosts', v: blocks.length.toLocaleString()+' block(s)', full:false},
+      ]);
+      $('#status').textContent = '';
+    }
+  }catch(e){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${e.message}</span>`;
+    $('#results').innerHTML='';
+  }
+}
+
+function loadExample(){
+  $('#input').value = mode === 'cidr' ? '192.168.10.0/22' : '10.0.0.0 - 10.0.3.255';
+  doConvert();
+}
+function doClear(){ $('#input').value=''; $('#results').innerHTML=''; $('#status').textContent=''; }
+
+function buildModeTabs(){
+  $('#modeTabs').innerHTML = `
+    <button id="tab-cidr" class="${mode==='cidr'?'active':''}">${t('modeCidr')}</button>
+    <button id="tab-range" class="${mode==='range'?'active':''}">${t('modeRange')}</button>`;
+  $('#tab-cidr').onclick = ()=>{ mode='cidr'; syncMode(); };
+  $('#tab-range').onclick = ()=>{ mode='range'; syncMode(); };
+}
+function syncMode(){
+  buildModeTabs();
+  $('#lbl-in').textContent = t(mode==='cidr'?'lblInCidr':'lblInRange');
+  $('#input').value = '';
+  $('#results').innerHTML = '';
+  $('#status').textContent = '';
+  $('#input').placeholder = mode==='cidr' ? '192.168.1.0/24' : '10.0.0.0 - 10.0.0.255';
+}
+
+$('#input').addEventListener('input', ()=>{ /* live */ });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/ipv4-subnet-calculator.html', name:'IPv4 Subnet Calculator'},
+    {icon:'🌐', href:'/dev/ipv6-subnet-calculator.html', name:'IPv6 Subnet Calculator'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP Address'},
+  ]
+});
+
+syncMode();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

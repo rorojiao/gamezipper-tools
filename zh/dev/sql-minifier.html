@@ -1,0 +1,163 @@
+<!DOCTYPE html><html lang="zh"><head>
+
+<title>SQL 压缩工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="通过移除空白、注释和多余空格将 SQL 压缩为一行，即时显示节省的空间大小。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/sql-minifier.html">
+  <meta property="og:title" content="SQL 压缩工具">
+  <meta property="og:description" content="通过移除空白、注释和多余空格将 SQL 压缩为一行，即时显示节省的空间大小。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/sql-minifier.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SQL 压缩工具">
+<meta name="twitter:description" content="通过移除空白、注释和多余空格将 SQL 压缩为一行，即时显示节省的空间大小。">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script><script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:100px}
+#status{margin-top:8px;font-size:.85em}
+.gz-stat{display:inline-block;background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;margin:2px;font-size:.8rem}
+.gz-stat b{color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SQL Minifier & Compressor","description":"Minify and compress SQL queries online for free. Remove whitespace, comments and extra spaces to shrink SQL to one line. Supports MySQL, PostgreSQL, SQLite. Instant, private, browser-only.","url": "https://tools.gamezipper.com/zh/dev/sql-minifier.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is SQL minification?","acceptedAnswer":{"@type":"Answer","text":"SQL minification removes unnecessary whitespace, line breaks, indentation and comments from SQL queries, compressing them into a single compact line. This reduces query size for transmission or embedding in code."}},{"@type":"Question","name":"Does SQL minification remove comments?","acceptedAnswer":{"@type":"Answer","text":"Yes, by default the tool removes single-line (--) and multi-line (/* */) comments to achieve the smallest size. You can toggle this option if you want to keep comments."}},{"@type":"Question","name":"Will minification break my SQL?","acceptedAnswer":{"@type":"Answer","text":"No. The minifier preserves all SQL keywords, string literals, quoted identifiers and semicolons. Only unnecessary whitespace is removed. Semicolons are kept so statements remain separable."}},{"@type":"Question","name":"Is my SQL sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All minification happens entirely in your browser. Your SQL queries never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sql-minifier.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sql-minifier.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sql-minifier.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SQL Minifier & Compressor',
+    toolDesc: 'Compress SQL queries to one line by removing whitespace, comments and extra spaces. Get the size savings instantly.',
+    lblIn: 'Input SQL',
+    lblOut: 'Minified SQL',
+    minify: 'Minify',
+    removeComments: 'Remove Comments',
+    saved: 'saved',
+    bytes: 'bytes',
+    step1: 'Paste your SQL query in the input area',
+    step2: 'Choose whether to remove comments',
+    step3: 'Click Minify and copy the compressed result',
+  },
+  zh: {
+    toolTitle: 'SQL 压缩工具',
+    toolDesc: '通过移除空白、注释和多余空格将 SQL 压缩为一行，即时显示节省的空间大小。',
+    lblIn: '输入 SQL',
+    lblOut: '压缩后的 SQL',
+    minify: '压缩',
+    removeComments: '移除注释',
+    saved: '节省',
+    bytes: '字节',
+    step1: '在输入区粘贴 SQL 查询',
+    step2: '选择是否移除注释',
+    step3: '点击压缩并复制结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let removeComments = true;
+
+function formatBytes(n) { return n.toLocaleString() + ' ' + t('bytes'); }
+
+function doMinify() {
+  const inp = $('#input').value;
+  if (!inp.trim()) return;
+  let sql = inp;
+
+  // Remove multi-line comments /* */
+  sql = sql.replace(/\/\*[\s\S]*?\*\//g, removeComments ? '' : ' ');
+  // Remove single-line comments -- (only when not inside a string)
+  if (removeComments) {
+    sql = sql.replace(/--[^\n]*/g, '');
+  }
+  // Protect strings by replacing them temporarily
+  const strings = [];
+  sql = sql.replace(/('(?:[^']|'')*'|"(?:[^"]|"")*"|`(?:[^`]|``)*`)/g, function(m){
+    strings.push(m);
+    return '\x00STR' + (strings.length - 1) + '\x00';
+  });
+  // Collapse whitespace
+  sql = sql.replace(/\s+/g, ' ').trim();
+  // Space before opening paren is fine to remove
+  sql = sql.replace(/\s*\(\s*/g, '(').replace(/\s*\)/g, ')');
+  // Restore strings
+  sql = sql.replace(/\x00STR(\d+)\x00/g, function(_, i){ return strings[+i]; });
+  // Ensure spacing around commas stays minimal
+  sql = sql.replace(/\s*,\s*/g, ', ');
+  // Tidy double spaces that may have appeared
+  sql = sql.replace(/\s+/g, ' ').trim();
+
+  const origSize = new Blob([inp]).size;
+  const newSize = new Blob([sql]).size;
+  const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
+
+  $('#output').value = sql;
+  const color = pct > 0 ? 'var(--gz-success)' : 'var(--text2)';
+  $('#status').innerHTML = `<span class="gz-stat">${formatBytes(origSize)} → <b>${formatBytes(newSize)}</b></span> <span class="gz-stat" style="color:${color}">${pct >= 0 ? '↓' : '↑'} ${Math.abs(pct)}% ${t('saved')}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = `-- Get top customers by total spending
+SELECT
+    u.id,
+    u.name,
+    u.email,
+    COUNT(o.id)   AS order_count,
+    SUM(o.total)  AS total_spent
+FROM users u
+/* Only active users */
+INNER JOIN orders o ON u.id = o.user_id
+WHERE u.status = 'active'
+  AND o.created_at >= '2025-01-01'
+GROUP BY u.id, u.name, u.email
+HAVING SUM(o.total) > 1000
+ORDER BY total_spent DESC
+LIMIT 20;`;
+  doMinify();
+}
+
+function doClear() { $('#input').value=''; $('#output').value=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', doMinify);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doMinify()">${t('minify')}</button>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer">
+    <input type="checkbox" id="opt-comments" checked onchange="removeComments=this.checked;doMinify()"> ${t('removeComments')}
+  </label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3'],
+  related: [
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'📋', href:'/dev/json-minifier.html', name:'JSON Minifier'},
+    {icon:'📄', href:'/dev/html-minifier.html', name:'HTML Minifier'},
+    {icon:'📜', href:'/dev/js-minifier.html', name:'JS Minifier'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body></html>

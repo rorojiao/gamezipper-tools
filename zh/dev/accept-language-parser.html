@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Accept-Language 头部解析器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 HTTP Accept-Language 头部解析为带 q 值的排名语言列表，按偏好排序并与你支持的语言列表匹配 — 纯浏览器，即时，不上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/accept-language-parser.html">
+  <meta property="og:title" content="Accept-Language 头部解析器">
+  <meta property="og:description" content="将 HTTP Accept-Language 头部解析为带 q 值的排名语言列表，按偏好排序并与你支持的语言列表匹配 — 纯浏览器，即时，不上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/accept-language-parser.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Accept-Language 头部解析器">
+<meta name="twitter:description" content="将 HTTP Accept-Language 头部解析为带 q 值的排名语言列表，按偏好排序并与你支持的语言列表匹配 — 纯浏览器，即时，不上传。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{font-size:.85em;line-height:1.55;min-height:160px}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.82rem}
+table th,table td{border:1px solid var(--border);padding:6px 9px;text-align:left}
+table th{background:var(--glass2);color:var(--text2);font-weight:600}
+table tr.top td{background:rgba(46,204,113,.08);font-weight:700}
+.lang{font-family:monospace;color:var(--accent);font-weight:600}
+.q{font-family:monospace}
+.bar{display:inline-block;height:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;vertical-align:middle}
+.match{margin-top:10px;padding:12px 14px;border-radius:12px;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.4);color:#2ecc71;font-weight:700}
+.nomatch{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--glass2);border:1px solid var(--border);color:var(--text2)}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:4px}
+.field input{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-family:monospace;font-size:.85em;box-sizing:border-box}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Accept-Language Header Parser","description":"Free online Accept-Language header parser and locale matcher. Decode q-values, sort by preference, match against your supported locales, and show browser default. Pure browser, instant.","url": "https://tools.gamezipper.com/zh/dev/accept-language-parser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is the Accept-Language header?","acceptedAnswer":{"@type":"Answer","text":"Accept-Language is an HTTP request header sent by the browser listing the user's preferred languages with optional q-values (0-1). Servers use it to pick the best matching locale for the response."}},{"@type":"Question","name":"What is a q-value?","acceptedAnswer":{"@type":"Answer","text":"The q-value is a quality factor between 0 and 1 (default 1.0) appended after a semicolon, e.g. en-US;q=0.8. Higher q-values mean stronger preference; q=0 means the language is explicitly not acceptable."}},{"@type":"Question","name":"How does locale matching work?","acceptedAnswer":{"@type":"Answer","text":"The parser walks the client's languages from highest to lowest q-value. For each, it looks for an exact match in your supported list (e.g. fr-CA), then a language-only fallback (fr), and finally a wildcard. The first hit is the best match."}},{"@type":"Question","name":"Where does this run?","acceptedAnswer":{"@type":"Answer","text":"Entirely in your browser. No Accept-Language value or supported-locales list is ever uploaded — useful for testing i18n negotiation logic locally."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/accept-language-parser.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/accept-language-parser.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/accept-language-parser.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="field"><label id="lbl-hdr"></label><input type="text" id="header" spellcheck="false" placeholder="en-US,en;q=0.9,fr;q=0.8"></div>
+        <div class="field"><label id="lbl-sup"></label><input type="text" id="supported" spellcheck="false" placeholder="en, fr, de, zh, ja"></div>
+        <div class="field"><label id="lbl-def"></label><input type="text" id="fallback" spellcheck="false" placeholder="en"></div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Accept-Language Header Parser',
+    toolDesc: 'Parse an HTTP Accept-Language header into ranked locales with q-values, sort by preference and match against your supported locales — pure browser, instant, no upload.',
+    parse: 'Parse',
+    lblHdr: 'Accept-Language header',
+    lblSup: 'Your supported locales (comma-separated)',
+    lblDef: 'Fallback locale',
+    lblOut: 'Parsed & matched result',
+    empty: 'Paste an Accept-Language value on the left.',
+    browserDefault: 'Your browser default',
+    rank: 'Rank',
+    lang: 'Locale',
+    q: 'q-value',
+    pref: 'Preference',
+    best: 'Best match for your app',
+    useDefault: 'No client preference matched — using fallback',
+    step1: 'Paste the Accept-Language header value',
+    step2: 'List the locales your app supports',
+    step3: 'Optionally set the fallback locale',
+    step4: 'Read the ranked table and best match',
+  },
+  zh: {
+    toolTitle: 'Accept-Language 头部解析器',
+    toolDesc: '将 HTTP Accept-Language 头部解析为带 q 值的排名语言列表，按偏好排序并与你支持的语言列表匹配 — 纯浏览器，即时，不上传。',
+    parse: '解析',
+    lblHdr: 'Accept-Language 头部',
+    lblSup: '你的应用支持的语言（逗号分隔）',
+    lblDef: '兜底语言',
+    lblOut: '解析与匹配结果',
+    empty: '在左侧粘贴 Accept-Language 值。',
+    browserDefault: '你的浏览器默认值',
+    rank: '排名',
+    lang: '语言',
+    q: 'q 值',
+    pref: '偏好',
+    best: '你的应用最佳匹配',
+    useDefault: '客户端偏好无匹配 — 使用兜底',
+    step1: '粘贴 Accept-Language 头部值',
+    step2: '列出你的应用支持的语言',
+    step3: '可选填兜底语言',
+    step4: '查看排名表和最佳匹配',
+  }
+});
+
+const { $, t } = GZ;
+const LANG_NAMES = {
+  en:'English', fr:'French', de:'German', es:'Spanish', it:'Italian', pt:'Portuguese',
+  ru:'Russian', zh:'Chinese', ja:'Japanese', ko:'Korean', ar:'Arabic', hi:'Hindi',
+  nl:'Dutch', sv:'Swedish', no:'Norwegian', da:'Danish', fi:'Finnish', pl:'Polish',
+  tr:'Turkish', cs:'Czech', el:'Greek', he:'Hebrew', th:'Thai', vi:'Vietnamese',
+  id:'Indonesian', ms:'Malay', uk:'Ukrainian', ro:'Romanian', hu:'Hungarian',
+  bg:'Bulgarian', hr:'Croatian', sk:'Slovak', sl:'Slovenian', et:'Estonian', lv:'Latvian',
+  lt:'Lithuanian', ga:'Irish', cy:'Welsh', eu:'Basque', ca:'Catalan'
+};
+
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function parseAcceptLanguage(header){
+  if(!header || !header.trim()) return [];
+  return header.split(',').map(tok => {
+    const parts = tok.trim().split(';').map(s => s.trim());
+    const tag = parts[0].toLowerCase();
+    let q = 1.0;
+    for(let i = 1; i < parts.length; i++){
+      const m = parts[i].match(/^q=([0-9.]+)$/i);
+      if(m) q = parseFloat(m[1]);
+    }
+    if(isNaN(q)) q = 1.0;
+    return { tag, q };
+  }).filter(x => x.tag && x.q > 0);
+}
+
+function langName(tag){
+  const base = tag.split('-')[0];
+  const name = LANG_NAMES[base];
+  return name ? name + ' (' + tag + ')' : tag;
+}
+
+function matchLocale(prefs, supported, fallback){
+  supported = supported.map(s => s.toLowerCase().trim()).filter(Boolean);
+  // exact match
+  for(const p of prefs){
+    if(supported.includes(p.tag)) return p.tag;
+  }
+  // language-prefix match (e.g. fr-CA → fr)
+  for(const p of prefs){
+    const base = p.tag.split('-')[0];
+    const hit = supported.find(s => s.split('-')[0] === base);
+    if(hit) return hit;
+  }
+  // wildcard
+  const wildcard = prefs.find(p => p.tag === '*');
+  if(wildcard && supported.length) return supported[0];
+  return fallback || (supported[0] || '');
+}
+
+function doParse(){
+  const hdr = $('#header').value;
+  const sup = $('#supported').value.split(',').map(s => s.trim()).filter(Boolean);
+  const def = $('#fallback').value.trim();
+  if(!hdr.trim()){
+    $('#output').innerHTML = '<span style="color:var(--text3)">' + t('empty') + '</span>';
+    $('#status').innerHTML = '';
+    return;
+  }
+  const prefs = parseAcceptLanguage(hdr);
+  if(!prefs.length){
+    $('#output').innerHTML = '<span style="color:var(--gz-accent)">⚠ ' + escapeHtml(hdr) + ' — no valid entries</span>';
+    $('#status').innerHTML = '';
+    return;
+  }
+  prefs.sort((a, b) => b.q - a.q);
+
+  let html = '<table><thead><tr><th>#</th><th>' + t('lang') + '</th><th>' + t('q') + '</th><th>' + t('pref') + '</th></tr></thead><tbody>';
+  prefs.forEach((p, i) => {
+    const barWidth = Math.round(p.q * 120);
+    html += '<tr' + (i === 0 ? ' class="top"' : '') + '><td>' + (i+1) + '</td>' +
+      '<td class="lang">' + escapeHtml(p.tag) + '<br><span style="color:var(--text3);font-size:.75rem">' + escapeHtml(langName(p.tag)) + '</span></td>' +
+      '<td class="q">' + p.q.toFixed(2) + '</td>' +
+      '<td><span class="bar" style="width:' + barWidth + 'px"></span></td></tr>';
+  });
+  html += '</tbody></table>';
+
+  const best = matchLocale(prefs, sup, def);
+  if(best){
+    html += '<div class="match">' + t('best') + ': ' + escapeHtml(best) + '</div>';
+  } else {
+    html += '<div class="nomatch">' + t('useDefault') + '</div>';
+  }
+
+  // browser default
+  const navLangs = navigator.languages || [navigator.language];
+  html += '<div style="margin-top:10px;font-size:.78rem;color:var(--text3)">' + t('browserDefault') + ': <code>' + escapeHtml(navLangs.join(', ')) + '</code></div>';
+
+  $('#output').innerHTML = html;
+  $('#status').innerHTML = '<span style="color:var(--gz-success)">✓ ' + prefs.length + ' locale(s) · best = ' + escapeHtml(best || '—') + '</span>';
+}
+
+function loadExample(){
+  $('#header').value = 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,fr;q=0.6,de;q=0.3,*;q=0.1';
+  $('#supported').value = 'en, zh, fr, de, ja';
+  $('#fallback').value = 'en';
+  doParse();
+}
+
+function useMyBrowser(){
+  const langs = navigator.languages || [navigator.language];
+  $('#header').value = langs.map((l, i) => i === 0 ? l : l + ';q=' + (1 - i*0.1).toFixed(1)).join(', ');
+  doParse();
+}
+
+$('#toolbar').innerHTML =
+  '<button class="gz-btn" onclick="doParse()">' + t('parse') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="loadExample()">' + t('example') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="useMyBrowser()">' + t('browserDefault') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="$(\'#header\').value=\'\';$(\'#supported\').value=\'\';$(\'#fallback\').value=\'\';doParse()">' + t('clear') + '</button>';
+
+['header','supported','fallback'].forEach(id => $('#'+id).addEventListener('input', doParse));
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'📊', href:'/dev/http-status-codes.html', name:'HTTP Status'},
+    {icon:'🛡️', href:'/dev/cache-control-parser.html', name:'Cache-Control'},
+    {icon:'🌐', href:'/dev/browser-info.html', name:'Browser Info'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

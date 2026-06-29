@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JWT 密钥爆破器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用内置 wordlist（rockyou 风格）或自定义字典，爆破 HS256 / HS384 / HS512 JSON Web Token 的弱密钥。纯浏览器、不上传 — 仅用于测试你自己的 Token。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/jwt-cracker.html">
+  <meta property="og:title" content="JWT 密钥爆破器">
+  <meta property="og:description" content="使用内置 wordlist（rockyou 风格）或自定义字典，爆破 HS256 / HS384 / HS512 JSON Web Token 的弱密钥。纯浏览器、不上传 — 仅用于测试你自己的 Token。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/jwt-cracker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JWT 密钥爆破器">
+<meta name="twitter:description" content="使用内置 wordlist（rockyou 风格）或自定义字典，爆破 HS256 / HS384 / HS512 JSON Web Token 的弱密钥。纯浏览器、不上传 — 仅用于测试你自己的 Token。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{font-size:.85em;line-height:1.55;min-height:120px;font-family:monospace}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:4px}
+.field textarea,.field input[type=text]{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-family:monospace;font-size:.82em;box-sizing:border-box}
+.progress{margin-top:8px;height:8px;background:var(--glass2);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.progress>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .15s}
+.stat{display:inline-block;margin-right:14px;font-size:.78rem;color:var(--text2);font-family:monospace}
+.stat b{color:var(--text)}
+.found{padding:12px 14px;border-radius:10px;background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.4);color:#2ecc71;font-weight:700;font-family:monospace;font-size:1rem;margin-top:8px;word-break:break-all}
+.notfound{padding:12px 14px;border-radius:10px;background:var(--glass2);border:1px solid var(--border);color:var(--text2);margin-top:8px}
+.opt{font-size:.8rem;color:var(--text2);display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.opt input[type=checkbox]{accent-color:var(--accent)}
+.opt select{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JWT Secret Cracker","description":"Free online JWT HS256/HS384/HS512 secret cracker. Brute-force weak JSON Web Token secrets using a built-in rockyou-style wordlist or your own. Pure browser, runs locally, no upload.","url": "https://tools.gamezipper.com/zh/dev/jwt-cracker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does JWT secret cracking work?","acceptedAnswer":{"@type":"Answer","text":"An HS256 JWT is signed with HMAC-SHA256 over header.payload using a shared secret. The cracker recomputes the HMAC for each candidate secret from a wordlist and compares it to the signature in the token. A match reveals the secret."}},{"@type":"Question","name":"Can this crack RS256 or strong secrets?","acceptedAnswer":{"@type":"Answer","text":"No. This only works against HMAC-based algorithms (HS256, HS384, HS512) signed with a weak, guessable secret. RS256/ES256 use asymmetric keys and cannot be brute-forced this way. Use a long random secret to stay safe."}},{"@type":"Question","name":"Is this tool legal to use?","acceptedAnswer":{"@type":"Answer","text":"It is a defensive and educational tool — use it only on tokens you own or are authorised to test (your own apps, CTF challenges, bug-bounty scopes). Cracking tokens you do not own may be illegal."}},{"@type":"Question","name":"Where does the cracking run?","acceptedAnswer":{"@type":"Answer","text":"Entirely in your browser using the Web Crypto API. The token and wordlist never leave your device, and processing happens in chunks via setTimeout so the page stays responsive."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/jwt-cracker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/jwt-cracker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/jwt-cracker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="field"><label id="lbl-token"></label><textarea id="token" rows="4" spellcheck="false" placeholder="eyJhbGciOiJIUzI1NiIs..."></textarea></div>
+        <div class="field"><label id="lbl-wl"></label><textarea id="wordlist" rows="5" spellcheck="false" placeholder="secret&#10;password&#10;123456&#10;..."></textarea></div>
+        <div class="opt">
+          <label><input type="checkbox" id="useBuiltin" checked> <span id="opt-builtin"></span></label>
+          <label><span id="opt-mode"></span>
+            <select id="mode">
+              <option value="wordlist">wordlist</option>
+              <option value="wordlist-case">wordlist + case</option>
+              <option value="wordlist-suffix">wordlist + digits</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+        <div class="progress"><div id="bar"></div></div>
+        <div style="margin-top:6px">
+          <span class="stat" id="stat-tried"></span>
+          <span class="stat" id="stat-total"></span>
+          <span class="stat" id="stat-rate"></span>
+        </div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JWT Secret Cracker',
+    toolDesc: 'Brute-force weak HS256 / HS384 / HS512 JSON Web Token secrets with a built-in wordlist (rockyou-style) or your own. Pure browser, no upload — for testing your own tokens only.',
+    crack: 'Crack',
+    stop: 'Stop',
+    lblToken: 'JWT to crack',
+    lblWl: 'Custom wordlist (one per line)',
+    lblOut: 'Result',
+    optBuiltin: 'Use built-in wordlist (append to mine)',
+    optMode: 'Strategy',
+    empty: 'Paste a JWT and click Crack.',
+    notHmac: 'Algorithm is not HS256/HS384/HS512 — cannot crack with this tool.',
+    badJwt: 'Invalid JWT structure.',
+    found: '✓ SECRET FOUND',
+    notFound: '✗ No match in wordlist.',
+    stopped: 'Stopped after',
+    tried: 'tried',
+    total: 'of',
+    rate: 'rate',
+    step1: 'Paste an HS256/HS384/HS512 token you are authorised to test',
+    step2: 'Keep the built-in wordlist or paste your own candidates',
+    step3: 'Pick a strategy (plain, case variants, or append digits)',
+    step4: 'Click Crack — the secret appears in a green box if found',
+  },
+  zh: {
+    toolTitle: 'JWT 密钥爆破器',
+    toolDesc: '使用内置 wordlist（rockyou 风格）或自定义字典，爆破 HS256 / HS384 / HS512 JSON Web Token 的弱密钥。纯浏览器、不上传 — 仅用于测试你自己的 Token。',
+    crack: '爆破',
+    stop: '停止',
+    lblToken: '待爆破 JWT',
+    lblWl: '自定义字典（每行一个）',
+    lblOut: '结果',
+    optBuiltin: '使用内置字典（追加在我的之后）',
+    optMode: '策略',
+    empty: '粘贴 JWT 并点击「爆破」。',
+    notHmac: '算法不是 HS256/HS384/HS512 — 此工具无法爆破。',
+    badJwt: 'JWT 结构无效。',
+    found: '✓ 找到密钥',
+    notFound: '✗ 字典中无匹配。',
+    stopped: '已停止，尝试',
+    tried: '已试',
+    total: '共',
+    rate: '速率',
+    step1: '粘贴你有权测试的 HS256/HS384/HS512 Token',
+    step2: '保留内置字典或粘贴你自己的候选词',
+    step3: '选择策略（原始、大小写变体、追加数字）',
+    step4: '点击「爆破」— 命中则绿框显示密钥',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Built-in mini rockyou-style wordlist (~250 common weak secrets)
+const BUILTIN = `secret
+Secret
+SECRET
+password
+Password
+PASSWORD
+passw0rd
+123456
+12345678
+1234567890
+123456789
+111111
+000000
+admin
+Admin
+ADMIN
+administrator
+root
+rootroot
+toor
+test
+Test
+TEST
+testing
+guest
+Guest
+user
+qwerty
+letmein
+welcome
+Welcome
+monkey
+dragon
+master
+shadow
+superman
+michael
+football
+baseball
+iloveyou
+trustno1
+sunshine
+princess
+abc123
+abcdef
+password1
+Password1
+P@ssw0rd
+P@ssword
+P@ssw0rd!
+changeme
+default
+none
+null
+key
+Key
+12345
+1234
+123
+1q2w3e4r
+1qaz2wsx
+qazwsx
+asdfgh
+zxcvbn
+foobar
+hello
+Hello
+world
+sample
+example
+demo
+demo123
+test123
+admin123
+root123
+secret123
+secretkey
+SecretKey
+SECRET_KEY
+jwt
+JWT
+jwtsecret
+jwt-secret
+JWT_SECRET
+jwt_secret
+JwtSecret
+token
+TOKEN
+mytoken
+mytoken123
+mysecret
+MySecret
+MY_SECRET
+my_secret
+my-secret
+topsecret
+TopSecret
+TOPSECRET
+api
+apikey
+ApiKey
+API_KEY
+api_key
+api-key
+secretkey123
+supersecret
+ultrasecret
+123qwe
+qwe123
+asd123
+zaq12wsx
+pass
+Pass
+word
+Word
+login
+Login
+auth
+Auth
+oauth
+session
+Session
+flask
+django
+Django
+express
+Express
+node
+Node
+nodejs
+NodeJS
+java
+Java
+python
+Python
+golang
+Golang
+react
+React
+angular
+Angular
+vue
+Vue
+postgres
+Postgres
+mysql
+MySQL
+mongo
+MongoDB
+redis
+Redis
+docker
+Docker
+kubernetes
+Kubernetes
+k8s
+aws
+AWS
+azure
+Azure
+gcp
+GCP
+dev
+dev-secret
+prod
+prod-secret
+staging
+Staging
+test-env
+qa
+sandbox
+Sandbox
+supersecret123
+mysecret123
+secret1234
+s3cr3t
+S3cr3t
+s3cret
+Secret!
+secret!
+secret@
+secret#
+secret$
+password!
+Password!
+passw0rd!
+password123!
+qwerty123
+Welcome1
+Welcome123
+letmein123
+admin@123
+root@123
+Admin@123
+passphrase
+passphrase123
+your-256-bit-secret
+your-secret-key
+your_secret_key
+your-secret
+YOUR_SECRET
+your256bitsecret
+shared-secret
+sharedsecret
+SHARED_SECRET
+app
+app-secret
+app_secret
+APP_SECRET
+appkey
+AppKey
+APP_KEY
+client
+client-secret
+clientsecret
+CLIENT_SECRET
+private
+private-key
+privatekey
+PRIVATE_KEY
+public
+public-key
+publickey
+PUBLIC_KEY
+sig
+signing
+signing-key
+signingkey
+SIGNING_KEY
+hmac
+HMAC
+hmac-secret
+hmacsecret
+HMAC_SECRET
+sha
+sha256
+SHA256
+hs256
+HS256
+jwtRS256
+jwt-hs256
+webtoken
+webtokensecret
+sam
+gandalf
+aragorn
+frodo
+legolas
+gimli
+boromir
+harry
+potter
+hermione
+ron
+spider
+batman
+superman
+ironman
+captain
+america
+marvel
+dc
+ninja
+pirate
+wizard
+matrix
+neo
+trinity
+morpheus
+oracle
+zion
+redpill
+bluepill
+localhost
+127.0.0.1
+0.0.0.0
+undefined
+NaN
+true
+false
+none
+yes
+no
+ok
+okay
+done
+end
+fin
+final
+complete
+hidden
+mystery
+enigma
+cipher
+crypto
+blockchain
+bitcoin
+ethereum
+satoshi
+doge
+moon
+lamborghini
+rich
+money
+dollar
+euro
+pound
+yen
+yuan
+rupiah
+rupee
+007
+agent
+bond
+james
+jamesbond
+starwars
+skywalker
+yoda
+vader
+chewbacca
+han
+solo
+millennium
+enterprise
+kirk
+spock
+scotty
+tribble`;
+
+let running = false;
+
+function strToBytes(s){ return new TextEncoder().encode(s); }
+function bytesToHex(buf){ return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function b64urlToBytes(s){
+  s = s.replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length % 4) s += '=';
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function getAlg(token){
+  const parts = token.trim().split('.');
+  if(parts.length < 2) return null;
+  try{
+    const header = JSON.parse(new TextDecoder().decode(b64urlToBytes(parts[0])));
+    return { alg: header.alg, signedInput: parts[0] + '.' + parts[1], sig: b64urlToBytes(parts[2]) };
+  }catch(_){ return null; }
+}
+
+function algToWebCrypto(alg){
+  if(alg === 'HS256') return 'SHA-256';
+  if(alg === 'HS384') return 'SHA-384';
+  if(alg === 'HS512') return 'SHA-512';
+  return null;
+}
+
+function expandWordlist(words, mode){
+  const out = [];
+  const seen = new Set();
+  const add = (s) => { if(!seen.has(s)){ seen.add(s); out.push(s); } };
+  for(const w of words){
+    if(!w) continue;
+    if(mode === 'wordlist'){
+      add(w);
+    } else if(mode === 'wordlist-case'){
+      add(w); add(w.toLowerCase()); add(w.toUpperCase());
+      add(w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    } else if(mode === 'wordlist-suffix'){
+      add(w);
+      for(const sfx of ['','1','12','123','1234','12345','!','@','#','2024','2025','2026','007','0','99','00']){
+        add(w + sfx);
+      }
+    }
+  }
+  return out;
+}
+
+async function trySecret(input, secret, hashAlg){
+  const key = await crypto.subtle.importKey('raw', strToBytes(secret), { name:'HMAC', hash:{ name: hashAlg } }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, strToBytes(input)));
+  return sig;
+}
+
+function ctEqual(a, b){
+  if(a.length !== b.length) return false;
+  let d = 0;
+  for(let i=0;i<a.length;i++) d |= a[i] ^ b[i];
+  return d === 0;
+}
+
+async function doCrack(){
+  if(running) return;
+  const token = $('#token').value.trim();
+  if(!token){ $('#status').innerHTML = '<span style="color:var(--text3)">' + t('empty') + '</span>'; return; }
+  const info = getAlg(token);
+  if(!info){ $('#status').innerHTML = '<span style="color:var(--gz-accent)">' + t('badJwt') + '</span>'; return; }
+  const hashAlg = algToWebCrypto(info.alg);
+  if(!hashAlg){ $('#status').innerHTML = '<span style="color:var(--gz-accent)">' + t('notHmac') + ' (' + info.alg + ')</span>'; return; }
+
+  // Build wordlist
+  let words = [];
+  if($('#useBuiltin').checked) words = words.concat(BUILTIN.split('\n'));
+  const custom = $('#wordlist').value.split('\n').map(s => s.trim()).filter(Boolean);
+  words = words.concat(custom);
+  const candidates = expandWordlist(words, $('#mode').value);
+
+  running = true;
+  $('#output').innerHTML = '<span style="color:var(--text3)">Cracking ' + info.alg + ' with ' + candidates.length + ' candidate(s)…</span>';
+  $('#bar').style.width = '0%';
+
+  const input = info.signedInput;
+  const target = info.sig;
+  const startTime = performance.now();
+  let i = 0;
+  const BATCH = 250;
+
+  while(running && i < candidates.length){
+    const end = Math.min(i + BATCH, candidates.length);
+    for(let j = i; j < end; j++){
+      try{
+        const sig = await trySecret(input, candidates[j], hashAlg);
+        if(ctEqual(sig, target)){
+          const elapsed = ((performance.now() - startTime)/1000).toFixed(1);
+          $('#bar').style.width = '100%';
+          $('#output').innerHTML =
+            '<div class="found">' + t('found') + '</div>' +
+            '<div style="margin-top:8px;color:var(--text2)">secret = <b style="color:var(--accent);font-size:1.05em">' + escapeHtml(candidates[j]) + '</b></div>' +
+            '<div style="margin-top:4px;color:var(--text3);font-size:.78rem">' + (j+1) + ' attempts in ' + elapsed + 's · ' + info.alg + '</div>';
+          $('#status').innerHTML = '<button class="gz-btn" onclick="copyText(\'' + candidates[j].replace(/'/g,"\\'") + '\')">' + t('copy') + '</button>';
+          running = false;
+          return;
+        }
+      }catch(_){}
+    }
+    i = end;
+    const pct = Math.round(i / candidates.length * 100);
+    $('#bar').style.width = pct + '%';
+    $('#stat-tried').innerHTML = t('tried') + ': <b>' + i + '</b>';
+    $('#stat-total').innerHTML = t('total') + ': <b>' + candidates.length + '</b>';
+    const elapsed = (performance.now() - startTime)/1000;
+    $('#stat-rate').innerHTML = t('rate') + ': <b>' + Math.round(i/elapsed) + '/s</b>';
+    // yield to UI
+    await new Promise(r => setTimeout(r, 0));
+  }
+  running = false;
+  if(i >= candidates.length){
+    $('#bar').style.width = '100%';
+    $('#output').innerHTML = '<div class="notfound">' + t('notFound') + '</div>';
+    $('#status').innerHTML = '';
+  } else {
+    $('#output').innerHTML = '<div class="notfound">' + t('stopped') + ' ' + i + ' candidate(s).</div>';
+    $('#status').innerHTML = '';
+  }
+}
+
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function doStop(){ running = false; }
+
+function loadExample(){
+  // Build a real HS256 token signed with "supersecret" so users see a FOUND result
+  (async()=>{
+    const header = b64url(JSON.stringify({alg:'HS256',typ:'JWT'}));
+    const payload = b64url(JSON.stringify({sub:'demo',iat:1730000000,exp:9999999999}));
+    const key = await crypto.subtle.importKey('raw', strToBytes('supersecret'), {name:'HMAC',hash:{name:'SHA-256'}}, false, ['sign']);
+    const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, strToBytes(header + '.' + payload)));
+    $('#token').value = header + '.' + payload + '.' + b64urlBytes(sig);
+  })();
+}
+
+function b64url(s){ return btoa(s).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
+function b64urlBytes(bytes){
+  let bin = '';
+  for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+}
+
+$('#toolbar').innerHTML =
+  '<button class="gz-btn" onclick="doCrack()">' + t('crack') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="doStop()">' + t('stop') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="loadExample()">' + t('example') + '</button>' +
+  '<button class="gz-btn gz-btn-secondary" onclick="$(\'#token\').value=\'\';$(\'#wordlist\').value=\'\';$(\'#output\').textContent=\'\';$(\'#bar\').style.width=\'0%\'">' + t('clear') + '</button>';
+
+$('#opt-builtin').textContent = t('optBuiltin');
+$('#opt-mode').textContent = t('optMode');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎫', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🔐', href:'/dev/jwt-verify.html', name:'JWT Verify'},
+    {icon:'🔑', href:'/dev/hmac-verify.html', name:'HMAC Verify'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Gen'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

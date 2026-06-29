@@ -1,0 +1,212 @@
+<!DOCTYPE html><html lang="zh"><head>
+
+<title>SQL 转 Markdown 表格转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 SQL SELECT 查询结果或 CREATE TABLE 语句转换为干净的 Markdown 表格。支持 SQL 客户端的制表符和竖线分隔输出。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/sql-to-markdown.html">
+  <meta property="og:title" content="SQL 转 Markdown 表格转换器">
+  <meta property="og:description" content="将 SQL SELECT 查询结果或 CREATE TABLE 语句转换为干净的 Markdown 表格。支持 SQL 客户端的制表符和竖线分隔输出。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/sql-to-markdown.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SQL 转 Markdown 表格转换器">
+<meta name="twitter:description" content="将 SQL SELECT 查询结果或 CREATE TABLE 语句转换为干净的 Markdown 表格。支持 SQL 客户端的制表符和竖线分隔输出。">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script><script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:100px}
+#status{margin-top:8px;font-size:.85em}
+.gz-mode-btn{cursor:pointer}
+.gz-mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SQL to Markdown Table Converter","description":"Convert SQL SELECT query results or CREATE TABLE statements to clean Markdown tables. Paste data and get formatted Markdown instantly. Free, private, browser-only.","url": "https://tools.gamezipper.com/zh/dev/sql-to-markdown.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What SQL input formats are supported?","acceptedAnswer":{"@type":"Answer","text":"The tool supports two modes: (1) Tab or pipe-separated query results as you'd copy from a SQL client (with a header row and a separator line), and (2) CREATE TABLE statements where column names and types are extracted."}},{"@type":"Question","name":"How does the query result mode work?","acceptedAnswer":{"@type":"Answer","text":"Paste the output you copied from your SQL client — the first line is treated as the header, any separator line (--- or +---+) is removed, and each data row becomes a Markdown table row. Both tab-separated and pipe-separated output work."}},{"@type":"Question","name":"Can I convert a CREATE TABLE statement?","acceptedAnswer":{"@type":"Answer","text":"Yes. Switch to CREATE TABLE mode and paste your DDL. The tool extracts every column name and type, producing a Markdown table with Column and Type columns."}},{"@type":"Question","name":"Is my SQL data sent anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser. Your SQL data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sql-to-markdown.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sql-to-markdown.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sql-to-markdown.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SQL to Markdown Table Converter',
+    toolDesc: 'Convert SQL SELECT query results or CREATE TABLE statements to clean Markdown tables. Supports tab and pipe-separated output from any SQL client.',
+    lblIn: 'Input SQL / Query Result',
+    lblOut: 'Markdown Table',
+    convert: 'Convert',
+    modeResult: 'Query Result',
+    modeCreate: 'CREATE TABLE',
+    colName: 'Column',
+    colType: 'Type',
+    rowsConverted: 'rows converted',
+    step1: 'Paste your SQL query result or CREATE TABLE statement',
+    step2: 'Pick the right mode (Query Result or CREATE TABLE)',
+    step3: 'Click Convert and copy the Markdown table',
+  },
+  zh: {
+    toolTitle: 'SQL 转 Markdown 表格转换器',
+    toolDesc: '将 SQL SELECT 查询结果或 CREATE TABLE 语句转换为干净的 Markdown 表格。支持 SQL 客户端的制表符和竖线分隔输出。',
+    lblIn: '输入 SQL / 查询结果',
+    lblOut: 'Markdown 表格',
+    convert: '转换',
+    modeResult: '查询结果',
+    modeCreate: 'CREATE TABLE',
+    colName: '列名',
+    colType: '类型',
+    rowsConverted: '行已转换',
+    step1: '粘贴 SQL 查询结果或 CREATE TABLE 语句',
+    step2: '选择正确的模式（查询结果或 CREATE TABLE）',
+    step3: '点击转换并复制 Markdown 表格',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'result';
+
+function escapeMd(s) {
+  return String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ').trim();
+}
+
+function convertResult(text) {
+  const lines = text.split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim());
+  if (lines.length === 0) return '';
+  // Detect delimiter: pipe if lines look like |...|, else tab
+  const hasPipes = lines.some(l => l.includes('|'));
+  const rows = lines.map(line => {
+    if (hasPipes) {
+      // Trim leading/trailing pipes, split by |, unescape
+      let inner = line.trim();
+      inner = inner.replace(/^\+[-+]+\+\s*$/, ''); // remove +---+ separator
+      if (/^\|/.test(inner)) inner = inner.replace(/^\|/, '').replace(/\|$/, '');
+      return inner.split('|').map(c => c.trim());
+    }
+    return line.split('\t').map(c => c.trim());
+  }).filter(r => r.length > 0 && !(r.length === 1 && /^[-+]+$/.test(r[0])));
+
+  // Remove separator rows (all dashes)
+  const filtered = rows.filter(r => !(r.length > 0 && r.every(c => /^[-=:*\s]*$/.test(c) && c.length > 0)));
+  if (filtered.length === 0) return '';
+  const header = filtered[0];
+  const body = filtered.slice(1);
+  const colCount = header.length;
+  let md = '';
+  md += '| ' + header.map(escapeMd).join(' | ') + ' |\n';
+  md += '| ' + header.map(() => '---').join(' | ') + ' |\n';
+  body.forEach(row => {
+    // Pad row to colCount
+    while (row.length < colCount) row.push('');
+    md += '| ' + row.slice(0, colCount).map(escapeMd).join(' | ') + ' |\n';
+  });
+  return { md, count: body.length };
+}
+
+function convertCreateTable(text) {
+  const cols = [];
+  // Match: column_name TYPE[(...)] ...
+  const lines = text.split('\n');
+  let inTable = false;
+  for (let line of lines) {
+    line = line.trim().replace(/,$/, '');
+    // CREATE TABLE
+    if (/CREATE\s+(TEMPORARY\s+|TEMP\s+)?TABLE/i.test(line)) { inTable = true; continue; }
+    if (/^\)/.test(line) || /;/.test(line)) { inTable = false; continue; }
+    if (!inTable) continue;
+    // Skip constraint lines
+    if (/^(PRIMARY\s+KEY|FOREIGN\s+KEY|CONSTRAINT|UNIQUE|CHECK|KEY|INDEX)/i.test(line)) continue;
+    // Extract column name and type
+    const m = line.match(/^(`[^`]+`|\[[^\]]+\]|"[^"]+"|\w+)\s+([A-Za-z][\w()]*(?:\s+\w+)*)/);
+    if (m) {
+      let name = m[1].replace(/[`"\[\]]/g, '');
+      let type = m[2].trim();
+      cols.push([name, type]);
+    }
+  }
+  if (cols.length === 0) return '';
+  let md = '';
+  md += '| ' + t('colName') + ' | ' + t('colType') + ' |\n';
+  md += '| --- | --- |\n';
+  cols.forEach(([name, type]) => {
+    md += '| ' + escapeMd(name) + ' | ' + escapeMd(type) + ' |\n';
+  });
+  return { md, count: cols.length };
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  const result = mode === 'result' ? convertResult(inp) : convertCreateTable(inp);
+  if (!result) {
+    $('#output').value = '';
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">⚠ ${mode === 'result' ? 'No rows detected. Make sure your input has a header line followed by data.' : 'No columns found in CREATE TABLE.'}</span>`;
+    return;
+  }
+  $('#output').value = result.md.trimEnd();
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${result.count} ${t('rowsConverted')}</span>`;
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.gz-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  doConvert();
+}
+
+function loadExample() {
+  if (mode === 'result') {
+    $('#input').value = `id\tname\temail\ttotal
+1\tAlice\talice@example.com\t250.00
+2\tBob\tbob@example.com\t89.50
+3\tCarol\tcarol@example.com\t1240.00`;
+  } else {
+    $('#input').value = `CREATE TABLE users (
+    id          SERIAL PRIMARY KEY,
+    username    VARCHAR(50) NOT NULL UNIQUE,
+    email       VARCHAR(255) NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active   BOOLEAN DEFAULT true
+);`;
+  }
+  doConvert();
+}
+
+function doClear() { $('#input').value=''; $('#output').value=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-mode-btn active" data-mode="result" onclick="setMode('result')">${t('modeResult')}</button>
+  <button class="gz-btn gz-mode-btn gz-btn-secondary" data-mode="create" onclick="setMode('create')">${t('modeCreate')}</button>
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3'],
+  related: [
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'🗜️', href:'/dev/sql-minifier.html', name:'SQL Minifier'},
+    {icon:'📊', href:'/text/markdown-table.html', name:'Markdown Table'},
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body></html>

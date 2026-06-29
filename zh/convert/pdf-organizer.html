@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>PDF 页面整理器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="拖拽重排、删除和旋转 PDF 页面。下载整理后的 PDF — 100% 浏览器本地运行，无需上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/pdf-organizer.html">
+  <meta property="og:title" content="PDF 页面整理器">
+  <meta property="og:description" content="拖拽重排、删除和旋转 PDF 页面。下载整理后的 PDF — 100% 浏览器本地运行，无需上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/pdf-organizer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PDF 页面整理器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<style>
+#po-drop{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;background:var(--glass);transition:border-color .2s}
+#po-drop:hover{border-color:var(--gz-accent)}
+#po-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:center}
+.po-page{position:relative;width:130px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:6px;cursor:grab;text-align:center}
+.po-page.dragging{opacity:.4}
+.po-page.drag-over{border-color:var(--gz-accent);border-style:solid}
+.po-page canvas{width:100%;height:160px;object-fit:contain;display:block;border-radius:4px;background:#fff}
+.po-page .po-num{font-size:.75em;opacity:.7;margin-top:2px}
+.po-page .po-rot{position:absolute;top:4px;right:4px;background:var(--glass);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8em}
+.po-page .po-del{position:absolute;top:4px;left:4px;background:var(--glass);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.7em;color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"PDF Organizer","description":"Organize PDF pages online for free. Drag to reorder, delete unwanted pages, rotate 90/180/270°, and download a clean new PDF — 100% in your browser with pdf-lib, no upload, no signup.","url": "https://tools.gamezipper.com/zh/convert/pdf-organizer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is the PDF organizer free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free with no signup and no watermark. Organize as many PDFs as you like."}}, {"@type": "Question", "name": "Is my PDF uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Your PDF is processed entirely in your browser using the pdf-lib library. The file never leaves your device."}}, {"@type": "Question", "name": "What can I do with pages?", "acceptedAnswer": {"@type": "Answer", "text": "You can drag pages to reorder them, delete individual pages, rotate pages 90 degrees clockwise, and download the reorganized PDF."}}, {"@type": "Question", "name": "Can I reverse all pages at once?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click the Reverse All button to instantly reverse the order of every page in your PDF."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/pdf-organizer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/pdf-organizer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/pdf-organizer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="po-drop"></div>
+    <input type="file" id="po-file" accept=".pdf" style="display:none">
+    <div id="po-grid"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'PDF Organizer',
+    toolDesc: 'Reorder, delete and rotate PDF pages with drag-and-drop. Download a clean reorganized PDF — 100% in your browser, no upload.',
+    dropHere: '📂 Drop a PDF here or click to browse',
+    download: '⬇ Download PDF',
+    reverse: 'Reverse All',
+    step1: 'Click the drop zone or drag a PDF file onto it',
+    step2: 'Drag page thumbnails to reorder them',
+    step3: 'Click ✕ to delete a page or ↻ to rotate it 90°',
+    step4: 'Press Download PDF to save the reorganized document',
+  },
+  zh: {
+    toolTitle: 'PDF 页面整理器',
+    toolDesc: '拖拽重排、删除和旋转 PDF 页面。下载整理后的 PDF — 100% 浏览器本地运行，无需上传。',
+    dropHere: '📂 拖放 PDF 到此处或点击浏览',
+    download: '⬇ 下载 PDF',
+    reverse: '全部反转',
+    step1: '点击拖放区或将 PDF 文件拖入',
+    step2: '拖动页面缩略图重新排序',
+    step3: '点击 ✕ 删除页面或 ↻ 旋转 90°',
+    step4: '按「下载 PDF」保存整理后的文档',
+  }
+});
+
+const { $, t } = GZ;
+const { PDFDocument, degrees } = PDFLib;
+
+let pages = []; // { origIdx, rotation }
+let pdfBytes = null;
+
+$('#po-drop').textContent = t('dropHere');
+$('#po-drop').onclick = () => $('#po-file').click();
+$('#po-file').onchange = e => loadFile(e.target.files[0]);
+
+$('#po-drop').ondragover = e => { e.preventDefault(); };
+$('#po-drop').ondrop = e => { e.preventDefault(); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); };
+
+async function loadFile(file) {
+  if (!file || !file.name.endsWith('.pdf')) return;
+  $('#status').textContent = GZI18n.getLang() === 'zh' ? '正在加载…' : 'Loading…';
+  pdfBytes = await file.arrayBuffer();
+  const doc = await PDFDocument.load(pdfBytes);
+  const count = doc.getPageCount();
+  pages = [];
+  for (let i = 0; i < count; i++) {
+    pages.push({ origIdx: i, rotation: doc.getPage(i).getRotation().angle || 0 });
+  }
+  await renderGrid(doc);
+}
+
+async function renderGrid(doc) {
+  const grid = $('#po-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < pages.length; i++) {
+    // render page i as PNG via single-page PDF
+    const singleDoc = await PDFDocument.create();
+    const [copied] = await singleDoc.copyPages(doc, [i]);
+    singleDoc.addPage(copied);
+    const png = await singleDoc.saveAsBase64({ dataUri: true });
+    const div = document.createElement('div');
+    div.className = 'po-page';
+    div.draggable = true;
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <span class="po-del" onclick="delPage(${i})">✕</span>
+      <span class="po-rot" onclick="rotPage(${i})">↻</span>
+      <img src="${png}" style="width:100%;height:160px;object-fit:contain;border-radius:4px;background:#fff;transform:rotate(${pages[i].rotation}deg)">
+      <div class="po-num">${i + 1}</div>`;
+    div.ondragstart = dragStart;
+    div.ondragover = dragOver;
+    div.ondrop = drop;
+    div.ondragend = dragEnd;
+    grid.appendChild(div);
+  }
+  $('#status').textContent = GZI18n.getLang() === 'zh' ? `${pages.length} 页` : `${pages.length} pages`;
+  // store doc reference for rebuild
+  window._pdfDoc = doc;
+}
+
+let dragIdx = null;
+function dragStart(e) { dragIdx = +e.currentTarget.dataset.idx; e.currentTarget.classList.add('dragging'); }
+function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function dragEnd(e) { document.querySelectorAll('.po-page').forEach(el => el.classList.remove('dragging','drag-over')); }
+function drop(e) {
+  e.preventDefault();
+  const targetIdx = +e.currentTarget.dataset.idx;
+  if (dragIdx === null || dragIdx === targetIdx) return;
+  const [moved] = pages.splice(dragIdx, 1);
+  pages.splice(targetIdx, 0, moved);
+  dragIdx = null;
+  renderGrid(window._pdfDoc);
+}
+
+async function delPage(i) {
+  pages.splice(i, 1);
+  await renderGrid(window._pdfDoc);
+}
+
+async function rotPage(i) {
+  pages[i].rotation = (pages[i].rotation + 90) % 360;
+  await renderGrid(window._pdfDoc);
+}
+
+async function reverseAll() {
+  pages.reverse();
+  await renderGrid(window._pdfDoc);
+}
+
+async function download() {
+  if (!window._pdfDoc) return;
+  $('#status').textContent = GZI18n.getLang() === 'zh' ? '正在生成…' : 'Building…';
+  const origDoc = await PDFDocument.load(await new Blob([pdfBytes]).arrayBuffer());
+  const indices = pages.map(p => p.origIdx);
+  const newDoc = await PDFDocument.create();
+  const copied = await newDoc.copyPages(origDoc, indices);
+  copied.forEach(p => newDoc.addPage(p));
+  newDoc.getPages().forEach((p, i) => {
+    if (pages[i].rotation) p.setRotation(degrees(pages[i].rotation));
+  });
+  const out = await newDoc.save();
+  const blob = new Blob([out], { type: 'application/pdf' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'organized.pdf';
+  a.click();
+  $('#status').textContent = GZI18n.getLang() === 'zh' ? '✓ 下载完成' : '✓ Downloaded';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="download()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="reverseAll()">${t('reverse')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/pdf-merger.html', name:'PDF Merger'},
+    {icon:'✂️', href:'/convert/pdf-splitter.html', name:'PDF Splitter'},
+    {icon:'🗑️', href:'/convert/pdf-delete-pages.html', name:'Delete PDF Pages'},
+    {icon:'🔄', href:'/convert/pdf-rotate.html', name:'PDF Rotate'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

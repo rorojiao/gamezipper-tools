@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Cache-Control 头部解析器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="解析和校验 HTTP Cache-Control 及相关缓存头部。显示指令、新鲜期、TTL（中英文）并提示冲突值 — 纯浏览器，无网络请求。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/cache-control-parser.html">
+  <meta property="og:title" content="Cache-Control 头部解析器">
+  <meta property="og:description" content="解析和校验 HTTP Cache-Control 及相关缓存头部。显示指令、新鲜期、TTL（中英文）并提示冲突值 — 纯浏览器，无网络请求。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/cache-control-parser.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Cache-Control 头部解析器">
+<meta name="twitter:description" content="解析和校验 HTTP Cache-Control 及相关缓存头部。显示指令、新鲜期、TTL（中英文）并提示冲突值 — 纯浏览器，无网络请求。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{font-size:.85em;line-height:1.6;min-height:160px}
+.directives{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin-top:8px}
+.directives .k{color:var(--accent);font-family:monospace;font-weight:600}
+.directives .v{color:var(--text2)}
+.tag{display:inline-block;padding:3px 10px;border-radius:14px;font-size:.78rem;margin:3px 6px 3px 0;background:var(--glass2);border:1px solid var(--border)}
+.tag.warn{background:rgba(233,69,96,.12);border-color:rgba(233,69,96,.4);color:var(--gz-accent)}
+.tag.ok{background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.4);color:#2ecc71}
+.tag.info{background:rgba(97,175,239,.12);border-color:rgba(97,175,239,.4);color:#61afef}
+.ttl{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--border);font-size:.85rem}
+.ttl b{color:var(--accent)}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:4px}
+.field input{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-family:monospace;font-size:.85em;box-sizing:border-box}
+.hdr{margin-top:6px}
+.hdr label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:4px}
+.hdr input{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px;font-family:monospace;font-size:.82em;box-sizing:border-box}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Cache-Control Header Parser","description":"Free online HTTP Cache-Control header parser. Validate and visualize Cache-Control, max-age, s-maxage, no-cache, no-store, immutable, Expires, ETag and Vary. Compute freshness lifetime and TTL. Runs in your browser.","url": "https://tools.gamezipper.com/zh/dev/cache-control-parser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does Cache-Control: max-age=3600 mean?", "acceptedAnswer": {"@type": "Answer", "text": "It tells every cache (browser, CDN, proxy) that the response is fresh for 3600 seconds (1 hour) from the time it was received. After that the cached copy is considered stale and must be revalidated."}}, {"@type": "Question", "name": "What is the difference between no-cache and no-store?", "acceptedAnswer": {"@type": "Answer", "text": "no-store forbids storing the response anywhere — the strongest cache prevention. no-cache allows storage but forces the cache to revalidate with the origin (via ETag or Last-Modified) before serving a copy."}}, {"@type": "Question", "name": "What does immutable do?", "acceptedAnswer": {"@type": "Answer", "text": "immutable tells the browser that the resource will never change during its freshness lifetime, so even a hard reload (Ctrl+R) should not trigger a conditional request. Pair it with long max-age on fingerprinted assets."}}, {"@type": "Question", "name": "How is the freshness lifetime computed?", "acceptedAnswer": {"@type": "Answer", "text": "The browser uses s-maxage for shared caches if present, otherwise max-age. If neither is set it falls back to the Expires header minus the Date header. This tool replicates RFC 7234 logic and also shows a human-readable TTL."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/cache-control-parser.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/cache-control-parser.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/cache-control-parser.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="field"><label id="lbl-cc"></label><input type="text" id="cc" spellcheck="false" placeholder="public, max-age=3600, s-maxage=86400"></div>
+        <div class="hdr"><label id="lbl-expires"></label><input type="text" id="expires" spellcheck="false" placeholder="Wed, 28 Jun 2027 12:00:00 GMT"></div>
+        <div class="hdr"><label id="lbl-date"></label><input type="text" id="date" spellcheck="false" placeholder="(server Date header, optional)"></div>
+        <div class="hdr"><label id="lbl-etag"></label><input type="text" id="etag" spellcheck="false" placeholder='"abc123" (optional)'></div>
+        <div class="hdr"><label id="lbl-vary"></label><input type="text" id="vary" spellcheck="false" placeholder="Accept-Encoding (optional)"></div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Cache-Control Header Parser',
+    toolDesc: 'Parse and validate HTTP Cache-Control and related caching headers. Shows directives, freshness lifetime, TTL in plain English and warns about conflicting values — pure browser, no network calls.',
+    parse: 'Parse',
+    lblCc: 'Cache-Control',
+    lblExpires: 'Expires',
+    lblDate: 'Date (server)',
+    lblEtag: 'ETag',
+    lblVary: 'Vary',
+    lblOut: 'Parsed result',
+    empty: 'Paste a Cache-Control value on the left, then click Parse.',
+    directives: 'Directives',
+    freshLife: 'Freshness lifetime',
+    seconds: 'seconds',
+    humanTtl: 'Effective TTL',
+    cacheTags: 'Cacheability',
+    invalid: '⚠ Invalid directive:',
+    step1: 'Paste the Cache-Control header value from a response',
+    step2: 'Optionally add Expires, Date, ETag and Vary',
+    step3: 'Click Parse to break down every directive',
+    step4: 'Read the TTL, cacheability tags and warnings',
+  },
+  zh: {
+    toolTitle: 'Cache-Control 头部解析器',
+    toolDesc: '解析和校验 HTTP Cache-Control 及相关缓存头部。显示指令、新鲜期、TTL（中英文）并提示冲突值 — 纯浏览器，无网络请求。',
+    parse: '解析',
+    lblCc: 'Cache-Control',
+    lblExpires: 'Expires',
+    lblDate: 'Date（服务器）',
+    lblEtag: 'ETag',
+    lblVary: 'Vary',
+    lblOut: '解析结果',
+    empty: '在左侧粘贴 Cache-Control 值，然后点击「解析」。',
+    directives: '指令',
+    freshLife: '新鲜期',
+    seconds: '秒',
+    humanTtl: '有效 TTL',
+    cacheTags: '可缓存性',
+    invalid: '⚠ 无效指令：',
+    step1: '粘贴响应中的 Cache-Control 头部值',
+    step2: '可选填 Expires、Date、ETag 和 Vary',
+    step3: '点击「解析」分解每个指令',
+    step4: '查看 TTL、可缓存性标签和警告',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const BOOL_DIRECTIVES = ['public','private','no-cache','no-store','no-transform','must-revalidate','proxy-revalidate','immutable','only-if-cached','stale-while-revalidate','stale-if-error'];
+const SEC_DIRECTIVES = ['max-age','s-maxage','stale-while-revalidate','stale-if-error'];
+
+function humanDuration(sec){
+  if(sec == null || isNaN(sec)) return '—';
+  if(sec <= 0) return '0 (already stale)';
+  const units = [['year',31536000],['day',86400],['hour',3600],['minute',60],['second',1]];
+  const parts = [];
+  for(const [name,s] of units){
+    const n = Math.floor(sec/s);
+    if(n>0){ parts.push(`${n} ${name}${n>1?'s':''}`); sec -= n*s; }
+    if(parts.length>=2) break;
+  }
+  return parts.join(' ') || 'less than a second';
+}
+
+function parseCacheControl(raw){
+  const out = { valid:true, errors:[], bools:[], secs:{}, ext:{} };
+  if(!raw || !raw.trim()){ out.empty = true; return out; }
+  const tokens = raw.split(',').map(s=>s.trim()).filter(Boolean);
+  for(const tok of tokens){
+    const eq = tok.indexOf('=');
+    let key, val;
+    if(eq >= 0){ key = tok.slice(0,eq).trim().toLowerCase(); val = tok.slice(eq+1).trim().replace(/^"|"$/g,''); }
+    else { key = tok.toLowerCase(); val = true; }
+    if(BOOL_DIRECTIVES.includes(key) && val === true){ out.bools.push(key); }
+    else if(SEC_DIRECTIVES.includes(key)){
+      const n = parseInt(val,10);
+      if(isNaN(n) || n<0){ out.valid=false; out.errors.push(key+'='+val); }
+      else out.secs[key] = n;
+    }
+    else if(val === true){ out.valid=false; out.errors.push(tok); }
+    else out.ext[key] = val;
+  }
+  return out;
+}
+
+function computeFreshness(cc, expiresStr, dateStr){
+  // shared cache TTL
+  if(cc.secs['s-maxage'] != null) return { shared:cc.secs['s-maxage'], source:'s-maxage' };
+  if(cc.secs['max-age'] != null) return { shared:cc.secs['max-age'], private:cc.secs['max-age'], source:'max-age' };
+  if(expiresStr){
+    const exp = Date.parse(expiresStr);
+    if(!isNaN(exp)){
+      const base = dateStr && !isNaN(Date.parse(dateStr)) ? Date.parse(dateStr) : Date.now();
+      const diff = Math.round((exp - base)/1000);
+      return { shared:diff, private:diff, source:'Expires' };
+    }
+  }
+  return { shared:null, private:null, source:'heuristic' };
+}
+
+function doParse(){
+  const ccRaw = $('#cc').value;
+  const expires = $('#expires').value.trim();
+  const date = $('#date').value.trim();
+  const etag = $('#etag').value.trim();
+  const vary = $('#vary').value.trim();
+  if(!ccRaw && !expires && !etag && !vary){
+    $('#output').innerHTML = `<span style="color:var(--text3)">${t('empty')}</span>`;
+    $('#status').innerHTML = '';
+    return;
+  }
+  const cc = parseCacheControl(ccRaw);
+  const ttl = computeFreshness(cc, expires, date);
+
+  let html = '';
+
+  // Cacheability tags
+  const tags = [];
+  if(cc.bools.includes('no-store')) tags.push(`<span class="tag warn">no-store</span>`);
+  else if(cc.bools.includes('no-cache')) tags.push(`<span class="tag warn">no-cache (revalidate)</span>`);
+  else if(cc.bools.includes('private')) tags.push(`<span class="tag info">private</span>`);
+  else if(cc.bools.includes('public')) tags.push(`<span class="tag ok">public</span>`);
+  if(cc.bools.includes('immutable')) tags.push(`<span class="tag ok">immutable</span>`);
+  if(cc.bools.includes('must-revalidate')) tags.push(`<span class="tag info">must-revalidate</span>`);
+  if(cc.secs['stale-while-revalidate'] != null) tags.push(`<span class="tag info">SWR ${cc.secs['stale-while-revalidate']}s</span>`);
+
+  html += `<div><b>${t('cacheTags')}:</b> ${tags.length ? tags.join('') : '<span class="tag">default (heuristic)</span>'}</div>`;
+
+  // TTL box
+  const ttlSec = ttl.shared;
+  html += `<div class="ttl"><b>${t('humanTtl')}:</b> ${ttl.source === 'heuristic' ? 'no explicit cache TTL — cache may use heuristic freshness' : humanDuration(ttlSec)}<br>
+    <b>${t('freshLife')}:</b> ${ttlSec == null ? '—' : ttlSec + ' ' + t('seconds')} &nbsp;<span style="color:var(--text3)">(${ttl.source})</span></div>`;
+
+  // Directives table
+  html += `<div style="margin-top:10px"><b>${t('directives')}</b></div><div class="directives">`;
+  cc.bools.forEach(b => html += `<span class="k">${b}</span><span class="v">true</span>`);
+  Object.entries(cc.secs).forEach(([k,v]) => html += `<span class="k">${k}</span><span class="v">${v} ${t('seconds')} (${humanDuration(v)})</span>`);
+  Object.entries(cc.ext).forEach(([k,v]) => html += `<span class="k">${k}</span><span class="v">${v}</span>`);
+  if(etag) html += `<span class="k">ETag</span><span class="v">${escapeHtml(etag)} — enables conditional revalidation</span>`;
+  if(vary) html += `<span class="k">Vary</span><span class="v">${escapeHtml(vary)} — separate cache entries per listed header</span>`;
+  if(expires && ttl.source !== 'Expires') html += `<span class="k">Expires</span><span class="v">${escapeHtml(expires)}</span>`;
+  html += `</div>`;
+
+  // Errors
+  if(cc.errors.length){
+    html += `<div style="margin-top:10px;color:var(--gz-accent)">${t('invalid')} ${cc.errors.map(escapeHtml).join(', ')}</div>`;
+  }
+  // Conflict warnings
+  if(cc.bools.includes('no-store') && (cc.secs['max-age'] != null || cc.secs['s-maxage'] != null)){
+    html += `<div style="margin-top:6px;color:var(--gz-accent)">⚠ no-store combined with max-age is contradictory.</div>`;
+  }
+  if(cc.bools.includes('public') && cc.bools.includes('private')){
+    html += `<div style="margin-top:6px;color:var(--gz-accent)">⚠ public and private are mutually exclusive.</div>`;
+  }
+  $('#output').innerHTML = html;
+  $('#status').innerHTML = cc.valid && !cc.errors.length
+    ? `<span style="color:var(--gz-success)">✓ Parsed · ${cc.bools.length + Object.keys(cc.secs).length + Object.keys(cc.ext).length} directive(s)</span>`
+    : `<span style="color:var(--gz-accent)">⚠ Parsed with ${cc.errors.length} error(s)</span>`;
+}
+
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function loadExample(){
+  $('#cc').value = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800, immutable';
+  $('#expires').value = '';
+  $('#etag').value = '"v1.2.3-abc"';
+  $('#vary').value = 'Accept-Encoding';
+  doParse();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doParse()">${t('parse')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="['cc','expires','date','etag','vary'].forEach(id=>\$('#'+id).value='');doParse()">${t('clear')}</button>`;
+
+['cc','expires','date','etag','vary'].forEach(id => $('#'+id).addEventListener('input', doParse));
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/dev/http-status-codes.html', name:'HTTP Status'},
+    {icon:'🛡️', href:'/dev/security-headers.html', name:'Security Headers'},
+    {icon:'🔐', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🔗', href:'/dev/url-parser.html', name:'URL Parser'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

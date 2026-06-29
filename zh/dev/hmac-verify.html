@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>HMAC 签名校验器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="校验 HMAC-SHA256 / SHA384 / SHA512 签名是否与消息和共享密钥匹配。常数时间比较，自动识别 hex / base64 / base64url。100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/hmac-verify.html">
+  <meta property="og:title" content="HMAC 签名校验器">
+  <meta property="og:description" content="校验 HMAC-SHA256 / SHA384 / SHA512 签名是否与消息和共享密钥匹配。常数时间比较，自动识别 hex / base64 / base64url。100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/hmac-verify.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HMAC 签名校验器">
+<meta name="twitter:description" content="校验 HMAC-SHA256 / SHA384 / SHA512 签名是否与消息和共享密钥匹配。常数时间比较，自动识别 hex / base64 / base64url。100% 浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.82em;line-height:1.55;min-height:120px}
+#status{margin-top:10px;font-size:.9rem;font-weight:600}
+.opt-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:.8rem;color:var(--text2)}
+.opt-row select,.opt-row input[type=text]{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 9px;font-family:monospace}
+.opt-row label{display:inline-flex;align-items:center;gap:6px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.78rem;color:var(--text2);margin-bottom:4px}
+.field textarea,.field input[type=text]{width:100%;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-family:monospace;font-size:.82em;box-sizing:border-box}
+.verdict{padding:14px 16px;border-radius:12px;font-weight:700;font-size:1rem;margin-top:8px}
+.verdict.ok{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.4)}
+.verdict.bad{background:rgba(233,69,96,.12);color:var(--gz-accent);border:1px solid rgba(233,69,96,.4)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HMAC Verifier","description":"Free online HMAC signature verifier. Check whether an HMAC-SHA256, SHA384 or SHA512 signature matches a message and secret using the Web Crypto API. 100% in-browser, no upload.","url": "https://tools.gamezipper.com/zh/dev/hmac-verify.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is HMAC verification?", "acceptedAnswer": {"@type": "Answer", "text": "HMAC (Hash-based Message Authentication Code) verification recomputes a keyed hash over a message using a shared secret and compares it to the signature you received. If the two values match, the message was not tampered with and was sent by someone who knows the secret."}}, {"@type": "Question", "name": "Which HMAC algorithms are supported?", "acceptedAnswer": {"@type": "Answer", "text": "This tool verifies HMAC-SHA256, HMAC-SHA384 and HMAC-SHA512, the same algorithms used by JWT HS256/HS384/HS512 tokens, AWS SigV4, GitHub webhooks and Stripe webhooks."}}, {"@type": "Question", "name": "Is my secret sent anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. The signature is recomputed entirely in your browser using the Web Crypto API. Your message, secret and signature never leave your device."}}, {"@type": "Question", "name": "What signature formats are accepted?", "acceptedAnswer": {"@type": "Answer", "text": "Hex (64/96/128 characters), standard Base64 and Base64URL without padding. The tool auto-detects the format and compares in constant time to avoid timing leaks."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/hmac-verify.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/hmac-verify.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/hmac-verify.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div>
+        <div class="field"><label id="lbl-msg"></label><textarea id="message" rows="6" spellcheck="false" placeholder="Raw message body..."></textarea></div>
+        <div class="field"><label id="lbl-secret"></label><input type="text" id="secret" spellcheck="false" autocomplete="off" placeholder="shared secret"></div>
+        <div class="field"><label id="lbl-sig"></label><input type="text" id="signature" spellcheck="false" placeholder="hex / base64 / base64url"></div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HMAC Signature Verifier',
+    toolDesc: 'Verify an HMAC-SHA256 / SHA384 / SHA512 signature against a message and shared secret. Constant-time compare, auto-detects hex / base64 / base64url. Runs 100% in your browser.',
+    algorithm: 'Algorithm',
+    verify: 'Verify',
+    lblMsg: 'Message',
+    lblSecret: 'Shared secret',
+    lblSig: 'Signature to verify',
+    lblOut: 'Recomputed digest',
+    empty: 'Enter a message, secret and signature, then click Verify.',
+    match: '✓ MATCH — signature is valid',
+    nomatch: '✗ NO MATCH — signature is invalid',
+    needAll: 'Fill in message, secret and signature.',
+    badSig: 'Signature is not valid hex/base64.',
+    step1: 'Paste the original message body',
+    step2: 'Enter the shared secret used to sign it',
+    step3: 'Paste the received signature (hex, base64 or base64url)',
+    step4: 'Click Verify — a green box means it matches',
+  },
+  zh: {
+    toolTitle: 'HMAC 签名校验器',
+    toolDesc: '校验 HMAC-SHA256 / SHA384 / SHA512 签名是否与消息和共享密钥匹配。常数时间比较，自动识别 hex / base64 / base64url。100% 浏览器本地运行。',
+    algorithm: '算法',
+    verify: '校验',
+    lblMsg: '消息',
+    lblSecret: '共享密钥',
+    lblSig: '待校验签名',
+    lblOut: '重新计算的摘要',
+    empty: '输入消息、密钥和签名，然后点击「校验」。',
+    match: '✓ 匹配 — 签名有效',
+    nomatch: '✗ 不匹配 — 签名无效',
+    needAll: '请填写消息、密钥和签名。',
+    badSig: '签名不是有效的 hex/base64。',
+    step1: '粘贴原始消息内容',
+    step2: '输入用于签名的共享密钥',
+    step3: '粘贴接收到的签名（hex、base64 或 base64url）',
+    step4: '点击「校验」— 绿色框表示匹配',
+  }
+});
+
+const { $, t } = GZ;
+let algo = 'SHA-256';
+
+const ALG_LABEL = { 'SHA-256':'HMAC-SHA256', 'SHA-384':'HMAC-SHA384', 'SHA-512':'HMAC-SHA512' };
+const HEX_LEN = { 'SHA-256':64, 'SHA-384':96, 'SHA-512':128 };
+
+function strToBytes(s){
+  return new TextEncoder().encode(s);
+}
+function bytesToHex(buf){
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function hexToBytes(hex){
+  if(hex.length % 2) throw new Error('odd hex length');
+  const out = new Uint8Array(hex.length/2);
+  for(let i=0;i<out.length;i++) out[i] = parseInt(hex.substr(i*2,2),16);
+  return out;
+}
+function b64ToBytes(b64){
+  // normalize base64url → base64, add padding
+  b64 = b64.replace(/-/g,'+').replace(/_/g,'/');
+  while(b64.length % 4) b64 += '=';
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function b64ToHex(b64){
+  return bytesToHex(b64ToBytes(b64));
+}
+function parseSignatureToHex(sig, expectedLen){
+  sig = sig.trim();
+  // hex?
+  if(/^[0-9a-fA-F]+$/.test(sig) && sig.length % 2 === 0){
+    return sig.toLowerCase();
+  }
+  // base64?
+  if(/^[A-Za-z0-9+/_=-]+$/.test(sig)){
+    try{ return b64ToHex(sig); }catch(e){}
+  }
+  throw new Error('bad sig');
+}
+
+async function computeHmac(message, secret){
+  const key = await crypto.subtle.importKey(
+    'raw', strToBytes(secret),
+    { name:'HMAC', hash:{ name: algo } },
+    false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, strToBytes(message));
+  return new Uint8Array(sig);
+}
+
+function ctEqual(a, b){
+  if(a.length !== b.length) return false;
+  let diff = 0;
+  for(let i=0;i<a.length;i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
+async function doVerify(){
+  const msg = $('#message').value;
+  const secret = $('#secret').value;
+  const sig = $('#signature').value;
+  if(!msg || !secret || !sig){
+    $('#status').innerHTML = `<span style="color:var(--text3)">${t('needAll')}</span>`;
+    $('#output').textContent = '';
+    return;
+  }
+  let providedBytes;
+  try{
+    const hex = parseSignatureToHex(sig, HEX_LEN[algo]);
+    providedBytes = hexToBytes(hex);
+  }catch(e){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('badSig')}</span>`;
+    $('#output').textContent = '';
+    return;
+  }
+  try{
+    const computed = await computeHmac(msg, secret);
+    const hexDigest = bytesToHex(computed);
+    $('#output').textContent = hexDigest + '\n\n' + b64FromBytes(computed);
+    const ok = ctEqual(computed, providedBytes);
+    $('#status').innerHTML = `<div class="verdict ${ok?'ok':'bad'}">${t(ok?'match':'nomatch')}</div>`;
+  }catch(e){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function b64FromBytes(bytes){
+  let bin = '';
+  for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function loadExample(){
+  $('#message').value = 'amount=4200&currency=usd&order_1234';
+  $('#secret').value = 'whsec_topsecret_demo_key';
+  // pre-compute the right signature for the example so users see a MATCH
+  (async()=>{
+    const sig = await computeHmac($('#message').value, $('#secret').value);
+    $('#signature').value = bytesToHex(sig);
+    doVerify();
+  })();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doVerify()">${t('verify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#message').value='';$('#secret').value='';$('#signature').value='';$('#output').textContent='';$('#status').innerHTML=''">${t('clear')}</button>`;
+
+$('#opts').innerHTML = `
+  <label>${t('algorithm')}:
+    <select onchange="algo=this.value;doVerify()">
+      <option value="SHA-256">HMAC-SHA256</option>
+      <option value="SHA-384">HMAC-SHA384</option>
+      <option value="SHA-512">HMAC-SHA512</option>
+    </select>
+  </label>
+  <span style="color:var(--text3)">(${ALG_LABEL[algo]} · ${HEX_LEN[algo]} hex chars)</span>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔑', href:'/dev/hmac.html', name:'HMAC Generator'},
+    {icon:'🎫', href:'/dev/jwt-verify.html', name:'JWT Verifier'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Gen'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

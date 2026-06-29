@@ -1,0 +1,266 @@
+<!DOCTYPE html><html lang="zh"><head>
+
+<title>UUID v3 & v5 生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="从命名空间和名称生成确定性的 UUID v3（MD5）和 UUID v5（SHA-1）。符合 RFC 4122 标准 — 相同的输入始终产生相同的 UUID。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/uuid-v3-v5.html">
+  <meta property="og:title" content="UUID v3 & v5 生成器">
+  <meta property="og:description" content="从命名空间和名称生成确定性的 UUID v3（MD5）和 UUID v5（SHA-1）。符合 RFC 4122 标准 — 相同的输入始终产生相同的 UUID。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/uuid-v3-v5.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="UUID v3 & v5 生成器">
+<meta name="twitter:description" content="从命名空间和名称生成确定性的 UUID v3（MD5）和 UUID v5（SHA-1）。符合 RFC 4122 标准 — 相同的输入始终产生相同的 UUID。">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script><script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{font-family:monospace;font-size:.85em;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+.uuid-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border)}
+.uuid-row:hover{background:var(--glass2)}
+.uuid-val{flex:1;user-select:all;color:var(--accent);font-weight:600}
+.gz-ns-btn{cursor:pointer;font-size:.8rem}
+.gz-ns-btn.active{background:var(--accent);color:#fff}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"UUID v3 & v5 Generator","description":"Generate UUID v3 (MD5) and UUID v5 (SHA-1) from a namespace and name. Deterministic, RFC 4122 compliant name-based UUIDs. Batch generation, copy and export. Free, private, browser-only.","url": "https://tools.gamezipper.com/zh/dev/uuid-v3-v5.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is the difference between UUID v3 and UUID v5?","acceptedAnswer":{"@type":"Answer","text":"Both are name-based UUIDs generated from a namespace UUID and a name string. UUID v3 uses MD5 hashing and UUID v5 uses SHA-1 hashing. UUID v5 is preferred because SHA-1 is considered more collision-resistant, but v3 remains supported for backward compatibility."}},{"@type":"Question","name":"Are UUID v3 and v5 deterministic?","acceptedAnswer":{"@type":"Answer","text":"Yes. The same namespace and name always produce the same UUID. This makes them ideal for generating consistent identifiers across systems without coordination — for example, deriving a URL-based UUID."}},{"@type":"Question","name":"What are the standard namespaces?","acceptedAnswer":{"@type":"Answer","text":"RFC 4122 defines four standard namespaces: DNS (from a domain name), URL (from a URL string), OID (from an ISO OID), and X.500 (from an X.500 DN). You can also use any custom UUID as a namespace."}},{"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All UUID generation uses the Web Crypto API and happens entirely in your browser. Your namespace and name strings never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/uuid-v3-v5.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/uuid-v3-v5.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/uuid-v3-v5.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:grid;gap:12px;margin-bottom:12px">
+      <div>
+        <label id="lbl-ns" style="display:block;margin-bottom:4px;font-size:.85em"></label>
+        <div id="ns-presets" style="margin-bottom:6px"></div>
+        <input id="namespace" class="gz-input" style="width:100%;font-family:monospace" spellcheck="false">
+      </div>
+      <div>
+        <label id="lbl-name" style="display:block;margin-bottom:4px;font-size:.85em"></label>
+        <input id="name" class="gz-input" style="width:100%" spellcheck="false">
+      </div>
+      <div>
+        <label id="lbl-count" style="display:block;margin-bottom:4px;font-size:.85em"></label>
+        <div id="name-list" style="display:none">
+          <textarea id="names" class="gz-input" style="width:100%;min-height:80px;font-family:monospace" spellcheck="false"></textarea>
+        </div>
+      </div>
+    </div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'UUID v3 & v5 Generator',
+    toolDesc: 'Generate deterministic name-based UUID v3 (MD5) and UUID v5 (SHA-1) from a namespace and name. RFC 4122 compliant — same input always produces the same UUID.',
+    lblNs: 'Namespace UUID',
+    lblName: 'Name (string to hash)',
+    lblCount: 'Generate Mode',
+    version: 'Version',
+    nsDNS: 'DNS',
+    nsURL: 'URL',
+    nsOID: 'OID',
+    nsX500: 'X.500',
+    nsCustom: 'Custom',
+    modeSingle: 'Single name',
+    modeBatch: 'Batch (one per line)',
+    generate: 'Generate',
+    copyAll: 'Copy All',
+    clear: 'Clear',
+    step1: 'Choose a UUID version (v3 or v5)',
+    step2: 'Pick a namespace preset or enter a custom namespace UUID',
+    step3: 'Type a name (or switch to batch mode for many names)',
+    step4: 'Click Generate and copy the deterministic UUID(s)',
+  },
+  zh: {
+    toolTitle: 'UUID v3 & v5 生成器',
+    toolDesc: '从命名空间和名称生成确定性的 UUID v3（MD5）和 UUID v5（SHA-1）。符合 RFC 4122 标准 — 相同的输入始终产生相同的 UUID。',
+    lblNs: '命名空间 UUID',
+    lblName: '名称（要哈希的字符串）',
+    lblCount: '生成模式',
+    version: '版本',
+    nsDNS: 'DNS',
+    nsURL: 'URL',
+    nsOID: 'OID',
+    nsX500: 'X.500',
+    nsCustom: '自定义',
+    modeSingle: '单个名称',
+    modeBatch: '批量（每行一个）',
+    generate: '生成',
+    copyAll: '全部复制',
+    clear: '清空',
+    step1: '选择 UUID 版本（v3 或 v5）',
+    step2: '选择命名空间预设或输入自定义命名空间 UUID',
+    step3: '输入名称（或切换到批量模式输入多个名称）',
+    step4: '点击生成并复制确定性的 UUID',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Standard namespace UUIDs (RFC 4122 Appendix C)
+const NAMESPACES = {
+  dns:  '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+  url:  '6ba7b811-9dad-11d1-80b4-00c04fd430c8',
+  oid:  '6ba7b812-9dad-11d1-80b4-00c04fd430c8',
+  x500: '6ba7b814-9dad-11d1-80b4-00c04fd430c8',
+};
+
+let version = 5;
+let nsMode = 'dns';
+let batchMode = false;
+
+function parseUuidStr(uuidStr) {
+  // Returns 16-byte Uint8Array or throws
+  const hex = uuidStr.replace(/[^0-9a-fA-F]/g, '');
+  if (hex.length !== 32) throw new Error('Invalid UUID (expected 32 hex digits)');
+  const bytes = new Uint8Array(16);
+  for (let i = 0; i < 16; i++) bytes[i] = parseInt(hex.substr(i*2, 2), 16);
+  return bytes;
+}
+
+function bytesToUuid(bytes) {
+  const hex = [];
+  for (let i = 0; i < bytes.length; i++) hex.push(bytes[i].toString(16).padStart(2, '0'));
+  const h = hex.join('');
+  return h.substr(0,8) + '-' + h.substr(8,4) + '-' + h.substr(12,4) + '-' + h.substr(16,4) + '-' + h.substr(20,12);
+}
+
+async function generateUuid(nsStr, nameStr, ver) {
+  const nsBytes = parseUuidStr(nsStr);
+  const nameBytes = new TextEncoder().encode(nameStr);
+  const combined = new Uint8Array(nsBytes.length + nameBytes.length);
+  combined.set(nsBytes, 0);
+  combined.set(nameBytes, nsBytes.length);
+
+  const algo = ver === 3 ? 'MD5' : 'SHA-1';
+  const hashBuf = await crypto.subtle.digest(algo, combined);
+  const hash = new Uint8Array(hashBuf);
+
+  // RFC 4122 §4.3: set version and variant bits
+  hash[6] = (hash[6] & 0x0f) | (ver << 4);
+  hash[8] = (hash[8] & 0x3f) | 0x80;
+
+  return bytesToUuid(hash.subarray(0, 16));
+}
+
+async function doGenerate() {
+  const nsStr = $('#namespace').value.trim();
+  const output = $('#output');
+  output.innerHTML = '';
+  if (!nsStr) { output.innerHTML = '<span style="color:var(--gz-accent)">⚠ Please enter a namespace UUID</span>'; return; }
+
+  let names;
+  if (batchMode) {
+    names = $('#names').value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+  } else {
+    const n = $('#name').value;
+    if (!n) { output.innerHTML = '<span style="color:var(--gz-accent)">⚠ Please enter a name</span>'; return; }
+    names = [n];
+  }
+  if (names.length === 0) { output.innerHTML = '<span style="color:var(--gz-accent)">⚠ Please enter at least one name</span>'; return; }
+
+  try {
+    parseUuidStr(nsStr); // validate
+  } catch(e) {
+    output.innerHTML = '<span style="color:var(--gz-accent)">⚠ ' + e.message + '</span>';
+    return;
+  }
+
+  const results = [];
+  for (const name of names) {
+    try {
+      const uuid = await generateUuid(nsStr, name, version);
+      results.push({ name, uuid });
+    } catch(e) {
+      output.innerHTML = '<span style="color:var(--gz-accent)">⚠ ' + e.message + '</span>';
+      return;
+    }
+  }
+
+  output.innerHTML = results.map(r =>
+    `<div class="uuid-row"><span class="uuid-val">${r.uuid}</span>${r.name ? `<span style="color:var(--text3);font-size:.8rem">${r.name.replace(/</g,'&lt;')}</span>` : ''}<button class="gz-btn gz-btn-secondary" style="padding:2px 8px;font-size:.75rem" onclick="copyText('${r.uuid}')">${t('copy')}</button></div>`
+  ).join('');
+}
+
+function setVersion(v) { version = v; document.querySelectorAll('.gz-ver-btn').forEach(b => b.classList.toggle('active', +b.dataset.ver === v)); doGenerate(); }
+function setNs(m) {
+  nsMode = m;
+  document.querySelectorAll('.gz-ns-btn').forEach(b => b.classList.toggle('active', b.dataset.ns === m));
+  if (NAMESPACES[m]) $('#namespace').value = NAMESPACES[m];
+  doGenerate();
+}
+function toggleBatch() {
+  batchMode = !batchMode;
+  $('#name').style.display = batchMode ? 'none' : '';
+  $('#name-list').style.display = batchMode ? 'block' : 'none';
+  doGenerate();
+}
+
+function loadExample() {
+  nsMode = 'dns'; version = 5;
+  $('#namespace').value = NAMESPACES.dns;
+  $('#name').value = 'example.com';
+  document.querySelectorAll('.gz-ver-btn').forEach(b => b.classList.toggle('active', +b.dataset.ver === 5));
+  document.querySelectorAll('.gz-ns-btn').forEach(b => b.classList.toggle('active', b.dataset.ns === 'dns'));
+  doGenerate();
+}
+
+// Build toolbar
+$('#toolbar').innerHTML = `
+  <span style="font-size:.85em">${t('version')}:</span>
+  <button class="gz-btn gz-ver-btn" data-ver="3" onclick="setVersion(3)">v3 (MD5)</button>
+  <button class="gz-btn gz-ver-btn active" data-ver="5" onclick="setVersion(5)">v5 (SHA-1)</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyAllResults()">${t('copyAll')}</button>`;
+
+$('#ns-presets').innerHTML = `
+  <button class="gz-btn gz-ns-btn gz-btn-secondary active" data-ns="dns" onclick="setNs('dns')">${t('nsDNS')}</button>
+  <button class="gz-btn gz-ns-btn gz-btn-secondary" data-ns="url" onclick="setNs('url')">${t('nsURL')}</button>
+  <button class="gz-btn gz-ns-btn gz-btn-secondary" data-ns="oid" onclick="setNs('oid')">${t('nsOID')}</button>
+  <button class="gz-btn gz-ns-btn gz-btn-secondary" data-ns="x500" onclick="setNs('x500')">${t('nsX500')}</button>`;
+
+$('#lbl-ns').textContent = t('lblNs');
+$('#lbl-name').textContent = t('lblName');
+$('#lbl-count').innerHTML = `${t('lblCount')}: <label style="margin-left:8px"><input type="radio" name="batch" checked onchange="toggleBatch()"> ${t('modeSingle')}</label> <label><input type="radio" name="batch" onchange="toggleBatch()"> ${t('modeBatch')}</label>`;
+
+$('#namespace').value = NAMESPACES.dns;
+$('#name').value = 'example.com';
+
+function copyAllResults() {
+  const vals = [...document.querySelectorAll('.uuid-val')].map(e => e.textContent);
+  if (vals.length) copyText(vals.join('\n'));
+}
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🆔', href:'/dev/uuid.html', name:'UUID v1/v4'},
+    {icon:'🆔', href:'/dev/uuid-v7.html', name:'UUID v7'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔐', href:'/dev/hmac.html', name:'HMAC Generator'},
+  ]
+});
+
+// Auto-generate on input
+$('#namespace').addEventListener('input', doGenerate);
+$('#name').addEventListener('input', doGenerate);
+$('#names').addEventListener('input', doGenerate);
+
+// Initial generate
+doGenerate();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body></html>

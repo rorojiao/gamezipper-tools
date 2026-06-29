@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>DMARC 记录检查器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查询并校验任意域名的 DMARC TXT 记录。解析策略标签（p、sp、rua、ruf、adkim、aspf、pct、fo）并给出清晰可执行的建议。通过 DNS-over-HTTPS 在浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/dmarc-checker.html">
+  <meta property="og:title" content="DMARC 记录检查器">
+  <meta property="og:description" content="查询并校验任意域名的 DMARC TXT 记录。解析策略标签（p、sp、rua、ruf、adkim、aspf、pct、fo）并给出清晰可执行的建议。通过 DNS-over-HTTPS 在浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/dmarc-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DMARC 记录检查器">
+<meta name="twitter:description" content="查询并校验任意域名的 DMARC TXT 记录。解析策略标签（p、sp、rua、ruf、adkim、aspf、pct、fo）并给出清晰可执行的建议。通过 DNS-over-HTTPS 在浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+.field{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.field input[type=text]{flex:1;min-width:200px;background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px;font-family:monospace;font-size:.9em}
+.raw{margin-top:12px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:monospace;font-size:.85em;word-break:break-all;color:var(--text)}
+.raw .k{color:var(--text3);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+.score{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-weight:700;font-size:.9rem;margin-top:8px}
+.score.none{background:rgba(233,69,96,.15);color:var(--gz-accent)}
+.score.bad{background:rgba(233,69,96,.15);color:var(--gz-accent)}
+.score.ok{background:rgba(255,193,7,.15);color:#ffc107}
+.score.good{background:rgba(46,204,113,.15);color:#2ecc71}
+.tag-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
+.tag{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px}
+.tag .name{font-family:monospace;color:var(--accent);font-weight:700;font-size:.9rem}
+.tag .val{font-family:monospace;color:var(--text);font-size:.85rem;margin-top:3px;word-break:break-all}
+.tag .desc{color:var(--text3);font-size:.75rem;margin-top:4px;line-height:1.4}
+.recs{margin-top:12px}
+.rec{background:var(--glass2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:.85rem;color:var(--text2)}
+.rec.good{border-left-color:#2ecc71}
+.rec.warn{border-left-color:#ffc107}
+.rec.bad{border-left-color:var(--gz-accent)}
+#status{margin-top:10px;font-size:.88rem}
+.busy{opacity:.6;pointer-events:none}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"DMARC Record Checker","description":"Free online DMARC record checker. Look up the DMARC TXT record for any domain, validate the policy tags (p, sp, rua, ruf, adkim, aspf, pct, fo) and get clear recommendations to fix email deliverability and spoofing protection. 100% in your browser.","url": "https://tools.gamezipper.com/zh/dev/dmarc-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a DMARC record?", "acceptedAnswer": {"@type": "Answer", "text": "DMARC (Domain-based Message Authentication, Reporting and Conformance) is a DNS TXT record published at _dmarc.<yourdomain>. It tells receiving mail servers what to do when an email fails SPF and DKIM checks — none, quarantine or reject — and where to send aggregate (rua) and forensic (ruf) reports."}}, {"@type": "Question", "name": "What is a good DMARC policy?", "acceptedAnswer": {"@type": "Answer", "text": "Start with p=none to collect reports and see who is sending mail as you, then move to p=quarantine (move failing mail to spam), and finally p=reject to block spoofed mail outright. A mature setup uses p=reject with sp=reject and a working rua= report address."}}, {"@type": "Question", "name": "Where does the DMARC record live?", "acceptedAnswer": {"@type": "Answer", "text": "DMARC is published as a TXT record on the subdomain _dmarc under your apex domain. For example.com the record is queried at _dmarc.example.com. This tool queries that exact hostname for you."}}, {"@type": "Question", "name": "Does this checker send my domain to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The DNS lookup is sent directly from your browser to the public Cloudflare DNS-over-HTTPS resolver (cloudflare-dns.com). The domain name itself is the only thing queried, just like any DNS resolver would."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/dmarc-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/dmarc-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/dmarc-checker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="field">
+      <input type="text" id="domain" spellcheck="false" autocomplete="off" placeholder="example.com">
+      <button class="gz-btn" id="checkBtn"></button>
+      <button class="gz-btn gz-btn-secondary" id="exampleBtn"></button>
+    </div>
+    <div id="status"></div>
+    <div id="result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'DMARC Record Checker',
+    toolDesc: 'Look up and validate the DMARC TXT record for any domain. Parse the policy tags (p, sp, rua, ruf, adkim, aspf, pct, fo) and get clear, actionable recommendations. 100% in your browser via DNS-over-HTTPS.',
+    check: 'Check DMARC',
+    example: 'Example',
+    needDomain: 'Enter a domain name (e.g. github.com).',
+    querying: 'Querying _dmarc.',
+    notFound: 'No DMARC record found for this domain.',
+    found: 'DMARC record found',
+    scoreNone: '✗ No DMARC — domain is spoofable',
+    scoreBad: '⚠ DMARC is in monitor-only mode (p=none)',
+    scoreOk: '⚠ DMARC quarantine — better, but spoofed mail still reaches some inboxes',
+    scoreGood: '✓ Strong DMARC enforcement (p=reject)',
+    rawRecord: 'Raw TXT record',
+    tags: 'Parsed tags',
+    recommendations: 'Recommendations',
+    multiRecords: 'Warning: multiple DMARC records found. Only the first one is parsed — RFC 7489 requires a single record.',
+    netError: 'Could not reach the DNS resolver. Check your network or try again.',
+    step1: 'Type a domain name (no https://, no trailing slash)',
+    step2: 'Click Check DMARC to query _dmarc.<domain>',
+    step3: 'Review the parsed tags and the security score',
+    step4: 'Apply the recommendations to fix your email authentication',
+  },
+  zh: {
+    toolTitle: 'DMARC 记录检查器',
+    toolDesc: '查询并校验任意域名的 DMARC TXT 记录。解析策略标签（p、sp、rua、ruf、adkim、aspf、pct、fo）并给出清晰可执行的建议。通过 DNS-over-HTTPS 在浏览器本地运行。',
+    check: '检查 DMARC',
+    example: '示例',
+    needDomain: '请输入域名（例如 github.com）。',
+    querying: '正在查询 _dmarc.',
+    notFound: '未找到该域名的 DMARC 记录。',
+    found: '已找到 DMARC 记录',
+    scoreNone: '✗ 未配置 DMARC — 域名可被冒充',
+    scoreBad: '⚠ DMARC 处于仅监控模式（p=none）',
+    scoreOk: '⚠ DMARC 隔离模式 — 已改进，但冒充邮件仍可能进入部分收件箱',
+    scoreGood: '✓ 强 DMARC 强制执行（p=reject）',
+    rawRecord: '原始 TXT 记录',
+    tags: '解析的标签',
+    recommendations: '改进建议',
+    multiRecords: '警告：发现多条 DMARC 记录。仅解析了第一条 — RFC 7489 要求只有一条记录。',
+    netError: '无法连接 DNS 解析器。请检查网络后重试。',
+    step1: '输入域名（不含 https:// 和末尾斜杠）',
+    step2: '点击「检查 DMARC」查询 _dmarc.<域名>',
+    step3: '查看解析的标签和安全评分',
+    step4: '根据建议修复邮件身份验证配置',
+  }
+});
+
+const { $, t } = GZ;
+
+const TAG_DOCS = {
+  v: {en:'DMARC version. Must be DMARC1.', zh:'DMARC 版本。必须为 DMARC1。'},
+  p: {en:'Policy for the organizational domain: none (monitor), quarantine (spam) or reject (block).', zh:'组织域的策略：none（仅监控）、quarantine（隔离）或 reject（拒绝）。'},
+  sp: {en:'Policy for subdomains. Defaults to the value of p.', zh:'子域的策略。默认与 p 相同。'},
+  rua: {en:'Address (mailto:) that receives aggregate reports.', zh:'接收聚合报告的地址（mailto:）。'},
+  ruf: {en:'Address (mailto:) that receives forensic failure reports.', zh:'接收取证失败报告的地址（mailto:）。'},
+  adkim: {en:'DKIM alignment mode: r (relaxed, default) or s (strict).', zh:'DKIM 对齐模式：r（宽松，默认）或 s（严格）。'},
+  aspf: {en:'SPF alignment mode: r (relaxed, default) or s (strict).', zh:'SPF 对齐模式：r（宽松，默认）或 s（严格）。'},
+  pct: {en:'Percentage of mail the policy applies to (0–100).', zh:'策略应用的邮件百分比（0–100）。'},
+  fo: {en:'Forensic report options: 0, 1, d or s.', zh:'取证报告选项：0、1、d 或 s。'},
+  ri: {en:'Report interval in seconds between aggregate reports.', zh:'聚合报告之间的间隔秒数。'},
+};
+
+async function fetchTxt(name){
+  const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=TXT`, {
+    headers: { 'accept':'application/dns-json' }
+  });
+  if(!res.ok) throw new Error('http '+res.status);
+  const data = await res.json();
+  const answers = (data.Answer || []).filter(a => a.type === 16);
+  return answers.map(a => {
+    let v = a.data;
+    if(v.startsWith('"')) v = v.slice(1);
+    if(v.endsWith('"')) v = v.slice(0,-1);
+    return v;
+  });
+}
+
+function parseDmarc(record){
+  // record like: v=DMARC1; p=reject; rua=mailto:dmarc@x.com; ...
+  const parts = record.split(';').map(s=>s.trim()).filter(Boolean);
+  const tags = {};
+  for(const part of parts){
+    const eq = part.indexOf('=');
+    if(eq < 0) continue;
+    const k = part.slice(0, eq).trim().toLowerCase();
+    const v = part.slice(eq+1).trim();
+    tags[k] = v;
+  }
+  return tags;
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function doCheck(){
+  const domain = $('#domain').value.trim().toLowerCase().replace(/^https?:\/\//,'').replace(/\/.*$/,'').replace(/^www\./,'');
+  if(!domain){ $('#status').textContent = t('needDomain'); $('#result').innerHTML=''; return; }
+  const btn = $('#checkBtn');
+  btn.classList.add('busy');
+  $('#status').innerHTML = `<span style="color:var(--text3)">${t('querying')}<strong>${esc(domain)}</strong> …</span>`;
+  $('#result').innerHTML = '';
+  try{
+    const records = (await fetchTxt('_dmarc.'+domain)).filter(r => /^v=DMARC1/i.test(r));
+    if(!records.length){
+      $('#status').innerHTML = `<span class="score none">${t('scoreNone')}</span>`;
+      $('#result').innerHTML = `
+        <div class="recs">
+          <div class="rec bad">Publish a TXT record at <code>_dmarc.${esc(domain)}</code> beginning with <code>v=DMARC1</code>.</div>
+          <div class="rec warn">Start with <code>p=none</code> and add a <code>rua=mailto:</code> so you receive reports before enforcing.</div>
+        </div>`;
+      btn.classList.remove('busy');
+      return;
+    }
+    const raw = records[0];
+    const tags = parseDmarc(raw);
+    const lang = ()=> GZI18n && window.__gzLang === 'zh' ? 'zh' : 'en';
+    // score
+    const p = (tags.p || 'none').toLowerCase();
+    let scoreClass, scoreText;
+    if(p === 'reject'){ scoreClass='good'; scoreText=t('scoreGood'); }
+    else if(p === 'quarantine'){ scoreClass='ok'; scoreText=t('scoreOk'); }
+    else { scoreClass='bad'; scoreText=t('scoreBad'); }
+
+    // recommendations
+    const recs = [];
+    if(tags.v && tags.v.toLowerCase() !== 'dmarc1') recs.push({c:'bad', t:'<code>v</code> must be <code>DMARC1</code> (case-sensitive). Current value is invalid.'});
+    if(p === 'none') recs.push({c:'warn', t:'<code>p=none</code> only collects reports. Move to <code>p=quarantine</code>, then <code>p=reject</code> after a few weeks of clean reports.'});
+    if(!tags.rua) recs.push({c:'warn', t:'No <code>rua=</code> set. Add <code>rua=mailto:dmarc-reports@'+esc(domain)+'</code> to receive aggregate reports.'});
+    if(p !== 'none' && tags.pct && tags.pct !== '100') recs.push({c:'warn', t:'<code>pct='+esc(tags.pct)+'</code> means only that % of mail is policy-enforced. Raise to 100 once stable.'});
+    if(tags.aspf === 's') recs.push({c:'warn', t:'<code>aspf=s</code> (strict SPF alignment) can break legitimate forwarded mail. <code>r</code> (relaxed) is safer.'});
+    if(tags.adkim === 's') recs.push({c:'warn', t:'<code>adkim=s</code> (strict DKIM alignment) is stricter than the relaxed default and may reject valid mail.'});
+    if(records.length > 1) recs.push({c:'bad', t:t('multiRecords')});
+    if(p === 'reject' && tags.rua && (!tags.pct || tags.pct==='100')) recs.push({c:'good', t:'Great — strong enforcement with report collection and 100% coverage.'});
+
+    // tag cards
+    const lang2 = GZI18n && window.__gzLang === 'zh' ? 'zh' : 'en';
+    const tagCards = Object.keys(tags).map(k=>{
+      const doc = TAG_DOCS[k] ? TAG_DOCS[k][lang2] : '';
+      return `<div class="tag"><div class="name">${esc(k)}</div><div class="val">${esc(tags[k])}</div>${doc?`<div class="desc">${doc}</div>`:''}</div>`;
+    }).join('');
+
+    $('#status').innerHTML = `<span class="score ${scoreClass}">${scoreText}</span>`;
+    $('#result').innerHTML = `
+      <div class="raw"><span class="k">${t('found')} @ _dmarc.${esc(domain)}</span>${esc(raw)}</div>
+      <h3 style="margin:18px 0 0;font-size:1rem">${t('tags')}</h3>
+      <div class="tag-list">${tagCards}</div>
+      ${recs.length?`<h3 style="margin:18px 0 0;font-size:1rem">${t('recommendations')}</h3><div class="recs">${recs.map(r=>`<div class="rec ${r.c}">${r.t}</div>`).join('')}</div>`:''}`;
+  }catch(e){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${t('netError')} (${esc(e.message)})</span>`;
+    $('#result').innerHTML='';
+  }
+  btn.classList.remove('busy');
+}
+
+function loadExample(){ $('#domain').value='github.com'; doCheck(); }
+
+$('#domain').addEventListener('keydown', e=>{ if(e.key==='Enter') doCheck(); });
+$('#checkBtn').onclick = doCheck;
+$('#exampleBtn').onclick = loadExample;
+
+$('#toolbar').innerHTML = '';
+$('#checkBtn').textContent = t('check');
+$('#exampleBtn').textContent = t('example');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🛡️', href:'/dev/spf-checker.html', name:'SPF Checker'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📧', href:'/dev/email-header-analyzer.html', name:'Email Header Analyzer'},
+    {icon:'🔒', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

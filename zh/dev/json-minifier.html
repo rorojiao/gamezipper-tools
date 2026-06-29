@@ -1,0 +1,151 @@
+<!DOCTYPE html><html lang="zh"><head>
+
+<title>JSON 压缩工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="通过移除所有空白、换行和缩进将 JSON 压缩到最小体积，即时显示节省的空间大小。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-minifier.html">
+  <meta property="og:title" content="JSON 压缩工具">
+  <meta property="og:description" content="通过移除所有空白、换行和缩进将 JSON 压缩到最小体积，即时显示节省的空间大小。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-minifier.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 压缩工具">
+<meta name="twitter:description" content="通过移除所有空白、换行和缩进将 JSON 压缩到最小体积，即时显示节省的空间大小。">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script><script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:100px}
+#status{margin-top:8px;font-size:.85em}
+.gz-stat{display:inline-block;background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;margin:2px;font-size:.8rem}
+.gz-stat b{color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Minifier & Compressor","description":"Minify and compress JSON online for free. Remove whitespace, line breaks and indentation to shrink JSON to its smallest size. Instant, private, browser-only.","url": "https://tools.gamezipper.com/zh/dev/json-minifier.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is JSON minification?","acceptedAnswer":{"@type":"Answer","text":"JSON minification removes all unnecessary whitespace, line breaks, indentation and spaces from JSON data, compressing it into the smallest possible single-line string. This reduces file size and improves transfer speed for APIs."}},{"@type":"Question","name":"How much size does JSON minification save?","acceptedAnswer":{"@type":"Answer","text":"Typically 20-60% depending on how the original JSON was formatted. Pretty-printed JSON with 2-4 space indentation shrinks the most; already compact JSON shrinks little."}},{"@type":"Question","name":"Is my JSON data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All processing happens entirely in your browser using JavaScript. Your JSON is never sent to any server, uploaded, or stored."}},{"@type":"Question","name":"Can I minify invalid JSON?","acceptedAnswer":{"@type":"Answer","text":"No — the tool validates your JSON first. If the JSON is invalid, you get a clear error message with the line and column number. Fix the error, then minify again."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-minifier.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-minifier.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-minifier.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head><body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Minifier & Compressor',
+    toolDesc: 'Compress JSON to its smallest size by removing all whitespace, line breaks and indentation. Get the size savings instantly.',
+    lblIn: 'Input JSON',
+    lblOut: 'Minified JSON',
+    minify: 'Minify',
+    valid: '✓ Valid JSON',
+    invalid: '✗ Invalid JSON',
+    saved: 'saved',
+    bytes: 'bytes',
+    step1: 'Paste your JSON in the input area',
+    step2: 'Click Minify to compress it to one line',
+    step3: 'See the size savings and copy the result',
+  },
+  zh: {
+    toolTitle: 'JSON 压缩工具',
+    toolDesc: '通过移除所有空白、换行和缩进将 JSON 压缩到最小体积，即时显示节省的空间大小。',
+    lblIn: '输入 JSON',
+    lblOut: '压缩后的 JSON',
+    minify: '压缩',
+    valid: '✓ JSON 有效',
+    invalid: '✗ JSON 无效',
+    saved: '节省',
+    bytes: '字节',
+    step1: '在输入区粘贴 JSON',
+    step2: '点击「压缩」将其压缩为一行',
+    step3: '查看节省的空间并复制结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function formatBytes(n) {
+  return n.toLocaleString() + ' ' + t('bytes');
+}
+
+function doMinify() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const obj = JSON.parse(inp);
+    const minified = JSON.stringify(obj);
+    const origSize = new Blob([inp]).size;
+    const newSize = new Blob([minified]).size;
+    const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
+    $('#output').value = minified;
+    const color = pct > 0 ? 'var(--gz-success)' : 'var(--text2)';
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span> &nbsp; <span class="gz-stat">${formatBytes(origSize)} → <b>${formatBytes(newSize)}</b></span> <span class="gz-stat" style="color:${color}">${pct >= 0 ? '↓' : '↑'} ${Math.abs(pct)}% ${t('saved')}</span>`;
+  } catch(e) {
+    const msg = e.message;
+    const posMatch = msg.match(/position (\d+)/);
+    let info = `<span style="color:var(--gz-accent)">${t('invalid')}: ${msg}</span>`;
+    if (posMatch) {
+      const pos = parseInt(posMatch[1]);
+      const before = $('#input').value.substring(0, pos);
+      const line = before.split('\n').length;
+      const col = pos - before.lastIndexOf('\n');
+      info += ` <span style="opacity:.7">(Line ${line}, Col ${col})</span>`;
+    }
+    $('#status').innerHTML = info;
+    $('#output').value = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "app": "GameZipper Tools",
+    "version": "2.0.0",
+    "features": ["json-minifier", "formatter", "validator"],
+    "config": {
+      "theme": "auto",
+      "language": "en",
+      "cache": true,
+      "limits": { "maxSize": 1048576, "timeout": 30 }
+    },
+    "active": true,
+    "count": 42
+  }, null, 2);
+  doMinify();
+}
+
+function doClear() { $('#input').value=''; $('#output').value=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', doMinify);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'✨', href:'/dev/js-beautifier.html', name:'JS Beautifier'},
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'📄', href:'/dev/html-minifier.html', name:'HTML Minifier'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body></html>

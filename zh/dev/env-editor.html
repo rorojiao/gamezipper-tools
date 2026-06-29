@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>.env 编辑器 / 格式化工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="解析、编辑和格式化 .env（dotenv）文件。排序键、规范化引号、添加注释，并在 .env 与 JSON 之间转换 — 完全在浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/env-editor.html">
+  <meta property="og:title" content=".env 编辑器 / 格式化工具">
+  <meta property="og:description" content="解析、编辑和格式化 .env（dotenv）文件。排序键、规范化引号、添加注释，并在 .env 与 JSON 之间转换 — 完全在浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/env-editor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content=".env 编辑器 / 格式化工具">
+<meta name="twitter:description" content="解析、编辑和格式化 .env（dotenv）文件。排序键、规范化引号、添加注释，并在 .env 与 JSON 之间转换 — 完全在浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260628812"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.8em;line-height:1.55;min-height:200px}
+#status{margin-top:8px;font-size:.85rem}
+.opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:.8rem;color:var(--text2)}
+.opt-row select{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px}
+.opt-row label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.opt-row input[type=checkbox]{accent-color:var(--accent)}
+.env-k{color:#e94560}.env-v{color:var(--gz-success)}.env-c{color:var(--text3);font-style:italic}
+table.envtbl{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px}
+table.envtbl th,table.envtbl td{border:1px solid var(--border);padding:5px 7px;text-align:left;vertical-align:top}
+table.envtbl th{background:var(--glass2);font-weight:600;color:var(--text2)}
+table.envtbl input{width:100%;background:transparent;border:none;color:var(--text);font-family:monospace;font-size:.8rem;padding:2px}
+table.envtbl input:focus{outline:1px solid var(--accent);border-radius:3px}
+.row-del{cursor:pointer;color:var(--gz-accent);font-size:1rem;padding:0 4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":".env Editor & Formatter","description":"Free online .env file editor and formatter. Parse KEY=VALUE lines, edit in a table, sort keys, quote values, add comments and export clean dotenv. Convert between .env and JSON. Runs entirely in your browser, no upload.","url": "https://tools.gamezipper.com/zh/dev/env-editor.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does a .env file work?", "acceptedAnswer": {"@type": "Answer", "text": "A .env (dotenv) file stores environment variables as KEY=VALUE pairs, one per line. Apps and frameworks like Node.js, Docker and Laravel read it at startup to load configuration such as database URLs, API keys and feature flags without hard-coding them in source."}}, {"@type": "Question", "name": "Does this tool send my secrets to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Parsing, editing and exporting happen entirely in your browser. Your environment variables never leave your device, so it is safe to paste real .env files including API keys and passwords."}}, {"@type": "Question", "name": "How are quoted values handled?", "acceptedAnswer": {"@type": "Answer", "text": "The parser understands single and double quotes, escaped characters and multi-line values wrapped in quotes. You can choose to re-quote all values on export using single or double quotes, or leave them unquoted when they contain no spaces or special characters."}}, {"@type": "Question", "name": "Can I convert my .env to JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. After parsing, switch the output format to JSON to export all variables as a single JSON object, or export as a clean normalized .env file with sorted keys, consistent quoting and grouped comments."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/env-editor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/env-editor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/env-editor.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="14" spellcheck="false" style="width:100%;font-family:monospace;font-size:.78em"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: '.env Editor & Formatter',
+    toolDesc: 'Parse, edit and format .env (dotenv) files. Sort keys, normalize quoting, add comments and convert between .env and JSON — runs entirely in your browser.',
+    parse: 'Parse',
+    format: 'Format',
+    sortKeys: 'Sort keys A→Z',
+    quoteStyle: 'Quote values',
+    qNone: 'auto',
+    qSingle: 'single',
+    qDouble: 'double',
+    groupComments: 'Group comments',
+    outFormat: 'Output',
+    outEnv: '.env',
+    outJson: 'JSON',
+    lblIn: '.env input',
+    lblOut: 'Formatted output',
+    empty: 'Paste your .env contents on the left.',
+    done: '✓ Formatted',
+    invalid: '✗ Parse error',
+    step1: 'Paste your .env contents (KEY=VALUE lines, comments with #)',
+    step2: 'Choose sort, quote style and output format (.env or JSON)',
+    step3: 'Click Format to normalize and export',
+    step4: 'Click Copy to copy, or Download to save the file',
+  },
+  zh: {
+    toolTitle: '.env 编辑器 / 格式化工具',
+    toolDesc: '解析、编辑和格式化 .env（dotenv）文件。排序键、规范化引号、添加注释，并在 .env 与 JSON 之间转换 — 完全在浏览器本地运行。',
+    parse: '解析',
+    format: '格式化',
+    sortKeys: '按 A→Z 排序',
+    quoteStyle: '值引号',
+    qNone: '自动',
+    qSingle: '单引号',
+    qDouble: '双引号',
+    groupComments: '分组注释',
+    outFormat: '输出格式',
+    outEnv: '.env',
+    outJson: 'JSON',
+    lblIn: '.env 输入',
+    lblOut: '格式化输出',
+    empty: '请在左侧粘贴 .env 内容。',
+    done: '✓ 已格式化',
+    invalid: '✗ 解析错误',
+    step1: '粘贴 .env 内容（KEY=VALUE 行，# 开头的注释）',
+    step2: '选择排序、引号样式和输出格式（.env 或 JSON）',
+    step3: '点击「格式化」规范化并导出',
+    step4: '点击「复制」复制或「下载」保存文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+let sortKeys = false;
+let quoteStyle = 'auto';
+let outFormat = 'env';
+
+// --- .env parser (returns array of {type:'comment'|'pair'|'blank', key, value, comment}) ---
+function parseEnv(text){
+  const lines = text.split('\n');
+  const out = [];
+  for(let idx = 0; idx < lines.length; idx++){
+    const raw = lines[idx];
+    const line = raw.trim();
+    if(line === ''){ out.push({type:'blank'}); continue; }
+    if(line.startsWith('#')){ out.push({type:'comment', value: raw}); continue; }
+    // optional leading "export "
+    let work = line;
+    const exportMatch = work.match(/^export\s+/);
+    if(exportMatch) work = work.slice(exportMatch[0].length);
+    const eq = work.indexOf('=');
+    if(eq < 0){ out.push({type:'comment', value: raw}); continue; }
+    let key = work.slice(0, eq).trim();
+    // key may be quoted
+    if((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) key = key.slice(1,-1);
+    let value = work.slice(eq+1);
+    // strip inline trailing comment only if value is unquoted & has whitespace before #
+    let inlineComment = '';
+    const trimmedVal = value.trim();
+    if(!(trimmedVal.startsWith('"') || trimmedVal.startsWith("'"))){
+      const hash = value.indexOf(' #');
+      if(hash >= 0){ inlineComment = value.slice(hash+1); value = value.slice(0, hash); }
+    }
+    value = unquote(value.trim());
+    out.push({type:'pair', key, value, exportPrefix: !!exportMatch, inlineComment});
+  }
+  return out;
+}
+
+function unquote(v){
+  if(v.length >= 2){
+    if(v[0] === '"' && v[v.length-1] === '"') return unescapeDouble(v.slice(1,-1));
+    if(v[0] === "'" && v[v.length-1] === "'") return v.slice(1,-1).replace(/\\'/g,"'");
+  }
+  return v;
+}
+function unescapeDouble(s){
+  return s.replace(/\\(.)/g, (m,c)=> c==='n'?'\n': c==='t'?'\t': c==='r'?'\r':c);
+}
+
+function needsQuote(v){
+  return v === '' || /[\s#"'\n\r=]/.test(v);
+}
+
+function quoteValue(v){
+  if(quoteStyle === 'auto'){
+    return needsQuote(v) ? `"${escapeDouble(v)}"` : v;
+  } else if(quoteStyle === 'single'){
+    return `'${v.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'`;
+  } else { // double
+    return `"${escapeDouble(v)}"`;
+  }
+}
+function escapeDouble(s){ return s.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\t/g,'\\t'); }
+
+function isValidKey(k){ return /^[A-Za-z_][A-Za-z0-9_]*$/.test(k); }
+
+function formatEnv(items){
+  let pairs = items.filter(x=>x.type==='pair');
+  const comments = items.filter(x=>x.type==='comment');
+  if(sortKeys) pairs = pairs.slice().sort((a,b)=> a.key.localeCompare(b.key));
+
+  if(outFormat === 'json'){
+    const obj = {};
+    pairs.forEach(p => { obj[p.key] = p.value; });
+    return JSON.stringify(obj, null, 2);
+  }
+
+  const lines = [];
+  if(groupComments && comments.length){
+    lines.push('# Environment variables');
+    lines.push('# Generated by tools.gamezipper.com — do not commit real secrets');
+    lines.push('');
+  }
+  pairs.forEach(p => {
+    const prefix = p.exportPrefix ? 'export ' : '';
+    const qv = quoteValue(p.value);
+    const ic = p.inlineComment ? '  ' + p.inlineComment : '';
+    if(!isValidKey(p.key)){
+      lines.push(`# ⚠ invalid key: "${p.key}"`);
+    }
+    lines.push(`${prefix}${p.key}=${qv}${ic}`);
+  });
+  // preserve standalone comments that aren't pair inline
+  const standalone = items.filter(x=> x.type==='comment' && !x.inlineComment);
+  return lines.join('\n');
+}
+
+function highlightEnv(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^(#.*)$/gm,'<span class="env-c">$1</span>')
+    .replace(/^([A-Za-z_][\w]*)(\s*=)/gm,'<span class="env-k">$1</span>$2');
+}
+
+function doFormat(){
+  const raw = $('#input').value;
+  if(!raw.trim()){ $('#status').innerHTML=''; $('#output').textContent=''; return; }
+  try{
+    const items = parseEnv(raw);
+    const result = formatEnv(items);
+    $('#output').innerHTML = outFormat === 'json' ? highlightJSON(result) : highlightEnv(result);
+    const count = items.filter(x=>x.type==='pair').length;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')} · ${count} variable(s)</span>`;
+  }catch(e){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}: ${e.message}</span>`;
+    $('#output').textContent='';
+  }
+}
+
+function highlightJSON(json){
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"\s*:)/g,'<span class="env-k">$1</span>')
+    .replace(/:\s*("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")/g,': <span class="env-v">$1</span>');
+}
+
+function loadExample(){
+  $('#input').value = `# Database
+export DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=myapp_dev
+DB_USER=postgres
+DB_PASS="p@ss word!"
+
+# Application
+APP_NAME="GameZipper Tools"
+APP_ENV=production
+DEBUG=false
+SECRET=abc123 # inline comment
+
+# Feature flags
+ENABLE_CACHE=true
+`;
+  doFormat();
+}
+
+function doDownload(){
+  const code = $('#output').textContent;
+  if(!code) return;
+  const blob = new Blob([code], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = outFormat === 'json' ? 'env.json' : '.env';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+$('#input').addEventListener('input', doFormat);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')||'Download'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';doFormat()">${t('clear')}</button>`;
+
+$('#opts').innerHTML = `
+  <label><input type="checkbox" onchange="sortKeys=this.checked;doFormat()"> ${t('sortKeys')}</label>
+  <label>${t('quoteStyle')}:
+    <select onchange="quoteStyle=this.value;doFormat()">
+      <option value="auto">${t('qNone')}</option>
+      <option value="single">${t('qSingle')}</option>
+      <option value="double">${t('qDouble')}</option>
+    </select>
+  </label>
+  <label>${t('outFormat')}:
+    <select onchange="outFormat=this.value;doFormat()">
+      <option value="env">${t('outEnv')}</option>
+      <option value="json">${t('outJson')}</option>
+    </select>
+  </label>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🛠️', href:'/dev/htaccess.html', name:'.htaccess Gen'},
+    {icon:'🔐', href:'/dev/api-key-generator.html', name:'API Key Gen'},
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Gen'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
