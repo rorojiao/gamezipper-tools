@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>二进制转文本转换器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="将二进制代码（0 和 1）解码为可读文本。支持空格、逗号或无分隔符。可切换为文本转二进制。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/convert/binary-to-text.html">
+<meta property="og:title" content="二进制转文本转换器">
+<meta property="og:description" content="将二进制代码（0 和 1）解码为可读文本。支持空格、逗号或无分隔符。可切换为文本转二进制。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/convert/binary-to-text.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="二进制转文本转换器">
+<meta name="twitter:description" content="将二进制代码（0 和 1）解码为可读文本。支持空格、逗号或无分隔符。可切换为文本转二进制。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#input,#output{font-family:monospace;font-size:.9rem}
+.gz-output{white-space:pre-wrap;word-break:break-all}
+.gz-split{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:700px){.gz-split{grid-template-columns:1fr 1fr}}
+.gz-select{padding:6px;border-radius:6px;background:var(--gz-card,#1e1e2e);border:1px solid var(--gz-border,#333);color:inherit}
+.opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:.85rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Binary to Text Converter","description":"Convert binary code to readable text instantly. Paste 0s and 1s and get the decoded string. Supports 8-bit ASCII and custom separators. Free, browser-only binary decoder.","url": "https://tools.gamezipper.com/zh/convert/binary-to-text.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does binary to text conversion work?","acceptedAnswer":{"@type":"Answer","text":"Every character is represented by an 8-bit binary number (ASCII code). The converter splits your binary string into 8-bit groups, converts each group to its decimal value, then maps that value to the corresponding ASCII character."}},{"@type":"Question","name":"What separators are supported?","acceptedAnswer":{"@type":"Answer","text":"You can use spaces (01001000 01101001), commas (01001000,01101001), or no separator at all (0100100001101001). The tool auto-detects and handles all three formats."}},{"@type":"Question","name":"Can it handle Unicode characters?","acceptedAnswer":{"@type":"Answer","text":"Standard 8-bit mode covers ASCII characters (0–127). For full Unicode text including emoji, each character becomes multiple bytes — this tool decodes each 8-bit byte and reconstructs the UTF-8 string."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/binary-to-text.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/binary-to-text.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/binary-to-text.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row">
+      <span id="lbl-sep"></span>
+      <select class="gz-select" id="sepMode" onchange="decode()">
+        <option value="auto">Auto</option>
+        <option value="space">Space</option>
+        <option value="comma">Comma</option>
+        <option value="none">None</option>
+      </select>
+      <label><input type="checkbox" id="swapMode" onchange="toggleMode()"> <span id="lbl-swap"></span></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="8" spellcheck="false" placeholder="01001000 01100101 01101100 01101100 01101111"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Binary to Text Converter',
+    toolDesc: 'Decode binary code (0s and 1s) into readable text. Supports space, comma, or no separator. Toggle to also encode text to binary.',
+    step1: 'Paste your binary string (8-bit groups) into the input area',
+    step2: 'Choose the separator format or leave on Auto-detect',
+    step3: 'The decoded text appears instantly on the right',
+    step4: 'Toggle "Text to Binary" mode to reverse the conversion',
+    separator: 'Separator:',
+    swap: 'Text to Binary mode',
+    inputLabel: 'Binary input',
+    textLabel: 'Text input',
+    outputLabel: 'Decoded text',
+    encodedLabel: 'Binary output',
+    example: 'Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    invalid: 'Invalid binary: only 0 and 1 are allowed in 8-bit groups',
+    modeDecode: 'Binary → Text',
+    modeEncode: 'Text → Binary',
+  },
+  zh: {
+    toolTitle: '二进制转文本转换器',
+    toolDesc: '将二进制代码（0 和 1）解码为可读文本。支持空格、逗号或无分隔符。可切换为文本转二进制。',
+    step1: '将二进制字符串（8位一组）粘贴到输入区',
+    step2: '选择分隔符格式或保持自动检测',
+    step3: '解码后的文本立即显示在右侧',
+    step4: '勾选「文本转二进制」可反向转换',
+    separator: '分隔符：',
+    swap: '文本转二进制模式',
+    inputLabel: '二进制输入',
+    textLabel: '文本输入',
+    outputLabel: '解码文本',
+    encodedLabel: '二进制输出',
+    example: '示例',
+    clear: '清除',
+    copy: '复制',
+    invalid: '无效二进制：每组8位只能包含 0 和 1',
+    modeDecode: '二进制 → 文本',
+    modeEncode: '文本 → 二进制',
+  }
+});
+const { $, copyText, t } = GZ;
+let mode='decode';
+
+function decode(){
+  const inp=$('#input').value.trim();
+  if(!inp){$('#output').textContent='';$('#status').textContent='';return;}
+  let cleaned=inp.replace(/[^01]/g,'');
+  if(cleaned.length%8!==0){
+    $('#status').innerHTML=`<span style="color:var(--gz-accent)">${t('invalid')}</span>`;
+    $('#output').textContent='';
+    return;
+  }
+  let bytes=[];
+  for(let i=0;i<cleaned.length;i+=8){
+    bytes.push(parseInt(cleaned.substr(i,8),2));
+  }
+  try{
+    const text=new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+    $('#output').textContent=text;
+    $('#status').innerHTML=`<span style="color:var(--gz-success)">✓ ${bytes.length} byte(s) decoded</span>`;
+  }catch(e){
+    $('#status').innerHTML=`<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function encode(){
+  const inp=$('#input').value;
+  if(!inp){$('#output').textContent='';return;}
+  const bytes=new TextEncoder().encode(inp);
+  const bin=Array.from(bytes).map(b=>b.toString(2).padStart(8,'0')).join(' ');
+  $('#output').textContent=bin;
+  $('#status').innerHTML=`<span style="color:var(--gz-success)">✓ ${bytes.length} byte(s) encoded</span>`;
+}
+
+function process(){
+  if(mode==='decode')decode();else encode();
+}
+
+function toggleMode(){
+  mode=$('#swapMode').checked?'encode':'decode';
+  $('#lbl-in').textContent=mode==='decode'?t('inputLabel'):t('textLabel');
+  $('#lbl-out').textContent=mode==='decode'?t('outputLabel'):t('encodedLabel');
+  // swap input/output
+  const outText=$('#output').textContent;
+  if(outText)$('#input').value=outText;
+  process();
+}
+
+function loadExample(){
+  $('#input').value=mode==='decode'?'01001000 01100101 01101100 01101100 01101111 00100000 01010111 01101111 01110010 01101100 01100100':'Hello World';
+  process();
+}
+
+function doClear(){$('#input').value='';$('#output').textContent='';$('#status').textContent='';}
+
+$('#input').addEventListener('input',process);
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent=t('inputLabel');
+$('#lbl-out').textContent=t('outputLabel');
+$('#lbl-sep').textContent=t('separator');
+$('#lbl-swap').textContent=t('swap');
+
+GZ.renderToolPage({
+  category:'convert',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🔢',href:'/text/text-to-binary.html',name:'Text to Binary'},
+    {icon:'🔤',href:'/dev/ascii-table.html',name:'ASCII Table'},
+    {icon:'🔄',href:'/dev/ascii-binary-hex-converter.html',name:'ASCII/Binary/Hex'},
+    {icon:'🔢',href:'/convert/number-base.html',name:'Number Base Converter'},
+  ]
+});
+decode();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

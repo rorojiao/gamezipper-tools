@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>IEEE 754 浮点数转换器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="将十进制数转换为 IEEE 754 单/双精度二进制和十六进制，并可反向转换。显示符号位、指数和尾数分解。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/ieee754-converter.html">
+<meta property="og:title" content="IEEE 754 浮点数转换器">
+<meta property="og:description" content="将十进制数转换为 IEEE 754 单/双精度二进制和十六进制，并可反向转换。显示符号位、指数和尾数分解。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/ieee754-converter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IEEE 754 浮点数转换器">
+<meta name="twitter:description" content="将十进制数转换为 IEEE 754 单/双精度二进制和十六进制，并可反向转换。显示符号位、指数和尾数分解。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.gz-input{width:100%;box-sizing:border-box;padding:10px;border-radius:8px;background:var(--gz-card,#1e1e2e);border:1px solid var(--gz-border,#333);color:inherit;font-family:monospace;font-size:1.05rem}
+.field{margin:12px 0}
+.field .lbl{font-size:.75rem;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.bits-row{display:flex;flex-wrap:wrap;gap:2px;margin:6px 0;font-family:monospace}
+.bit{width:22px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:.8rem;font-weight:600}
+.bit-0{background:#1a1a2e;color:#61afef}
+.bit-1{background:#00d672;color:#000}
+.bit-sep{width:1px;margin:0 3px;background:var(--gz-border,#444)}
+.field-label{font-size:.75rem;margin-top:2px;font-weight:600}
+.hex-out{font-family:monospace;font-size:1.1rem;color:var(--gz-success,#00d672);word-break:break-all}
+.gz-split{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:700px){.gz-split{grid-template-columns:1fr 1fr}}
+.gz-output{background:var(--gz-card,#1e1e2e);border:1px solid var(--gz-border,#333);border-radius:8px;padding:14px;min-height:100px}
+.prec-toggle{display:inline-flex;border-radius:8px;overflow:hidden;border:1px solid var(--gz-border,#333);margin-bottom:8px}
+.prec-toggle button{padding:8px 16px;border:none;background:var(--gz-card,#1e1e2e);color:inherit;cursor:pointer;font-size:.85rem}
+.prec-toggle button.active{background:var(--gz-accent,#e94560);color:#fff}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IEEE 754 Floating Point Converter","description":"Convert decimal numbers to IEEE 754 binary representation (single and double precision) and back. See sign, exponent, mantissa breakdown. Free, browser-only tool for students and engineers.","url": "https://tools.gamezipper.com/zh/dev/ieee754-converter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is IEEE 754?","acceptedAnswer":{"@type":"Answer","text":"IEEE 754 is the standard for floating-point arithmetic used by virtually all modern CPUs and programming languages. A number is stored as three fields: a sign bit, an exponent (biased), and a mantissa/significand. Single precision uses 32 bits; double precision uses 64 bits."}},{"@type":"Question","name":"What is the bias for single and double precision?","acceptedAnswer":{"@type":"Answer","text":"The exponent bias is 127 for single precision (32-bit) and 1023 for double precision (64-bit). The stored exponent value equals the true exponent plus the bias."}},{"@type":"Question","name":"How are special values like zero and infinity represented?","acceptedAnswer":{"@type":"Answer","text":"Zero has exponent 0 and mantissa 0. Infinity has the max exponent (all ones) and mantissa 0. NaN (Not a Number) has the max exponent and a non-zero mantissa. Subnormal numbers use exponent 0 with a non-zero mantissa."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ieee754-converter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ieee754-converter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ieee754-converter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="prec-toggle" id="precToggle">
+      <button class="active" data-prec="32">Single (32-bit)</button>
+      <button data-prec="64">Double (64-bit)</button>
+    </div>
+    <div class="field">
+      <div class="lbl" id="lbl-decimal"></div>
+      <input type="text" class="gz-input" id="decimalInput" value="3.14" oninput="convert()">
+    </div>
+    <div class="gz-output" id="output"></div>
+    <div class="field">
+      <div class="lbl" id="lbl-hex"></div>
+      <input type="text" class="gz-input" id="hexInput" oninput="convertFromHex()" placeholder="4048F5C3">
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'IEEE 754 Floating Point Converter',
+    toolDesc: 'Convert decimal numbers to IEEE 754 single/double precision binary and hex, and back. See sign, exponent, and mantissa breakdown.',
+    step1: 'Enter a decimal number (e.g. 3.14, -0.5, 0)',
+    step2: 'Choose single (32-bit) or double (64-bit) precision',
+    step3: 'View the binary breakdown: sign | exponent | mantissa',
+    step4: 'Or paste a hex value to convert back to decimal',
+    decimal: 'Decimal number',
+    hexInput: 'Hex value (reverse conversion)',
+    example: 'Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    sign: 'Sign',
+    exponent: 'Exponent',
+    mantissa: 'Mantissa',
+    binary: 'Binary',
+    hexVal: 'Hex',
+    precision: 'Precision',
+    invalid: 'Please enter a valid number',
+  },
+  zh: {
+    toolTitle: 'IEEE 754 浮点数转换器',
+    toolDesc: '将十进制数转换为 IEEE 754 单/双精度二进制和十六进制，并可反向转换。显示符号位、指数和尾数分解。',
+    step1: '输入十进制数（如 3.14、-0.5、0）',
+    step2: '选择单精度（32位）或双精度（64位）',
+    step3: '查看二进制分解：符号 | 指数 | 尾数',
+    step4: '或粘贴十六进制值反向转换为十进制',
+    decimal: '十进制数',
+    hexInput: '十六进制值（反向转换）',
+    example: '示例',
+    clear: '清除',
+    copy: '复制',
+    sign: '符号',
+    exponent: '指数',
+    mantissa: '尾数',
+    binary: '二进制',
+    hexVal: '十六进制',
+    precision: '精度',
+    invalid: '请输入有效数字',
+  }
+});
+const { $, copyText, t } = GZ;
+let prec = 32;
+const bits = {32:{exp:8,man:23,bias:127},64:{exp:11,man:52,bias:1023}};
+
+function decimalToIEEE(val){
+  const cfg=bits[prec];
+  const buf=new ArrayBuffer(prec/8);
+  if(prec===32){new Float32Array(buf)[0]=val;}
+  else{new Float64Array(buf)[0]=val;}
+  const uint=new BigUint64Array(buf);
+  let bin=uint[0].toString(2).padStart(prec,'0');
+  if(prec===32)bin=bin.padStart(32,'0');
+  return bin;
+}
+
+function ieeeToDecimal(bin){
+  const cfg=bits[prec];
+  const buf=new ArrayBuffer(prec/8);
+  const uint=new BigUint64Array(buf);
+  uint[0]=BigInt('0b'+bin);
+  if(prec===32)return new Float32Array(buf)[0];
+  return new Float64Array(buf)[0];
+}
+
+function formatBin(bin){
+  const cfg=bits[prec];
+  const sign=bin[0];
+  const exp=bin.substr(1,cfg.exp);
+  const man=bin.substr(1+cfg.exp,cfg.man);
+  const html=[
+    ...sign.split('').map(b=>`<span class="bit bit-${b}">${b}</span>`),
+    `<div class="bit-sep"></div>`,
+    ...exp.split('').map(b=>`<span class="bit bit-${b}">${b}</span>`),
+    `<div class="bit-sep"></div>`,
+    ...man.split('').map(b=>`<span class="bit bit-${b}">${b}</span>`),
+  ].join('');
+  return {
+    html,
+    sign,exp,man,
+    full:bin
+  };
+}
+
+function convert(){
+  const val=parseFloat($('#decimalInput').value);
+  if(isNaN(val)){
+    $('#output').innerHTML=`<span style="color:var(--gz-accent)">${t('invalid')}</span>`;
+    return;
+  }
+  const bin=decimalToIEEE(val);
+  const f=formatBin(bin);
+  const cfg=bits[prec];
+  const hex=BigInt('0b'+bin).toString(16).toUpperCase().padStart(prec/4,'0');
+  const expDec=parseInt(f.exp,2)-cfg.bias;
+  let expLabel=expDec;
+  if(parseInt(f.exp,2)===0)expLabel='0 (subnormal)';
+  else if(parseInt(f.exp,2)===(1<<cfg.exp)-1)expLabel='reserved (inf/nan)';
+  else expLabel=`${expDec} (stored: ${parseInt(f.exp,2)})`;
+
+  $('#output').innerHTML=`
+    <div class="bits-row">${f.html}</div>
+    <div class="gz-split" style="margin-top:10px">
+      <div>
+        <div class="field-label" style="color:var(--gz-accent)">${t('sign')}: ${f.sign}</div>
+        <div class="field-label" style="color:#61afef">${t('exponent')}: ${expLabel}</div>
+        <div class="field-label" style="color:#00d672">${t('mantissa')}: ${f.man}</div>
+      </div>
+      <div>
+        <div class="lbl">${t('binary')} (${prec}-bit)</div>
+        <div class="hex-out" style="font-size:.85rem">${f.full}</div>
+        <div class="lbl" style="margin-top:6px">${t('hexVal')}</div>
+        <div class="hex-out">0x${hex}</div>
+      </div>
+    </div>`;
+  $('#hexInput').value=hex;
+}
+
+function convertFromHex(){
+  let h=$('#hexInput').value.trim().replace(/^0x/i,'');
+  if(!h)return;
+  const expected=prec/4;
+  if(h.length!==expected)return;
+  if(!/^[0-9a-fA-F]+$/.test(h))return;
+  const bin=BigInt('0x'+h).toString(2).padStart(prec,'0');
+  const dec=ieeeToDecimal(bin);
+  $('#decimalInput').value=dec;
+  convert();
+}
+
+$('#precToggle').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#precToggle button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  prec=+e.target.dataset.prec;
+  convert();
+});
+
+$('#lbl-decimal').textContent=t('decimal');
+$('#lbl-hex').textContent=t('hexInput');
+
+GZ.renderToolPage({
+  category:'dev',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🔢',href:'/convert/number-base.html',name:'Number Base Converter'},
+    {icon:'🔤',href:'/dev/ascii-table.html',name:'ASCII Table'},
+    {icon:'🔄',href:'/dev/ascii-binary-hex-converter.html',name:'ASCII/Binary/Hex'},
+    {icon:'📊',href:'/dev/hex-viewer.html',name:'Hex Viewer'},
+  ]
+});
+convert();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
