@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Serial Number Generator - Product Key Maker | GameZipper Tools</title>
+  <meta name="description" content="Generate serial numbers, product keys and license codes with custom format. Supports XXXX-XXXX-XXXX patterns, alphanumeric, checksums and bulk generation. 100% in-browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/serial-number-generator.html">
+  <meta property="og:title" content="Serial Number Generator - Product Key Maker | GameZipper Tools">
+  <meta property="og:description" content="Generate serial numbers, product keys and license codes with custom format. Supports XXXX-XXXX-XXXX patterns, alphanumeric, checksums and bulk generation. 100% in-browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/serial-number-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Serial Number Generator - Product Key Maker | GameZipper Tools">
+<meta name="twitter:description" content="Generate serial numbers, product keys and license codes with custom format. Supports XXXX-XXXX-XXXX patterns, alphanumeric, checksums and bulk generation.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.form-row{margin:10px 0}
+.form-row label{display:block;font-size:.85em;margin-bottom:4px}
+.form-row input,.form-row select{width:100%;padding:8px;border-radius:6px;border:1px solid var(--gz-border,#444);background:var(--gz-surface,#f5f5f5);color:inherit;font-size:.9em;font-family:inherit}
+.result-box{background:var(--gz-surface,#f5f5f5);border-radius:8px;padding:12px;margin-top:8px;font-family:monospace;font-size:.9em;max-height:400px;overflow-y:auto;line-height:1.8}
+.result-line{padding:2px 0;display:flex;align-items:center;gap:6px}
+.result-line code{flex:1}
+.preset-btn{padding:4px 10px;font-size:.75em;margin:2px;border-radius:4px;cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Serial Number Generator","description":"Generate serial numbers, product keys and license codes with custom format. Supports XXXX-XXXX-XXXX patterns, alphanumeric, checksums and bulk generation. 100% in-browser.","url":"https://tools.gamezipper.com/dev/serial-number-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What format patterns can I use?", "acceptedAnswer": {"@type": "Answer", "text": "Use X for uppercase letters, # for digits, A for alphanumeric (uppercase+digits), and a for lowercase letters. Separate groups with dashes. For example, XXXX-XXXX-XXXX-XXXX generates like ABCD-EFGH-IJKL-MNOP, while ####-#### generates like 1234-5678."}}, {"@type": "Question", "name": "Can I generate unique serial numbers?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool uses a Set to guarantee uniqueness within each batch. Enable the deduplicate option and generate up to 1000 unique serial numbers at once."}}, {"@type": "Question", "name": "What is the checksum option?", "acceptedAnswer": {"@type": "Answer", "text": "When enabled, a Luhn checksum digit is appended to each generated number. This helps detect typos when users manually enter serial numbers, similar to credit card number validation."}}, {"@type": "Question", "name": "Are these serial numbers cryptographically random?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool uses crypto.getRandomValues() for cryptographically secure random generation, making the serial numbers unpredictable and suitable for security-sensitive applications like license keys."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/serial-number-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/serial-number-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/serial-number-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <div class="form-row">
+          <label id="lbl-pattern"></label>
+          <input id="pattern" type="text" value="XXXX-XXXX-XXXX-XXXX" spellcheck="false">
+          <div style="margin-top:6px">
+            <button class="preset-btn gz-btn gz-btn-sm" onclick="setPattern('XXXX-XXXX-XXXX-XXXX')">XXXX-XXXX</button>
+            <button class="preset-btn gz-btn gz-btn-sm" onclick="setPattern('########-########')">UUID-style</button>
+            <button class="preset-btn gz-btn gz-btn-sm" onclick="setPattern('AAAA-AAAA-AAAA-AAAA')">Alphanum</button>
+            <button class="preset-btn gz-btn gz-btn-sm" onclick="setPattern('PROD-####-####-XXXX')">Prefixed</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <label id="lbl-qty"></label>
+          <input id="qty" type="number" value="10" min="1" max="1000">
+        </div>
+        <div class="form-row">
+          <label id="lbl-charset"></label>
+          <select id="charset">
+            <option value="auto">Auto (based on pattern)</option>
+            <option value="upper">Uppercase A-Z (no ambiguous)</option>
+            <option value="alnum">Alphanumeric (no ambiguous)</option>
+            <option value="hex">Hexadecimal 0-9A-F</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label><input type="checkbox" id="dedup" checked> <span id="lbl-dedup"></span></label>
+        </div>
+        <div class="form-row">
+          <label><input type="checkbox" id="checksum"> <span id="lbl-checksum"></span></label>
+        </div>
+        <div style="font-size:.75em;opacity:.7;margin-top:8px" id="legend"></div>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"><p style="opacity:.6">Click Generate to create serial numbers.</p></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Serial Number Generator',
+    toolDesc: 'Generate serial numbers, product keys and license codes with custom patterns. Cryptographically random, bulk generation, checksum support. 100% in-browser.',
+    pattern: 'Format pattern (X=letter, #=digit, A=alphanum, a=lowercase)',
+    quantity: 'Quantity (1-1000)',
+    charset: 'Character set',
+    dedup: 'Deduplicate (guarantee unique)',
+    checksum: 'Add Luhn checksum digit',
+    legend: 'Legend: X = uppercase letter · # = digit · A = alphanumeric · a = lowercase · any other char = literal',
+    outputLabel: 'Generated serial numbers',
+    generate: 'Generate', copy: 'Copy All', clear: 'Clear', download: 'Download CSV',
+    copied: 'Copied!',
+    step1: 'Enter a format pattern (e.g. XXXX-XXXX-XXXX-XXXX)',
+    step2: 'Set quantity and character set options',
+    step3: 'Enable checksum for typo detection if needed',
+    step4: 'Click Generate, then Copy or Download as CSV',
+  },
+  zh: {
+    toolTitle: '序列号生成器',
+    toolDesc: '使用自定义模式生成序列号、产品密钥和许可证代码。加密随机、批量生成、校验和支持。100% 浏览器本地运行。',
+    pattern: '格式模式（X=字母, #=数字, A=字母数字, a=小写）',
+    quantity: '数量（1-1000）',
+    charset: '字符集',
+    dedup: '去重（保证唯一）',
+    checksum: '添加 Luhn 校验位',
+    legend: '图例：X = 大写字母 · # = 数字 · A = 字母数字 · a = 小写 · 其他字符 = 原样输出',
+    outputLabel: '生成的序列号',
+    generate: '生成', copy: '全部复制', clear: '清除', download: '下载 CSV',
+    copied: '已复制！',
+    step1: '输入格式模式（如 XXXX-XXXX-XXXX-XXXX）',
+    step2: '设置数量和字符集选项',
+    step3: '如需检测输入错误，启用校验和',
+    step4: '点击「生成」，然后复制或下载为 CSV',
+  }
+});
+
+const { $, copyText, t, showToast } = GZ;
+
+const CHARSET_UPPER = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I, O
+const CHARSET_ALNUM = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0,1,I,O
+const CHARSET_HEX = '0123456789ABCDEF';
+const CHARSET_LOWER = 'abcdefghjkmnpqrstuvwxyz'; // no i,l,o
+const CHARSET_DIGITS = '0123456789';
+
+function secureRandomInt(max){
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0] % max;
+}
+
+function generateSegment(type, charsetMode){
+  let charset;
+  if(charsetMode === 'auto'){
+    switch(type){
+      case 'X': charset = CHARSET_UPPER; break;
+      case 'A': charset = CHARSET_ALNUM; break;
+      case 'a': charset = CHARSET_LOWER; break;
+      case '#': charset = CHARSET_DIGITS; break;
+      default: charset = CHARSET_ALNUM;
+    }
+  } else {
+    switch(charsetMode){
+      case 'upper': charset = CHARSET_UPPER; break;
+      case 'alnum': charset = CHARSET_ALNUM; break;
+      case 'hex': charset = CHARSET_HEX; break;
+      default: charset = CHARSET_ALNUM;
+    }
+  }
+  return charset[secureRandomInt(charset.length)];
+}
+
+function luhnChecksum(numberStr){
+  let sum = 0;
+  let alt = false;
+  // Process from right to left
+  const clean = numberStr.replace(/[^0-9]/g, '');
+  for(let i = clean.length - 1; i >= 0; i--){
+    let n = parseInt(clean[i]);
+    if(alt){ n *= 2; if(n > 9) n -= 9; }
+    sum += n;
+    alt = !alt;
+  }
+  const check = (10 - (sum % 10)) % 10;
+  return check.toString();
+}
+
+function generateOne(pattern, charsetMode, addChecksum){
+  let result = '';
+  for(const ch of pattern){
+    if(ch === 'X') result += generateSegment('X', charsetMode);
+    else if(ch === '#') result += generateSegment('#', charsetMode);
+    else if(ch === 'A') result += generateSegment('A', charsetMode);
+    else if(ch === 'a') result += generateSegment('a', charsetMode);
+    else result += ch; // literal
+  }
+  if(addChecksum){
+    const cs = luhnChecksum(result);
+    result += '-' + cs;
+  }
+  return result;
+}
+
+function setPattern(p){ $('#pattern').value = p; }
+
+function doGenerate(){
+  const pattern = $('#pattern').value.trim();
+  if(!pattern){ $('#status').innerHTML = '<span style="color:var(--gz-accent)">Please enter a pattern</span>'; return; }
+  const charsetMode = $('#charset').value;
+  const dedup = $('#dedup').checked;
+  const addChecksum = $('#checksum').checked;
+  const qty = Math.min(1000, Math.max(1, parseInt($('#qty').value) || 10));
+
+  const results = new Set();
+  let attempts = 0;
+  const maxAttempts = qty * 5;
+  while(results.size < qty && attempts < maxAttempts){
+    const sn = generateOne(pattern, charsetMode, addChecksum);
+    if(!dedup) results.add(sn);
+    else results.add(sn);
+    attempts++;
+    if(!dedup && results.size >= qty) break;
+    if(!dedup){ results.add(sn); if(results.size >= qty) break; }
+  }
+
+  const arr = [...results];
+  if(arr.length < qty && dedup){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">⚠ Only ${arr.length} unique values possible with this pattern. Try a longer pattern.</span>`;
+  } else {
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${arr.length} serial number(s) generated</span>`;
+  }
+
+  let html = '<div class="result-box">';
+  arr.forEach((sn, i) => {
+    html += `<div class="result-line"><code>${sn}</code></div>`;
+  });
+  html += '</div>';
+  $('#output').innerHTML = html;
+  window._serials = arr;
+}
+
+function copyAll(){ if(window._serials && window._serials.length){ copyText(window._serials.join('\n')); showToast(t('copied')); } }
+function downloadCSV(){
+  if(!window._serials || !window._serials.length) return;
+  const csv = 'Serial Number\n' + window._serials.map(s => `"${s}"`).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'serial-numbers.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function doClear(){ $('#output').innerHTML = '<p style="opacity:.6">Click Generate to create serial numbers.</p>'; $('#status').innerHTML=''; window._serials=null; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyAll()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadCSV()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category:'dev',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🔑',href:'/dev/api-key-generator.html',name:'API Key Generator'},
+    {icon:'🎫',href:'/dev/license-key-generator.html',name:'License Key Generator'},
+    {icon:'🆔',href:'/dev/uuid-generator.html',name:'UUID Generator'},
+    {icon:'🎲',href:'/dev/random-string.html',name:'Random String'},
+  ]
+});
+
+document.querySelector('label#lbl-pattern').textContent = t('pattern');
+document.querySelector('label#lbl-qty').textContent = t('quantity');
+document.querySelector('label#lbl-charset').textContent = t('charset');
+document.querySelector('#lbl-dedup').textContent = t('dedup');
+document.querySelector('#lbl-checksum').textContent = t('checksum');
+document.querySelector('#legend').textContent = t('legend');
+document.querySelector('label#lbl-out').textContent = t('outputLabel');
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>SHA-3 / Keccak 哈希生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时生成 SHA-3 和 Keccak 哈希（SHA3-224、SHA3-256、SHA3-384、SHA3-512、Keccak-256、Keccak-512），完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/sha3-generator.html">
+  <meta property="og:title" content="SHA-3 / Keccak 哈希生成器">
+  <meta property="og:description" content="即时生成 SHA-3 和 Keccak 哈希（SHA3-224、SHA3-256、SHA3-384、SHA3-512、Keccak-256、Keccak-512），完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/sha3-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SHA-3 / Keccak 哈希生成器">
+<meta name="twitter:description" content="即时生成 SHA-3 和 Keccak 哈希（SHA3-224、SHA3-256、SHA3-384、SHA3-512、Keccak-256、Keccak-512），完全在浏览器中运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.hash-row{display:flex;align-items:center;gap:8px;margin:6px 0;padding:8px 12px;background:var(--gz-surface,#f5f5f5);border-radius:8px}
+.hash-row strong{min-width:100px;font-size:.8em;flex-shrink:0}
+.hash-row code{flex:1;word-break:break-all;font-size:.8em;font-family:monospace}
+.algo-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.algo-toggle label{font-size:.8em;display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--gz-surface,#f5f5f5);border-radius:6px;cursor:pointer}
+input[type=checkbox]{accent-color:var(--gz-accent,#4ecdc4)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SHA-3 / Keccak Hash Generator","description":"Generate SHA-3 (Keccak) hashes — SHA3-224, SHA3-256, SHA3-384, SHA3-512, Keccak-256 and Keccak-512 — online for free. 100% in-browser, no uploads.","url": "https://tools.gamezipper.com/zh/dev/sha3-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is SHA-3?", "acceptedAnswer": {"@type": "Answer", "text": "SHA-3 (Secure Hash Algorithm 3) is a cryptographic hash function standardized by NIST in FIPS 202. Unlike SHA-1 and SHA-2 which use the Merkle-Damgard construction, SHA-3 uses the sponge construction based on the Keccak permutation, making it resistant to length-extension attacks."}}, {"@type": "Question", "name": "What is the difference between SHA3-256 and Keccak-256?", "acceptedAnswer": {"@type": "Answer", "text": "Keccak-256 is the original submission to the NIST competition. SHA3-256 is the final FIPS 202 standard, which changed the padding rule (0x06 instead of 0x01). They produce different outputs for the same input. Ethereum uses Keccak-256, while NIST-standardized tools use SHA3-256."}}, {"@type": "Question", "name": "Is my data safe with this SHA-3 generator?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All hashing happens entirely in your browser using the Web Crypto API and a pure-JavaScript Keccak implementation. No data is ever sent to any server."}}, {"@type": "Question", "name": "Which SHA-3 variant should I use?", "acceptedAnswer": {"@type": "Answer", "text": "For new applications, use SHA3-256 or SHA3-512 (the NIST standard). If you are working with Ethereum or smart contracts, use Keccak-256. SHA3-224 and SHA3-384 are less common but useful for compatibility with existing systems."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sha3-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sha3-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sha3-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="input" spellcheck="false" placeholder="Enter text to hash..."></textarea>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SHA-3 / Keccak Hash Generator',
+    toolDesc: 'Generate SHA-3 and Keccak hashes (SHA3-224, SHA3-256, SHA3-384, SHA3-512, Keccak-256, Keccak-512) instantly in your browser.',
+    inputLabel: 'Input text',
+    outputLabel: 'Hash output',
+    empty: 'Enter text above to generate SHA-3 hashes.',
+    step1: 'Type or paste your text into the input area',
+    step2: 'Select which algorithms you want to generate',
+    step3: 'Click Generate to compute all selected hashes',
+    step4: 'Click Copy next to any hash to copy it to clipboard',
+    copy: 'Copy', generate: 'Generate', clear: 'Clear', example: 'Example',
+    copied: 'Copied!',
+    webCrypto: 'via Web Crypto API',
+    jsImpl: 'JavaScript implementation',
+  },
+  zh: {
+    toolTitle: 'SHA-3 / Keccak 哈希生成器',
+    toolDesc: '即时生成 SHA-3 和 Keccak 哈希（SHA3-224、SHA3-256、SHA3-384、SHA3-512、Keccak-256、Keccak-512），完全在浏览器中运行。',
+    inputLabel: '输入文本',
+    outputLabel: '哈希输出',
+    empty: '在上方输入文本以生成 SHA-3 哈希。',
+    step1: '在输入区输入或粘贴文本',
+    step2: '选择要生成的算法',
+    step3: '点击「生成」计算所有选中的哈希',
+    step4: '点击哈希旁边的「复制」复制到剪贴板',
+    copy: '复制', generate: '生成', clear: '清除', example: '示例',
+    copied: '已复制！',
+    webCrypto: '通过 Web Crypto API',
+    jsImpl: 'JavaScript 实现',
+  }
+});
+
+const { $, copyText, t, showToast } = GZ;
+
+const ALGOS = [
+  {id:'sha3_224',name:'SHA3-224',len:224,webcrypto:false},
+  {id:'sha3_256',name:'SHA3-256',len:256,webcrypto:false},
+  {id:'sha3_384',name:'SHA3-384',len:384,webcrypto:false},
+  {id:'sha3_512',name:'SHA3-512',len:512,webcrypto:false},
+  {id:'keccak256',name:'Keccak-256',len:256,webcrypto:false},
+  {id:'keccak512',name:'Keccak-512',len:512,webcrypto:false},
+];
+
+// --- Keccak-f[1600] permutation (pure JS, no dependencies) ---
+const RC = [
+  0x0000000000000001n,0x0000000000008082n,0x800000000000808an,0x8000000080008000n,
+  0x000000000000808bn,0x0000000080000001n,0x8000000080008081n,0x8000000000008009n,
+  0x000000000000008an,0x0000000000000088n,0x0000000080008009n,0x000000008000000an,
+  0x000000008000808bn,0x800000000000008bn,0x8000000000008089n,0x8000000000008003n,
+  0x8000000000008002n,0x8000000000000080n,0x000000000000800an,0x800000008000000an,
+  0x8000000080008081n,0x8000000000008080n,0x0000000080000001n,0x8000000080008008n,
+];
+const ROT = [
+  [0,36,3,41,18],
+  [1,44,10,45,2],
+  [62,6,43,15,61],
+  [28,55,25,21,56],
+  [27,20,39,8,14],
+];
+
+function keccakF(state){
+  for(let rnd=0;rnd<24;rnd++){
+    // Theta
+    const C=[],D=[];
+    for(let x=0;x<5;x++){
+      C[x]=state[x][0]^state[x][1]^state[x][2]^state[x][3]^state[x][4];
+    }
+    for(let x=0;x<5;x++){
+      D[x]=C[(x+4)%5]^((C[(x+1)%5]<<1n)|(C[(x+1)%5]>>63n));
+    }
+    for(let x=0;x<5;x++)for(let y=0;y<5;y++)state[x][y]^=D[x];
+
+    // Rho and Pi
+    const B=Array.from({length:5},()=>new Array(5).fill(0n));
+    for(let x=0;x<5;x++)for(let y=0;y<5;y++){
+      const r=ROT[x][y];
+      B[y][(2*x+3*y)%5]=(state[x][y]<<BigInt(r))|(state[x][y]>>BigInt(64-r));
+    }
+
+    // Chi
+    for(let x=0;x<5;x++)for(let y=0;y<5;y++){
+      state[x][y]=B[x][y]^(B[(x+1)%5][y]^((~B[(x+2)%5][y])&0xFFFFFFFFFFFFFFFFn));
+    }
+
+    // Iota
+    state[0][0]^=RC[rnd];
+  }
+}
+
+function keccakSponge(msgBytes,rateBytes,outputBytes,padByte){
+  // rate in bytes must be < 200; capacity = 200 - rate
+  const state=Array.from({length:5},()=>new Array(5).fill(0n));
+  // Padding
+  const padded=[...msgBytes];
+  padded.push(padByte);
+  while(padded.length%rateBytes!==rateBytes-1)padded.push(0);
+  padded.push(0x80);
+
+  // Absorb
+  for(let blk=0;blk<padded.length;blk+=rateBytes){
+    for(let i=0;i<rateBytes;i+=8){
+      let lane=0n;
+      for(let j=0;j<8&&i+j<rateBytes;j++){
+        lane|=BigInt(padded[blk+i+j])<<(BigInt(j)*8n);
+      }
+      const x=(i/8)%5,y=Math.floor((i/8)/5);
+      state[x][y]^=lane;
+    }
+    keccakF(state);
+  }
+
+  // Squeeze
+  const out=[];
+  while(out.length<outputBytes){
+    for(let i=0;i<rateBytes&&out.length<outputBytes;i+=8){
+      const x=(i/8)%5,y=Math.floor((i/8)/5);
+      const lane=state[x][y];
+      for(let j=0;j<8&&out.length<outputBytes;j++){
+        out.push(Number((lane>>(BigInt(j)*8n))&0xFFn));
+      }
+    }
+    if(out.length<outputBytes)keccakF(state);
+  }
+  return out;
+}
+
+function bytesToHex(bytes){return bytes.map(b=>b.toString(16).padStart(2,'0')).join('');}
+function strToBytes(str){
+  const enc=new TextEncoder();
+  return Array.from(enc.encode(str));
+}
+
+function generateHash(algoId, text){
+  const bytes=strToBytes(text);
+  let outLen,rate,pad;
+  switch(algoId){
+    case 'sha3_224': outLen=28;rate=144;pad=0x06;break;
+    case 'sha3_256': outLen=32;rate=136;pad=0x06;break;
+    case 'sha3_384': outLen=48;rate=104;pad=0x06;break;
+    case 'sha3_512': outLen=64;rate=72;pad=0x06;break;
+    case 'keccak256': outLen=32;rate=136;pad=0x01;break;
+    case 'keccak512': outLen=64;rate=72;pad=0x01;break;
+    default:return'';
+  }
+  return bytesToHex(keccakSponge(bytes,rate,outLen,pad));
+}
+
+function doGenerate(){
+  const text=$('#input').value;
+  if(!text){$('#output').innerHTML=`<p style="opacity:.6">${t('empty')}</p>`;$('#status').innerHTML='';return;}
+  const enabled=ALGOS.filter(a=>$('#chk_'+a.id).checked);
+  let html='';
+  for(const algo of enabled){
+    const hash=generateHash(algo.id,text);
+    html+=`<div class="hash-row"><strong>${algo.name}</strong><code>${hash}</code><button class="gz-btn gz-btn-sm" onclick="copyHash('${hash}')">${t('copy')}</button></div>`;
+  }
+  $('#output').innerHTML=html||`<p style="opacity:.6">${t('empty')}</p>`;
+  $('#status').innerHTML=`<span style="color:var(--gz-success)">✓ ${enabled.length} hash(es) generated</span>`;
+}
+
+function copyHash(h){copyText(h);showToast(t('copied'));}
+
+function doClear(){$('#input').value='';$('#output').innerHTML=`<p style="opacity:.6">${t('empty')}</p>`;$('#status').innerHTML='';}
+
+$('#input').addEventListener('input',doGenerate);
+
+$('#toolbar').innerHTML=`
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+const algoToggles=`<div class="algo-toggle">${ALGOS.map((a,i)=>`<label><input type="checkbox" id="chk_${a.id}" ${[1,4].includes(i)?'checked':''} onchange="doGenerate()"> ${a.name}</label>`).join('')}</div>`;
+$('#output').parentElement.parentElement.querySelector('#lbl-out').insertAdjacentHTML('afterend',algoToggles);
+
+GZ.renderToolPage({
+  category:'dev',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'#️⃣',href:'/dev/hash.html',name:'Hash Generator'},
+    {icon:'🔐',href:'/dev/base64.html',name:'Base64'},
+    {icon:'🔑',href:'/dev/hmac.html',name:'HMAC Generator'},
+    {icon:'🪙',href:'/dev/bcrypt-generator.html',name:'Bcrypt Generator'},
+  ]
+});
+
+// labels
+document.querySelector('label#lbl-in').textContent=t('inputLabel');
+document.querySelector('label#lbl-out').textContent=t('outputLabel');
+$('#output').innerHTML=`<p style="opacity:.6">${t('empty')}</p>`;
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
