@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>DNS Lookup Tool - Check DNS Records Online Free | GameZipper Tools</title>
+  <meta name="description" content="Free online DNS lookup tool. Query A, AAAA, MX, NS, TXT, CNAME and SOA records for any domain using DNS-over-HTTPS. No signup, 100% in-browser. Perfect for debugging DNS issues.">
+  <link rel="canonical" href="https://tools.gamezipper.com/network/dns-lookup.html">
+  <meta property="og:title" content="DNS Lookup Tool - Check DNS Records Online Free | GameZipper Tools">
+  <meta property="og:description" content="Free online DNS lookup tool. Query A, AAAA, MX, NS, TXT, CNAME and SOA records for any domain using DNS-over-HTTPS. No signup, 100% in-browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/network/dns-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DNS Lookup Tool - Check DNS Records Online Free | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#result-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.85rem}
+#result-table th,#result-table td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+#result-table th{color:var(--text2);font-weight:600}
+#result-table td{font-family:monospace;word-break:break-all}
+.input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.input-row input[type=text]{flex:1;min-width:200px}
+.input-row select{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text)}
+.status-msg{margin-top:8px;font-size:.85rem}
+.dns-type-btns{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+.dns-type-btns button{padding:4px 10px;font-size:.8rem;border-radius:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"DNS Lookup Tool","description":"Free online DNS lookup tool. Query A, AAAA, MX, NS, TXT, CNAME and SOA records for any domain using DNS-over-HTTPS. No signup, 100% in-browser.","url":"https://tools.gamezipper.com/network/dns-lookup.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What DNS record types are supported?","acceptedAnswer":{"@type":"Answer","text":"This tool supports A, AAAA, MX, NS, TXT, CNAME, SOA and CAA record types."}},{"@type":"Question","name":"How does the DNS lookup work?","acceptedAnswer":{"@type":"Answer","text":"The tool uses DNS-over-HTTPS (DoH) to query Google and Cloudflare public DNS resolvers directly from your browser. No server-side processing is involved."}},{"@type":"Question","name":"Is this tool free?","acceptedAnswer":{"@type":"Answer","text":"Yes, completely free with no signup, API key or installation required."}},{"@type":"Question","name":"Why would I use a DNS lookup tool?","acceptedAnswer":{"@type":"Answer","text":"DNS lookups help debug website issues, verify DNS propagation after changes, check email (MX) configuration, and verify TXT records for domain verification."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/network/dns-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/network/dns-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/network/dns-lookup.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="input-row">
+      <input type="text" id="domain" placeholder="example.com" value="google.com">
+      <select id="dns-type">
+        <option value="A" selected>A (IPv4)</option>
+        <option value="AAAA">AAAA (IPv6)</option>
+        <option value="MX">MX (Mail)</option>
+        <option value="NS">NS (Nameserver)</option>
+        <option value="TXT">TXT (Text)</option>
+        <option value="CNAME">CNAME</option>
+        <option value="SOA">SOA</option>
+        <option value="CAA">CAA</option>
+      </select>
+      <button class="gz-btn" id="btn-lookup" onclick="doLookup()">🔍 <span id="lbl-lookup"></span></button>
+    </div>
+    <div class="dns-type-btns" id="quick-types"></div>
+    <div id="status" class="status-msg"></div>
+    <table id="result-table" style="display:none">
+      <thead><tr><th id="th-type"></th><th id="th-name"></th><th id="th-ttl"></th><th id="th-data"></th></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'DNS Lookup Tool',
+    toolDesc: 'Query DNS records (A, AAAA, MX, NS, TXT, CNAME, SOA) for any domain using DNS-over-HTTPS. Free, instant, no signup — perfect for debugging DNS issues.',
+    lookup: 'Lookup',
+    type: 'Type',
+    name: 'Name',
+    ttl: 'TTL',
+    data: 'Data',
+    querying: 'Querying...',
+    noResults: 'No records found',
+    error: 'Error: ',
+    enterDomain: 'Please enter a domain name',
+    step1: 'Enter a domain name (e.g., example.com) in the input field',
+    step2: 'Select the DNS record type you want to query',
+    step3: 'Click Lookup to query DNS-over-HTTPS resolvers',
+    step4: 'Review the results in the table below',
+  },
+  zh: {
+    toolTitle: 'DNS 查询工具',
+    toolDesc: '通过 DNS-over-HTTPS 查询任意域名的 DNS 记录（A、AAAA、MX、NS、TXT、CNAME、SOA）。免费、即时、无需注册 — 调试 DNS 问题的利器。',
+    lookup: '查询',
+    type: '类型',
+    name: '名称',
+    ttl: 'TTL',
+    data: '数据',
+    querying: '查询中...',
+    noResults: '未找到记录',
+    error: '错误：',
+    enterDomain: '请输入域名',
+    step1: '在输入框中输入域名（如 example.com）',
+    step2: '选择要查询的 DNS 记录类型',
+    step3: '点击「查询」通过 DNS-over-HTTPS 解析器查询',
+    step4: '在下方表格中查看结果',
+  }
+});
+
+const { $, t } = GZ;
+const DOH_ENDPOINTS = [
+  'https://dns.google/resolve',
+  'https://cloudflare-dns.com/dns-query'
+];
+
+const TYPE_MAP = {1:'A',28:'AAAA',15:'MX',2:'NS',16:'TXT',5:'CNAME',6:'SOA',257:'CAA'};
+
+async function doLookup() {
+  const domain = $('#domain').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  if (!domain) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('enterDomain')}</span>`; return; }
+
+  const rtype = $('#dns-type').value;
+  $('#status').innerHTML = `<span style="color:var(--text2)">${t('querying')}</span>`;
+  $('#result-table').style.display = 'none';
+  $('#btn-lookup').disabled = true;
+
+  let data = null;
+  for (const endpoint of DOH_ENDPOINTS) {
+    try {
+      const url = `${endpoint}?name=${encodeURIComponent(domain)}&type=${rtype}`;
+      const resp = await fetch(url, { headers: { 'Accept': 'application/dns-json' } });
+      if (resp.ok) {
+        data = await resp.json();
+        break;
+      }
+    } catch(e) { /* try next */ }
+  }
+
+  $('#btn-lookup').disabled = false;
+
+  if (!data) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}network error</span>`;
+    return;
+  }
+
+  const answers = (data.Answer || data.Authority || []).filter(a => {
+    if (rtype === 'CNAME') return TYPE_MAP[a.type] === 'CNAME' || TYPE_MAP[a.type] === 'A';
+    return true;
+  });
+
+  if (answers.length === 0) {
+    $('#status').innerHTML = `<span style="color:var(--text2)">${t('noResults')}</span>`;
+    return;
+  }
+
+  const body = answers.map(a => {
+    let displayData = a.data;
+    return `<tr><td>${TYPE_MAP[a.type] || rtype}</td><td>${a.name}</td><td>${a.TTL}s</td><td>${displayData}</td></tr>`;
+  }).join('');
+
+  $('#result-body').innerHTML = body;
+  $('#result-table').style.display = 'table';
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${answers.length} record${answers.length !== 1 ? 's' : ''}</span>`;
+}
+
+// Quick type buttons
+const quickTypes = ['A','AAAA','MX','NS','TXT','CNAME','SOA','CAA'];
+$('#quick-types').innerHTML = quickTypes.map(ty =>
+  `<button class="gz-btn gz-btn-secondary" onclick="quickType('${ty}')">${ty}</button>`
+).join('');
+
+function quickType(ty) {
+  $('#dns-type').value = ty;
+  doLookup();
+}
+
+$('#domain').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLookup(); });
+
+$('#lbl-lookup').textContent = t('lookup');
+$('#th-type').textContent = t('type');
+$('#th-name').textContent = t('name');
+$('#th-ttl').textContent = t('ttl');
+$('#th-data').textContent = t('data');
+
+GZ.renderToolPage({
+  category: 'network',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/network/http-headers-checker.html', name:'HTTP Headers Checker'},
+    {icon:'📡', href:'/dev/api-tester.html', name:'API Tester'},
+    {icon:'🔑', href:'/dev/api-key-generator.html', name:'API Key Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

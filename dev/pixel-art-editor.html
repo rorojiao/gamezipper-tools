@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Pixel Art Editor - Draw Pixel Art Online Free | GameZipper Tools</title>
+  <meta name="description" content="Free online pixel art editor. Draw 8-bit and 16-bit pixel art on a customizable grid — choose canvas size, palette colors, eraser, fill bucket, undo/redo. Export as PNG. No signup, 100% in-browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/pixel-art-editor.html">
+  <meta property="og:title" content="Pixel Art Editor - Draw Pixel Art Online Free | GameZipper Tools">
+  <meta property="og:description" content="Free online pixel art editor. Draw 8-bit and 16-bit pixel art on a customizable grid — choose canvas size, palette colors, eraser, fill bucket, undo/redo. Export as PNG. No signup, 100% in-browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/pixel-art-editor.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Pixel Art Editor - Draw Pixel Art Online Free | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#canvas-wrap{display:flex;justify-content:center;margin:12px 0}
+#pixel-canvas{image-rendering:pixelated;image-rendering:crisp-edges;cursor:crosshair;border:2px solid var(--border);background:#fff;max-width:100%;touch-action:none}
+.palette{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0;justify-content:center}
+.palette .sw{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.palette .sw.active{border-color:var(--accent);transform:scale(1.15)}
+.palette .sw:hover{transform:scale(1.1)}
+.tool-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin:10px 0}
+.tool-row label{font-size:.85rem;color:var(--text2)}
+.tool-row input[type=color]{width:36px;height:32px;border:none;border-radius:6px;cursor:pointer;background:transparent}
+.tool-row select,.tool-row input[type=number]{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text)}
+.gz-btn-tool{padding:6px 12px;font-size:.85rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pixel Art Editor","description":"Free online pixel art editor. Draw 8-bit and 16-bit pixel art on a customizable grid with palette, eraser, fill bucket, undo/redo. Export as PNG. No signup, 100% in-browser.","url":"https://tools.gamezipper.com/dev/pixel-art-editor.html","applicationCategory":"Multimedia","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this pixel art editor free?","acceptedAnswer":{"@type":"Answer","text":"Yes, completely free with no signup required. All drawing happens in your browser."}},{"@type":"Question","name":"Can I export my pixel art as PNG?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click Export PNG to download your artwork at the pixel grid resolution."}},{"@type":"Question","name":"What canvas sizes are supported?","acceptedAnswer":{"@type":"Answer","text":"You can choose from 8×8, 16×16, 24×24, 32×32, 48×48 and 64×64 grids."}},{"@type":"Question","name":"Does it have undo and redo?","acceptedAnswer":{"@type":"Answer","text":"Yes, the editor supports full undo/redo history so you can easily correct mistakes."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/pixel-art-editor.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/pixel-art-editor.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/pixel-art-editor.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tool-row">
+      <label id="lbl-size"></label>
+      <select id="grid-size">
+        <option value="8">8 × 8</option>
+        <option value="16" selected>16 × 16</option>
+        <option value="24">24 × 24</option>
+        <option value="32">32 × 32</option>
+        <option value="48">48 × 48</option>
+        <option value="64">64 × 64</option>
+      </select>
+      <label id="lbl-color"></label>
+      <input type="color" id="color-picker" value="#ff0000">
+      <button class="gz-btn gz-btn-tool" id="btn-eraser" onclick="toggleEraser()">🧹 <span id="lbl-eraser"></span></button>
+      <button class="gz-btn gz-btn-tool" onclick="fillBucket()">🪣 <span id="lbl-fill"></span></button>
+      <button class="gz-btn gz-btn-secondary gz-btn-tool" onclick="undo()">↩ <span id="lbl-undo"></span></button>
+      <button class="gz-btn gz-btn-secondary gz-btn-tool" onclick="redo()">↪ <span id="lbl-redo"></span></button>
+      <button class="gz-btn gz-btn-secondary gz-btn-tool" onclick="clearCanvas()">🗑 <span id="lbl-clear"></span></button>
+      <button class="gz-btn gz-btn-tool" onclick="exportPNG()">💾 PNG</button>
+    </div>
+    <div class="palette" id="palette"></div>
+    <div id="canvas-wrap">
+      <canvas id="pixel-canvas" width="480" height="480"></canvas>
+    </div>
+    <div id="status" style="text-align:center;font-size:.85rem;color:var(--text2);margin-top:4px"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Pixel Art Editor',
+    toolDesc: 'Draw retro 8-bit and 16-bit pixel art on a customizable grid. Pick colors, use eraser and fill bucket, undo/redo, export as PNG. Free, no signup.',
+    gridSize: 'Grid:',
+    color: 'Color:',
+    eraser: 'Eraser',
+    fill: 'Fill',
+    undo: 'Undo',
+    redo: 'Redo',
+    clear: 'Clear',
+    step1: 'Choose your grid size and pick a color from the palette or color picker',
+    step2: 'Click or drag on the canvas to draw pixels — use Eraser to remove',
+    step3: 'Use Fill bucket to flood-fill an area with the current color',
+    step4: 'Click Export PNG to download your pixel art at full resolution',
+  },
+  zh: {
+    toolTitle: '像素画编辑器',
+    toolDesc: '在可定制网格上绘制复古 8 位和 16 位像素画。选色、使用橡皮擦和填充桶、撤销/重做、导出 PNG。免费、无需注册。',
+    gridSize: '网格：',
+    color: '颜色：',
+    eraser: '橡皮擦',
+    fill: '填充',
+    undo: '撤销',
+    redo: '重做',
+    clear: '清空',
+    step1: '选择网格大小，从调色板或取色器中选择颜色',
+    step2: '在画布上点击或拖拽来绘制像素 — 使用橡皮擦可删除',
+    step3: '使用填充桶将当前颜色填充到整个区域',
+    step4: '点击导出 PNG 以全分辨率下载你的像素画',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let gridSize = 16;
+let pixelSize = 30;
+let pixels = [];
+let currentColor = '#ff0000';
+let isEraser = false;
+let isDrawing = false;
+let history = [];
+let redoStack = [];
+
+const DEFAULT_PALETTE = [
+  '#000000','#1d2b53','#7e2553','#008751','#ab5236','#5f574f','#c2c3c7','#fff1e8',
+  '#ff004d','#ffa300','#ffec27','#00e436','#29adff','#83769c','#ff77a8','#ffccaa',
+  '#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#888888'
+];
+
+function initGrid() {
+  gridSize = parseInt($('#grid-size').value);
+  pixelSize = Math.floor(480 / gridSize);
+  const c = $('#pixel-canvas');
+  c.width = gridSize * pixelSize;
+  c.height = gridSize * pixelSize;
+  pixels = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+  history = [];
+  redoStack = [];
+  drawGrid();
+}
+
+function drawGrid() {
+  const c = $('#pixel-canvas');
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      if (pixels[y][x]) {
+        ctx.fillStyle = pixels[y][x];
+        ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+      }
+    }
+  }
+  // grid lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= gridSize; i++) {
+    ctx.beginPath(); ctx.moveTo(i * pixelSize, 0); ctx.lineTo(i * pixelSize, c.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * pixelSize); ctx.lineTo(c.width, i * pixelSize); ctx.stroke();
+  }
+}
+
+function saveHistory() {
+  history.push(pixels.map(row => [...row]));
+  if (history.length > 50) history.shift();
+  redoStack = [];
+}
+
+function getPixelCoord(e) {
+  const c = $('#pixel-canvas');
+  const rect = c.getBoundingClientRect();
+  const scaleX = c.width / rect.width;
+  const scaleY = c.height / rect.height;
+  const cx = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+  const cy = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+  const x = Math.floor((cx * scaleX) / pixelSize);
+  const y = Math.floor((cy * scaleY) / pixelSize);
+  return { x: Math.max(0, Math.min(gridSize - 1, x)), y: Math.max(0, Math.min(gridSize - 1, y)) };
+}
+
+function paintPixel(x, y) {
+  pixels[y][x] = isEraser ? null : currentColor;
+}
+
+const canvas = $('#pixel-canvas');
+canvas.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  isDrawing = true;
+  saveHistory();
+  const { x, y } = getPixelCoord(e);
+  paintPixel(x, y);
+  drawGrid();
+});
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDrawing) return;
+  const { x, y } = getPixelCoord(e);
+  paintPixel(x, y);
+  drawGrid();
+});
+canvas.addEventListener('mouseup', () => { isDrawing = false; });
+canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  isDrawing = true;
+  saveHistory();
+  const { x, y } = getPixelCoord(e);
+  paintPixel(x, y);
+  drawGrid();
+}, { passive: false });
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!isDrawing) return;
+  const { x, y } = getPixelCoord(e);
+  paintPixel(x, y);
+  drawGrid();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+function toggleEraser() {
+  isEraser = !isEraser;
+  $('#btn-eraser').style.background = isEraser ? 'var(--accent)' : '';
+  $('#btn-eraser').style.color = isEraser ? '#000' : '';
+}
+
+function floodFill(x, y, target, replacement) {
+  if (target === replacement) return;
+  const stack = [[x, y]];
+  while (stack.length) {
+    const [cx, cy] = stack.pop();
+    if (cx < 0 || cx >= gridSize || cy < 0 || cy >= gridSize) continue;
+    if (pixels[cy][cx] !== target) continue;
+    pixels[cy][cx] = replacement;
+    stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+  }
+}
+
+function fillBucket() {
+  saveHistory();
+  const target = pixels[0][0];
+  floodFill(0, 0, target, isEraser ? null : currentColor);
+  drawGrid();
+}
+
+function undo() {
+  if (history.length === 0) return;
+  redoStack.push(pixels.map(row => [...row]));
+  pixels = history.pop();
+  drawGrid();
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  history.push(pixels.map(row => [...row]));
+  pixels = redoStack.pop();
+  drawGrid();
+}
+
+function clearCanvas() {
+  saveHistory();
+  pixels = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+  drawGrid();
+}
+
+function exportPNG() {
+  const tmp = document.createElement('canvas');
+  tmp.width = gridSize;
+  tmp.height = gridSize;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, gridSize, gridSize);
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      if (pixels[y][x]) {
+        ctx.fillStyle = pixels[y][x];
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+  const a = document.createElement('a');
+  a.download = 'pixel-art.png';
+  a.href = tmp.toDataURL('image/png');
+  a.click();
+}
+
+// Palette
+function renderPalette() {
+  const pal = $('#palette');
+  pal.innerHTML = DEFAULT_PALETTE.map(c =>
+    `<div class="sw" style="background:${c}" data-color="${c}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+}
+
+function selectColor(c) {
+  currentColor = c;
+  isEraser = false;
+  $('#btn-eraser').style.background = '';
+  $('#color-picker').value = c;
+  document.querySelectorAll('.palette .sw').forEach(sw => {
+    sw.classList.toggle('active', sw.dataset.color === c);
+  });
+}
+
+$('#color-picker').addEventListener('input', (e) => {
+  currentColor = e.target.value;
+  isEraser = false;
+  $('#btn-eraser').style.background = '';
+  document.querySelectorAll('.palette .sw').forEach(sw => sw.classList.remove('active'));
+});
+
+$('#grid-size').addEventListener('change', initGrid);
+
+renderPalette();
+selectColor('#000000');
+initGrid();
+
+$('#lbl-size').textContent = t('gridSize');
+$('#lbl-color').textContent = t('color');
+$('#lbl-eraser').textContent = t('eraser');
+$('#lbl-fill').textContent = t('fill');
+$('#lbl-undo').textContent = t('undo');
+$('#lbl-redo').textContent = t('redo');
+$('#lbl-clear').textContent = t('clear');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/color/hex-rgb.html', name:'HEX/RGB'},
+    {icon:'🖼️', href:'/image/avatar-generator.html', name:'Avatar Generator'},
+    {icon:'📐', href:'/image/aspect-ratio-visualizer.html', name:'Aspect Ratio'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

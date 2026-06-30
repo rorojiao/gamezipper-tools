@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>HTTP Headers Checker - Inspect Response Headers Online | GameZipper Tools</title>
+  <meta name="description" content="Free online HTTP headers checker. Enter any URL to inspect HTTP response headers — status code, content-type, cache-control, security headers and more. Uses CORS proxies, 100% in-browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/network/http-headers-checker.html">
+  <meta property="og:title" content="HTTP Headers Checker - Inspect Response Headers Online | GameZipper Tools">
+  <meta property="og:description" content="Free online HTTP headers checker. Enter any URL to inspect HTTP response headers — status code, content-type, cache-control, security headers and more. 100% in-browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/network/http-headers-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HTTP Headers Checker - Inspect Response Headers Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.input-row input[type=text]{flex:1;min-width:200px}
+.status-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-weight:700;font-size:.85rem}
+#result-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.85rem}
+#result-table th,#result-table td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+#result-table th{color:var(--text2);font-weight:600}
+#result-table td{font-family:monospace;word-break:break-all}
+#result-table td:first-child{color:var(--accent);font-weight:600}
+.security-check{margin-top:16px}
+.security-check .item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:.85rem}
+.security-check .item .icon{font-size:1.1rem}
+.status-msg{margin-top:8px;font-size:.85rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HTTP Headers Checker","description":"Free online HTTP headers checker. Enter any URL to inspect HTTP response headers — status code, content-type, cache-control, security headers and more. 100% in-browser.","url":"https://tools.gamezipper.com/network/http-headers-checker.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What are HTTP headers?","acceptedAnswer":{"@type":"Answer","text":"HTTP headers are key-value pairs sent between a client and server in HTTP requests and responses. They carry metadata like content type, caching rules, security policies and authentication tokens."}},{"@type":"Question","name":"Why check HTTP response headers?","acceptedAnswer":{"@type":"Answer","text":"Checking headers helps debug CORS issues, verify security headers (HSTS, CSP, X-Frame-Options), check caching configuration, and confirm content types and redirects."}},{"@type":"Question","name":"Does this tool work on any URL?","acceptedAnswer":{"@type":"Answer","text":"Most URLs work. Some servers block cross-origin requests (CORS); the tool tries multiple approaches to retrieve headers, but restrictive servers may not return all data."}},{"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"The URL you enter is sent to a public CORS proxy to fetch headers. No other data is collected or stored."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/network/http-headers-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/network/http-headers-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/network/http-headers-checker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="input-row">
+      <input type="text" id="url-input" placeholder="https://example.com" value="https://example.com">
+      <button class="gz-btn" id="btn-check" onclick="checkHeaders()">🔍 <span id="lbl-check"></span></button>
+    </div>
+    <div id="status" class="status-msg"></div>
+    <div id="status-display" style="margin-top:12px;display:none">
+      <span class="status-badge" id="status-code"></span>
+    </div>
+    <table id="result-table" style="display:none">
+      <thead><tr><th id="th-header"></th><th id="th-value"></th></tr></thead>
+      <tbody id="result-body"></tbody>
+    </table>
+    <div class="security-check" id="security-check" style="display:none">
+      <h3 style="font-size:.95rem;margin:16px 0 8px" id="sec-title"></h3>
+      <div id="sec-items"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HTTP Headers Checker',
+    toolDesc: 'Inspect HTTP response headers for any URL — check status codes, content-type, cache-control, security headers (HSTS, CSP, X-Frame-Options) and more. Free, instant, no signup.',
+    check: 'Check',
+    headerName: 'Header',
+    headerValue: 'Value',
+    checking: 'Fetching headers...',
+    error: 'Error: ',
+    enterUrl: 'Please enter a valid URL',
+    securityHeaders: 'Security Headers Check',
+    step1: 'Enter the full URL including https:// in the input field',
+    step2: 'Click Check to fetch the HTTP response headers',
+    step3: 'Review the status code and all response headers in the table',
+    step4: 'Check the security headers section for best-practice recommendations',
+  },
+  zh: {
+    toolTitle: 'HTTP 头信息检查器',
+    toolDesc: '检查任意 URL 的 HTTP 响应头 — 查看状态码、content-type、cache-control、安全头（HSTS、CSP、X-Frame-Options）等。免费、即时、无需注册。',
+    check: '检查',
+    headerName: '头部',
+    headerValue: '值',
+    checking: '获取头信息中...',
+    error: '错误：',
+    enterUrl: '请输入有效的 URL',
+    securityHeaders: '安全头检查',
+    step1: '在输入框中输入完整 URL（含 https://）',
+    step2: '点击「检查」获取 HTTP 响应头',
+    step3: '在表格中查看状态码和所有响应头',
+    step4: '查看安全头部分了解最佳实践建议',
+  }
+});
+
+const { $, t } = GZ;
+
+const PROXIES = [
+  (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
+const SECURITY_HEADERS = [
+  { name: 'strict-transport-security', label: 'HSTS (HTTPS enforcement)', good: '✅', bad: '⚠️' },
+  { name: 'content-security-policy', label: 'Content-Security-Policy', good: '✅', bad: '⚠️' },
+  { name: 'x-frame-options', label: 'X-Frame-Options (Clickjacking)', good: '✅', bad: '⚠️' },
+  { name: 'x-content-type-options', label: 'X-Content-Type-Options', good: '✅', bad: '⚠️' },
+  { name: 'referrer-policy', label: 'Referrer-Policy', good: '✅', bad: '⚠️' },
+  { name: 'permissions-policy', label: 'Permissions-Policy', good: '✅', bad: '⚠️' },
+];
+
+async function checkHeaders() {
+  let url = $('#url-input').value.trim();
+  if (!url) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('enterUrl')}</span>`; return; }
+  if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+
+  $('#status').innerHTML = `<span style="color:var(--text2)">${t('checking')}</span>`;
+  $('#result-table').style.display = 'none';
+  $('#status-display').style.display = 'none';
+  $('#security-check').style.display = 'none';
+  $('#btn-check').disabled = true;
+
+  let headers = null;
+  let status = 0;
+
+  for (const proxyFn of PROXIES) {
+    try {
+      const resp = await fetch(proxyFn(url), { method: 'GET', redirect: 'follow' });
+      status = resp.status;
+      headers = {};
+      resp.headers.forEach((value, key) => { headers[key] = value; });
+      if (Object.keys(headers).length > 0) break;
+    } catch(e) { /* try next */ }
+  }
+
+  $('#btn-check').disabled = false;
+
+  if (!headers || Object.keys(headers).length === 0) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}CORS restriction or network error</span>`;
+    return;
+  }
+
+  // Display status code
+  const statusColors = { 2:'#00d672', 3:'#61afef', 4:'#ffa500', 5:'#ff6b6b' };
+  const sc = String(status)[0];
+  const color = statusColors[sc] || '#888';
+  $('#status-code').textContent = `HTTP ${status}`;
+  $('#status-code').style.background = color + '22';
+  $('#status-code').style.color = color;
+  $('#status-display').style.display = 'block';
+
+  // Display headers table
+  const rows = Object.entries(headers).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+  $('#result-body').innerHTML = rows;
+  $('#result-table').style.display = 'table';
+
+  // Security check
+  const secItems = SECURITY_HEADERS.map(sh => {
+    const found = headers[sh.name] || headers[sh.name.toLowerCase()];
+    return `<div class="item"><span class="icon">${found ? sh.good : sh.bad}</span><span>${sh.label}: ${found || '<span style="color:var(--text3)">missing</span>'}</span></div>`;
+  }).join('');
+  $('#sec-items').innerHTML = secItems;
+  $('#security-check').style.display = 'block';
+
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${Object.keys(headers).length} headers</span>`;
+}
+
+$('#url-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkHeaders(); });
+
+$('#lbl-check').textContent = t('check');
+$('#th-header').textContent = t('headerName');
+$('#th-value').textContent = t('headerValue');
+$('#sec-title').textContent = t('securityHeaders');
+
+GZ.renderToolPage({
+  category: 'network',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/network/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📡', href:'/dev/api-tester.html', name:'API Tester'},
+    {icon:'🔑', href:'/dev/jwt.html', name:'JWT Decoder'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
