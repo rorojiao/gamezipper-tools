@@ -18,7 +18,7 @@
   // Direct tunnel URL: browser → Cloudflare Tunnel → BI server (10.10.29.67:8090)
   // Tunnel: cloudflared systemd service (auto-restart on failure)
   // NOTE: If tunnel URL changes, update this and redeploy
-  var EP = 'https://reveals-novel-receptor-characters.trycloudflare.com/api/collect';
+  var EP = 'https://fairly-marathon-medieval-nuke.trycloudflare.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
@@ -167,9 +167,14 @@
     ps('v_chg', { u: P, st: document.visibilityState });
   });
 
+  // 2026-06-30: enrich exit_mouse meta with clientY/dwellMs (parity with gz.com).
   document.addEventListener('mouseout', function(e) {
     var f = e ? e.relatedTarget || e.toElement : null;
-    if (!f) ps('exit_mouse', { u: P });
+    if (!f) {
+      var dwell = Date.now() - t0;
+      var cy = (e && typeof e.clientY === 'number') ? e.clientY : -1;
+      ps('exit_mouse', { u: P, cy: cy, dwell: dwell });
+    }
   });
 
   var pObs = window.PerformanceObserver || window.MozPerformanceObserver || window.webkitPerformanceObserver;

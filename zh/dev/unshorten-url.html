@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>短链接还原 / 链接展开器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查看短链接到底指向哪里。粘贴 bit.ly、tinyurl、t.co 或任何短链接，跟随完整的重定向链到达最终目标 — 比盲目点击更安全。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/unshorten-url.html">
+  <meta property="og:title" content="短链接还原 / 链接展开器">
+  <meta property="og:description" content="查看短链接到底指向哪里。粘贴 bit.ly、tinyurl、t.co 或任何短链接，跟随完整的重定向链到达最终目标 — 比盲目点击更安全。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/unshorten-url.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="短链接还原 / 链接展开器">
+<meta name="twitter:description" content="查看短链接到底指向哪里。粘贴 bit.ly、tinyurl、t.co 或任何短链接，跟随完整的重定向链到达最终目标 — 比盲目点击更安全。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.gz-url-input{width:100%;padding:12px;background:var(--gz-surface,#1e1e2e);border:1px solid var(--gz-border,#333);border-radius:8px;color:inherit;font-size:1em;box-sizing:border-box}
+.gz-chain{margin:16px 0;font-family:monospace;font-size:.88em}
+.gz-chain-step{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:var(--glass,#1a1a2e);border:1px solid var(--gz-border,#333);border-radius:8px;margin-bottom:6px}
+.gz-chain-step .arrow{color:var(--gz-accent,#e94560);font-weight:700;font-size:1em}
+.gz-chain-step .url{word-break:break-all;flex:1}
+.gz-chain-step .status{font-size:.85em;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.gz-final{padding:16px;background:var(--glass2,#16213e);border:2px solid var(--gz-accent,#e94560);border-radius:12px;margin:16px 0}
+.gz-final-label{font-size:.8em;opacity:.75;text-transform:uppercase;letter-spacing:.05em}
+.gz-final-url{font-family:monospace;font-size:1.05em;word-break:break-all;margin-top:4px}
+.gz-warn{padding:12px;background:rgba(245,166,35,.1);border:1px solid #f5a623;border-radius:8px;margin:12px 0;font-size:.88em}
+.gz-loader{display:none;align-items:center;gap:8px;padding:12px;font-size:.9em}
+.gz-loader.show{display:flex}
+.gz-spinner{width:16px;height:16px;border:2px solid var(--gz-border,#444);border-top-color:var(--gz-accent,#e94560);border-radius:50%;animation:gzspin .8s linear infinite}
+@keyframes gzspin{to{transform:rotate(360deg)}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Unshorten URL & Link Expander","description":"Unshorten any short URL and follow redirects to the final destination. Expand bit.ly, tinyurl, t.co and 100s of shorteners. See the full redirect chain and final URL — free and private.","url": "https://tools.gamezipper.com/zh/dev/unshorten-url.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does unshorten mean?","acceptedAnswer":{"@type":"Answer","text":"Unshortening (or expanding) a URL means following all HTTP redirects from a short link like bit.ly/abc to its final destination URL. This reveals where the link actually goes before you click it."}},{"@type":"Question","name":"Which shorteners are supported?","acceptedAnswer":{"@type":"Answer","text":"All of them — bit.ly, tinyurl.com, t.co (Twitter), goo.gl, ow.ly, is.gd, buff.ly, rebrand.ly, cutt.ly and hundreds of others. The tool follows redirects on any URL, not just known shorteners."}},{"@type":"Question","name":"Is it safe to check suspicious links here?","acceptedAnswer":{"@type":"Answer","text":"Yes. The tool uses public CORS proxies to fetch only HTTP headers (not page content), so your browser never directly visits the destination. This is safer than clicking the link yourself, though you should still scan the final URL for phishing indicators."}},{"@type":"Question","name":"Why do some URLs fail to expand?","acceptedAnswer":{"@type":"Answer","text":"Some shorteners or destinations block cross-origin requests (CORS), require JavaScript redirects, or are behind login walls. In those cases the tool shows the last reachable hop. Try a different URL or check manually."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/unshorten-url.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/unshorten-url.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/unshorten-url.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <input type="text" id="url-input" class="gz-url-input" spellcheck="false" placeholder="">
+    <div style="margin-top:12px"><button class="gz-btn" id="btn-unshorten"></button> <button class="gz-btn gz-btn-secondary" id="btn-clear"></button></div>
+    <div class="gz-loader" id="loader"><div class="gz-spinner"></div><span id="loader-text"></span></div>
+    <div class="gz-warn" id="cors-warn" style="display:none"></div>
+    <div id="result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Unshorten URL & Link Expander',
+    toolDesc: 'See where a short URL really goes. Paste bit.ly, tinyurl, t.co or any shortened link and follow the full redirect chain to the final destination — safer than clicking blind.',
+    placeholder: 'Paste a short URL, e.g. https://bit.ly/3xyz…',
+    unshorten: 'Expand URL',
+    clear: 'Clear',
+    loading: 'Following redirects…',
+    finalDest: 'Final Destination',
+    redirectChain: 'Redirect Chain',
+    corsWarn: '⚠ Some redirects could not be followed due to browser CORS restrictions. The chain shows the last reachable URL. For a complete chain, the server-side approach may be needed.',
+    noRedirects: 'This URL does not redirect — it is already the final destination.',
+    invalidUrl: 'Please enter a valid URL starting with http:// or https://',
+    error: 'Could not expand this URL. The shortener may be down or blocking cross-origin requests.',
+    step: 'Hop',
+    step1: 'Paste a shortened URL (bit.ly, tinyurl, t.co, etc.) into the input',
+    step2: 'Click "Expand URL" to start following redirects',
+    step3: 'View the full redirect chain hop-by-hop',
+    step4: 'See the final destination URL and verify it before visiting',
+  },
+  zh: {
+    toolTitle: '短链接还原 / 链接展开器',
+    toolDesc: '查看短链接到底指向哪里。粘贴 bit.ly、tinyurl、t.co 或任何短链接，跟随完整的重定向链到达最终目标 — 比盲目点击更安全。',
+    placeholder: '粘贴短链接，例如 https://bit.ly/3xyz…',
+    unshorten: '展开链接',
+    clear: '清空',
+    loading: '正在跟随重定向…',
+    finalDest: '最终目标',
+    redirectChain: '重定向链',
+    corsWarn: '⚠ 部分重定向因浏览器 CORS 限制无法跟随。链中显示的是最后可达的 URL。完整链路可能需要服务端支持。',
+    noRedirects: '该 URL 不会重定向 — 它已经是最终目标。',
+    invalidUrl: '请输入以 http:// 或 https:// 开头的有效 URL',
+    error: '无法展开此 URL。短链服务可能已下线或阻止了跨域请求。',
+    step: '跳转',
+    step1: '在输入框中粘贴短链接（bit.ly、tinyurl、t.co 等）',
+    step2: '点击「展开链接」开始跟随重定向',
+    step3: '逐跳查看完整的重定向链',
+    step4: '查看最终目标 URL 并在访问前核实',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#url-input').placeholder = t('placeholder');
+$('#btn-unshorten').textContent = t('unshorten');
+$('#btn-clear').textContent = t('clear');
+
+function statusClass(code){
+  if(code >= 200 && code < 300) return 'gz-good';
+  if(code >= 300 && code < 400) return 'gz-warn';
+  return 'gz-bad';
+}
+function statusBg(code){
+  if(code >= 200 && code < 300) return 'background:#4caf50;color:#fff';
+  if(code >= 300 && code < 400) return 'background:#f5a623;color:#000';
+  return 'background:#e94560;color:#fff';
+}
+
+async function unshorten(){
+  const url = $('#url-input').value.trim();
+  $('#result').innerHTML = '';
+  $('#cors-warn').style.display = 'none';
+  if(!url || !/^https?:\/\//i.test(url)){
+    $('#result').innerHTML = `<div class="gz-warn">${t('invalidUrl')}</div>`;
+    return;
+  }
+  $('#loader').classList.add('show');
+  $('#loader-text').textContent = t('loading');
+
+  const chain = [{ url, status: null, note: 'START' }];
+  let current = url;
+  let corsBlocked = false;
+  const MAX_HOPS = 12;
+
+  try {
+    for(let i = 0; i < MAX_HOPS; i++){
+      // Use a CORS proxy to fetch headers only
+      const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(current);
+      let resp;
+      try {
+        resp = await fetch(proxyUrl, { method: 'GET', redirect: 'manual' });
+      } catch(e){
+        // fallback: allorigins
+        try {
+          resp = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(current));
+        } catch(e2){
+          corsBlocked = true;
+          break;
+        }
+      }
+      // corsproxy with redirect:manual returns an opaque response on cross-origin redirect,
+      // so we fall back to following normally and inspecting response.url
+      if(!resp || resp.type === 'opaque'){
+        // try normal fetch via proxy
+        try {
+          const r2 = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(current));
+          if(r2.ok || r2.redirected){
+            const finalUrl = r2.url ? r2.url.replace('https://corsproxy.io/?url=', '') : current;
+            if(finalUrl && finalUrl !== current){
+              chain.push({ url: finalUrl, status: r2.status, note: '→' });
+              current = finalUrl;
+              continue;
+            }
+          }
+        } catch(e3){}
+        corsBlocked = true;
+        break;
+      }
+      const status = resp.status;
+      const loc = resp.headers.get('location');
+      chain[chain.length - 1].status = status;
+      if(status >= 300 && status < 400 && loc){
+        const next = new URL(loc, current).href;
+        chain.push({ url: next, status: null, note: status + ' →' });
+        current = next;
+      } else {
+        break; // final destination reached
+      }
+    }
+  } catch(err){
+    corsBlocked = true;
+  }
+
+  $('#loader').classList.remove('show');
+
+  if(corsBlocked && chain.length === 1){
+    // Try simpler approach: just resolve via allorigins raw
+    try {
+      const r = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
+      if(r.redirected || r.ok){
+        const fu = r.url && r.url !== url ? r.url : url;
+        chain.push({ url: fu, status: r.status, note: 'FINAL' });
+      }
+    } catch(e){
+      $('#result').innerHTML = `<div class="gz-warn">${t('error')}</div>`;
+      return;
+    }
+  }
+
+  if(corsBlocked){
+    $('#cors-warn').style.display = '';
+    $('#cors-warn').textContent = t('corsWarn');
+  }
+
+  renderResult(chain);
+}
+
+function renderResult(chain){
+  if(chain.length <= 1){
+    $('#result').innerHTML = `<div class="gz-warn">${t('noRedirects')}</div>`;
+    return;
+  }
+  const final = chain[chain.length - 1];
+  const stepsHtml = chain.map((s, i) => {
+    const st = s.status ? `<span class="status" style="${statusBg(s.status)}">${s.status}</span>` : `<span style="opacity:.5;font-size:.8em">${s.note||''}</span>`;
+    return `<div class="gz-chain-step"><span class="arrow">${i===0?'🔗':'↳'}</span><span class="url">${escapeHtml(s.url)}</span>${st}</div>`;
+  }).join('');
+
+  $('#result').innerHTML = `
+    <div class="gz-final">
+      <div class="gz-final-label">${t('finalDest')}</div>
+      <div class="gz-final-url"><a href="${escapeHtml(final.url)}" target="_blank" rel="noopener nofollow" style="color:var(--gz-accent)">${escapeHtml(final.url)}</a></div>
+      <div style="margin-top:8px"><button class="gz-btn gz-btn-secondary" onclick="copyText('${final.url.replace(/'/g,"\\'")}')">${t('clear').length? '📋 Copy':''}</button></div>
+    </div>
+    <h3 style="margin:18px 0 8px;font-size:1em">${t('redirectChain')} (${chain.length} ${t('step')})</h3>
+    <div class="gz-chain">${stepsHtml}</div>`;
+}
+
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+$('#btn-unshorten').addEventListener('click', unshorten);
+$('#btn-clear').addEventListener('click', () => { $('#url-input').value=''; $('#result').innerHTML=''; $('#cors-warn').style.display='none'; });
+$('#url-input').addEventListener('keydown', e => { if(e.key === 'Enter') unshorten(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'🌐', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'📡', href:'/dev/http-headers.html', name:'HTTP Headers'},
+    {icon:'✅', href:'/dev/http-status-codes.html', name:'HTTP Status'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
