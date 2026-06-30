@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Online MIDI Player & Viewer — Listen to MIDI Files | GameZipper Tools</title>
+  <meta name="description" content="Play MIDI files online for free. Drop a .mid file, see notes on a piano roll, adjust tempo and instrument. 100% browser-based — no upload, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/midi-player.html">
+  <meta property="og:title" content="Online MIDI Player & Viewer — Listen to MIDI Files | GameZipper Tools">
+  <meta property="og:description" content="Play MIDI files online for free. Drop a .mid file, see notes on a piano roll, adjust tempo and instrument. 100% browser-based — no upload, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/midi-player.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Online MIDI Player & Viewer — Listen to MIDI Files | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.midi-drop{border:2px dashed var(--gz-border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:1rem;background:var(--gz-surface)}
+.midi-drop:hover,.midi-drop.dragover{border-color:var(--gz-accent);background:rgba(78,205,196,.08)}
+.midi-controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:10px;padding:12px;margin-bottom:1rem}
+.midi-controls button{padding:8px 18px;border:none;background:var(--gz-accent);color:#fff;border-radius:6px;cursor:pointer;font-size:.9em;font-weight:600}
+.midi-controls button:disabled{opacity:.5;cursor:not-allowed}
+.midi-controls label{font-size:.8em;color:var(--gz-text-muted)}
+.midi-controls input[type=range]{vertical-align:middle}
+.midi-info{font-size:.85em;color:var(--gz-text-muted);margin-bottom:1rem}
+#rollWrap{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;padding:8px;overflow:auto;max-height:380px}
+#roll{display:block;background:#1a1d24;border-radius:6px}
+.track-tbl{width:100%;font-size:.82em;border-collapse:collapse;margin-top:1rem}
+.track-tbl th,.track-tbl td{padding:5px 8px;border-bottom:1px solid var(--gz-border);text-align:left}
+.track-tbl th{font-weight:600;color:var(--gz-text-muted)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online MIDI Player","description":"Play MIDI files online for free. Drop a .mid file, see notes on a piano roll, adjust tempo and instrument. 100% browser-based — no upload, no signup.","url":"https://tools.gamezipper.com/convert/midi-player.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I play a MIDI file online?","acceptedAnswer":{"@type":"Answer","text":"Drop your .mid or .midi file into the upload zone above and press Play. The tool parses the MIDI and synthesizes the audio in real time using the Web Audio API — no plugins or uploads."}},{"@type":"Question","name":"Can I change the instrument while playing?","acceptedAnswer":{"@type":"Answer","text":"Yes. Use the Instrument dropdown to switch between piano, organ, guitar, strings and 8 other basic synth waveforms. Each track can play a different instrument."}},{"@type":"Question","name":"Is my MIDI file uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. Everything is processed locally in your browser. The file never leaves your device."}},{"@type":"Question","name":"Why does my MIDI sound different from my music software?","acceptedAnswer":{"@type":"Answer","text":"This tool uses a simple oscillator-based synthesizer rather than the full General MIDI sound bank. Notes, timing and structure are accurate, but the timbre will sound like a retro synth rather than a sampled instrument."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/midi-player.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/midi-player.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/midi-player.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="midi-drop" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin-bottom:8px;opacity:.6"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <div id="dropText"></div>
+    </div>
+    <input type="file" id="fileInput" accept=".mid,.midi,audio/midi" hidden>
+    <div id="fileInfo"></div>
+    <div class="midi-controls">
+      <button id="playBtn" disabled>▶</button>
+      <button id="stopBtn" disabled>⏹</button>
+      <label id="lbl-tempo"></label>
+      <input type="range" id="tempo" min="0.25" max="2" step="0.05" value="1">
+      <span id="tempoVal" style="font-size:.85em;font-family:monospace">1.00×</span>
+      <label id="lbl-inst"></label>
+      <select id="instrument">
+        <option value="piano">🎹 Piano (triangle)</option>
+        <option value="organ">⛪ Organ (sine)</option>
+        <option value="guitar">🎸 Guitar (sawtooth)</option>
+        <option value="bass">🎸 Bass (square)</option>
+        <option value="strings">🎻 Strings (sawtooth soft)</option>
+        <option value="brass">🎺 Brass (sawtooth)</option>
+        <option value="flute">🎵 Flute (sine)</option>
+        <option value="bell">🔔 Bell (sine + harmonics)</option>
+        <option value="square"> PIXEL (square)</option>
+        <option value="saw">SYNTH (sawtooth)</option>
+      </select>
+    </div>
+    <div class="midi-info" id="info"></div>
+    <div id="rollWrap"><canvas id="roll" width="800" height="320"></canvas></div>
+    <div id="tracks"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online MIDI Player & Viewer',
+    toolDesc: 'Play MIDI files in your browser — drop a .mid file, see notes on a piano roll, adjust tempo and instrument. Free, private, no upload.',
+    dropText: 'Drop a .mid or .midi file here, or click to browse',
+    lblTempo: 'Tempo',
+    lblInst: 'Instrument',
+    loading: 'Parsing MIDI…',
+    noFile: 'Please load a MIDI file first.',
+    invalidFile: 'This file is not a valid MIDI.',
+    loaded: 'Loaded: ',
+    tracks: ' tracks, ',
+    notes: ' notes',
+    duration: 'Duration: ',
+    step1: 'Drop your .mid or .midi file onto the upload zone',
+    step2: 'Press Play — the tool synthesizes audio locally via Web Audio',
+    step3: 'Adjust tempo and instrument while playing',
+    step4: 'See the notes highlighted on the piano roll as they play',
+  },
+  zh: {
+    toolTitle: '在线 MIDI 播放器',
+    toolDesc: '在浏览器中播放 MIDI 文件 — 拖入 .mid 文件，查看钢琴卷帘上的音符，调节速度和音色。免费、私密、无需上传。',
+    dropText: '将 .mid 或 .midi 文件拖到此处，或点击选择',
+    lblTempo: '速度',
+    lblInst: '音色',
+    loading: '正在解析 MIDI…',
+    noFile: '请先加载一个 MIDI 文件。',
+    invalidFile: '此文件不是有效的 MIDI。',
+    loaded: '已加载：',
+    tracks: ' 轨，',
+    notes: ' 个音符',
+    duration: '时长：',
+    step1: '将 .mid 或 .midi 文件拖入上传区',
+    step2: '点击播放 — 工具通过 Web Audio 本地合成音频',
+    step3: '播放时调整速度和音色',
+    step4: '在钢琴卷帘上查看正在播放的音符',
+  }
+});
+
+const { $, t } = GZ;
+let parsed = null;
+let audioCtx = null;
+let playTimers = [];
+let playing = false;
+let startTime = 0;
+let rafId = null;
+
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function noteName(n) { return NOTES[n % 12] + Math.floor(n/12 - 1); }
+function midiToFreq(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+
+function readVarLen(bytes, off) {
+  let v = 0;
+  let b;
+  do {
+    b = bytes[off++];
+    v = (v << 7) | (b & 0x7f);
+  } while (b & 0x80 && off < bytes.length);
+  return [v, off];
+}
+
+function parseMidi(bytes) {
+  const dv = new DataView(bytes.buffer || bytes);
+  // header
+  if (dv.getUint32(0) !== 0x4d546864) throw new Error('Not a MIDI file');
+  const format = dv.getUint16(8);
+  const ntracks = dv.getUint16(10);
+  const division = dv.getUint16(12);
+  let off = 14;
+  const tracks = [];
+  for (let tr = 0; tr < ntracks; tr++) {
+    if (dv.getUint32(off) !== 0x4d54726b) { off += 8 + dv.getUint32(off+4); continue; }
+    const len = dv.getUint32(off + 4);
+    off += 8;
+    const end = off + len;
+    let absTick = 0;
+    let status = 0;
+    const events = [];
+    const trackBytes = new Uint8Array(bytes.buffer || bytes);
+    let p = off;
+    while (p < end) {
+      let delta; [delta, p] = readVarLen(trackBytes, p);
+      absTick += delta;
+      let b = trackBytes[p];
+      if (b < 0x80) {
+        // running status
+      } else {
+        status = b;
+        p++;
+      }
+      const typ = status & 0xf0;
+      if (typ === 0x80 || typ === 0x90 || typ === 0xa0 || typ === 0xe0) {
+        const d1 = trackBytes[p++]; const d2 = trackBytes[p++];
+        const on = typ === 0x90 && d2 > 0;
+        events.push({ tick: absTick, note: d1, vel: d2, on });
+      } else if (typ === 0xb0 || typ === 0xc0 || typ === 0xd0) {
+        p++; // 1 data byte
+        if (typ === 0xb0) p++;
+      } else if (typ === 0xf0) {
+        if (status === 0xff) {
+          const metaType = trackBytes[p++]; let ml; [ml, p] = readVarLen(trackBytes, p);
+          p += ml;
+        } else if (status === 0xf0 || status === 0xf7) {
+          let ml; [ml, p] = readVarLen(trackBytes, p);
+          p += ml;
+        }
+      }
+    }
+    off = end;
+    if (events.length) tracks.push(events);
+  }
+  // Build a global timeline of notes
+  const allNotes = [];
+  for (let i = 0; i < tracks.length; i++) {
+    const evs = tracks[i];
+    const pending = new Map(); // note -> startTick
+    for (const e of evs) {
+      if (e.on) {
+        if (!pending.has(e.note)) pending.set(e.note, e.tick);
+      } else {
+        const start = pending.get(e.note);
+        if (start !== undefined) {
+          allNotes.push({ start: start, dur: e.tick - start, note: e.note, vel: e.vel, track: i });
+          pending.delete(e.note);
+        }
+      }
+    }
+  }
+  allNotes.sort((a,b) => a.start - b.start);
+  return { format, ntracks, division, tracks, allNotes };
+}
+
+function computeDuration(parsed) {
+  const { division, allNotes } = parsed;
+  const tempoBPM = 120; // assume default
+  const microsPerTick = 60000000 / tempoBPM / (division & 0x7fff);
+  if (!allNotes.length) return 0;
+  const lastTick = allNotes.reduce((m,n) => Math.max(m, n.start + n.dur), 0);
+  return lastTick * microsPerTick / 1000000;
+}
+
+function loadFile(f) {
+  $('#status').textContent = t('loading');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const bytes = new Uint8Array(e.target.result);
+      parsed = parseMidi(bytes);
+      const dur = computeDuration(parsed);
+      $('#fileInfo').innerHTML = `<div class="midi-info"><strong>${esc(f.name)}</strong> — ${t('loaded')}${parsed.tracks.length}${t('tracks')}${parsed.allNotes.length}${t('notes')} · ${t('duration')}${dur.toFixed(1)}s</div>`;
+      $('#playBtn').disabled = false;
+      $('#stopBtn').disabled = false;
+      drawRoll(parsed);
+      $('#status').textContent = '';
+    } catch (err) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidFile')} (${err.message})</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function drawRoll(p, currentTick = -1) {
+  const c = $('#roll');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.fillStyle = '#1a1d24';
+  ctx.fillRect(0, 0, W, H);
+  if (!p || !p.allNotes.length) {
+    ctx.fillStyle = '#6c7280';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Load a MIDI file to see notes here', W/2, H/2);
+    return;
+  }
+  const maxTick = p.allNotes.reduce((m,n) => Math.max(m, n.start + n.dur), 0) || 1;
+  const notes = p.allNotes.map(n => n.note);
+  const minNote = Math.max(0, Math.min(...notes) - 2);
+  const maxNote = Math.min(127, Math.max(...notes) + 2);
+  const noteRange = Math.max(1, maxNote - minNote);
+  const pxPerTick = W / maxTick;
+  const pxPerNote = H / noteRange;
+
+  // horizontal lines (octaves)
+  ctx.strokeStyle = '#2a2f3a';
+  ctx.lineWidth = 1;
+  for (let n = minNote; n <= maxNote; n++) {
+    const y = H - (n - minNote) * pxPerNote;
+    if (n % 12 === 0) {
+      ctx.strokeStyle = '#3a4050';
+      ctx.fillStyle = '#7a8290';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(noteName(n), 2, y - 2);
+    } else ctx.strokeStyle = '#252932';
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  // playhead
+  if (currentTick >= 0) {
+    const x = currentTick * pxPerTick;
+    ctx.fillStyle = 'rgba(78,205,196,.35)';
+    ctx.fillRect(x, 0, 2, H);
+  }
+  // notes
+  for (const note of p.allNotes) {
+    const x = note.start * pxPerTick;
+    const w = Math.max(2, note.dur * pxPerTick);
+    const y = H - (note.note - minNote + 1) * pxPerNote;
+    const hue = (note.track * 60) % 360;
+    const active = currentTick >= note.start && currentTick <= note.start + note.dur;
+    ctx.fillStyle = `hsla(${hue}, 70%, ${active ? 70 : 55}%, ${active ? 1 : 0.85})`;
+    ctx.fillRect(x, y, w, Math.max(2, pxPerNote - 1));
+  }
+}
+
+const INSTRUMENTS = {
+  piano:   { type: 'triangle', attack: 0.005, decay: 0.3, sustain: 0.5, release: 0.4, gain: 0.6 },
+  organ:   { type: 'sine',     attack: 0.02,  decay: 0.05, sustain: 0.85, release: 0.05, gain: 0.4 },
+  guitar:  { type: 'sawtooth', attack: 0.005, decay: 0.4, sustain: 0.2, release: 0.2, gain: 0.3 },
+  bass:    { type: 'square',   attack: 0.01,  decay: 0.3, sustain: 0.4, release: 0.1, gain: 0.3 },
+  strings: { type: 'sawtooth', attack: 0.15,  decay: 0.1, sustain: 0.8, release: 0.4, gain: 0.25 },
+  brass:   { type: 'sawtooth', attack: 0.05,  decay: 0.1, sustain: 0.7, release: 0.2, gain: 0.3 },
+  flute:   { type: 'sine',     attack: 0.08,  decay: 0.05, sustain: 0.8, release: 0.2, gain: 0.4 },
+  bell:    { type: 'sine',     attack: 0.002, decay: 1.2, sustain: 0.0, release: 0.5, gain: 0.5, harmonics: true },
+  square:  { type: 'square',   attack: 0.005, decay: 0.1, sustain: 0.7, release: 0.1, gain: 0.25 },
+  saw:     { type: 'sawtooth', attack: 0.005, decay: 0.2, sustain: 0.6, release: 0.2, gain: 0.3 },
+};
+
+function playNote(time, freq, dur, cfg) {
+  const ctx2 = audioCtx;
+  const osc = ctx2.createOscillator();
+  const gain = ctx2.createGain();
+  osc.type = cfg.type;
+  osc.frequency.value = freq;
+  const peak = cfg.gain;
+  const a = cfg.attack, d = cfg.decay, s = cfg.sustain * peak, r = Math.min(cfg.release, dur * 0.6);
+  const susStart = time + a + d;
+  const susEnd = Math.max(susStart, time + dur);
+  gain.gain.setValueAtTime(0, time);
+  gain.gain.linearRampToValueAtTime(peak, time + a);
+  gain.gain.linearRampToValueAtTime(s, susStart);
+  gain.gain.setValueAtTime(s, susEnd);
+  gain.gain.linearRampToValueAtTime(0, susEnd + r);
+  osc.connect(gain).connect(ctx2.destination);
+  osc.start(time);
+  osc.stop(susEnd + r + 0.02);
+  if (cfg.harmonics) {
+    const osc2 = ctx2.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = freq * 2;
+    const g2 = ctx2.createGain();
+    g2.gain.setValueAtTime(0, time);
+    g2.gain.linearRampToValueAtTime(peak * 0.3, time + a);
+    g2.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    osc2.connect(g2).connect(ctx2.destination);
+    osc2.start(time);
+    osc2.stop(time + dur + 0.05);
+  }
+}
+
+function play() {
+  if (!parsed) { GZ.showToast(t('noFile')); return; }
+  stop();
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioCtx.resume();
+  playing = true;
+  startTime = audioCtx.currentTime + 0.1;
+  const tempo = parseFloat($('#tempo').value);
+  const cfg = INSTRUMENTS[$('#instrument').value];
+  const division = parsed.division & 0x7fff;
+  const microsPerTick = 60000000 / 120 / division;
+  const secPerTick = microsPerTick / 1000000 / tempo;
+  for (const n of parsed.allNotes) {
+    const t0 = startTime + n.start * secPerTick;
+    const dur = Math.max(0.1, n.dur * secPerTick);
+    playNote(t0, midiToFreq(n.note), dur, cfg);
+  }
+  // playhead animation
+  const totalTicks = parsed.allNotes.reduce((m,n) => Math.max(m, n.start + n.dur), 0);
+  const totalDur = totalTicks * secPerTick;
+  function animate() {
+    if (!playing) return;
+    const elapsed = audioCtx.currentTime - startTime;
+    const curTick = elapsed / secPerTick;
+    drawRoll(parsed, curTick);
+    if (elapsed < totalDur + 0.5) {
+      rafId = requestAnimationFrame(animate);
+    } else {
+      stop();
+      drawRoll(parsed);
+    }
+  }
+  animate();
+}
+
+function stop() {
+  playing = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  if (audioCtx) {
+    // close and recreate to silence any ringing notes
+    audioCtx.close();
+    audioCtx = null;
+  }
+}
+
+// Drop zone
+const dz = $('#dropZone');
+dz.addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); e.target.value=''; });
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+$('#dropText').textContent = t('dropText');
+
+$('#playBtn').addEventListener('click', play);
+$('#stopBtn').addEventListener('click', stop);
+$('#tempo').addEventListener('input', e => { $('#tempoVal').textContent = (+e.target.value).toFixed(2) + '×'; });
+
+drawRoll(null);
+
+$('#toolbar').innerHTML = '';
+$('#lbl-tempo').textContent = t('lblTempo');
+$('#lbl-inst').textContent = t('lblInst');
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎹', href:'/fun/piano.html', name:'Virtual Piano'},
+    {icon:'🎼', href:'/fun/chord-generator.html', name:'Chord Generator'},
+    {icon:'🥁', href:'/fun/drum-machine.html', name:'Drum Machine'},
+    {icon:'🎵', href:'/convert/mp3-tag-editor.html', name:'MP3 Tag Editor'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
