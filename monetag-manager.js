@@ -1,7 +1,25 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.11-tools-adsense-timing-fix (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.13-tools-cb-monetag-slot (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.13 Changes (2026-06-30 — Commercial-Break Monetag Slot + Exit-Intent clientY 30px):
+ *   - 🪲 Fix: Commercial-break Monetag race (T+0s parallel with AdSense Tier 1) was broken
+ *     for the same reason as gz.com v5.10 (proven by 0 monetag_fills in commercial_break
+ *     over 30d): loadZone() was called with targetEl=null, so checkFill() short-circuited
+ *     and Monetag silently went to .catch() → commercial_break_no_fill.
+ *     Fix: build dedicated `<div id="gz-cb-monetag-slot">` inside overlay with a
+ *     `<ins data-zoneid="11012002">` (Monetag MultiTag discovers zones via this ins tag).
+ *     Then trigger loadZone(11012002, slot) AFTER 2.5s grace period if AdSense missed.
+ *     Mirrors gz.com v5.11 fix exactly.
+ *   - 🔓 Loosen: initExitIntent() clientY guard loosened from > 10 → > 30 (parity with
+ *     gz.com v5.10). BI 14d showed exit_mouse events come from clients with clientY
+ *     up to 28px (top edge hover before back-button click). 10px guard silently
+ *     rejected 100% of detected attempts since 2026-06-25.
+ *   - 🔓 Loosen: exitIntentCooldownMs 60s → 30s — same reasoning as gz.com v5.11.
+ *     tools exit_mouse events average 1.2/session (low because tools pages are quick
+ *     task completions), so cooldown isn't the bottleneck. But matching gz.com
+ *     avoids user-facing inconsistency.
  *
  * v5.12 Changes (2026-06-29 — Dead-Zone Cull, parallel to gz.com v5.10):
  *   - 🪦 Cull: 11012010, 11012011, 11012009 marked DEAD. BI 7d: 11012010=0/132 loads (0%,
@@ -248,11 +266,11 @@
       popunderInteractionDelay: 5000,  // 5s after first interaction
       adLoadTimeout: 5000,
       exitIntentMinDwellMs: 15000,      // v5.8: 15s minimum on page (was 30s; tools task flow exits faster than games)
-      exitIntentCooldownMs: 60*1000,    // v5.8: 60s between exit-intent commercial breaks (was 5min, mirrors gz.com v5.9)
+      exitIntentCooldownMs: 30*1000,    // v5.13: 60s→30s (parity with gz.com v5.11); tools quick sessions benefit
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.12-tools-dead-zone-cull',  // 2026-06-29: dead-zone cull (11012009/10/11 = 0% fill 7d); concentrates all Monetag attempts on 11012002 (only working zone). Bumped from 5.11 to track on BI.
+    VERSION: '5.13-tools-cb-monetag-slot',  // 2026-06-30: CB race real fix (Monetag in dedicated slot with ins tag) + exit-intent clientY 10→30 + cooldown 60s→30s
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -1099,6 +1117,26 @@
       skipBtn.textContent = 'Continue in ' + skipSeconds + 's...';
       overlay.appendChild(skipBtn);
 
+      // v5.13: Monetag detection slot — mirrors gz.com v5.11 fix. Without targetEl,
+      // loadZone()'s checkFill() short-circuits → Monetag silently rejects → 'commercial_break_no_fill'
+      // even after AdSense miss. Slot has <ins data-zoneid="11012002"> so Monetag MultiTag
+      // discovers the zone and injects ad into this slot (Monetag MultiTag pattern).
+      var monetagSlot = document.createElement('div');
+      monetagSlot.id = 'gz-cb-monetag-slot';
+      monetagSlot.style.cssText = [
+        'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)',
+        'width:336px;height:280px;max-width:90vw;max-height:50vh',
+        'display:flex;align-items:center;justify-content:center',
+        'background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15)',
+        'border-radius:8px;overflow:hidden;z-index:1;pointer-events:none;',
+        'opacity:0;transition:opacity 0.3s ease;',
+      ].join(';');
+      var monetagIns = document.createElement('ins');
+      monetagIns.className = 'eas' + String(ZONES.inpagePushGz);
+      monetagIns.setAttribute('data-zoneid', String(ZONES.inpagePushGz));
+      monetagSlot.appendChild(monetagIns);
+      overlay.appendChild(monetagSlot);
+
       document.body.appendChild(overlay);
 
       // 进度条动画 (总时长 = vignetteMaxDuration)
@@ -1176,25 +1214,45 @@
       } catch(e) {
         trackAdEvent('adsense_load_error', { error: String(e) });
       }
-      // Tier 2: Monetag (race with AdSense)
+      // v5.13: Monetag fallback AFTER AdSense miss (was T+1.5s race that was broken —
+      //   loadZone() with targetEl=null silently routed every attempt to .catch().
+      //   Now: 2.5s grace for AdSense, then loadZone with monetagSlot target so
+      //   checkFill() sees the iframe. Mirrors gz.com v5.11 fix.
+      // Tier 2: Monetag waterfall — leads with cross-deployed inpagePushGz (11012002)
+      // since tools primary zones have 0% fill (verified BI 7d 2026-06-23~06-30).
       setTimeout(function() {
         if (adFilled) return;
-        loadZone(ZONES.vignette).then(function() { onAdFilled('monetag_vignette'); }).catch(function() {
+        loadZone(ZONES.inpagePushGz, monetagSlot).then(function() {
+          monetagSlot.style.opacity = '1';
+          monetagSlot.textContent = '';
+          onAdFilled('monetag_inpageGz');
+        }).catch(function() {
           if (adFilled) return;
-          // v5.6: cross-deployed inpagePushGz (gz.com's only working zone) as commercial-break Tier 3
-          loadZone(ZONES.inpagePushGz).then(function() { onAdFilled('monetag_inpageGz'); }).catch(function() {
+          loadZone(ZONES.vignette, monetagSlot).then(function() {
+            monetagSlot.style.opacity = '1';
+            monetagSlot.textContent = '';
+            onAdFilled('monetag_vignette');
+          }).catch(function() {
             if (adFilled) return;
-            loadZone(ZONES.vignetteLegacy).then(function() { onAdFilled('monetag_vignette_legacy'); }).catch(function() {
+            loadZone(ZONES.vignetteLegacy, monetagSlot).then(function() {
+              monetagSlot.style.opacity = '1';
+              monetagSlot.textContent = '';
+              onAdFilled('monetag_vignette_legacy');
+            }).catch(function() {
               // v6.5 Tier 4: Adsterra vignette — bypass Monetag 14-day 0% fill.
               // Only fires when CONFIG.ADSTERRA.enabled + zoneId configured.
               // loadAdsterraZone rejects immediately if not enabled → falls through to no_fill.
               if (adFilled) return;
-              loadAdsterraZone(ZONES.adsterraVignette, null, 'vignette').then(function() {
+              loadAdsterraZone(ZONES.adsterraVignette, monetagSlot, 'vignette').then(function() {
+                monetagSlot.style.opacity = '1';
+                monetagSlot.textContent = '';
                 onAdFilled('adsterra_vignette');
               }).catch(function() {
                 // v6.5 Tier 4b: Adsterra in-page push (last resort before user sees blank break)
                 if (adFilled) return;
-                loadAdsterraZone(ZONES.adsterraInpagePush, null, 'inpage').then(function() {
+                loadAdsterraZone(ZONES.adsterraInpagePush, monetagSlot, 'inpage').then(function() {
+                  monetagSlot.style.opacity = '1';
+                  monetagSlot.textContent = '';
                   onAdFilled('adsterra_inpage');
                 }).catch(function() {
                   trackAdEvent('commercial_break_no_fill', { source: source || 'auto' });
@@ -1203,7 +1261,7 @@
             });
           });
         });
-      }, 1500);
+      }, 2500);  // v5.13: extended 1.5s → 2.5s grace period for AdSense to fill
 
       function finishOverlay() {
         clearInterval(progressInterval);
@@ -1274,7 +1332,7 @@
       // toward the top edge (clientY < 10). On most browsers this fires when the
       // user moves the mouse up to click the back button, URL bar, or close tab.
       if (e.relatedTarget !== null && e.relatedTarget !== undefined) return;
-      if (typeof e.clientY !== 'number' || e.clientY > 10) return;
+      if (typeof e.clientY !== 'number' || e.clientY > 30) return;  // v5.13: loosen 10→30 (parity with gz.com v5.10)
       if (e.clientY < 0) return; // already left the viewport, too late
 
       // Guard 1: minimum dwell time
