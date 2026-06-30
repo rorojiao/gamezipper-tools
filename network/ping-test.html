@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Ping Test - Website Latency Checker | GameZipper Tools</title>
+  <meta name="description" content="Test website latency and response time. Free online ping test — measure how fast a website responds from your browser. Check reachability and load speed, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/network/ping-test.html">
+  <meta property="og:title" content="Ping Test - Website Latency Checker | GameZipper Tools">
+  <meta property="og:description" content="Test website latency and response time. Free online ping test — measure how fast a website responds from your browser. Check reachability and load speed, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/network/ping-test.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Ping Test - Website Latency Checker | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.pt-input-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.pt-input-row input{flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1rem}
+.pt-input-row input:focus{outline:none;border-color:var(--accent)}
+.pt-input-row select{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:.9rem}
+.pt-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.pt-stat{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px 20px;text-align:center;flex:1;min-width:100px}
+.pt-stat .num{font-size:1.6rem;font-weight:700;color:var(--accent)}
+.pt-stat .lbl{font-size:.75rem;color:var(--text2);margin-top:4px}
+.pt-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.pt-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700}
+.pt-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.pt-table tr:hover td{background:var(--glass2)}
+.pt-good{color:#00d672;font-weight:600}
+.pt-ok{color:#d19a66;font-weight:600}
+.pt-bad{color:#e94560;font-weight:600}
+.pt-loading{text-align:center;padding:24px;color:var(--text2)}
+.pt-bar{height:6px;background:var(--glass2);border-radius:3px;margin-top:4px;overflow:hidden}
+.pt-bar-fill{height:100%;background:linear-gradient(90deg,#00d672,#61afef);border-radius:3px;transition:width .3s}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Ping Test","description":"Test website latency and response time. Free online ping test — measure how fast a website responds from your browser. Check reachability and load speed, no signup.","url":"https://tools.gamezipper.com/network/ping-test.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a ping test?", "acceptedAnswer": {"@type": "Answer", "text": "A ping test measures the round-trip time for data to travel from your device to a remote host and back. It indicates network latency and whether a host is reachable."}}, {"@type": "Question", "name": "How is browser ping different from system ping?", "acceptedAnswer": {"@type": "Answer", "text": "System ping uses ICMP packets. Browsers cannot send ICMP, so this tool measures HTTP request latency instead, which includes DNS, TCP, TLS, and HTTP overhead. Results are comparable but slightly higher than raw ICMP ping."}}, {"@type": "Question", "name": "What is a good ping time?", "acceptedAnswer": {"@type": "Answer", "text": "Under 50ms is excellent, 50-100ms is good, 100-200ms is acceptable, and above 200ms may cause noticeable delays for real-time applications like gaming or video calls."}}, {"@type": "Question", "name": "Is this ping test free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free. All measurements are done from your browser — no data is sent to our servers."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/network/ping-test.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/network/ping-test.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/network/ping-test.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="pt-input-row">
+      <input type="text" id="host" placeholder="example.com" spellcheck="false">
+      <select id="count">
+        <option value="5">5 pings</option>
+        <option value="10" selected>10 pings</option>
+        <option value="20">20 pings</option>
+        <option value="50">50 pings</option>
+      </select>
+      <button class="gz-btn" onclick="doPing()" id="btn-ping"></button>
+    </div>
+    <div id="stats"></div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Ping Test',
+    toolDesc: 'Measure website latency and response time from your browser. Send multiple HTTP pings to check reachability and speed — free, instant, no signup.',
+    btnPing: 'Start Ping',
+    seq: '#',
+    time: 'Latency (ms)',
+    status: 'Status',
+    reachable: 'Reachable',
+    unreachable: 'Unreachable',
+    min: 'Min',
+    max: 'Max',
+    avg: 'Average',
+    loss: 'Packet Loss',
+    sent: 'Sent',
+    received: 'Received',
+    enterHost: 'Please enter a hostname or URL.',
+    pinging: 'Pinging',
+    noData: 'No data yet. Enter a host and click Start Ping.',
+    step1: 'Enter a hostname (e.g. google.com or github.com)',
+    step2: 'Choose how many pings to send',
+    step3: 'Click Start Ping to begin measuring latency',
+    step4: 'Review min, max, average latency and packet loss',
+  },
+  zh: {
+    toolTitle: 'Ping 延迟测试',
+    toolDesc: '从浏览器测量网站延迟和响应时间。发送多个 HTTP Ping 检测可达性和速度 — 免费、即时、无需注册。',
+    btnPing: '开始 Ping',
+    seq: '#',
+    time: '延迟 (ms)',
+    status: '状态',
+    reachable: '可达',
+    unreachable: '不可达',
+    min: '最小',
+    max: '最大',
+    avg: '平均',
+    loss: '丢包率',
+    sent: '发送',
+    received: '接收',
+    enterHost: '请输入主机名或网址。',
+    pinging: '正在 Ping',
+    noData: '暂无数据。请输入主机并点击「开始 Ping」。',
+    step1: '输入主机名（如 google.com 或 github.com）',
+    step2: '选择发送的 Ping 次数',
+    step3: '点击「开始 Ping」开始测量延迟',
+    step4: '查看最小、最大、平均延迟和丢包率',
+  }
+});
+
+const { $, t } = GZ;
+let pinging = false;
+
+async function singlePing(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  const cacheBust = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+  const start = performance.now();
+  try {
+    await fetch(cacheBust, { mode: 'no-cors', signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(timer);
+    return performance.now() - start;
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') return null;
+    return null;
+  }
+}
+
+function latencyClass(ms) {
+  if (ms < 50) return 'pt-good';
+  if (ms < 200) return 'pt-ok';
+  return 'pt-bad';
+}
+
+async function doPing() {
+  if (pinging) return;
+  let host = $('#host').value.trim();
+  if (!host) { $('#output').innerHTML = `<div class="pt-loading">${t('enterHost')}</div>`; return; }
+  host = host.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  const count = parseInt($('#count').value);
+  const url = 'https://' + host;
+
+  pinging = true;
+  $('#btn-ping').disabled = true;
+  $('#stats').innerHTML = '';
+  $('#output').innerHTML = `<div class="pt-loading">${t('pinging')} ${host}...</div>`;
+
+  const results = [];
+  let html = `<div style="font-weight:600;margin-bottom:8px">${t('pinging')} ${host} × ${count}</div>`;
+  html += '<table class="pt-table"><thead><tr><th>' + t('seq') + '</th><th>' + t('time') + '</th><th>' + t('status') + '</th></tr></thead><tbody id="pt-body"></tbody></table>';
+  $('#output').innerHTML = html;
+  const tbody = $('#pt-body');
+
+  for (let i = 0; i < count; i++) {
+    const ms = await singlePing(url);
+    results.push(ms);
+    const row = document.createElement('tr');
+    if (ms !== null) {
+      row.innerHTML = `<td>${i + 1}</td><td class="${latencyClass(ms)}">${ms.toFixed(1)}</td><td class="pt-good">✓ ${t('reachable')}</td>`;
+    } else {
+      row.innerHTML = `<td>${i + 1}</td><td class="pt-bad">—</td><td class="pt-bad">✗ ${t('unreachable')}</td>`;
+    }
+    tbody.appendChild(row);
+  }
+
+  // Compute stats
+  const valid = results.filter(r => r !== null);
+  const lost = results.length - valid.length;
+  if (valid.length > 0) {
+    const min = Math.min(...valid);
+    const max = Math.max(...valid);
+    const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+    const lossPct = ((lost / results.length) * 100).toFixed(0);
+    $('#stats').innerHTML = `
+      <div class="pt-stats">
+        <div class="pt-stat"><div class="num ${latencyClass(min)}">${min.toFixed(0)}</div><div class="lbl">${t('min')} (ms)</div></div>
+        <div class="pt-stat"><div class="num ${latencyClass(avg)}">${avg.toFixed(0)}</div><div class="lbl">${t('avg')} (ms)</div></div>
+        <div class="pt-stat"><div class="num ${latencyClass(max)}">${max.toFixed(0)}</div><div class="lbl">${t('max')} (ms)</div></div>
+        <div class="pt-stat"><div class="num ${lossPct > 0 ? 'pt-bad' : 'pt-good'}">${lossPct}%</div><div class="lbl">${t('loss')}</div></div>
+        <div class="pt-stat"><div class="num">${results.length}</div><div class="lbl">${t('sent')}</div></div>
+        <div class="pt-stat"><div class="num">${valid.length}</div><div class="lbl">${t('received')}</div></div>
+      </div>`;
+  }
+
+  pinging = false;
+  $('#btn-ping').disabled = false;
+}
+
+$('#host').addEventListener('keydown', e => { if (e.key === 'Enter') doPing(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔌', href:'/network/port-checker.html', name:'Port Checker'},
+    {icon:'🌐', href:'/network/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'📡', href:'/network/http-headers-checker.html', name:'HTTP Headers'},
+    {icon:'⚡', href:'/dev/speed-test.html', name:'Speed Test'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
