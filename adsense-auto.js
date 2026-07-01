@@ -365,6 +365,17 @@
       // v5.4.2: Retry once on failure (handles transient network issues + race with
       // very fast page navigations where first request gets aborted)
       if (window.gzToolsAdSense.loadAttempts < 2) {
+        // v5.14.0 (2026-07-01): Skip retry when tab is hidden — BI 7d shows
+        // 100/319 (31%) of retries happen in `vis: hidden` state where the user
+        // can't see the ad anyway. Retry only fires when tab returns to foreground
+        // (or via the visibilitychange listener at IIFE end). Saves 30/day wasted
+        // pagead2.googlesyndication.com requests + reduces Cloudflare 525 noise.
+        if (document.visibilityState === 'hidden') {
+          window.gzToolsAdSense.loaded = false; // allow future load attempt
+          trackAdEvent('adsense_load_retry_skipped_hidden', { network: 'adsense', online: navigator.onLine, vis: 'hidden' });
+          console.log('[GZToolsAdSense] AdSense retry deferred — tab hidden, will retry on visibilitychange');
+          return;
+        }
         window.gzToolsAdSense.loaded = false; // allow retry
         trackAdEvent('adsense_load_retry', { network: 'adsense', attempt: 1, error: 'script_load_failed', online: navigator.onLine, vis: document.visibilityState });
         console.warn('[GZToolsAdSense] AdSense script failed, retrying once after 1s');
@@ -400,4 +411,19 @@
   // here, but the data shows the 1.5s/3s delays were net negative: 13 load_errors in
   // 7d vs 19 successful loads, and the errors all came from sequential page visits.
   loadAdSense();
+
+  // v5.14.0 (2026-07-01): If the initial AdSense load failed AND the tab is hidden
+  // when onerror fires (see above), the retry was skipped. Retry on visibilitychange
+  // back to visible — this is when the user actually returns and CAN see the ad.
+  // Also: track gz_ad_event('adsense_visibilitychange_visible') so BI can see how
+  // often this path fires.
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState !== 'visible') return;
+    // If AdSense was never successfully loaded (no .loaded flag), try once more
+    if (!window.adsbygoogle || !window.adsbygoogle.loaded) {
+      trackAdEvent('adsense_visibilitychange_retry', { network: 'adsense', attempts: window.gzToolsAdSense.loadAttempts || 0 });
+      console.log('[GZToolsAdSense] Tab became visible — retrying AdSense load');
+      loadAdSense();
+    }
+  });
 })();

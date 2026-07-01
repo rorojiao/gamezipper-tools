@@ -76,7 +76,7 @@
   var s1=document.createElement('script');s1.src='/monetag-manager.js?v=v513cbslot';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
-  var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260628812b';s4.defer=true;document.head.appendChild(s4);
+  var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260701v5140';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
   // 2026-06-14: load gz-analytics.js globally so every tools page fires page_view
   // with vid/sid (replaces per-page new Image().src hits to site-analytics.gamezipper.com
