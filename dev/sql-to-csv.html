@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>SQL to CSV Converter - Convert SQL to CSV Online | GameZipper Tools</title>
+<meta name="description" content="Free SQL to CSV converter. Paste INSERT statements or SELECT-style rows and get clean CSV instantly. Handles NULL, quoted strings, multiple rows. Runs entirely in your browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/sql-to-csv.html">
+<meta property="og:title" content="SQL to CSV Converter - Convert SQL to CSV Online | GameZipper Tools">
+<meta property="og:description" content="Free SQL to CSV converter. Paste INSERT statements and get clean CSV instantly. Handles NULL, quoted strings, multiple rows. Runs in your browser.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/sql-to-csv.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SQL to CSV Converter - Convert SQL to CSV Online | GameZipper Tools">
+<meta name="twitter:description" content="Free SQL to CSV converter. Paste INSERT statements and get clean CSV. Runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.sj-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.sj-grid{grid-template-columns:1fr}}
+.sj-col{display:flex;flex-direction:column;gap:6px}
+.sj-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.sj-col textarea{min-height:420px;padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.86em;line-height:1.55;resize:vertical;tab-size:2}
+.sj-col textarea:focus{outline:none;border-color:var(--accent)}
+.sj-opts{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85em}
+.sj-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.sj-opts select{padding:4px 8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px}
+.sj-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.sj-status.ok{color:var(--success)}.sj-status.err{color:var(--danger)}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"SQL to CSV Converter","description":"Free SQL to CSV converter. Paste INSERT statements or SELECT-style rows and get clean CSV instantly. Handles NULL, quoted strings, multiple rows. Runs entirely in your browser.","url":"https://tools.gamezipper.com/dev/sql-to-csv.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://***@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What kinds of SQL can this converter handle?","acceptedAnswer":{"@type":"Answer","text":"It parses INSERT INTO statements (with or without an explicit column list) and bare value tuples, then outputs RFC 4180-compliant CSV. NULL becomes an empty field, numbers stay unquoted, and strings containing commas, quotes or newlines are automatically quoted and escaped."}},{"@type":"Question","name":"How are SQL NULL and booleans written in the CSV?","acceptedAnswer":{"@type":"Answer","text":"By default SQL NULL becomes an empty CSV cell. You can optionally render it as the literal word NULL. Booleans true/false are written as the words true and false. Numbers keep their original form. All other values are treated as strings and quoted only when necessary."}},{"@type":"Question","name":"Does it support multiple INSERT statements at once?","acceptedAnswer":{"@type":"Answer","text":"Yes. Paste several INSERT statements separated by semicolons. The converter merges all rows into one CSV. If the column lists differ between statements, the union of all columns is used as the header and missing cells are left empty."}},{"@type":"Question","name":"Is my SQL data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing and conversion happens entirely in your browser using JavaScript. Nothing is uploaded, stored or transmitted. The tool works offline after the page loads."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sql-to-csv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sql-to-csv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sql-to-csv.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="sj-opts">
+      <label><span id="lbl-null"></span>
+        <select id="nullMode">
+          <option value="empty">Empty cell</option>
+          <option value="literal">Literal "NULL"</option>
+        </select>
+      </label>
+      <label><span id="lbl-delim"></span>
+        <select id="delim">
+          <option value=",">Comma (,)</option>
+          <option value=";">Semicolon (;)</option>
+          <option value="&#9;">Tab</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="headerRow" checked> <span id="lbl-header"></span></label>
+    </div>
+    <div class="sj-grid">
+      <div class="sj-col">
+        <label id="lbl-input"></label>
+        <textarea id="input" spellcheck="false" placeholder="INSERT INTO users (id, name, active) VALUES (1, 'Alice', true);"></textarea>
+      </div>
+      <div class="sj-col">
+        <label id="lbl-output"></label>
+        <textarea id="output" spellcheck="false" readonly placeholder="CSV output appears here..."></textarea>
+      </div>
+    </div>
+    <div class="sj-status" id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SQL to CSV Converter',
+    toolDesc: 'Convert SQL INSERT statements and value tuples into clean RFC 4180 CSV. Handles NULL, numbers, booleans and quoted strings with proper escaping. Runs entirely in your browser.',
+    lblNull: 'NULL as', lblDelim: 'Delimiter', lblHeader: 'Header row',
+    emptyCell: 'Empty cell', literalNull: 'Literal "NULL"',
+    comma: 'Comma (,)', semicolon: 'Semicolon (;)', tab: 'Tab',
+    lblInput: 'SQL Input', lblOutput: 'CSV Output',
+    ok: '✓ Converted — N row(s), M column(s)',
+    err: '✗ Could not parse SQL: ',
+    errEmpty: '✗ No valid rows found in input',
+    step1: 'Paste your SQL INSERT statement(s) into the input area',
+    step2: 'Choose delimiter and how NULL should appear',
+    step3: 'Clean CSV appears instantly on the right',
+    step4: 'Click Copy or Download to use the CSV',
+  },
+  zh: {
+    toolTitle: 'SQL 转 CSV 转换器',
+    toolDesc: '将 SQL INSERT 语句和值元组转换为整洁的 RFC 4180 CSV。支持 NULL、数字、布尔值和带引号字符串的正确转义。完全浏览器本地运行。',
+    lblNull: 'NULL 显示为', lblDelim: '分隔符', lblHeader: '包含表头',
+    emptyCell: '空单元格', literalNull: '字面 "NULL"',
+    comma: '逗号 (,)', semicolon: '分号 (;)', tab: '制表符',
+    lblInput: 'SQL 输入', lblOutput: 'CSV 输出',
+    ok: '✓ 已转换 — N 行，M 列',
+    err: '✗ 无法解析 SQL：',
+    errEmpty: '✗ 输入中未找到有效行',
+    step1: '将 SQL INSERT 语句粘贴到输入区',
+    step2: '选择分隔符和 NULL 的显示方式',
+    step3: '整洁的 CSV 立即出现在右侧',
+    step4: '点击「复制」或「下载」即可使用 CSV',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// ---- SQL value tokenizer (reused logic, single-quote aware) ----
+function parseValueTuple(s) {
+  const out = [];
+  let i = 0, cur = '', inStr = false, depth = 0, strQuote = '';
+  while (i < s.length) {
+    const c = s[i];
+    if (inStr) {
+      if (c === '\\' && i + 1 < s.length) { cur += c + s[i + 1]; i += 2; continue; }
+      if (c === strQuote) {
+        if (s[i + 1] === strQuote) { cur += strQuote; i += 2; continue; }
+        inStr = false; strQuote = ''; i++; continue;
+      }
+      cur += c; i++; continue;
+    }
+    if (c === "'" || c === '"') { inStr = true; strQuote = c; i++; continue; }
+    if (c === '(') { depth++; cur += c; i++; continue; }
+    if (c === ')') { depth--; cur += c; i++; continue; }
+    if (c === ',' && depth === 0) { out.push(coerce(cur)); cur = ''; i++; continue; }
+    cur += c; i++;
+  }
+  if (cur.trim() !== '') out.push(coerce(cur));
+  return out;
+}
+
+function coerce(raw) {
+  const v = raw.trim();
+  if (v === '') return { isNull: false, value: '' };
+  if (/^null$/i.test(v)) return { isNull: true, value: null };
+  if (/^-?\d+$/.test(v)) return { isNull: false, value: v, numeric: true };
+  if (/^-?\d*\.\d+([eE][+-]?\d+)?$/.test(v) || /^-?\d+[eE][+-]?\d+$/.test(v)) return { isNull: false, value: v, numeric: true };
+  return { isNull: false, value: v };
+}
+
+function extractTuples(s) {
+  const out = [];
+  let i = 0, depth = 0, start = -1, inStr = false, q = '';
+  while (i < s.length) {
+    const c = s[i];
+    if (inStr) {
+      if (c === '\\') { i += 2; continue; }
+      if (c === q) { if (s[i+1] === q) { i += 2; continue; } inStr = false; }
+      i++; continue;
+    }
+    if (c === "'" || c === '"') { inStr = true; q = c; i++; continue; }
+    if (c === '(') { if (depth === 0) start = i + 1; depth++; i++; continue; }
+    if (c === ')') { depth--; if (depth === 0 && start >= 0) { out.push(s.slice(start, i)); start = -1; } i++; continue; }
+    i++;
+  }
+  return out.map(parseValueTuple);
+}
+
+function splitStatements(sql) {
+  const out = [];
+  let i = 0, cur = '', inStr = false, q = '';
+  while (i < sql.length) {
+    const c = sql[i];
+    if (inStr) {
+      cur += c;
+      if (c === '\\' && i + 1 < sql.length) { cur += sql[i+1]; i += 2; continue; }
+      if (c === q) { if (sql[i+1] === q) { cur += sql[i+1]; i += 2; continue; } inStr = false; }
+      i++; continue;
+    }
+    if (c === "'" || c === '"') { inStr = true; q = c; cur += c; i++; continue; }
+    if (c === '-' && sql[i+1] === '-') { while (i < sql.length && sql[i] !== '\n') i++; continue; }
+    if (c === '/' && sql[i+1] === '*') { i += 2; while (i < sql.length && !(sql[i] === '*' && sql[i+1] === '/')) i++; i += 2; continue; }
+    if (c === ';') { const tt = cur.trim(); if (tt) out.push(tt); cur = ''; i++; continue; }
+    cur += c; i++;
+  }
+  const tt = cur.trim(); if (tt) out.push(tt);
+  return out;
+}
+
+function parseInsert(stmt) {
+  const m = stmt.match(/insert\s+into\s+["'`]?([\w\.]+)["'`]?\s*\(([^)]*)\)\s*values\s*([\s\S]+)$/i);
+  if (m) {
+    const cols = m[2].split(',').map(c => c.trim().replace(/^["'`]|["'`]$/g, ''));
+    const tuples = extractTuples(m[3]);
+    return { cols, tuples };
+  }
+  const m2 = stmt.match(/insert\s+into\s+["'`]?([\w\.]+)["'`]?\s*values\s*([\s\S]+)$/i);
+  if (m2) {
+    const tuples = extractTuples(m2[2]);
+    return { cols: null, tuples };
+  }
+  return null;
+}
+
+function parseBareRows(sql) {
+  const firstParen = sql.indexOf('(');
+  if (firstParen === -1) return { cols: null, tuples: extractTuples(sql) };
+  const head = sql.slice(0, firstParen).trim();
+  let cols = null;
+  const lines = head.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const lastLine = lines[lines.length - 1] || '';
+  if (lines.length && /^[\w,"'`\s]+$/.test(lastLine) && lastLine.includes(',')) {
+    cols = lastLine.split(',').map(c => c.trim().replace(/^["'`]|["'`]$/g, ''));
+  }
+  return { cols, tuples: extractTuples(sql.slice(firstParen)) };
+}
+
+function csvEscape(val, delim) {
+  const s = String(val);
+  if (s.includes(delim) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function run() {
+  const raw = $('#input').value;
+  const status = $('#status');
+  if (!raw.trim()) { $('#output').value = ''; status.textContent = ''; status.className = 'sj-status'; return; }
+  try {
+    const nullMode = $('#nullMode').value;
+    const delim = $('#delim').value;
+    const headerRow = $('#headerRow').checked;
+    const allCols = []; // ordered unique
+    const colSet = new Set();
+    const rows = []; // each row is a map col->coerced value
+
+    function registerCols(cols) {
+      if (!cols) return;
+      for (const c of cols) {
+        if (!colSet.has(c)) { colSet.add(c); allCols.push(c); }
+      }
+    }
+
+    let stmts;
+    const hasInsert = /insert\s+into/i.test(raw);
+    if (hasInsert) {
+      stmts = splitStatements(raw);
+      let any = false;
+      for (const st of stmts) {
+        const pr = parseInsert(st);
+        if (!pr) continue;
+        any = true;
+        if (pr.cols) registerCols(pr.cols);
+        for (const tup of pr.tuples) {
+          const row = {};
+          if (pr.cols) {
+            for (let k = 0; k < pr.cols.length; k++) row[pr.cols[k]] = tup[k];
+          } else {
+            const genCols = [];
+            for (let k = 0; k < tup.length; k++) { const cn = 'col' + (k + 1); genCols.push(cn); row[cn] = tup[k]; }
+            registerCols(genCols);
+          }
+          rows.push(row);
+        }
+      }
+      if (!any) {
+        const bare = parseBareRows(raw);
+        registerCols(bare.cols);
+        for (const tup of bare.tuples) {
+          const row = {};
+          if (bare.cols) { for (let k = 0; k < bare.cols.length; k++) row[bare.cols[k]] = tup[k]; }
+          else { const genCols = []; for (let k = 0; k < tup.length; k++) { const cn = 'col' + (k + 1); genCols.push(cn); row[cn] = tup[k]; } registerCols(genCols); }
+          rows.push(row);
+        }
+      }
+    } else {
+      const bare = parseBareRows(raw);
+      registerCols(bare.cols);
+      for (const tup of bare.tuples) {
+        const row = {};
+        if (bare.cols) { for (let k = 0; k < bare.cols.length; k++) row[bare.cols[k]] = tup[k]; }
+        else { const genCols = []; for (let k = 0; k < tup.length; k++) { const cn = 'col' + (k + 1); genCols.push(cn); row[cn] = tup[k]; } registerCols(genCols); }
+        rows.push(row);
+      }
+    }
+
+    if (!rows.length) throw new Error(t('errEmpty'));
+
+    // If no column names at all, synthesize col1..colN from max width
+    if (!allCols.length) {
+      let maxW = 0;
+      for (const r of rows) maxW = Math.max(maxW, Object.keys(r).length);
+      for (let k = 0; k < maxW; k++) allCols.push('col' + (k + 1));
+    }
+
+    const lines = [];
+    if (headerRow) {
+      lines.push(allCols.map(c => csvEscape(c, delim)).join(delim));
+    }
+    for (const r of rows) {
+      const cells = allCols.map(c => {
+        const cv = r[c];
+        if (!cv || cv.isNull) return nullMode === 'literal' ? 'NULL' : '';
+        return cv.value;
+      });
+      lines.push(cells.map(v => csvEscape(v, delim)).join(delim));
+    }
+    $('#output').value = lines.join('\n');
+    status.textContent = t('ok').replace('N', rows.length).replace('M', allCols.length);
+    status.className = 'sj-status ok';
+  } catch (e) {
+    $('#output').value = '';
+    status.textContent = t('err') + e.message;
+    status.className = 'sj-status err';
+  }
+}
+
+function loadExample() {
+  $('#input').value =
+`INSERT INTO users (id, name, email, score, active, created_at)
+VALUES (1, 'Alice', 'alice@example.com', 4.8, true, NULL),
+       (2, 'Bob', 'bob, Jr.', 3.5, false, NULL),
+       (3, 'Carol "Caz"', 'carol@example.com', 5.0, true, NULL);`;
+  run();
+}
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').textContent = ''; }
+function doDownload() {
+  const text = $('#output').value; if (!text) return;
+  const blob = new Blob([text], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'data.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+$('#lbl-null').textContent = t('lblNull');
+$('#lbl-delim').textContent = t('lblDelim');
+$('#lbl-header').textContent = t('lblHeader');
+$('#lbl-input').textContent = t('lblInput');
+$('#lbl-output').textContent = t('lblOutput');
+$('#nullMode').querySelectorAll('option').forEach((o, i) => { o.textContent = [t('emptyCell'), t('literalNull')][i]; });
+$('#delim').querySelectorAll('option').forEach((o, i) => { o.textContent = [t('comma'), t('semicolon'), t('tab')][i]; });
+
+$('#input').addEventListener('input', run);
+$('#nullMode').addEventListener('change', run);
+$('#delim').addEventListener('change', run);
+$('#headerRow').addEventListener('change', run);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="run()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🗃️', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'📊', href:'/convert/json-to-csv.html', name:'JSON to CSV'},
+    {icon:'🔄', href:'/dev/sql-to-json.html', name:'SQL to JSON'},
+    {icon:'🧪', href:'/dev/sql-tester.html', name:'SQL Tester'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
