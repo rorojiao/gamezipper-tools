@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>HTML Table to JSON Converter - Convert HTML Tables to JSON | GameZipper Tools</title>
+<meta name="description" content="Free HTML table to JSON converter. Paste an HTML table and get clean JSON array of objects instantly. Handles thead/tbody, colspan, nested tables and missing cells. Runs entirely in your browser.">
+<link rel="canonical" href="https://tools.gamezipper.com/convert/html-table-to-json.html">
+<meta property="og:title" content="HTML Table to JSON Converter - Convert HTML Tables to JSON | GameZipper Tools">
+<meta property="og:description" content="Free HTML table to JSON converter. Paste an HTML table and get clean JSON array of objects instantly. Handles thead, tbody and missing cells. Runs in your browser.">
+<meta property="og:url" content="https://tools.gamezipper.com/convert/html-table-to-json.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="HTML Table to JSON Converter - Convert HTML Tables to JSON | GameZipper Tools">
+<meta name="twitter:description" content="Free HTML table to JSON converter. Paste an HTML table and get clean JSON instantly. Runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.sj-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.sj-grid{grid-template-columns:1fr}}
+.sj-col{display:flex;flex-direction:column;gap:6px}
+.sj-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.sj-col textarea{min-height:420px;padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.86em;line-height:1.55;resize:vertical;tab-size:2}
+.sj-col textarea:focus{outline:none;border-color:var(--accent)}
+.sj-opts{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85em}
+.sj-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.sj-opts select{padding:4px 8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px}
+.sj-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.sj-status.ok{color:var(--success)}.sj-status.err{color:var(--danger)}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HTML Table to JSON Converter","description":"Free HTML table to JSON converter. Paste an HTML table and get clean JSON array of objects instantly. Handles thead, tbody, colspan and missing cells. Runs entirely in your browser.","url":"https://tools.gamezipper.com/convert/html-table-to-json.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the HTML table to JSON converter work?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your HTML table markup into the input area. The tool parses it with the browser DOM parser, treats the first row (or the contents of thead) as the header, and produces a JSON array where each object represents one data row keyed by the header cell text."}}, {"@type": "Question", "name": "Does it handle tables without a thead section?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. If there is no thead, the first tr is treated as the header row. You can also switch to positional mode (col1, col2, ...) if your table has no header row at all."}}, {"@type": "Question", "name": "What happens with empty or merged cells?", "acceptedAnswer": {"@type": "Answer", "text": "Empty cells become empty strings (or null, depending on the option). Colspan and rowspan are expanded so each logical cell gets the correct value repeated across the spanned positions."}}, {"@type": "Question", "name": "Is my HTML data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing and conversion happens entirely in your browser using the built-in DOMParser. Nothing is uploaded, stored or transmitted. The tool works offline after the page loads."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/html-table-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/html-table-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/html-table-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="sj-opts">
+      <label><span id="lbl-header-mode"></span>
+        <select id="headerMode">
+          <option value="auto">Auto (thead or first row)</option>
+          <option value="first">First row is header</option>
+          <option value="none">No header (col1, col2…)</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="pretty" checked> <span id="lbl-pretty"></span></label>
+      <label><input type="checkbox" id="emptyNull"> <span id="lbl-empty-null"></span></label>
+      <label><input type="checkbox" id="coerce"> <span id="lbl-coerce"></span></label>
+    </div>
+    <div class="sj-grid">
+      <div class="sj-col">
+        <label id="lbl-input"></label>
+        <textarea id="input" spellcheck="false" placeholder="<table>...</table>"></textarea>
+      </div>
+      <div class="sj-col">
+        <label id="lbl-output"></label>
+        <textarea id="output" spellcheck="false" readonly placeholder="JSON output appears here..."></textarea>
+      </div>
+    </div>
+    <div class="sj-status" id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HTML Table to JSON Converter',
+    toolDesc: 'Convert HTML tables into clean JSON arrays of objects. Handles thead/tbody, colspan/rowspan, missing cells and number coercion. Runs entirely in your browser.',
+    lblHeaderMode: 'Header', lblPretty: 'Pretty print', lblEmptyNull: 'Empty → null', lblCoerce: 'Coerce numbers',
+    autoMode: 'Auto (thead or first row)', firstMode: 'First row is header', noneMode: 'No header (col1, col2…)',
+    lblInput: 'HTML Input', lblOutput: 'JSON Output',
+    ok: '✓ Converted — N row(s), M column(s)',
+    err: '✗ Could not parse HTML: ',
+    errNoTable: '✗ No <table> element found in input',
+    step1: 'Paste your HTML table markup into the input area',
+    step2: 'Choose header mode and number coercion options',
+    step3: 'Clean JSON appears instantly on the right',
+    step4: 'Click Copy or Download to use the JSON',
+  },
+  zh: {
+    toolTitle: 'HTML 表格转 JSON 转换器',
+    toolDesc: '将 HTML 表格转换为整洁的 JSON 对象数组。支持 thead/tbody、colspan/rowspan、缺失单元格和数字自动转换。完全浏览器本地运行。',
+    lblHeaderMode: '表头', lblPretty: '美化输出', lblEmptyNull: '空值 → null', lblCoerce: '自动转数字',
+    autoMode: '自动（thead 或首行）', firstMode: '首行为表头', noneMode: '无表头（col1, col2…）',
+    lblInput: 'HTML 输入', lblOutput: 'JSON 输出',
+    ok: '✓ 已转换 — N 行，M 列',
+    err: '✗ 无法解析 HTML：',
+    errNoTable: '✗ 输入中未找到 <table> 元素',
+    step1: '将 HTML 表格标记粘贴到输入区',
+    step2: '选择表头模式和数字转换选项',
+    step3: '整洁的 JSON 立即出现在右侧',
+    step4: '点击「复制」或「下载」即可使用 JSON',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function coerceValue(raw, doCoerce, emptyNull) {
+  const v = (raw || '').trim();
+  if (v === '') return emptyNull ? null : '';
+  if (!doCoerce) return v;
+  if (/^-?\d+$/.test(v)) { const n = Number(v); return Number.isSafeInteger(n) ? n : v; }
+  if (/^-?\d*\.\d+([eE][+-]?\d+)?$/.test(v) || /^-?\d+[eE][+-]?\d+$/.test(v)) {
+    const n = Number(v); return isNaN(n) ? v : n;
+  }
+  if (/^(true|false)$/i.test(v)) return /^true$/i.test(v);
+  return v;
+}
+
+function parseTable(tableEl, headerMode, pretty, emptyNull, coerce) {
+  // Build a 2D grid honouring rowspan/colspan
+  const grid = []; // grid[r][c] = text
+  let maxCols = 0;
+  const rows = tableEl.querySelectorAll(':scope > tr, :scope > thead > tr, :scope > tbody > tr, :scope > tfoot > tr');
+  const rowList = Array.from(rows);
+  // track occupied cells for rowspan/colspan
+  const occupied = {}; // "r,c" -> true
+
+  rowList.forEach((tr, r) => {
+    if (!grid[r]) grid[r] = [];
+    const cells = Array.from(tr.children).filter(c => c.tagName === 'TD' || c.tagName === 'TH');
+    let c = 0;
+    for (const cell of cells) {
+      while (occupied[r + ',' + c]) c++;
+      const text = cell.textContent.replace(/\s+/g, ' ').trim();
+      const colspan = parseInt(cell.getAttribute('colspan') || '1', 10);
+      const rowspan = parseInt(cell.getAttribute('rowspan') || '1', 10);
+      for (let dr = 0; dr < rowspan; dr++) {
+        for (let dc = 0; dc < colspan; dc++) {
+          const rr = r + dr, cc = c + dc;
+          occupied[rr + ',' + cc] = true;
+          if (!grid[rr]) grid[rr] = [];
+          grid[rr][cc] = (dr === 0 && dc === 0) ? text : text; // repeat value across span
+        }
+      }
+      c += colspan;
+      if (c > maxCols) maxCols = c;
+    }
+  });
+
+  // Normalize grid: fill holes with empty string
+  for (let r = 0; r < grid.length; r++) {
+    if (!grid[r]) grid[r] = [];
+    for (let c = 0; c < maxCols; c++) {
+      if (grid[r][c] === undefined) grid[r][c] = '';
+    }
+  }
+
+  if (!grid.length) return { rows: [], cols: 0 };
+
+  // Determine header
+  let header = [];
+  let dataStart = 0;
+  if (headerMode === 'none') {
+    header = []; for (let c = 0; c < maxCols; c++) header.push('col' + (c + 1));
+  } else if (headerMode === 'first') {
+    header = grid[0].slice(0, maxCols);
+    dataStart = 1;
+  } else {
+    // auto: thead first if present
+    const thead = tableEl.querySelector(':scope > thead');
+    if (thead && thead.querySelector('tr')) {
+      // find index of first thead row
+      const theadRowIdx = rowList.findIndex(tr => thead.contains(tr));
+      if (theadRowIdx >= 0) {
+        header = grid[theadRowIdx].slice(0, maxCols);
+        dataStart = theadRowIdx + 1;
+      } else {
+        header = grid[0].slice(0, maxCols); dataStart = 1;
+      }
+    } else {
+      header = grid[0].slice(0, maxCols); dataStart = 1;
+    }
+  }
+
+  // De-duplicate empty header names
+  header = header.map((h, i) => h && h.trim() ? h.trim() : 'col' + (i + 1));
+
+  const out = [];
+  for (let r = dataStart; r < grid.length; r++) {
+    const row = grid[r];
+    if (!row) continue;
+    // skip fully empty rows
+    if (row.every(c => c === '' || c === undefined)) continue;
+    const obj = {};
+    for (let c = 0; c < maxCols; c++) {
+      obj[header[c] || ('col' + (c + 1))] = coerceValue(row[c], coerce, emptyNull);
+    }
+    out.push(obj);
+  }
+  return { rows: out, cols: maxCols };
+}
+
+function run() {
+  const raw = $('#input').value;
+  const status = $('#status');
+  if (!raw.trim()) { $('#output').value = ''; status.textContent = ''; status.className = 'sj-status'; return; }
+  try {
+    const doc = new DOMParser().parseFromString('<!DOCTYPE html><html><body>' + raw + '</body></html>', 'text/html');
+    const tables = doc.querySelectorAll('table');
+    if (!tables.length) throw new Error(t('errNoTable'));
+    const headerMode = $('#headerMode').value;
+    const pretty = $('#pretty').checked;
+    const emptyNull = $('#emptyNull').checked;
+    const coerce = $('#coerce').checked;
+
+    let result;
+    if (tables.length === 1) {
+      const { rows, cols } = parseTable(tables[0], headerMode, pretty, emptyNull, coerce);
+      result = pretty ? JSON.stringify(rows, null, 2) : JSON.stringify(rows);
+      status.textContent = t('ok').replace('N', rows.length).replace('M', cols);
+    } else {
+      const all = [];
+      let totalRows = 0, totalCols = 0;
+      tables.forEach(tb => {
+        const { rows, cols } = parseTable(tb, headerMode, pretty, emptyNull, coerce);
+        all.push(rows); totalRows += rows.length; totalCols = Math.max(totalCols, cols);
+      });
+      result = pretty ? JSON.stringify(all, null, 2) : JSON.stringify(all);
+      status.textContent = t('ok').replace('N', totalRows).replace('M', totalCols) + ' (' + tables.length + ' tables)';
+    }
+    $('#output').value = result;
+    status.className = 'sj-status ok';
+  } catch (e) {
+    $('#output').value = '';
+    status.textContent = t('err') + e.message;
+    status.className = 'sj-status err';
+  }
+}
+
+function loadExample() {
+  $('#input').value =
+`<table>
+  <thead>
+    <tr><th>Name</th><th>Age</th><th>City</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Alice</td><td>30</td><td>New York</td></tr>
+    <tr><td>Bob</td><td>25</td><td>London</td></tr>
+    <tr><td>Carol</td><td>35</td><td>Tokyo</td></tr>
+  </tbody>
+</table>`;
+  run();
+}
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').textContent = ''; }
+function doDownload() {
+  const text = $('#output').value; if (!text) return;
+  const blob = new Blob([text], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'table.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+$('#lbl-header-mode').textContent = t('lblHeaderMode');
+$('#lbl-pretty').textContent = t('lblPretty');
+$('#lbl-empty-null').textContent = t('lblEmptyNull');
+$('#lbl-coerce').textContent = t('lblCoerce');
+$('#lbl-input').textContent = t('lblInput');
+$('#lbl-output').textContent = t('lblOutput');
+$('#headerMode').querySelectorAll('option').forEach((o, i) => { o.textContent = [t('autoMode'), t('firstMode'), t('noneMode')][i]; });
+
+$('#input').addEventListener('input', run);
+$('#headerMode').addEventListener('change', run);
+$('#pretty').addEventListener('change', run);
+$('#emptyNull').addEventListener('change', run);
+$('#coerce').addEventListener('change', run);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="run()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/html-table-to-csv.html', name:'HTML Table to CSV'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔄', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📑', href:'/convert/html-table-to-markdown.html', name:'HTML Table to Markdown'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
