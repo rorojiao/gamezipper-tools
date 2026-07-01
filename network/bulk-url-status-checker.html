@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Bulk URL Status Checker - Check Multiple URLs at Once | GameZipper Tools</title>
+  <meta name="description" content="Check the HTTP status of up to 50 URLs at once. Free bulk URL status checker — batch test response codes, redirects and response times. No signup, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/network/bulk-url-status-checker.html">
+  <meta property="og:title" content="Bulk URL Status Checker - Check Multiple URLs at Once | GameZipper Tools">
+  <meta property="og:description" content="Check the HTTP status of up to 50 URLs at once. Free bulk URL status checker — batch test response codes, redirects and response times. No signup, browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/network/bulk-url-status-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Bulk URL Status Checker - Check Multiple URLs at Once | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+#urls{width:100%;min-height:180px;font-family:monospace;font-size:.9rem}
+.bus-result{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:.85rem}
+.bus-url{word-break:break-all;color:var(--text)}
+.bus-code{font-weight:700;padding:3px 10px;border-radius:6px;font-size:.8rem;white-space:nowrap}
+.bus-code-2xx{background:rgba(0,214,114,.15);color:#00d672}
+.bus-code-3xx{background:rgba(97,175,239,.15);color:#61afef}
+.bus-code-4xx{background:rgba(255,193,7,.15);color:#ffc107}
+.bus-code-5xx{background:rgba(233,69,96,.15);color:#e94560}
+.bus-code-err{background:rgba(136,136,136,.15);color:#888}
+.bus-time{font-size:.75rem;color:var(--text2);white-space:nowrap}
+.bus-summary{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:.85rem}
+.bus-summary span{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:4px 12px}
+.bus-progress{margin-top:8px;height:4px;background:var(--glass2);border-radius:2px;overflow:hidden}
+.bus-progress-bar{height:100%;background:var(--accent);width:0;transition:width .3s}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Bulk URL Status Checker","description":"Check the HTTP status of up to 50 URLs at once. Free bulk URL status checker — batch test response codes, redirects and response times. No signup, browser-based.","url":"https://tools.gamezipper.com/network/bulk-url-status-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How many URLs can I check at once?","acceptedAnswer":{"@type":"Answer","text":"You can check up to 50 URLs at once. Simply paste them into the text area (one per line) and click Check All."}},{"@type":"Question","name":"Does this tool send my URLs to a server?","acceptedAnswer":{"@type":"Answer","text":"The tool uses your browser's fetch API to make HEAD requests directly to each target URL. No data is sent to or stored on any GameZipper server."}},{"@type":"Question","name":"Why do some URLs show an error instead of a status code?","acceptedAnswer":{"@type":"Answer","text":"Browsers block cross-origin requests without CORS headers. If a server does not allow cross-origin requests, the tool cannot read the status code and will show a CORS error. This is a browser security limitation, not a tool issue."}},{"@type":"Question","name":"What do the different status code colors mean?","acceptedAnswer":{"@type":"Answer","text":"Green 2xx codes mean success, blue 3xx codes mean redirects, yellow 4xx codes mean client errors (like 404), and red 5xx codes mean server errors. Gray indicates a connection or CORS error."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/network/bulk-url-status-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/network/bulk-url-status-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/network/bulk-url-status-checker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="urls" spellcheck="false" placeholder="https://example.com&#10;https://example.org/page"></textarea>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output">
+          <div id="bus-summary" class="bus-summary" style="display:none"></div>
+          <div id="bus-progress" class="bus-progress" style="display:none"><div class="bus-progress-bar" id="bus-bar"></div></div>
+          <div id="bus-results"></div>
+        </div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Bulk URL Status Checker',
+    toolDesc: 'Check the HTTP status code of up to 50 URLs at once. Batch test response codes, redirects and response times — free and browser-based.',
+    checkAll: 'Check All',
+    clear: 'Clear',
+    example: 'Example',
+    inputLabel: 'Enter URLs (one per line, max 50)',
+    outputLabel: 'Results',
+    checking: 'Checking...',
+    done: 'Done',
+    corsError: 'CORS blocked',
+    total: 'Total',
+    success: '2xx',
+    redirects: '3xx',
+    errors: '4xx/5xx',
+    failed: 'Failed',
+    step1: 'Paste up to 50 URLs into the input area (one per line)',
+    step2: 'Click "Check All" to start the batch status check',
+    step3: 'View each URL\'s HTTP status code, color-coded by category',
+    step4: 'Review the summary counts for quick overview',
+  },
+  zh: {
+    toolTitle: '批量网址状态检测器',
+    toolDesc: '一次检测最多 50 个网址的 HTTP 状态码。批量测试响应码、重定向和响应时间 — 免费浏览器本地运行。',
+    checkAll: '批量检测',
+    clear: '清空',
+    example: '示例',
+    inputLabel: '输入网址（每行一个，最多 50 个）',
+    outputLabel: '结果',
+    checking: '检测中...',
+    done: '完成',
+    corsError: 'CORS 限制',
+    total: '总计',
+    success: '2xx 成功',
+    redirects: '3xx 重定向',
+    errors: '4xx/5xx 错误',
+    failed: '失败',
+    step1: '在输入区粘贴最多 50 个网址（每行一个）',
+    step2: '点击「批量检测」开始检测',
+    step3: '查看每个网址的 HTTP 状态码，按类别颜色标识',
+    step4: '查看汇总统计快速了解整体情况',
+  }
+});
+
+const { $, t } = GZ;
+let checking = false;
+
+function parseUrls() {
+  return $('#urls').value.split('\n').map(u => u.trim()).filter(u => u.length > 0).slice(0, 50);
+}
+
+function normalizeUrl(u) {
+  if (!/^https?:\/\//i.test(u)) return 'https://' + u;
+  return u;
+}
+
+function codeClass(code) {
+  if (code >= 200 && code < 300) return 'bus-code-2xx';
+  if (code >= 300 && code < 400) return 'bus-code-3xx';
+  if (code >= 400 && code < 500) return 'bus-code-4xx';
+  if (code >= 500) return 'bus-code-5xx';
+  return 'bus-code-err';
+}
+
+async function checkUrl(url) {
+  const start = performance.now();
+  try {
+    const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors', redirect: 'follow', signal: AbortSignal.timeout(10000) });
+    const ms = Math.round(performance.now() - start);
+    // In no-cors mode, status is always 0 (opaque) — we can only detect reachability
+    if (resp.type === 'opaque') {
+      return { code: 0, label: 'OK*', ms, reachable: true };
+    }
+    return { code: resp.status, label: String(resp.status), ms, reachable: true };
+  } catch (e) {
+    const ms = Math.round(performance.now() - start);
+    return { code: -1, label: t('corsError'), ms, reachable: false };
+  }
+}
+
+async function doCheck() {
+  if (checking) return;
+  const urls = parseUrls();
+  if (urls.length === 0) { $('#bus-results').innerHTML = '<p style="padding:14px;color:var(--text2)">—</p>'; return; }
+  checking = true;
+  $('#bus-results').innerHTML = '';
+  $('#bus-summary').style.display = 'none';
+  const progressDiv = $('#bus-progress');
+  const bar = $('#bus-bar');
+  progressDiv.style.display = 'block';
+  bar.style.width = '0%';
+
+  let counts = { success: 0, redirects: 0, errors: 0, failed: 0 };
+
+  for (let i = 0; i < urls.length; i++) {
+    const url = normalizeUrl(urls[i]);
+    const result = await checkUrl(url);
+    bar.style.width = ((i + 1) / urls.length * 100) + '%';
+
+    if (result.code >= 200 && result.code < 300) counts.success++;
+    else if (result.code >= 300 && result.code < 400) counts.redirects++;
+    else if (result.code >= 400) counts.errors++;
+    else counts.failed++;
+
+    const cls = result.code === 0 ? 'bus-code-2xx' : codeClass(result.code);
+    const displayUrl = url.length > 60 ? url.substring(0, 57) + '...' : url;
+
+    $('#bus-results').insertAdjacentHTML('beforeend',
+      `<div class="bus-result">
+        <span class="bus-url" title="${url}">${displayUrl}</span>
+        <span class="bus-code ${cls}">${result.label}</span>
+        <span class="bus-time">${result.ms}ms</span>
+      </div>`);
+  }
+
+  checking = false;
+  progressDiv.style.display = 'none';
+  const sum = $('#bus-summary');
+  sum.style.display = 'flex';
+  sum.innerHTML = `
+    <span>${t('total')}: ${urls.length}</span>
+    <span style="color:#00d672">${t('success')}: ${counts.success}</span>
+    <span style="color:#61afef">${t('redirects')}: ${counts.redirects}</span>
+    <span style="color:#ffc107">${t('errors')}: ${counts.errors}</span>
+    <span style="color:#888">${t('failed')}: ${counts.failed}</span>
+  `;
+}
+
+function loadExample() {
+  $('#urls').value = 'https://tools.gamezipper.com\nhttps://gamezipper.com\nhttps://example.com\nhttps://httpbin.org/status/200\nhttps://httpbin.org/status/404\nhttps://httpbin.org/status/500';
+  doCheck();
+}
+
+function doClear() {
+  $('#urls').value = '';
+  $('#bus-results').innerHTML = '';
+  $('#bus-summary').style.display = 'none';
+  $('#bus-progress').style.display = 'none';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doCheck()">${t('checkAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'network',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/network/website-status-checker.html', name:'Website Status'},
+    {icon:'📋', href:'/network/http-headers-checker.html', name:'HTTP Headers'},
+    {icon:'🔗', href:'/text/extract-contacts.html', name:'Extract URLs'},
+    {icon:'📡', href:'/network/dns-lookup.html', name:'DNS Lookup'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
