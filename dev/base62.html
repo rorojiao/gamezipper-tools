@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Base62 Encoder / Decoder - Free Online Tool | GameZipper Tools</title>
+<meta name="description" content="Free online Base62 encoder and decoder. Convert text to Base62 (0-9A-Za-z, used in URL shorteners like bit.ly) and decode back. Browser-only, no upload.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/base62.html">
+<meta property="og:title" content="Base62 Encoder / Decoder - Free Online Tool | GameZipper Tools">
+<meta property="og:description" content="Free Base62 encoder/decoder for URL shorteners, database IDs and compact tokens. Convert text or hex to Base62 and back. Browser-only, no upload.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/base62.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Base62 Encoder / Decoder - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Encode and decode Base62 online. URL-shortener friendly, runs in your browser, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.b62-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.b62-wrap{grid-template-columns:1fr}}
+.b62-col{display:flex;flex-direction:column;gap:6px}
+.b62-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.b62-col textarea{min-height:220px;padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:.88em;line-height:1.55;resize:vertical;tab-size:2;word-break:break-all}
+.b62-col textarea:focus{outline:none;border-color:var(--accent)}
+.b62-opts{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85em}
+.b62-opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.b62-opts select{padding:5px 8px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-family:inherit}
+.b62-info{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.82em;line-height:1.7;margin-top:6px}
+.b62-info b{color:var(--accent)}
+.b62-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.b62-status.ok{color:var(--success)}
+.b62-status.err{color:var(--danger)}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Base62 Encoder / Decoder","description":"Free online Base62 encoder and decoder for URL shorteners, database IDs and compact tokens. Convert text or hex to Base62 and back. Browser-only, no upload.","url":"https://tools.gamezipper.com/dev/base62.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://***@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Base62 encoding?","acceptedAnswer":{"@type":"Answer","text":"Base62 is a binary-to-text encoding that uses 62 characters: 0-9, A-Z and a-z. It is the most compact case-sensitive alphanumeric encoding and is widely used by URL shorteners (bit.ly, TinyURL), database ID obfuscation, YouTube video IDs and short link tokens. It avoids ambiguous characters (0/O, 1/l/I) only in the 'inverted' variant."}},{"@type":"Question","name":"What's the difference between Base62 and Base64?","acceptedAnswer":{"@type":"Answer","text":"Base64 uses 64 characters (adds + and /, and = padding) and encodes 6 bits per character. Base62 uses 62 alphanumeric-only characters, encodes ~5.95 bits per character, and is URL-safe without escaping. Base62 produces strings roughly 3-4% longer than Base64 but is safer to embed in URLs, filenames and QR codes."}},{"@type":"Question","name":"How are bytes converted to Base62?","acceptedAnswer":{"@type":"Answer","text":"The encoder treats the input bytes as one big integer (big-endian) and repeatedly divides by 62, mapping each remainder to a character. Decoding reverses the process. This 'big-integer' approach preserves leading zero bytes; a leading zero byte is encoded as a leading '0' so that decode is lossless."}},{"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All encoding and decoding happens locally in your browser using JavaScript BigInt. Nothing is uploaded, stored or transmitted. The tool works fully offline after the page loads."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/base62.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/base62.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/base62.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="b62-opts">
+      <label><span data-i18n="mode">Mode</span>
+        <select id="mode">
+          <option value="text" data-i18n="modeText">text ⇄ Base62</option>
+          <option value="hex" data-i18n="modeHex">hex ⇄ Base62</option>
+        </select>
+      </label>
+      <label><span data-i18n="alphabet">Alphabet</span>
+        <select id="alphabet">
+          <option value="standard">0-9 A-Z a-z</option>
+          <option value="inverted">0-9 a-z A-Z</option>
+        </select>
+      </label>
+    </div>
+    <div class="b62-wrap">
+      <div class="b62-col">
+        <label data-i18n="lblIn">Input</label>
+        <textarea id="input" spellcheck="false" placeholder="Hello, World!"></textarea>
+      </div>
+      <div class="b62-col">
+        <label data-i18n="lblOut">Base62 output</label>
+        <textarea id="output" spellcheck="false" readonly></textarea>
+      </div>
+    </div>
+    <div class="b62-status" id="status"></div>
+    <div class="b62-info">
+      <b data-i18n="info1"></b> <span data-i18n="info1t"></span><br>
+      <b data-i18n="info2"></b> <span data-i18n="info2t"></span>
+    </div>
+  </div>
+  <div class="gz-howto"><h2 data-i18n="howTo"></h2><ol></ol></div>
+  <div class="gz-related"><h2 data-i18n="related"></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Base62 Encoder / Decoder',
+    toolDesc: 'Encode text or hex to Base62 (the 0-9A-Za-z format used by URL shorteners) and decode back. Browser-only, no upload, supports standard and inverted alphabets.',
+    mode: 'Mode',
+    modeText: 'text ⇄ Base62',
+    modeHex: 'hex ⇄ Base62',
+    alphabet: 'Alphabet',
+    lblIn: 'Input',
+    lblOut: 'Base62 output',
+    howTo: 'How to use',
+    related: 'Related tools',
+    encode: 'Encode',
+    decode: 'Decode',
+    example: 'Example',
+    copy: 'Copy',
+    clear: 'Clear',
+    info1: 'Standard:',
+    info1t: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+    info2: 'Inverted:',
+    info2t: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    step1: 'Type or paste your text or hex into the input box',
+    step2: 'Choose the mode (text or hex) and the alphabet',
+    step3: 'Click Encode to get Base62, or Decode to recover the original',
+    step4: 'Click Copy to copy the result',
+    encoded: '✓ Encoded',
+    decoded: '✓ Decoded',
+    invalid: '✗ Invalid input: ',
+    invalidHex: '✗ Not valid hex',
+    invalidB62: '✗ Not valid Base62',
+  },
+  zh: {
+    toolTitle: 'Base62 编码 / 解码器',
+    toolDesc: '将文本或十六进制编码为 Base62（短链接服务使用的 0-9A-Za-z 格式）并解码还原。浏览器本地运行，无需上传，支持标准和反转字母表。',
+    mode: '模式',
+    modeText: '文本 ⇄ Base62',
+    modeHex: '十六进制 ⇄ Base62',
+    alphabet: '字母表',
+    lblIn: '输入',
+    lblOut: 'Base62 输出',
+    howTo: '使用方法',
+    related: '相关工具',
+    encode: '编码',
+    decode: '解码',
+    example: '示例',
+    copy: '复制',
+    clear: '清空',
+    info1: '标准：',
+    info1t: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+    info2: '反转：',
+    info2t: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    step1: '在输入框输入或粘贴文本或十六进制',
+    step2: '选择模式（文本或十六进制）和字母表',
+    step3: '点击「编码」得到 Base62，或点击「解码」还原原文',
+    step4: '点击「复制」复制结果',
+    encoded: '✓ 已编码',
+    decoded: '✓ 已解码',
+    invalid: '✗ 输入无效：',
+    invalidHex: '✗ 不是有效的十六进制',
+    invalidB62: '✗ 不是有效的 Base62',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const ALPHABETS = {
+  standard: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+  inverted: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+};
+
+function getAlphabet() { return ALPHABETS[$('#alphabet').value] || ALPHABETS.standard; }
+
+// --- Big-integer Base62 (lossless for any byte length) ---
+function bytesToB62(bytes, alpha) {
+  if (bytes.length === 0) return '';
+  // Handle leading zero bytes — each leading zero byte becomes a '0'
+  let leadingZeros = 0;
+  while (leadingZeros < bytes.length && bytes[leadingZeros] === 0) leadingZeros++;
+  let num = 0n;
+  for (let i = leadingZeros; i < bytes.length; i++) {
+    num = (num << 8n) | BigInt(bytes[i]);
+  }
+  if (num === 0n) return alpha[0].repeat(Math.max(1, leadingZeros));
+  let out = '';
+  const base = BigInt(alpha.length);
+  while (num > 0n) {
+    const rem = num % base;
+    out = alpha[Number(rem)] + out;
+    num = num / base;
+  }
+  return alpha[0].repeat(leadingZeros) + out;
+}
+
+function b62ToBytes(str, alpha) {
+  if (str === '') return new Uint8Array(0);
+  // Count leading '0' chars (the zero marker)
+  let leadingZeros = 0;
+  const zeroChar = alpha[0];
+  while (leadingZeros < str.length && str[leadingZeros] === zeroChar) leadingZeros++;
+  let num = 0n;
+  const base = BigInt(alpha.length);
+  const map = {};
+  for (let i = 0; i < alpha.length; i++) map[alpha[i]] = i;
+  for (let i = leadingZeros; i < str.length; i++) {
+    const v = map[str[i]];
+    if (v === undefined) throw new Error('invalid Base62 character: ' + str[i]);
+    num = num * base + BigInt(v);
+  }
+  // Convert big int to bytes
+  const bytes = [];
+  if (num === 0n) {
+    // only leading zeros
+  } else {
+    while (num > 0n) {
+      bytes.unshift(Number(num & 0xffn));
+      num = num >> 8n;
+    }
+  }
+  const result = new Uint8Array(leadingZeros + bytes.length);
+  for (let i = 0; i < bytes.length; i++) result[leadingZeros + i] = bytes[i];
+  return result;
+}
+
+function textToBytes(s) {
+  return new TextEncoder().encode(s);
+}
+function bytesToText(bytes) {
+  return new TextDecoder().decode(bytes);
+}
+function hexToBytes(hex) {
+  hex = hex.replace(/^0x/i,'').replace(/\s+/g,'');
+  if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length % 2 !== 0) throw new Error('not valid hex');
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i*2, 2), 16);
+  return out;
+}
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function encode() {
+  const inp = $('#input').value;
+  if (!inp) { $('#output').value=''; $('#status').textContent=''; return; }
+  try {
+    const alpha = getAlphabet();
+    const bytes = $('#mode').value === 'hex' ? hexToBytes(inp) : textToBytes(inp);
+    $('#output').value = bytesToB62(bytes, alpha);
+    $('#status').className = 'b62-status ok';
+    $('#status').textContent = t('encoded');
+  } catch (e) {
+    $('#status').className = 'b62-status err';
+    $('#status').textContent = t('invalid') + e.message;
+    $('#output').value = '';
+  }
+}
+
+function decode() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').value=''; $('#status').textContent=''; return; }
+  try {
+    const alpha = getAlphabet();
+    // Validate characters
+    const valid = new Set(alpha);
+    for (const ch of inp) {
+      if (!valid.has(ch)) throw new Error(t('invalidB62'));
+    }
+    const bytes = b62ToBytes(inp, alpha);
+    if ($('#mode').value === 'hex') {
+      $('#output').value = bytesToHex(bytes);
+    } else {
+      $('#output').value = bytesToText(bytes);
+    }
+    $('#status').className = 'b62-status ok';
+    $('#status').textContent = t('decoded');
+  } catch (e) {
+    $('#status').className = 'b62-status err';
+    $('#status').textContent = t('invalid') + e.message;
+    $('#output').value = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = $('#mode').value === 'hex' ? '48656c6c6f2c20576f726c6421' : 'Hello, World!';
+  encode();
+}
+
+function doClear() { $('#input').value=''; $('#output').value=''; $('#status').textContent=''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="encode()">${t('encode')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="decode()">${t('decode')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🪙', href:'/dev/base58.html', name:'Base58'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔤', href:'/convert/base85.html', name:'Base85'},
+    {icon:'🔤', href:'/convert/base32.html', name:'Base32'},
+  ]
+});
+
+loadExample();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
