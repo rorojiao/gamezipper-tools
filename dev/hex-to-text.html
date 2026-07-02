@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Hex to Text Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert hexadecimal (hex) to text instantly. Free online hex to text decoder — supports UTF-8, space/comma/none separators, 0x prefixes and live conversion.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/hex-to-text.html">
+  <meta property="og:title" content="Hex to Text Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert hexadecimal (hex) to text instantly. Free online hex to text decoder — supports UTF-8, space/comma/none separators, 0x prefixes and live conversion.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/hex-to-text.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Hex to Text Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert hexadecimal (hex) to text instantly. Free online hex to text decoder — supports UTF-8, space/comma/none separators, 0x prefixes and live conversion.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260629512"></script>
+<style>
+.gz-split textarea{font-family:monospace;font-size:.85em;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Hex to Text Converter","description":"Convert hexadecimal (hex) to text instantly. Free online hex to text decoder with custom separators and live conversion.","url":"https://tools.gamezipper.com/dev/hex-to-text.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert hex to text?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your hex values in the input area. The tool decodes each hex byte back into its text character automatically. You can use space, comma or no separator."}}, {"@type": "Question", "name": "What formats does the decoder accept?", "acceptedAnswer": {"@type": "Answer", "text": "The decoder accepts hex with or without separators (48656C6C6F or 48 65 6C 6C 6F), with or without 0x prefixes, and with uppercase or lowercase letters A-F."}}, {"@type": "Question", "name": "Can it decode emoji and Unicode?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool decodes the full UTF-8 byte sequence, so emoji, Chinese characters and other multi-byte Unicode text are decoded correctly."}}, {"@type": "Question", "name": "Why is my hex output showing strange characters?", "acceptedAnswer": {"@type": "Answer", "text": "Make sure your hex string has an even number of digits and valid separators. Odd-length hex or invalid characters will show an error message."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/hex-to-text.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/hex-to-text.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/hex-to-text.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="8" spellcheck="false" placeholder="48 65 6C 6C 6F"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" rows="8" spellcheck="false" readonly placeholder="Hello"></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Hex to Text Converter',
+    toolDesc: 'Decode hexadecimal (hex) to readable text instantly. Supports UTF-8, custom separators and 0x prefixes.',
+    inputLabel: 'Hex Input',
+    outputLabel: 'Text Output',
+    example: 'Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    swap: '⇄ Text to Hex',
+    valid: '✓ Decoded successfully',
+    invalid: '✗ Invalid hex: ',
+    step1: 'Paste your hex values in the input area',
+    step2: 'Use space, comma, 0x prefixes, or no separator — all are auto-detected',
+    step3: 'The decoded text appears instantly in the output area',
+    step4: 'Click Copy to copy the decoded text to clipboard',
+  },
+  zh: {
+    toolTitle: '十六进制转文本转换器',
+    toolDesc: '即时将十六进制（Hex）解码为可读文本。支持 UTF-8、自定义分隔符和 0x 前缀。',
+    inputLabel: '十六进制输入',
+    outputLabel: '文本输出',
+    example: '示例',
+    clear: '清空',
+    copy: '复制',
+    swap: '⇄ 文本转十六进制',
+    valid: '✓ 解码成功',
+    invalid: '✗ 无效的十六进制：',
+    step1: '在输入区粘贴十六进制值',
+    step2: '可使用空格、逗号、0x 前缀或无分隔符 — 全部自动识别',
+    step3: '解码后的文本即时显示在输出区',
+    step4: '点击「复制」将解码的文本复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function hexToText(hex) {
+  let cleaned = hex.trim();
+  if (!cleaned) return '';
+  // remove 0x prefixes
+  cleaned = cleaned.replace(/0x/gi, '');
+  // if has separators, split; else treat as continuous
+  if (/[\s,;]+/.test(cleaned)) {
+    cleaned = cleaned.split(/[\s,;]+/).filter(Boolean).join('');
+  }
+  // pad to even length
+  if (cleaned.length % 2 !== 0) cleaned = '0' + cleaned;
+  if (!/^[0-9a-fA-F]*$/.test(cleaned)) {
+    throw new Error('hex string contains non-hex characters');
+  }
+  const bytes = new Uint8Array(cleaned.length / 2);
+  for (let i = 0; i < cleaned.length; i += 2) {
+    bytes[i / 2] = parseInt(cleaned.substr(i, 2), 16);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').value = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const text = hexToText(inp);
+    $('#output').value = text;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')} (${text.length} chars)</span>`;
+  } catch(e) {
+    $('#output').value = '';
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = '48 65 6C 6C 6F 2C 20 47 61 6D 65 5A 69 70 70 65 72 21 20 F0 9F 8E AE';
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <a class="gz-btn gz-btn-secondary" href="/dev/text-to-hex.html" style="text-decoration:none">${t('swap')}</a>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔤', href:'/dev/text-to-hex.html', name:'Text to Hex'},
+    {icon:'🔢', href:'/dev/ascii-binary-hex-converter.html', name:'ASCII/Binary/Hex'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'📊', href:'/dev/hex-viewer.html', name:'Hex Viewer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
