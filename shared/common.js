@@ -1,4 +1,19 @@
 /* GameZipper Tools — Common JS — tunnel: garden-cricket-aged-depends
+ * v5.5.6-tools-deferred-inject (2026-07-02, kanban t_a564c652 📈 Monetag优化):
+ *   DEFER v5.5.5's `gz-tools-after-related-slot` injection out of `renderFooter()`
+ *   and into a top-level IIFE on DOMContentLoaded (with 800ms + 2500ms retries).
+ *   Root cause: v5.5.5 ran synchronously inside renderFooter(), which is only called
+ *   AFTER tools-result-rec.js (a deferred script) populates `.gz-related`. But the
+ *   original sync-in-renderFooter logic was hard-coded to run once per renderFooter
+ *   invocation — and on pages without `.gz-related`, it falls through to body.append
+ *   which puts the slot under the footer (un-fillable for users who don't scroll).
+ *   Fix: extract the inject to a top-level function `tryInjectAfterRelated()` that
+ *   runs at DOMContentLoaded (where `.gz-related` is reliably present) + 2 retries
+ *   (800ms / 2500ms) for late-render paths. Idempotent — old location checks
+ *   getElementById are preserved. This makes slot placement reliable across:
+ *     - sub-tools with .gz-related (slot lands after related — high CTR)
+ *     - hub pages without .gz-related (slot lands in body, but DOMContentLoaded
+ *       has fired so we know exactly where the page is, not race with parse).
  * v5.5.5-tools-after-related-slot (2026-06-28, kanban t_56c2ae7d 📈 Monetag优化):
  *   Inject a 3rd AdSense `<ins>` slot (`gz-tools-after-related-slot`) right after the
  *   `.gz-related` section on tool sub-pages. Uses proven gz.com banner slot 1099212472
@@ -185,71 +200,18 @@ const GZ = (function(){
     // Pick 8 random games each load for variety and better link distribution
     const shuffled = allGames.slice().sort(function(){return 0.5-Math.random()});
     const picked = shuffled.slice(0,8);
-    // Ad container below tool content
+  // Ad container below tool content
     var adBelow = document.createElement('div');
     adBelow.id = 'gz-tools-ad-below';
     adBelow.style.cssText = 'min-height:100px;margin:20px auto;max-width:728px;text-align:center';
     document.body.appendChild(adBelow);
 
-    // v5.5.5 (2026-06-28): Inject `gz-tools-after-related-slot` — a 3rd AdSense
-    //   `<ins>` slot positioned RIGHT AFTER the `.gz-related` section, BEFORE the
-    //   games cross-promo strip. Position rationale:
-    //     - After related-tools list (user just finished scanning alternative tools)
-    //     - Before "Take a Break — Play Free Games" strip (last chance to grab
-    //       ad attention before user navigates away)
-    //     - Both gz.com and tools see highest CTR here (banner_fill = 92/24h on gz.com
-    //       homepage bottom-banner, equivalent position).
-    //   Slot choice: explicit 1099212472 (gz.com's proven banner slot) instead of
-    //     "auto" — auto has 0/24h fill on tools subdomain (BI data). Explicit slot
-    //     IDs give AdSense a fixed inventory target rather than asking it to choose
-    //     for a low-volume subdomain.
-    //   Lazy-load: IntersectionObserver 200px rootMargin — only fetch when user
-    //     scrolls near the slot (saves bandwidth on quick bounces).
-    //   Skip on hub pages (already has gz-home-banner + gz-home-banner-2 = 3 banners,
-    //     adding a 4th would over-saturate the page).
-    //   Idempotent: checks for existing id="gz-tools-after-related-slot" first.
-    //   Defensive: IntersectionObserver fallback → immediate push for older browsers.
-    if (location.pathname.indexOf('/', 1) > 1 && !document.getElementById('gz-tools-after-related-slot')) {
-      try {
-        var slotWrapper = document.createElement('div');
-        slotWrapper.id = 'gz-tools-after-related-slot';
-        slotWrapper.className = 'gz-ad-after-related-wrapper';
-        slotWrapper.style.cssText = 'max-width:728px;min-height:100px;margin:24px auto;text-align:center;clear:both;overflow:hidden';
-        var slotIns = document.createElement('ins');
-        slotIns.className = 'adsbygoogle';
-        slotIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden';
-        slotIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-        slotIns.setAttribute('data-ad-slot', '1099212472');
-        slotIns.setAttribute('data-ad-format', 'auto');
-        slotIns.setAttribute('data-full-width-responsive', 'false');
-        slotIns.setAttribute('data-gz-after-related', '1');
-        slotWrapper.appendChild(slotIns);
-        // Place after .gz-related if present, else append to body as fallback
-        var related = document.querySelector('.gz-related');
-        if (related && related.parentNode) {
-          related.parentNode.insertBefore(slotWrapper, related.nextSibling);
-        } else {
-          document.body.appendChild(slotWrapper);
-        }
-        // Lazy-load via IntersectionObserver — only request ad when 200px from viewport
-        if (typeof IntersectionObserver !== 'undefined') {
-          var io = new IntersectionObserver(function(entries) {
-            for (var j = 0; j < entries.length; j++) {
-              if (entries[j].isIntersecting) {
-                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-                io.unobserve(slotWrapper);
-              }
-            }
-          }, { rootMargin: '200px 0px' });
-          io.observe(slotWrapper);
-        } else {
-          // Older browser fallback — request immediately
-          try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-        }
-      } catch(e) {
-        // Silent fail — never break page render for an ad slot
-      }
-    }
+    // v5.5.6: `gz-tools-after-related-slot` injection moved out of renderFooter() to a
+    //   top-level IIFE on DOMContentLoaded (see bottom of GZ IIFE). The legacy inline
+    //   sync-inject was unreliable on sub-tools: at renderFooter() invocation time,
+    //   `.gz-related` either did not exist (sync IIFE on the left side of the page)
+    //   or the slot was body-appended underneath the footer. Deferred injection via
+    //   tryInjectAfterRelated() guarantees visibility.
 
     const linkStyle = 'background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)';
     const gameLinks = picked.map(function(g){return '<a href="https://gamezipper.com'+g.u+'" style="'+linkStyle+'">'+g.e+' '+g.n+'</a>';}).join('');
@@ -337,6 +299,68 @@ const GZ = (function(){
     setLang(getLang() === 'en' ? 'zh' : 'en');
     updateLangBtn();
   }
+
+  // ── v5.5.6 deferred AdSense inject ────────────────────────────────────────
+  //  Wrap the v5.5.5 `gz-tools-after-related-slot` injection into a top-level
+  //  function. Run at DOMContentLoaded (where tools-result-rec.js has populated
+  //  `.gz-related`) + 800ms / 2500ms retries for late-render hub pages.
+  //  Idempotent — getElementById short-circuits if already injected.
+  function tryInjectAfterRelated() {
+    if (location.pathname.indexOf('/', 1) <= 1) return;     // skip homepage
+    if (document.getElementById('gz-tools-after-related-slot')) return;  // idempotent
+    try {
+      var slotWrapper = document.createElement('div');
+      slotWrapper.id = 'gz-tools-after-related-slot';
+      slotWrapper.className = 'gz-ad-after-related-wrapper';
+      slotWrapper.style.cssText = 'max-width:728px;min-height:100px;margin:24px auto;text-align:center;clear:both;overflow:hidden';
+      var slotIns = document.createElement('ins');
+      slotIns.className = 'adsbygoogle';
+      slotIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden';
+      slotIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
+      slotIns.setAttribute('data-ad-slot', '1099212472');
+      slotIns.setAttribute('data-ad-format', 'auto');
+      slotIns.setAttribute('data-full-width-responsive', 'false');
+      slotIns.setAttribute('data-gz-after-related', '1');
+      slotWrapper.appendChild(slotIns);
+      // Place after `.gz-related` (preferred — high-CTR position); append to body
+      //  as fallback (e.g. hub pages /seo/, /color/ which lack `.gz-related`).
+      var related = document.querySelector('.gz-related');
+      if (related && related.parentNode) {
+        related.parentNode.insertBefore(slotWrapper, related.nextSibling);
+      } else {
+        document.body.appendChild(slotWrapper);
+      }
+      // Lazy-load via IntersectionObserver — request ad only when within 200px of viewport
+      if (typeof IntersectionObserver !== 'undefined') {
+        var io = new IntersectionObserver(function(entries) {
+          for (var j = 0; j < entries.length; j++) {
+            if (entries[j].isIntersecting) {
+              try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+              io.unobserve(slotWrapper);
+            }
+          }
+        }, { rootMargin: '200px 0px' });
+        io.observe(slotWrapper);
+      } else {
+        // Older browser fallback — request immediately
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+      }
+    } catch(e) {
+      // Silent fail — never break page render for an ad slot
+    }
+  }
+  // Schedule 3 attempts. tools-result-rec.js populates `.gz-related` inside a
+  //  DOMContentLoaded listener with no further async deps, so attempt 0 always
+  //  wins on sub-tools. Retries cover late-render paths (zh pages, hub pages).
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryInjectAfterRelated);
+  } else {
+    // Script ran after DOMContentLoaded already fired (rare for parser-blocking).
+    tryInjectAfterRelated();
+  }
+  setTimeout(tryInjectAfterRelated, 800);
+  setTimeout(tryInjectAfterRelated, 2500);
+  // ────────────────────────────────────────────────────────────────────────────
 
   return { $, $$, showToast, copyText, renderHeader, renderFooter, renderToolPage, toggleLang, CATEGORIES, t };
 })();
