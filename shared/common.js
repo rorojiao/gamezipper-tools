@@ -73,7 +73,12 @@
   // v5.10.1 (2026-06-27): Container AdSense Tier 0 + showContainerAd event completeness.
 //   v5.10 had banner AdSense Tier 0; v5.10.1 mirrors to container_ad (tool sub-pages).
 //   Cache suffix must be monotonically increasing to avoid browser reusing old version.
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=v513cbslot';s1.defer=true;document.head.appendChild(s1);
+  // 2026-07-02: bump cache to v=20260629512a (matches 4af31961 deploy) — old v=v513cbslot
+  // was a transient manually-written cache suffix that never made it to any commit;
+  // production code is currently v5.13-tools-cb-monetag-slot. Cloudflare CDN serves
+  // the same content regardless, but pinned cache versions prevent stale browser
+  // caches during partial deploys.
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260629512a';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260701v5140';s4.defer=true;document.head.appendChild(s4);
@@ -83,7 +88,11 @@
   // which returns 501 with no data). Catches all 1780 subpages that load common.js.
   // Cache v=20260614aa is the first tools-side bump; higher lexicographically than
   // gamezipper.com's v=202606147b so we know it's the new one.
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=20260618P0fix";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  // 2026-07-02: bump cache to v=202607029dac2e93ecb (parity with gamezipper.com/gz-analytics.js
+  // current deploy). Old v=20260618P0fix was 14 days stale; though Cloudflare CDN serves
+  // current source, the pinned cache suffix prevents a stale-browser window if the JS file
+  // is rolled back or hot-reloaded during debugging.
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=202607029dac2e93ecb";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
