@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>RPN 计算器（逆波兰表示法） - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="即时计算后缀（逆波兰）表达式，逐步显示栈状态。支持 +、−、×、÷、^、mod、sqrt、sin、cos、ln 等。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/calc/rpn-calculator.html">
+<meta property="og:title" content="RPN 计算器（逆波兰表示法）">
+<meta property="og:description" content="即时计算后缀（逆波兰）表达式，逐步显示栈状态。支持 +、−、×、÷、^、mod、sqrt、sin、cos、ln 等。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/calc/rpn-calculator.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RPN 计算器（逆波兰表示法）">
+<meta name="twitter:description" content="即时计算后缀（逆波兰）表达式，逐步显示栈状态。支持 +、−、×、÷、^、mod、sqrt、sin、cos、ln 等。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<style>
+.rpn-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media(max-width:768px){.rpn-grid{grid-template-columns:1fr}}
+.rpn-col{display:flex;flex-direction:column;gap:6px}
+.rpn-col label{font-size:.78em;text-transform:uppercase;letter-spacing:.04em;font-weight:600;color:var(--text2)}
+.rpn-col input{padding:12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono','SF Mono',Menlo,Consolas,monospace;font-size:1em}
+.rpn-col input:focus{outline:none;border-color:var(--accent)}
+.rpn-output{padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-family:monospace;font-size:1.1em;min-height:48px}
+.rpn-steps{font-size:.8em;line-height:1.8;font-family:monospace}
+.rpn-steps .step{padding:4px 8px;border-bottom:1px solid var(--border)}
+.rpn-steps .step:last-child{border-bottom:none}
+.rpn-status{font-size:.85em;min-height:1.4em;margin-top:4px}
+.rpn-status.ok{color:var(--success)}.rpn-status.err{color:var(--danger)}
+.rpn-help{margin:14px 0;padding:12px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.82em;line-height:1.7}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"RPN Calculator","description":"Free online RPN (Reverse Polish Notation) calculator. Evaluate postfix expressions instantly, step through the stack, and learn RPN math. Supports +, −, ×, ÷, ^, mod. Browser-only, no signup.","url": "https://tools.gamezipper.com/zh/calc/rpn-calculator.html","applicationCategory":"CalculatorApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is RPN (Reverse Polish Notation)?","acceptedAnswer":{"@type":"Answer","text":"RPN is a mathematical notation where operators follow their operands. For example, 3 4 + means 3 + 4 = 7. It eliminates the need for parentheses because the order of operations is always determined by position. HP calculators famously used RPN."}},{"@type":"Question","name":"How do I write expressions in RPN?","acceptedAnswer":{"@type":"Answer","text":"Write numbers first, then the operator. For 2 + 3, type: 2 3 +. For (5 + 3) × 2, type: 5 3 + 2 ×. The calculator processes tokens left to right, pushing numbers onto a stack and popping them when an operator appears."}},{"@type":"Question","name":"What operators are supported?","acceptedAnswer":{"@type":"Answer","text":"Addition (+), subtraction (−), multiplication (*), division (/), power (^), modulo (mod), and unary operations: neg (negate), sqrt, sin, cos, tan, ln, log."}},{"@type":"Question","name":"Why does RPN not need parentheses?","acceptedAnswer":{"@type":"Answer","text":"In RPN, the operator always applies to the most recent operands on the stack. The sequence 3 4 + 5 * unambiguously means (3+4)×5 without any grouping symbols."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/rpn-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/rpn-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/rpn-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="rpn-grid">
+      <div class="rpn-col">
+        <label id="lbl-input"></label>
+        <input type="text" id="expr" placeholder="3 4 + 5 *" autocomplete="off">
+        <div class="rpn-status" id="status"></div>
+      </div>
+      <div class="rpn-col">
+        <label id="lbl-result"></label>
+        <div class="rpn-output" id="result">—</div>
+      </div>
+    </div>
+    <div class="rpn-help" id="help"></div>
+    <div class="rpn-steps" id="steps"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'RPN Calculator (Reverse Polish Notation)',
+    toolDesc: 'Evaluate postfix (RPN) expressions instantly with step-by-step stack visualization. Supports +, −, ×, ÷, ^, mod, sqrt, sin, cos, ln and more.',
+    lblInput: 'RPN Expression',
+    lblResult: 'Result',
+    invalidExpr: 'Invalid expression — not enough operands or unknown operator',
+    step1: 'Type an RPN expression with numbers and operators separated by spaces',
+    step2: 'Numbers are pushed onto a stack; operators pop operands and push the result',
+    step3: 'For example: 5 3 + 2 × evaluates as (5+3)×2 = 16',
+    step4: 'The step-by-step breakdown shows the stack state after each token',
+  },
+  zh: {
+    toolTitle: 'RPN 计算器（逆波兰表示法）',
+    toolDesc: '即时计算后缀（逆波兰）表达式，逐步显示栈状态。支持 +、−、×、÷、^、mod、sqrt、sin、cos、ln 等。',
+    lblInput: 'RPN 表达式',
+    lblResult: '结果',
+    invalidExpr: '表达式无效 — 操作数不足或运算符未知',
+    step1: '输入由空格分隔的数字和运算符组成的 RPN 表达式',
+    step2: '数字入栈，运算符弹出操作数并将结果入栈',
+    step3: '例如：5 3 + 2 × 的计算过程为 (5+3)×2 = 16',
+    step4: '逐步分解显示每个 token 后的栈状态',
+  }
+});
+
+const { $, t } = GZ;
+
+$('#help').innerHTML = '<b>Operators:</b> + − * / ^ mod neg sqrt sin cos tan asin acos atan ln log exp abs floor ceil round &nbsp;|&nbsp; <b>Example:</b> 3 4 + 5 *';
+
+function evaluateRPN(expr) {
+  const tokens = expr.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return null;
+  const stack = [];
+  const steps = [];
+
+  const ops = {
+    '+': (a, b) => a + b,
+    '-': (a, b) => a - b,
+    '*': (a, b) => a * b,
+    '/': (a, b) => b === 0 ? NaN : a / b,
+    '^': (a, b) => Math.pow(a, b),
+    'mod': (a, b) => a % b,
+  };
+  const unary = {
+    'neg': a => -a,
+    'sqrt': a => Math.sqrt(a),
+    'sin': a => Math.sin(a),
+    'cos': a => Math.cos(a),
+    'tan': a => Math.tan(a),
+    'asin': a => Math.asin(a),
+    'acos': a => Math.acos(a),
+    'atan': a => Math.atan(a),
+    'ln': a => Math.log(a),
+    'log': a => Math.log10(a),
+    'exp': a => Math.exp(a),
+    'abs': a => Math.abs(a),
+    'floor': a => Math.floor(a),
+    'ceil': a => Math.ceil(a),
+    'round': a => Math.round(a),
+  };
+
+  for (const tok of tokens) {
+    if (tok in ops) {
+      if (stack.length < 2) return { error: true };
+      const b = stack.pop();
+      const a = stack.pop();
+      stack.push(ops[tok](a, b));
+    } else if (tok in unary) {
+      if (stack.length < 1) return { error: true };
+      const a = stack.pop();
+      stack.push(unary[tok](a));
+    } else {
+      const num = parseFloat(tok);
+      if (isNaN(num)) return { error: true };
+      stack.push(num);
+    }
+    steps.push({ token: tok, stack: [...stack] });
+  }
+
+  if (stack.length !== 1) return { error: true };
+  return { result: stack[0], steps };
+}
+
+function formatNum(n) {
+  if (isNaN(n)) return 'NaN';
+  if (!isFinite(n)) return n > 0 ? '∞' : '−∞';
+  if (Math.abs(n) < 1e-10) return '0';
+  return parseFloat(n.toPrecision(12)).toString();
+}
+
+$('#expr').addEventListener('input', function() {
+  const expr = this.value.trim();
+  if (!expr) {
+    $('#result').textContent = '—';
+    $('#status').textContent = '';
+    $('#steps').innerHTML = '';
+    return;
+  }
+  const res = evaluateRPN(expr);
+  if (!res || res.error) {
+    $('#result').textContent = 'Error';
+    $('#status').textContent = t('invalidExpr');
+    $('#status').className = 'rpn-status err';
+    $('#steps').innerHTML = '';
+    return;
+  }
+  $('#result').textContent = formatNum(res.result);
+  $('#status').textContent = '= ' + formatNum(res.result);
+  $('#status').className = 'rpn-status ok';
+  $('#steps').innerHTML = res.steps.map(s =>
+    '<div class="step"><b>' + s.token + '</b> → [ ' + s.stack.map(formatNum).join(', ') + ' ]</div>'
+  ).join('');
+});
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔬', href:'/calc/scientific-calculator.html', name:'Scientific Calc'},
+    {icon:'🔢', href:'/calc/percentage-calculator.html', name:'Percentage'},
+    {icon:'➗', href:'/calc/fraction-calculator.html', name:'Fraction Calc'},
+    {icon:'√', href:'/calc/fraction-simplifier.html', name:'Fraction Simplifier'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

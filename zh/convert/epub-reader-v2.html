@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>EPUB 在线阅读器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在线阅读 EPUB 电子书。拖拽上传、浏览章节、自定义字体/字号/主题。100% 浏览器本地运行 — 无需上传、无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/epub-reader-v2.html">
+  <meta property="og:title" content="EPUB 在线阅读器">
+  <meta property="og:description" content="免费在线阅读 EPUB 电子书。拖拽上传、浏览章节、自定义字体/字号/主题。100% 浏览器本地运行 — 无需上传、无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/epub-reader-v2.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="EPUB 在线阅读器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+.ep-drop{border:2px dashed var(--gz-border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:1rem;background:var(--gz-surface)}
+.ep-drop:hover,.ep-drop.dragover{border-color:var(--gz-accent);background:rgba(78,205,196,.08)}
+.ep-reader{display:none;grid-template-columns:220px 1fr;gap:1rem;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:10px;padding:1rem;min-height:520px}
+@media (max-width:760px){.ep-reader{grid-template-columns:1fr}}
+.ep-toc{border-right:1px solid var(--gz-border);padding-right:10px;max-height:520px;overflow:auto}
+.ep-toc h3{font-size:.85em;color:var(--gz-text-muted);margin:0 0 8px;text-transform:uppercase;letter-spacing:.05em}
+.ep-toc a{display:block;padding:6px 8px;border-radius:6px;color:var(--gz-text);text-decoration:none;font-size:.85em;cursor:pointer;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ep-toc a:hover{background:rgba(78,205,196,.1)}
+.ep-toc a.active{background:var(--gz-accent);color:#fff}
+.ep-content{max-height:520px;overflow:auto;padding:0 12px;line-height:1.7}
+.ep-content h1,.ep-content h2,.ep-content h3{margin:.8em 0 .4em}
+.ep-content p{margin:.6em 0}
+.ep-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:.85em}
+.ep-controls label{color:var(--gz-text-muted);margin-right:2px}
+.ep-controls select,.ep-controls input[type=number]{padding:4px 8px;background:var(--gz-bg);border:1px solid var(--gz-border);color:var(--gz-text);border-radius:5px;font-size:.9em}
+.theme-light .ep-content{background:#fff;color:#1a1a1a}
+.theme-sepia .ep-content{background:#f4ecd8;color:#5b4636}
+.theme-dark .ep-content{background:#1a1a1a;color:#d4d4d4}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"EPUB Reader","description":"Read EPUB eBooks online for free. Drag and drop your .epub file, navigate chapters, customize font, size and theme — 100% in your browser, no upload, no signup.","url": "https://tools.gamezipper.com/zh/convert/epub-reader-v2.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I read an EPUB file online?","acceptedAnswer":{"@type":"Answer","text":"Drop your .epub file onto the upload zone above. The reader parses the eBook and lists chapters in the sidebar — click any chapter to read it. Everything happens in your browser."}},{"@type":"Question","name":"Is my eBook uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. The reader is 100% browser-based using JSZip. Your eBook is opened locally and never sent anywhere."}},{"@type":"Question","name":"Can I change the font size and theme?","acceptedAnswer":{"@type":"Answer","text":"Yes. Use the controls above the reading pane to switch between Serif, Sans and Monospace fonts, change the size, and pick Light, Sepia or Dark themes."}},{"@type":"Question","name":"Does it work on mobile?","acceptedAnswer":{"@type":"Answer","text":"Yes. The reader adapts to small screens — the chapter list moves above the content on phones."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/epub-reader-v2.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/epub-reader-v2.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/epub-reader-v2.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="ep-drop" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin-bottom:8px;opacity:.6"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <div id="dropText"></div>
+    </div>
+    <input type="file" id="fileInput" accept=".epub,application/epub+zip" hidden>
+    <div id="info"></div>
+    <div class="ep-controls" id="controls" style="display:none">
+      <label id="lbl-font"></label>
+      <select id="fontFamily">
+        <option value="'Georgia',serif">Serif (Georgia)</option>
+        <option value="'Helvetica',Arial,sans-serif">Sans (Helvetica)</option>
+        <option value="'Courier New',monospace">Monospace</option>
+      </select>
+      <label id="lbl-size"></label>
+      <input type="number" id="fontSize2" value="17" min="12" max="32" step="1">
+      <label id="lbl-theme"></label>
+      <select id="theme">
+        <option value="theme-light">☀️ Light</option>
+        <option value="theme-sepia">📜 Sepia</option>
+        <option value="theme-dark">🌙 Dark</option>
+      </select>
+      <button class="gz-btn gz-btn-secondary" id="newBook" style="margin-left:auto">Open another</button>
+    </div>
+    <div class="ep-reader theme-light" id="reader">
+      <aside class="ep-toc"><h3 id="tocHeading"></h3><div id="toc"></div></aside>
+      <div class="ep-content" id="content"></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'EPUB Reader — Read eBooks Online',
+    toolDesc: 'Read EPUB eBooks online for free. Drag and drop, navigate chapters, customize font, size and theme. 100% browser-based — no upload, no signup.',
+    dropText: 'Drop your .epub file here or click to browse',
+    tocHeading: 'Chapters',
+    lblFont: 'Font',
+    lblSize: 'Size',
+    lblTheme: 'Theme',
+    loading: 'Reading EPUB…',
+    invalid: 'This file is not a valid EPUB archive.',
+    step1: 'Drop your .epub file onto the upload zone',
+    step2: 'Click any chapter in the sidebar to start reading',
+    step3: 'Customize font, font size and theme to your taste',
+    step4: 'Your book stays private — everything runs in your browser',
+  },
+  zh: {
+    toolTitle: 'EPUB 在线阅读器',
+    toolDesc: '免费在线阅读 EPUB 电子书。拖拽上传、浏览章节、自定义字体/字号/主题。100% 浏览器本地运行 — 无需上传、无需注册。',
+    dropText: '将 .epub 文件拖到这里或点击选择',
+    tocHeading: '目录',
+    lblFont: '字体',
+    lblSize: '字号',
+    lblTheme: '主题',
+    loading: '正在读取 EPUB…',
+    invalid: '此文件不是有效的 EPUB 归档。',
+    step1: '将 .epub 文件拖入上传区',
+    step2: '点击侧边栏的章节开始阅读',
+    step3: '根据喜好自定义字体、字号和主题',
+    step4: '你的电子书完全私密 — 所有操作在浏览器中进行',
+  }
+});
+
+const { $, t } = GZ;
+let book = null;
+let currentChapter = 0;
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function decodeEntities(s) {
+  const ent = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', copy: '©', reg: '®', mdash: '—', ndash: '–', hellip: '…', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”' };
+  return s.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (full, code) => {
+    if (code[0] === '#') {
+      const num = code[1] === 'x' || code[1] === 'X' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+      return String.fromCodePoint(num);
+    }
+    return ent[code.toLowerCase()] || full;
+  });
+}
+
+function sanitizeHtml(html) {
+  // remove scripts and event handlers
+  html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+  html = html.replace(/\son\w+="[^"]*"/gi, '');
+  html = html.replace(/\son\w+='[^']*'/gi, '');
+  html = html.replace(/javascript:/gi, '');
+  return decodeEntities(html);
+}
+
+async function loadEpub(file) {
+  $('#status').textContent = t('loading');
+  try {
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const containerXml = await zip.file('META-INF/container.xml')?.async('string');
+    if (!containerXml) throw new Error(t('invalid'));
+    const opfPath = (containerXml.match(/full-path="([^"]+)"/) || [])[1];
+    if (!opfPath) throw new Error(t('invalid'));
+    const opfXml = await zip.file(opfPath)?.async('string');
+    if (!opfXml) throw new Error(t('invalid'));
+    const opfDir = opfPath.includes('/') ? opfPath.replace(/[^/]+$/, '') : '';
+
+    // manifest + spine
+    const manifest = {};
+    const itemRe = /<item\b[^>]*\/>/g;
+    let m;
+    while ((m = itemRe.exec(opfXml)) !== null) {
+      const tag = m[0];
+      const id = (tag.match(/id="([^"]+)"/) || [])[1];
+      const href = (tag.match(/href="([^"]+)"/) || [])[1];
+      const mt = (tag.match(/media-type="([^"]+)"/) || [])[1];
+      if (id && href) manifest[id] = { href: decodeURIComponent(href), mediaType: mt };
+    }
+    const spineIds = [];
+    const spineRe = /<itemref\b[^>]*idref="([^"]+)"[^>]*\/?>/g;
+    while ((m = spineRe.exec(opfXml)) !== null) spineIds.push(m[1]);
+    if (!spineIds.length) Object.keys(manifest).forEach(k => { if (manifest[k].mediaType === 'application/xhtml+xml') spineIds.push(k); });
+
+    // title
+    const bookTitle = (opfXml.match(/<dc:title[^>]*>([\s\S]*?)<\/dc:title>/i) || [])[1] || file.name;
+    const bookAuthor = (opfXml.match(/<dc:creator[^>]*>([\s\S]*?)<\/dc:creator>/i) || [])[1] || '';
+
+    // resolve chapters
+    const chapters = [];
+    for (const id of spineIds) {
+      const item = manifest[id];
+      if (!item || item.mediaType !== 'application/xhtml+xml') continue;
+      const filePath = (opfDir + item.href).replace(/^\.\//, '');
+      const html = await zip.file(filePath)?.async('string');
+      if (html) {
+        const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        const body = bodyMatch ? bodyMatch[1] : html;
+        const hMatch = body.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i);
+        const label = hMatch ? hMatch[1].replace(/<[^>]+>/g,'').trim() : `Chapter ${chapters.length + 1}`;
+        chapters.push({ label, html: body });
+      }
+    }
+    book = { title: bookTitle.replace(/<[^>]+>/g,'').trim(), author: bookAuthor.replace(/<[^>]+>/g,'').trim(), chapters };
+    $('#info').innerHTML = `<div class="midi-info"><strong>${esc(book.title)}</strong>${book.author ? ' — ' + esc(book.author) : ''} · ${book.chapters.length} chapters</div>`;
+    $('#dropZone').style.display = 'none';
+    $('#controls').style.display = 'flex';
+    $('#reader').style.display = 'grid';
+    renderToc();
+    showChapter(0);
+    $('#status').textContent = '';
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')} (${e.message})</span>`;
+  }
+}
+
+function renderToc() {
+  if (!book) return;
+  $('#toc').innerHTML = book.chapters.map((c, i) =>
+    `<a data-i="${i}" class="${i===currentChapter?'active':''}">${esc((c.label||'Chapter '+(i+1)).slice(0,60))}</a>`
+  ).join('');
+  $('#toc').querySelectorAll('a').forEach(a => a.addEventListener('click', e => showChapter(+e.target.dataset.i)));
+}
+
+function showChapter(i) {
+  if (!book || i < 0 || i >= book.chapters.length) return;
+  currentChapter = i;
+  $('#content').innerHTML = sanitizeHtml(book.chapters[i].html);
+  $('#content').scrollTop = 0;
+  renderToc();
+}
+
+// Controls
+$('#fontFamily').addEventListener('change', e => $('#content').style.fontFamily = e.target.value);
+$('#fontSize2').addEventListener('input', e => $('#content').style.fontSize = e.target.value + 'px');
+$('#theme').addEventListener('change', e => {
+  const r = $('#reader');
+  r.classList.remove('theme-light','theme-sepia','theme-dark');
+  r.classList.add(e.target.value);
+});
+$('#newBook').addEventListener('click', () => {
+  book = null;
+  $('#reader').style.display = 'none';
+  $('#controls').style.display = 'none';
+  $('#dropZone').style.display = 'block';
+  $('#info').innerHTML = '';
+});
+
+const dz = $('#dropZone');
+dz.addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => { if (e.target.files[0]) loadEpub(e.target.files[0]); e.target.value=''; });
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadEpub(e.dataTransfer.files[0]); });
+$('#dropText').textContent = t('dropText');
+$('#tocHeading').textContent = t('tocHeading');
+$('#lbl-font').textContent = t('lblFont');
+$('#lbl-size').textContent = t('lblSize');
+$('#lbl-theme').textContent = t('lblTheme');
+$('#toolbar').innerHTML = '';
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/convert/epub-to-pdf.html', name:'EPUB to PDF'},
+    {icon:'📖', href:'/convert/pdf-viewer.html', name:'PDF Viewer'},
+    {icon:'📄', href:'/convert/word-to-pdf.html', name:'Word to PDF'},
+    {icon:'🗜️', href:'/convert/pdf-compressor.html', name:'PDF Compressor'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

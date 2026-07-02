@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Bcrypt 密码验证器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="检查明文密码是否匹配 bcrypt 哈希值。免费、安全、100% 浏览器本地运行 — 不上传任何数据。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/bcrypt-verify.html">
+  <meta property="og:title" content="Bcrypt 密码验证器">
+  <meta property="og:description" content="检查明文密码是否匹配 bcrypt 哈希值。免费、安全、100% 浏览器本地运行 — 不上传任何数据。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/bcrypt-verify.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Bcrypt 密码验证器">
+<meta name="twitter:description" content="检查明文密码是否匹配 bcrypt 哈希值。免费、安全、100% 浏览器本地运行 — 不上传任何数据。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+<style>
+.gz-field{margin-bottom:14px}
+.gz-field label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}
+.gz-field input,.gz-field textarea{width:100%;font-family:monospace;font-size:.9em;padding:10px;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-card);color:var(--gz-text);box-sizing:border-box}
+.gz-result{padding:18px 20px;border-radius:14px;margin-top:14px;font-weight:700;text-align:center;font-size:1.1em}
+.gz-result.match{background:rgba(0,214,114,.12);border:1px solid #00d672;color:#00d672}
+.gz-result.nomatch{background:rgba(233,69,96,.12);border:1px solid #e94560;color:#e94560}
+.gz-result.error{background:rgba(255,217,61,.12);border:1px solid #ffd93d;color:#ffd93d}
+.gz-result.idle{background:var(--gz-card);border:1px solid var(--gz-border);color:var(--gz-text2)}
+.hash-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.hash-info .cell{background:var(--gz-card);border:1px solid var(--gz-border);border-radius:10px;padding:10px 12px}
+.hash-info .cell .lbl{font-size:.72em;color:var(--gz-text2);text-transform:uppercase;letter-spacing:.05em}
+.hash-info .cell .val{font-size:1rem;font-weight:700;margin-top:2px;word-break:break-all}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Bcrypt Password Verifier","description":"Verify a password against a bcrypt hash online. Free bcrypt password checker — 100% browser-based, no upload.","url": "https://tools.gamezipper.com/zh/dev/bcrypt-verify.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I verify a bcrypt password?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your bcrypt hash in the hash field and the plaintext password in the password field, then click Verify. The tool uses bcrypt.compareSync to check if the password matches the hash."}}, {"@type": "Question", "name": "What does a bcrypt hash look like?", "acceptedAnswer": {"@type": "Answer", "text": "A bcrypt hash starts with $2a$, $2b$ or $2y$, followed by a two-digit cost factor, a $ separator, then 22 characters of base64-encoded salt and 31 characters of hash. Total length is 60 characters."}}, {"@type": "Question", "name": "Is it safe to paste my password here?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All verification happens locally in your browser using the bcryptjs library. Your password and hash never leave your device or get sent to any server."}}, {"@type": "Question", "name": "Why does verification take a moment?", "acceptedAnswer": {"@type": "Answer", "text": "Bcrypt is intentionally slow to resist brute-force attacks. The cost factor (e.g. 10, 12, 14) controls how many iterations run — higher cost means slower but more secure verification."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/bcrypt-verify.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/bcrypt-verify.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/bcrypt-verify.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-field">
+      <label id="lbl-hash"></label>
+      <textarea id="hash-input" rows="3" spellcheck="false" placeholder="$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"></textarea>
+    </div>
+    <div class="gz-field">
+      <label id="lbl-pass"></label>
+      <input type="text" id="pass-input" spellcheck="false" placeholder="secret123">
+    </div>
+    <div id="result" class="gz-result idle"></div>
+    <div id="hash-info" class="hash-info" style="display:none"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Bcrypt Password Verifier',
+    toolDesc: 'Check if a plaintext password matches a bcrypt hash. Free, secure, 100% browser-based — no data uploaded.',
+    hashLabel: 'Bcrypt Hash',
+    passLabel: 'Password to Check',
+    verify: 'Verify',
+    clear: 'Clear',
+    copy: 'Copy Hash',
+    match: '✓ MATCH — password is correct',
+    nomatch: '✗ NO MATCH — password does not match',
+    error: '⚠ Invalid hash format',
+    enterBoth: 'Enter a hash and password to verify',
+    computing: 'Computing…',
+    infoAlgorithm: 'Algorithm',
+    infoVersion: 'Version',
+    infoCost: 'Cost Factor',
+    infoSalt: 'Salt (22 chars)',
+    infoHash: 'Hash (31 chars)',
+    step1: 'Paste your bcrypt hash (starts with $2a$, $2b$ or $2y$)',
+    step2: 'Enter the plaintext password you want to verify',
+    step3: 'Click Verify — the tool checks locally with bcrypt.compareSync',
+    step4: 'A green MATCH or red NO MATCH result appears instantly',
+  },
+  zh: {
+    toolTitle: 'Bcrypt 密码验证器',
+    toolDesc: '检查明文密码是否匹配 bcrypt 哈希值。免费、安全、100% 浏览器本地运行 — 不上传任何数据。',
+    hashLabel: 'Bcrypt 哈希',
+    passLabel: '待验证密码',
+    verify: '验证',
+    clear: '清空',
+    copy: '复制哈希',
+    match: '✓ 匹配 — 密码正确',
+    nomatch: '✗ 不匹配 — 密码错误',
+    error: '⚠ 无效的哈希格式',
+    enterBoth: '请输入哈希和密码以验证',
+    computing: '计算中…',
+    infoAlgorithm: '算法',
+    infoVersion: '版本',
+    infoCost: '成本因子',
+    infoSalt: '盐值（22字符）',
+    infoHash: '哈希（31字符）',
+    step1: '粘贴 bcrypt 哈希（以 $2a$、$2b$ 或 $2y$ 开头）',
+    step2: '输入要验证的明文密码',
+    step3: '点击「验证」— 工具使用 bcrypt.compareSync 本地检查',
+    step4: '即时显示绿色「匹配」或红色「不匹配」结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const result = $('#result');
+const hashInfo = $('#hash-info');
+
+function parseHash(hash) {
+  // $2a$10$22charsalt31charhash
+  const m = hash.match(/^\$(2a|2b|2y)\$(\d{2})\$(.{22})(.{31})$/);
+  if (!m) return null;
+  return { version: m[1], cost: m[2], salt: m[3], hashPart: m[4] };
+}
+
+function doVerify() {
+  const hash = $('#hash-input').value.trim();
+  const pass = $('#pass-input').value;
+  if (!hash || !pass) {
+    result.className = 'gz-result idle';
+    result.textContent = t('enterBoth');
+    hashInfo.style.display = 'none';
+    return;
+  }
+  const parsed = parseHash(hash);
+  if (!parsed) {
+    result.className = 'gz-result error';
+    result.textContent = t('error');
+    hashInfo.style.display = 'none';
+    return;
+  }
+  result.className = 'gz-result idle';
+  result.textContent = t('computing');
+  // show parsed info
+  hashInfo.style.display = 'grid';
+  hashInfo.innerHTML = `
+    <div class="cell"><div class="lbl">${t('infoAlgorithm')}</div><div class="val">bcrypt</div></div>
+    <div class="cell"><div class="lbl">${t('infoVersion')}</div><div class="val">$${parsed.version}</div></div>
+    <div class="cell"><div class="lbl">${t('infoCost')}</div><div class="val">${parsed.cost}</div></div>
+    <div class="cell"><div class="lbl">${t('infoSalt')}</div><div class="val" style="font-size:.8em">${parsed.salt}</div></div>`;
+  // defer so UI updates
+  setTimeout(() => {
+    try {
+      const match = bcryptjs.compareSync(pass, hash);
+      result.className = 'gz-result ' + (match ? 'match' : 'nomatch');
+      result.textContent = match ? t('match') : t('nomatch');
+    } catch(e) {
+      result.className = 'gz-result error';
+      result.textContent = t('error') + ': ' + e.message;
+    }
+  }, 50);
+}
+
+function doClear() {
+  $('#hash-input').value = '';
+  $('#pass-input').value = '';
+  result.className = 'gz-result idle';
+  result.textContent = '';
+  hashInfo.style.display = 'none';
+}
+
+$('#hash-input').addEventListener('input', () => { result.className='gz-result idle'; result.textContent=''; });
+$('#pass-input').addEventListener('input', () => { result.className='gz-result idle'; result.textContent=''; });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doVerify()">${t('verify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#hash-input').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔒', href:'/dev/bcrypt-generator.html', name:'Bcrypt Generator'},
+    {icon:'🛡️', href:'/dev/argon2.html', name:'Argon2'},
+    {icon:'#️⃣', href:'/dev/hash-generator.html', name:'Hash Generator'},
+    {icon:'🔑', href:'/dev/api-key-generator.html', name:'API Key Gen'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

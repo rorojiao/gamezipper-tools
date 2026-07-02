@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JSON 转 Schema 生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="从任意 JSON 数据自动推断 JSON Schema（Draft-07）。支持类型检测、必填字段和嵌套对象。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-to-schema.html">
+  <meta property="og:title" content="JSON 转 Schema 生成器">
+  <meta property="og:description" content="从任意 JSON 数据自动推断 JSON Schema（Draft-07）。支持类型检测、必填字段和嵌套对象。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-to-schema.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 转 Schema 生成器">
+<meta name="twitter:description" content="从任意 JSON 数据自动推断 JSON Schema（Draft-07）。支持类型检测、必填字段和嵌套对象。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+.gz-options{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.gz-options label{font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:4px}
+.gz-options input[type=checkbox]{accent-color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to Schema Generator","description":"Generate a JSON Schema from any JSON data automatically. Draft-07 compliant with type detection and nested objects. Free, browser-based.","url": "https://tools.gamezipper.com/zh/dev/json-to-schema.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a JSON Schema?", "acceptedAnswer": {"@type": "Answer", "text": "A JSON Schema is a vocabulary that lets you annotate and validate JSON documents. It describes the structure, types and constraints of your data — like a type system for JSON."}}, {"@type": "Question", "name": "How does the schema inference work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool walks your JSON recursively and infers the type of each field (string, number, boolean, object, array, null). For objects it lists properties and required fields; for arrays it samples the first element."}}, {"@type": "Question", "name": "Which JSON Schema draft is used?", "acceptedAnswer": {"@type": "Answer", "text": "The generator outputs Draft-07 schemas by default ($schema set to http://json-schema.org/draft-07/schema#). This is the most widely supported version."}}, {"@type": "Question", "name": "Is my JSON data sent anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. All schema generation happens in your browser using JavaScript. Your JSON data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-schema.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-schema.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-schema.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-options">
+      <label><input type="checkbox" id="opt-required" checked> <span id="lbl-required"></span></label>
+      <label><input type="checkbox" id="opt-additional" checked> <span id="lbl-additional"></span></label>
+      <label><input type="checkbox" id="opt-titles" checked> <span id="lbl-titles"></span></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="12" spellcheck="false" placeholder='{"name":"GameZipper","version":1.0,"active":true,"tags":["tool","free"]}'></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to Schema Generator',
+    toolDesc: 'Automatically infer a JSON Schema (Draft-07) from any JSON data. Type detection, required fields and nested objects.',
+    inputLabel: 'JSON Input',
+    outputLabel: 'Generated Schema',
+    format: 'Format',
+    example: 'Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    optRequired: 'Mark required fields',
+    optAdditional: 'Allow additional properties',
+    optTitles: 'Include titles',
+    valid: '✓ Schema generated',
+    invalid: '✗ Invalid JSON: ',
+    step1: 'Paste your JSON data in the input area',
+    step2: 'Toggle options: required fields, additional properties, titles',
+    step3: 'The schema generates instantly with syntax highlighting',
+    step4: 'Click Copy to copy the Draft-07 JSON Schema',
+  },
+  zh: {
+    toolTitle: 'JSON 转 Schema 生成器',
+    toolDesc: '从任意 JSON 数据自动推断 JSON Schema（Draft-07）。支持类型检测、必填字段和嵌套对象。',
+    inputLabel: 'JSON 输入',
+    outputLabel: '生成的 Schema',
+    format: '格式化',
+    example: '示例',
+    clear: '清空',
+    copy: '复制',
+    optRequired: '标记必填字段',
+    optAdditional: '允许额外属性',
+    optTitles: '包含标题',
+    valid: '✓ Schema 已生成',
+    invalid: '✗ 无效的 JSON：',
+    step1: '在输入区粘贴 JSON 数据',
+    step2: '切换选项：必填字段、额外属性、标题',
+    step3: 'Schema 即时生成并带语法高亮',
+    step4: '点击「复制」复制 Draft-07 JSON Schema',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function inferSchema(value, depth) {
+  const schema = {};
+  const type = Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value;
+  schema.type = type;
+
+  if (type === 'string') {
+    schema.minLength = 0;
+  } else if (type === 'integer' || (type === 'number' && Number.isInteger(value))) {
+    schema.type = 'integer';
+  } else if (type === 'object') {
+    const props = {};
+    const required = [];
+    for (const [k, v] of Object.entries(value)) {
+      props[k] = inferSchema(v, depth + 1);
+      required.push(k);
+    }
+    schema.properties = props;
+    if ($('#opt-required').checked) schema.required = required;
+    schema.additionalProperties = $('#opt-additional').checked;
+    if ($('#opt-titles').checked) schema.title = 'Object';
+  } else if (type === 'array') {
+    if (value.length > 0) {
+      schema.items = inferSchema(value[0], depth + 1);
+    } else {
+      schema.items = {};
+    }
+    schema.minItems = 0;
+  }
+  return schema;
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function generate() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').innerHTML = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const data = JSON.parse(inp);
+    const schema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      ...(typeof data === 'object' && data !== null ? { type: Array.isArray(data) ? 'array' : 'object' } : {}),
+      ...inferSchema(data, 0)
+    };
+    // merge top-level
+    if (typeof data === 'object' && data !== null) {
+      const inferred = inferSchema(data, 0);
+      Object.assign(schema, inferred);
+    } else {
+      schema.type = typeof data === 'string' ? 'string' : typeof data;
+      if (schema.type === 'number') schema.type = Number.isInteger(data) ? 'integer' : 'number';
+    }
+    const formatted = JSON.stringify(schema, null, 2);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')} (Draft-07)</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    id: 42,
+    name: 'GameZipper Tools',
+    description: 'Free online utilities',
+    active: true,
+    version: 1.0,
+    tags: ['dev', 'text', 'image'],
+    author: { name: 'Team', email: 'hi@example.com' },
+    createdAt: null
+  }, null, 2);
+  generate();
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', generate);
+['opt-required','opt-additional','opt-titles'].forEach(id => $('#' + id).addEventListener('change', generate));
+
+$('#lbl-required').textContent = t('optRequired');
+$('#lbl-additional').textContent = t('optAdditional');
+$('#lbl-titles').textContent = t('optTitles');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔷', href:'/dev/json-schema-validator.html', name:'JSON Schema Validator'},
+    {icon:'📋', href:'/dev/json-to-typescript.html', name:'JSON to TypeScript'},
+    {icon:'🔒', href:'/dev/json-minifier.html', name:'JSON Minifier'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

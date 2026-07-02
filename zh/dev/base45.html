@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Base45 编码 / 解码 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将文本或二进制编码为 Base45，或反向解码。符合 RFC 9285 标准 — 欧盟数字新冠证明使用的编码。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/base45.html">
+  <meta property="og:title" content="Base45 编码 / 解码">
+  <meta property="og:description" content="将文本或二进制编码为 Base45，或反向解码。符合 RFC 9285 标准 — 欧盟数字新冠证明使用的编码。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/base45.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Base45 编码 / 解码">
+  <meta name="twitter:description" content="将文本或二进制编码为 Base45，或反向解码。符合 RFC 9285 标准 — 欧盟数字新冠证明使用的编码。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<style>
+.base-output{background:var(--gz-bg-alt);border:1px solid var(--gz-border,#444);border-radius:12px;padding:16px;font-family:monospace;font-size:1.05em;line-height:1.6;word-break:break-all;white-space:pre-wrap;min-height:60px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Base45 Encoder & Decoder","description":"Free Base45 encoder and decoder. Encode text or binary to Base45 and decode it back. Full EU Digital COVID Certificate Base45 (RFC 9285) support — instant, no signup, runs in your browser.","url": "https://tools.gamezipper.com/zh/dev/base45.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Base45?", "acceptedAnswer": {"@type": "Answer", "text": "Base45 is a binary-to-text encoding scheme defined in RFC 9285. It uses a 45-character alphabet (0-9, A-Z, space, $, %, *, +, -, ., /, :) to encode data compactly. It was designed for QR codes, most notably used in the EU Digital COVID Certificate."}}, {"@type": "Question", "name": "How does Base45 compare to Base64?", "acceptedAnswer": {"@type": "Answer", "text": "Base45 is more efficient than Base64 for data that will be placed in a QR code, because QR codes can natively store alphanumeric characters (which Base45 uses) more densely than the binary that Base64 decoders must handle. Base45 produces roughly 2 bytes per 3 characters."}}, {"@type": "Question", "name": "What is the Base45 alphabet?", "acceptedAnswer": {"@type": "Answer", "text": "The 45 characters are: 0-9 (10), A-Z (26), then space, $, %, *, +, -, ., /, : (9). That is 10+26+9 = 45 symbols. The order is important for correct encoding and decoding."}}, {"@type": "Question", "name": "What was Base45 used for?", "acceptedAnswer": {"@type": "Answer", "text": "Base45's main real-world use is the EU Digital COVID Certificate (green pass), where the signed vaccination data is CBOR-encoded, zlib-compressed, then Base45-encoded so it fits compactly in a QR code on a phone screen or paper."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/base45.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/base45.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/base45.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="base-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Base45 Encoder & Decoder',
+    toolDesc: 'Encode text or binary to Base45 and decode it back. RFC 9285 compliant — the encoding used in EU Digital COVID Certificates.',
+    encode: 'Encode',
+    decode: 'Decode',
+    step1: 'Type or paste text (encode) or Base45 (decode) in the input',
+    step2: 'Choose Encode or Decode mode',
+    step3: 'The result appears instantly — click Copy',
+    step4: 'Invalid Base45 input shows a clear error message',
+  },
+  zh: {
+    toolTitle: 'Base45 编码 / 解码',
+    toolDesc: '将文本或二进制编码为 Base45，或反向解码。符合 RFC 9285 标准 — 欧盟数字新冠证明使用的编码。',
+    encode: '编码',
+    decode: '解码',
+    step1: '在输入区输入文本（编码）或 Base45（解码）',
+    step2: '选择编码或解码模式',
+    step3: '结果即时显示 — 点击复制',
+    step4: '无效的 Base45 输入会显示清晰的错误信息',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'encode';
+
+const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+const DECODE_MAP = {};
+for (let i = 0; i < ALPHABET.length; i++) DECODE_MAP[ALPHABET[i]] = i;
+
+function bytesToBase45(bytes) {
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 2) {
+    if (i + 1 < bytes.length) {
+      const x = (bytes[i] << 8) + bytes[i + 1];
+      const e = x % 45;
+      const d = Math.floor(x / 45) % 45;
+      const c = Math.floor(x / 45 / 45) % 45;
+      out += ALPHABET[c] + ALPHABET[d] + ALPHABET[e];
+    } else {
+      const x = bytes[i];
+      const d = x % 45;
+      const c = Math.floor(x / 45) % 45;
+      out += ALPHABET[c] + ALPHABET[d];
+    }
+  }
+  return out;
+}
+
+function base45ToBytes(str) {
+  const chars = [...str];
+  const residual = chars.length % 3;
+  if (residual === 1) throw new Error('Invalid Base45: length mod 3 is 1');
+  const out = [];
+  for (let i = 0; i < chars.length; i += 3) {
+    let c, d, e;
+    if (i + 2 < chars.length) {
+      c = chars[i]; d = chars[i+1]; e = chars[i+2];
+      if (!(c in DECODE_MAP) || !(d in DECODE_MAP) || !(e in DECODE_MAP))
+        throw new Error('Invalid Base45 character in triple');
+      const x = DECODE_MAP[c] + 45 * DECODE_MAP[d] + 45 * 45 * DECODE_MAP[e];
+      out.push(x >> 8);
+      out.push(x & 0xff);
+    } else {
+      // last two chars
+      c = chars[i]; d = chars[i+1];
+      if (!(c in DECODE_MAP) || !(d in DECODE_MAP))
+        throw new Error('Invalid Base45 character in pair');
+      const x = DECODE_MAP[c] + 45 * DECODE_MAP[d];
+      if (x > 255) throw new Error('Invalid Base45: last pair > 255');
+      out.push(x & 0xff);
+    }
+  }
+  return new Uint8Array(out);
+}
+
+function strToBytes(s) {
+  return new TextEncoder().encode(s);
+}
+
+function bytesToStr(bytes) {
+  return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+}
+
+function update() {
+  const txt = $('#input').value;
+  if (!txt) { $('#output').textContent = ''; return; }
+  try {
+    if (mode === 'encode') {
+      $('#output').textContent = bytesToBase45(strToBytes(txt));
+    } else {
+      const bytes = base45ToBytes(txt.trim().replace(/\s+/g, ''));
+      $('#output').textContent = bytesToStr(bytes);
+    }
+  } catch (e) {
+    $('#output').innerHTML = '<span style="color:var(--gz-accent)">✗ ' + e.message + '</span>';
+  }
+}
+
+function loadExample() {
+  $('#input').value = mode === 'encode' ? 'Hello' : '96%DV 2L';
+  update();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; }
+
+$('#input').addEventListener('input', update);
+
+$('#toolbar').innerHTML = `
+  <select class="gz-select" onchange="mode=this.value;update()">
+    <option value="encode">${t('encode')}</option>
+    <option value="decode">${t('decode')}</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🔢', href:'/dev/base58.html', name:'Base58'},
+    {icon:'🔢', href:'/convert/base85.html', name:'Base85'},
+    {icon:'🔢', href:'/convert/base32.html', name:'Base32'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

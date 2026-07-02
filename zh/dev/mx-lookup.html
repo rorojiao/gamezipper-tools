@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>MX 记录查询 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查询任意域名的邮件服务器（MX）记录及优先级。检查邮件路由、验证邮件服务器配置并排查投递问题。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/mx-lookup.html">
+  <meta property="og:title" content="MX 记录查询">
+  <meta property="og:description" content="查询任意域名的邮件服务器（MX）记录及优先级。检查邮件路由、验证邮件服务器配置并排查投递问题。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/mx-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MX 记录查询">
+<meta name="twitter:description" content="查询任意域名的邮件服务器（MX）记录及优先级。检查邮件路由、验证邮件服务器配置并排查投递问题。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260703v516"></script>
+<style>
+.mx-input-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.mx-input-row input{flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1rem}
+.mx-input-row input:focus{outline:none;border-color:var(--accent)}
+.mx-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.85rem}
+.mx-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;white-space:nowrap}
+.mx-table td{padding:8px 12px;border-bottom:1px solid var(--border);word-break:break-all}
+.mx-table tr:hover td{background:var(--glass2)}
+.mx-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;background:var(--accent);color:#000}
+.mx-priority{font-family:monospace;font-weight:700;color:var(--accent)}
+.mx-error{color:var(--gz-accent);padding:16px;background:var(--glass2);border-radius:12px;margin-top:16px}
+.mx-loading{text-align:center;padding:24px;color:var(--text2)}
+.mx-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.mx-stat{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center}
+.mx-stat .num{font-size:1.4rem;font-weight:700;color:var(--accent)}
+.mx-stat .lbl{font-size:.75rem;color:var(--text2)}
+.mx-examples{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.mx-examples button{background:var(--glass2);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:8px;font-size:.8rem;cursor:pointer}
+.mx-examples button:hover{border-color:var(--accent);color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"MX Record Lookup Tool","description":"Free MX record lookup tool. Enter any domain to find its mail server (MX) records with priority. Check email routing, verify mail server config and troubleshoot delivery. No signup, runs in your browser.","url": "https://tools.gamezipper.com/zh/dev/mx-lookup.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an MX record?","acceptedAnswer":{"@type":"Answer","text":"An MX (Mail Exchange) record tells email servers where to deliver mail for a domain. Each MX record has a priority (lower number = higher priority) and a mail server hostname."}},{"@type":"Question","name":"Why would I check MX records?","acceptedAnswer":{"@type":"Answer","text":"You check MX records to verify email is routing correctly, troubleshoot email delivery failures, confirm a domain can receive email, or verify a migration to Google Workspace, Microsoft 365 or another provider."}},{"@type":"Question","name":"What does MX priority mean?","acceptedAnswer":{"@type":"Answer","text":"MX priority is a number where lower means higher priority. Email is first delivered to the server with the lowest priority number. If that server is unavailable, the next priority server is tried. For example, priority 5 is tried before priority 10."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/mx-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/mx-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/mx-lookup.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="mx-input-row">
+      <input type="text" id="domain" placeholder="gmail.com" spellcheck="false">
+      <button class="gz-btn" onclick="doLookup()" id="btn-lookup"></button>
+    </div>
+    <div class="mx-examples" id="examples"></div>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'MX Record Lookup',
+    toolDesc: 'Find mail server (MX) records for any domain with priority. Check email routing, verify mail server configuration and troubleshoot delivery.',
+    btnLookup: 'Lookup',
+    loading: 'Looking up MX records...',
+    noRecords: 'No MX records found for this domain. The domain may not be configured to receive email.',
+    fetchError: 'Failed to fetch MX records. Please check the domain and try again.',
+    enterDomain: 'Please enter a domain name.',
+    priority: 'Priority',
+    mailServer: 'Mail Server',
+    ttl: 'TTL',
+    recordsFound: 'MX records',
+    primary: 'Primary',
+    backup: 'Backup',
+    examples: 'Try',
+    step1: 'Enter a domain name (e.g. gmail.com)',
+    step2: 'Click Lookup to query the MX records',
+    step3: 'Review the priority and mail server hostname for each record',
+    step4: 'The lowest priority number is the primary mail server',
+  },
+  zh: {
+    toolTitle: 'MX 记录查询',
+    toolDesc: '查询任意域名的邮件服务器（MX）记录及优先级。检查邮件路由、验证邮件服务器配置并排查投递问题。',
+    btnLookup: '查询',
+    loading: '正在查询 MX 记录...',
+    noRecords: '未找到该域名的 MX 记录。该域名可能未配置接收邮件。',
+    fetchError: '获取 MX 记录失败，请检查域名后重试。',
+    enterDomain: '请输入域名。',
+    priority: '优先级',
+    mailServer: '邮件服务器',
+    ttl: 'TTL',
+    recordsFound: '条 MX 记录',
+    primary: '主服务器',
+    backup: '备用',
+    examples: '试试',
+    step1: '输入域名（如 gmail.com）',
+    step2: '点击「查询」获取 MX 记录',
+    step3: '查看每条记录的优先级和邮件服务器主机名',
+    step4: '优先级数字最小的是主邮件服务器',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+async function doLookup() {
+  let domain = $('#domain').value.trim();
+  const output = $('#output');
+  if (!domain) { output.innerHTML = `<div class="mx-error">${t('enterDomain')}</div>`; return; }
+  domain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '');
+  output.innerHTML = `<div class="mx-loading">${t('loading')}</div>`;
+
+  try {
+    const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=MX`, {
+      headers: { 'Accept': 'application/dns-json' }
+    });
+    const data = await res.json();
+    const answers = (data.Answer || []).filter(a => a.type === 15);
+    if (answers.length === 0) {
+      output.innerHTML = `<div class="mx-error">${t('noRecords')}</div>`;
+      return;
+    }
+    // Sort by priority
+    answers.sort((a, b) => {
+      const pa = parseInt(a.data.match(/^(\d+)\s/)?.[1] || '999');
+      const pb = parseInt(b.data.match(/^(\d+)\s/)?.[1] || '999');
+      return pa - pb;
+    });
+
+    let html = `<div class="mx-stats"><div class="mx-stat"><div class="num">${answers.length}</div><div class="lbl">${t('recordsFound')}</div></div></div>`;
+    html += '<table class="mx-table"><thead><tr><th>' + t('priority') + '</th><th>' + t('mailServer') + '</th><th>' + t('ttl') + '</th></tr></thead><tbody>';
+    answers.forEach((r, idx) => {
+      const parts = r.data.match(/^(\d+)\s+(.+)$/);
+      const prio = parts ? parts[1] : '?';
+      const host = parts ? parts[2] : r.data;
+      const badge = idx === 0 ? ` <span class="mx-badge">${t('primary')}</span>` : '';
+      html += `<tr><td><span class="mx-priority">${prio}</span>${badge}</td><td>${host}</td><td>${r.TTL}s</td></tr>`;
+    });
+    html += '</tbody></table>';
+    output.innerHTML = html;
+  } catch (e) {
+    output.innerHTML = `<div class="mx-error">${t('fetchError')}<br><small>${e.message}</small></div>`;
+  }
+}
+
+$('#domain').addEventListener('keydown', e => { if (e.key === 'Enter') doLookup(); });
+
+$('#examples').innerHTML = `<span style="color:var(--text2);font-size:.8rem;align-self:center">${t('examples')}:</span>` +
+  ['gmail.com', 'outlook.com', 'github.com', 'apple.com'].map(d =>
+    `<button onclick="document.getElementById('domain').value='${d}';doLookup()">${d}</button>`
+  ).join('');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔄', href:'/dev/reverse-dns.html', name:'Reverse DNS'},
+    {icon:'📧', href:'/dev/email-validator.html', name:'Email Validator'},
+    {icon:'📧', href:'/dev/email-header.html', name:'Email Header Analyzer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

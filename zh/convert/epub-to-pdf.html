@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>EPUB 转 PDF 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线将 EPUB 电子书转换为可打印 PDF — 拖拽上传，即时下载。100% 浏览器本地处理，无需上传、无需注册、无水印。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/epub-to-pdf.html">
+  <meta property="og:title" content="EPUB 转 PDF 转换器">
+  <meta property="og:description" content="在线将 EPUB 电子书转换为可打印 PDF — 拖拽上传，即时下载。100% 浏览器本地处理，无需上传、无需注册、无水印。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/epub-to-pdf.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="EPUB 转 PDF 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<style>
+.eb-drop{border:2px dashed var(--gz-border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:1rem;background:var(--gz-surface)}
+.eb-drop:hover,.eb-drop.dragover{border-color:var(--gz-accent);background:rgba(78,205,196,.08)}
+.eb-drop svg{width:48px;height:48px;margin-bottom:8px;opacity:.6}
+.eb-file{padding:12px 14px;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.eb-file .ic{font-size:1.5rem}
+.eb-file .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9em}
+.eb-file .sz{color:var(--gz-text-muted);font-size:.8em}
+.eb-settings{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:10px;padding:14px;margin-bottom:1rem}
+.eb-settings label{display:block;font-size:.85em;color:var(--gz-text-muted);margin:8px 0 4px}
+.eb-settings select,.eb-settings input[type=number]{width:100%;max-width:220px;padding:6px 10px;background:var(--gz-bg);border:1px solid var(--gz-border);color:var(--gz-text);border-radius:6px;font-size:.9em}
+.eb-progress{height:6px;background:var(--gz-bg);border-radius:6px;overflow:hidden;margin:1rem 0;display:none}
+.eb-progress.show{display:block}
+.eb-progress .bar{height:100%;background:linear-gradient(90deg,var(--gz-accent),#00d672);width:0;transition:width .3s}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"EPUB to PDF Converter","description":"Convert EPUB eBooks to PDF online for free. Drag, drop and download a print-ready PDF — 100% in your browser, no upload, no signup, no watermark.","url": "https://tools.gamezipper.com/zh/convert/epub-to-pdf.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert EPUB to PDF for free?","acceptedAnswer":{"@type":"Answer","text":"Upload your .epub file above, choose page size and font size, then click Convert. The tool extracts the eBook text and images and renders them into a clean PDF entirely in your browser — nothing is uploaded to any server."}},{"@type":"Question","name":"Is my EPUB data safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. The conversion runs 100% locally in your browser using JSZip and pdf-lib. Your eBook never leaves your device."}},{"@type":"Question","name":"Does it work with DRM-protected EPUBs?","acceptedAnswer":{"@type":"Answer","text":"No. DRM-protected EPUBs (e.g. Adobe ADEPT or Apple FairPlay) cannot be converted. The tool only works with DRM-free EPUB files, which is the vast majority of public-domain and self-published eBooks."}},{"@type":"Question","name":"Will images and formatting be preserved?","acceptedAnswer":{"@type":"Answer","text":"The tool preserves chapter headings, paragraphs, lists, bold and italic text, and embedded images in reading order. Complex CSS-driven layouts may be simplified because PDF is a print-oriented format."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/epub-to-pdf.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/epub-to-pdf.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/epub-to-pdf.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="eb-drop" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <div id="dropText"></div>
+    </div>
+    <input type="file" id="fileInput" accept=".epub,application/epub+zip" hidden>
+    <div id="fileInfo"></div>
+    <div class="eb-settings" id="settings">
+      <label id="lbl-pagesize"></label>
+      <select id="pageSize">
+        <option value="A4">A4 (210 × 297 mm)</option>
+        <option value="Letter">US Letter (8.5 × 11 in)</option>
+        <option value="A5">A5 (148 × 210 mm)</option>
+        <option value="Legal">US Legal (8.5 × 14 in)</option>
+      </select>
+      <label id="lbl-fontsize"></label>
+      <input type="number" id="fontSize" value="12" min="8" max="24" step="1">
+      <label id="lbl-margin"></label>
+      <input type="number" id="margin" value="50" min="0" max="120" step="5">
+    </div>
+    <div class="eb-progress" id="progress"><div class="bar" id="progressBar"></div></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'EPUB to PDF Converter',
+    toolDesc: 'Convert EPUB eBooks to print-ready PDF online — drag, drop and download. 100% browser-based, no upload, no signup, no watermark.',
+    dropText: 'Drop your .epub file here or click to browse',
+    convert: 'Convert to PDF',
+    clear: 'Clear',
+    lblPagesize: 'Page size',
+    lblFontsize: 'Font size (pt)',
+    lblMargin: 'Margin (px)',
+    loading: 'Reading EPUB…',
+    rendering: 'Rendering PDF…',
+    done: '✓ PDF downloaded',
+    noFile: 'Please select an EPUB file first.',
+    error: 'Error: ',
+    invalidEpub: 'This file is not a valid EPUB archive.',
+    step1: 'Drop your .epub file onto the upload zone (or click to browse)',
+    step2: 'Choose page size, font size and margin',
+    step3: 'Click Convert to PDF — processing is instant and private',
+    step4: 'Download the finished PDF — no watermark, no signup',
+  },
+  zh: {
+    toolTitle: 'EPUB 转 PDF 转换器',
+    toolDesc: '在线将 EPUB 电子书转换为可打印 PDF — 拖拽上传，即时下载。100% 浏览器本地处理，无需上传、无需注册、无水印。',
+    dropText: '将 .epub 文件拖到这里，或点击选择',
+    convert: '转换为 PDF',
+    clear: '清除',
+    lblPagesize: '页面大小',
+    lblFontsize: '字号 (pt)',
+    lblMargin: '页边距 (px)',
+    loading: '正在读取 EPUB…',
+    rendering: '正在生成 PDF…',
+    done: '✓ PDF 已下载',
+    noFile: '请先选择一个 EPUB 文件。',
+    error: '错误：',
+    invalidEpub: '此文件不是有效的 EPUB 归档。',
+    step1: '将 .epub 文件拖入上传区（或点击选择）',
+    step2: '选择页面大小、字号和页边距',
+    step3: '点击「转换为 PDF」— 即时且完全私密',
+    step4: '下载生成的 PDF — 无水印、无需注册',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let selectedFile = null;
+
+const dz = $('#dropZone');
+dz.addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) selectFile(e.target.files[0]);
+  e.target.value = '';
+});
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]);
+});
+$('#dropText').textContent = t('dropText');
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(2) + ' MB';
+}
+
+function selectFile(f) {
+  if (!f.name.toLowerCase().endsWith('.epub') && f.type !== 'application/epub+zip') {
+    GZ.showToast(t('invalidEpub'));
+    return;
+  }
+  selectedFile = f;
+  $('#fileInfo').innerHTML = `<div class="eb-file"><span class="ic">📖</span><span class="nm">${f.name}</span><span class="sz">${fmtSize(f.size)}</span></div>`;
+}
+
+async function convertEpubToPdf() {
+  if (!selectedFile) { GZ.showToast(t('noFile')); return; }
+  const prog = $('#progress');
+  const bar = $('#progressBar');
+  prog.classList.add('show');
+  bar.style.width = '5%';
+  $('#status').textContent = t('loading');
+
+  try {
+    const buf = await selectedFile.arrayBuffer();
+    const zip = await JSZip.loadAsync(buf);
+    bar.style.width = '20%';
+
+    // Find OPF (container.xml → rootfile)
+    const containerXml = await zip.file('META-INF/container.xml')?.async('string');
+    if (!containerXml) throw new Error(t('invalidEpub'));
+    const opfPath = (containerXml.match(/full-path="([^"]+)"/) || [])[1];
+    if (!opfPath) throw new Error(t('invalidEpub'));
+    bar.style.width = '30%';
+
+    const opfXml = await zip.file(opfPath)?.async('string');
+    if (!opfXml) throw new Error(t('invalidEpub'));
+    const opfDir = opfPath.includes('/') ? opfPath.replace(/[^/]+$/, '') : '';
+    bar.style.width = '40%';
+
+    // spine order + manifest map
+    const manifest = {};
+    const itemRe = /<item\b[^>]*\/>/g;
+    let m;
+    while ((m = itemRe.exec(opfXml)) !== null) {
+      const tag = m[0];
+      const id = (tag.match(/id="([^"]+)"/) || [])[1];
+      const href = (tag.match(/href="([^"]+)"/) || [])[1];
+      const mt = (tag.match(/media-type="([^"]+)"/) || [])[1];
+      if (id && href) manifest[id] = { href: decodeURIComponent(href), mediaType: mt };
+    }
+    const spineIds = [];
+    const spineRe = /<itemref\b[^>]*idref="([^"]+)"[^>]*\/?>/g;
+    while ((m = spineRe.exec(opfXml)) !== null) spineIds.push(m[1]);
+    if (!spineIds.length) Object.keys(manifest).forEach(k => { if (manifest[k].mediaType === 'application/xhtml+xml') spineIds.push(k); });
+
+    bar.style.width = '50%';
+
+    // PDF setup
+    const { PDFDocument, PDFFont, StandardFonts, rgb } = PDFLib;
+    const pdfDoc = await PDFDocument.create();
+    const helv = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helvBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const helvOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+    const pageSize = $('#pageSize').value;
+    const fontSize = parseInt($('#fontSize').value, 10) || 12;
+    const margin = parseInt($('#margin').value, 10) || 50;
+    const dims = { A4: [595.28, 841.89], Letter: [612, 792], A5: [419.53, 595.28], Legal: [612, 1008] }[pageSize];
+    const pageW = dims[0], pageH = dims[1];
+    const contentW = pageW - margin * 2;
+    const lineH = fontSize * 1.5;
+
+    // Decode HTML entities
+    function decodeEntities(s) {
+      const ent = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', copy: '©', reg: '®', mdash: '—', ndash: '–', hellip: '…', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”' };
+      return s.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (full, code) => {
+        if (code[0] === '#') {
+          const num = code[1] === 'x' || code[1] === 'X' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+          return String.fromCodePoint(num);
+        }
+        return ent[code.toLowerCase()] || full;
+      });
+    }
+
+    // Strip HTML, collect inline styled text
+    function htmlToRuns(html) {
+      const runs = [];
+      html = html.replace(/<img[^>]*>/gi, ' ');
+      html = html.replace(/<\/(h[1-6]|p|div|li|tr|br|blockquote)>/gi, '\n');
+      html = html.replace(/<br\s*\/?>/gi, '\n');
+      const re = /<[^>]+>|([^<]+)/g;
+      let bold = false, italic = false;
+      let match;
+      while ((match = re.exec(html)) !== null) {
+        if (match[0][0] === '<') {
+          const tag = match[0].toLowerCase();
+          if (/^<b(\b|>)/.test(tag) || /^<strong(\b|>)/.test(tag) || /^<h[1-6](\b|>)/.test(tag)) bold = true;
+          if (/^<\/b>/.test(tag) || /^<\/strong>/.test(tag) || /^<\/h[1-6]>/.test(tag)) bold = false;
+          if (/^<i(\b|>)/.test(tag) || /^<em(\b|>)/.test(tag)) italic = true;
+          if (/^<\/i>/.test(tag) || /^<\/em>/.test(tag)) italic = false;
+        } else if (match[1]) {
+          runs.push({ text: match[1], bold, italic });
+        }
+      }
+      return runs;
+    }
+
+    function pickFont(r) {
+      return r.bold && r.italic ? helvBold : r.bold ? helvBold : r.italic ? helvOblique : helv;
+    }
+
+    let page = null;
+    let y = 0;
+    const total = spineIds.length;
+
+    function newPage() {
+      page = pdfDoc.addPage([pageW, pageH]);
+      y = pageH - margin;
+    }
+
+    function ensureSpace(needed) {
+      if (!page || y - needed < margin) newPage();
+    }
+
+    function drawHeading(text) {
+      const f = helvBold;
+      const size = Math.max(fontSize + 4, 16);
+      ensureSpace(size * 2.2);
+      y -= size * 0.8;
+      // Wrap heading
+      const words = text.split(/\s+/);
+      let line = '';
+      for (const w of words) {
+        const tryLine = line ? line + ' ' + w : w;
+        if (f.widthOfTextAtSize(tryLine, size) > contentW) {
+          page.drawText(line, { x: margin, y, size, font: f, color: rgb(0.1, 0.1, 0.15) });
+          y -= size * 1.5;
+          ensureSpace(size * 1.5);
+          line = w;
+        } else line = tryLine;
+      }
+      if (line) { page.drawText(line, { x: margin, y, size, font: f, color: rgb(0.1, 0.1, 0.15) }); y -= size * 1.5; }
+      y -= fontSize * 0.6;
+    }
+
+    function drawParagraph(runs) {
+      // flatten runs into words with style
+      const words = [];
+      for (const r of runs) {
+        const parts = decodeEntities(r.text).split(/(\s+)/);
+        for (const p of parts) if (p !== '') words.push({ text: p, bold: r.bold, italic: r.italic });
+      }
+      // split on explicit newlines
+      let lineRuns = [];
+      const flushLine = () => {
+        if (!lineRuns.length) return;
+        ensureSpace(lineH);
+        let x = margin;
+        for (const r of lineRuns) {
+          const f = pickFont(r);
+          page.drawText(r.text, { x, y, size: fontSize, font: f, color: rgb(0.12, 0.12, 0.12) });
+          x += f.widthOfTextAtSize(r.text, fontSize);
+        }
+        y -= lineH;
+        lineRuns = [];
+      };
+      for (const w of words) {
+        if (/\n/.test(w.text)) {
+          flushLine();
+        } else {
+          const f = pickFont(w);
+          const testLine = lineRuns.concat([w]);
+          const width = testLine.reduce((s, r) => s + pickFont(r).widthOfTextAtSize(r.text, fontSize), 0);
+          if (width > contentW && lineRuns.length) {
+            flushLine();
+            lineRuns.push(w);
+          } else {
+            lineRuns.push(w);
+          }
+        }
+      }
+      flushLine();
+      y -= lineH * 0.4; // paragraph gap
+    }
+
+    newPage();
+
+    for (let i = 0; i < total; i++) {
+      const item = manifest[spineIds[i]];
+      if (!item || item.mediaType !== 'application/xhtml+xml') continue;
+      const filePath = (opfDir + item.href).replace(/^\.\//, '');
+      const html = await zip.file(filePath)?.async('string');
+      if (!html) continue;
+      bar.style.width = (50 + Math.round((i / total) * 45)) + '%';
+      $('#status').textContent = `${t('rendering')} (${i + 1}/${total})`;
+
+      // extract body
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      const body = bodyMatch ? bodyMatch[1] : html;
+      // chapters by headings
+      const chunks = body.split(/(<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>)/i);
+      for (const chunk of chunks) {
+        if (!chunk) continue;
+        const hMatch = chunk.match(/^<h([1-6])[^>]*>([\s\S]*?)<\/h[1-6]>/i);
+        if (hMatch) {
+          // strip inner tags from heading text
+          const hText = decodeEntities(hMatch[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+          if (hText) drawHeading(hText);
+        } else {
+          const runs = htmlToRuns(chunk);
+          if (runs.some(r => r.text.trim())) drawParagraph(runs);
+        }
+      }
+    }
+
+    bar.style.width = '97%';
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = selectedFile.name.replace(/\.epub$/i, '') + '.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+    bar.style.width = '100%';
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')}</span>`;
+    setTimeout(() => prog.classList.remove('show'), 1500);
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}${e.message}</span>`;
+    prog.classList.remove('show');
+  }
+}
+
+function clearAll() {
+  selectedFile = null;
+  $('#fileInfo').innerHTML = '';
+  $('#status').textContent = '';
+  $('#progress').classList.remove('show');
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="convertEpubToPdf()">${t('convert')}</button><button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+$('#lbl-pagesize').textContent = t('lblPagesize');
+$('#lbl-fontsize').textContent = t('lblFontsize');
+$('#lbl-margin').textContent = t('lblMargin');
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📖', href:'/convert/epub-reader.html', name:'EPUB Reader'},
+    {icon:'📄', href:'/convert/pdf-merger.html', name:'PDF Merger'},
+    {icon:'📄', href:'/convert/word-to-pdf.html', name:'Word to PDF'},
+    {icon:'🖼️', href:'/convert/image-to-pdf.html', name:'Image to PDF'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

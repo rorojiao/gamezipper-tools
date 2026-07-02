@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Argon2 密码哈希生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="生成并验证 Argon2id、Argon2i 和 Argon2d 密码哈希，可调整内存、迭代次数和并行度。100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/argon2.html">
+  <meta property="og:title" content="Argon2 密码哈希生成器">
+  <meta property="og:description" content="生成并验证 Argon2id、Argon2i 和 Argon2d 密码哈希，可调整内存、迭代次数和并行度。100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/argon2.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Argon2 密码哈希生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<script src="https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/dist/argon2.umd.min.js"></script>
+<style>
+#hash-output{font-family:monospace;font-size:.82em;word-break:break-all;background:var(--gz-card);border-radius:8px;padding:12px;min-height:48px;color:var(--gz-success)}
+#verify-result{padding:8px 12px;border-radius:6px;margin-top:8px;font-weight:600}
+.match{background:#00d67222;color:#00d672}
+.no-match{background:#e9456022;color:#e94560}
+.gz-field{margin-bottom:12px}
+.gz-field label{display:block;margin-bottom:4px;font-weight:600;font-size:.9em}
+.gz-field input,.gz-field textarea,.gz-field select{width:100%;padding:8px;border-radius:6px;border:1px solid var(--gz-border);background:var(--gz-bg);color:var(--gz-text);font-size:.9em;box-sizing:border-box}
+.gz-field textarea{font-family:monospace;font-size:.85em;min-height:60px;resize:vertical}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Argon2 Password Hash Generator","description":"Generate and verify Argon2id, Argon2i and Argon2d password hashes online. Free Argon2 generator with adjustable memory, time and parallelism — no data sent to servers.","url": "https://tools.gamezipper.com/zh/dev/argon2.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Argon2?", "acceptedAnswer": {"@type": "Answer", "text": "Argon2 is the winner of the 2015 Password Hashing Competition and is the recommended password hashing algorithm by RFC 9106. It comes in three variants: Argon2id (recommended, hybrid), Argon2i (side-channel resistant) and Argon2d (GPU-resistant)."}}, {"@type": "Question", "name": "What parameters should I use for Argon2?", "acceptedAnswer": {"@type": "Answer", "text": "RFC 9106 recommends for production: memory 64 MiB (65536 KiB), iterations 3, parallelism 4, output length 32 bytes. The salt should be 16 random bytes. Higher values are more secure but slower."}}, {"@type": "Question", "name": "Is my password sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All Argon2 hashing runs entirely in your browser using the hash-wasm WebAssembly library. Your password never leaves your device."}}, {"@type": "Question", "name": "What is the difference between Argon2id, Argon2i and Argon2d?", "acceptedAnswer": {"@type": "Answer", "text": "Argon2id is a hybrid of the other two and is the recommended default for most use cases. Argon2i uses data-independent memory access (resistant to side-channel attacks, good for password hashing). Argon2d uses data-dependent memory access (resistant to GPU cracking, good for cryptocurrency)."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/argon2.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/argon2.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/argon2.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in" style="font-weight:600;display:block;margin-bottom:6px"></label>
+        <div class="gz-field">
+          <label id="lbl-pw"></label>
+          <input type="text" id="password" placeholder="" autocomplete="off" />
+        </div>
+        <div class="gz-field">
+          <label id="lbl-type"></label>
+          <select id="argon-type">
+            <option value="argon2id">argon2id (recommended)</option>
+            <option value="argon2i">argon2i</option>
+            <option value="argon2d">argon2d</option>
+          </select>
+        </div>
+        <div class="gz-field">
+          <label id="lbl-memory"></label>
+          <input type="number" id="memory" value="65536" min="16" step="1" />
+        </div>
+        <div class="gz-field">
+          <label id="lbl-time"></label>
+          <input type="number" id="iterations" value="3" min="1" max="20" step="1" />
+        </div>
+        <div class="gz-field">
+          <label id="lbl-parallel"></label>
+          <input type="number" id="parallelism" value="4" min="1" max="16" step="1" />
+        </div>
+        <div class="gz-field">
+          <label id="lbl-len"></label>
+          <input type="number" id="hash-len" value="32" min="4" max="128" step="1" />
+        </div>
+        <button class="gz-btn" id="btn-generate"></button>
+      </div>
+      <div>
+        <label id="lbl-out" style="font-weight:600;display:block;margin-bottom:6px"></label>
+        <div class="gz-output" id="hash-output"></div>
+        <div id="status" style="margin-top:8px;font-size:.85em"></div>
+      </div>
+    </div>
+
+    <hr style="margin:24px 0;border:none;border-top:1px solid var(--gz-border)">
+    <h3 id="verify-title" style="margin-bottom:12px"></h3>
+    <div class="gz-field">
+      <label id="lbl-verify-pw"></label>
+      <input type="text" id="verify-password" autocomplete="off" />
+    </div>
+    <div class="gz-field">
+      <label id="lbl-verify-hash"></label>
+      <textarea id="verify-hash" spellcheck="false" placeholder="$argon2id$v=19$m=..."></textarea>
+    </div>
+    <button class="gz-btn gz-btn-secondary" id="btn-verify"></button>
+    <div id="verify-result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Argon2 Password Hash Generator',
+    toolDesc: 'Generate and verify Argon2id, Argon2i and Argon2d password hashes with adjustable memory, iterations and parallelism. Runs 100% in your browser.',
+    input: 'Password to hash',
+    output: 'Argon2 hash',
+    pwLabel: 'Password',
+    typeLabel: 'Argon2 variant',
+    memLabel: 'Memory cost (KiB)',
+    timeLabel: 'Time cost (iterations)',
+    parLabel: 'Parallelism (lanes)',
+    lenLabel: 'Hash length (bytes)',
+    generate: 'Generate Hash',
+    enterPw: 'Enter a password to generate the Argon2 hash.',
+    generating: '⏳ Hashing… this takes a moment.',
+    verifySection: 'Verify a Password against a Hash',
+    verifyPw: 'Password to verify',
+    verifyHash: 'Argon2 hash',
+    verifyBtn: 'Verify',
+    match: '✓ Password matches the hash!',
+    noMatch: '✗ Password does NOT match.',
+    invalid: '✗ Invalid hash format.',
+    step1: 'Type or paste the password you want to hash',
+    step2: 'Choose the Argon2 variant (argon2id is recommended) and adjust the cost parameters',
+    step3: 'Click "Generate Hash" to produce the encoded Argon2 hash string',
+    step4: 'To verify, paste a hash and a password in the verify section below',
+  },
+  zh: {
+    toolTitle: 'Argon2 密码哈希生成器',
+    toolDesc: '生成并验证 Argon2id、Argon2i 和 Argon2d 密码哈希，可调整内存、迭代次数和并行度。100% 浏览器本地运行。',
+    input: '要哈希的密码',
+    output: 'Argon2 哈希',
+    pwLabel: '密码',
+    typeLabel: 'Argon2 变体',
+    memLabel: '内存成本 (KiB)',
+    timeLabel: '时间成本（迭代次数）',
+    parLabel: '并行度（通道数）',
+    lenLabel: '哈希长度（字节）',
+    generate: '生成哈希',
+    enterPw: '输入密码以生成 Argon2 哈希。',
+    generating: '⏳ 正在哈希中…请稍候。',
+    verifySection: '验证密码是否匹配哈希',
+    verifyPw: '要验证的密码',
+    verifyHash: 'Argon2 哈希',
+    verifyBtn: '验证',
+    match: '✓ 密码与哈希匹配！',
+    noMatch: '✗ 密码不匹配。',
+    invalid: '✗ 哈希格式无效。',
+    step1: '输入或粘贴要哈希的密码',
+    step2: '选择 Argon2 变体（推荐 argon2id）并调整成本参数',
+    step3: '点击「生成哈希」生成编码的 Argon2 哈希字符串',
+    step4: '如需验证，请在下方验证区粘贴哈希和密码',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+$('#lbl-in').textContent = t('input');
+$('#lbl-out').textContent = t('output');
+$('#lbl-pw').textContent = t('pwLabel');
+$('#lbl-type').textContent = t('typeLabel');
+$('#lbl-memory').textContent = t('memLabel');
+$('#lbl-time').textContent = t('timeLabel');
+$('#lbl-parallel').textContent = t('parLabel');
+$('#lbl-len').textContent = t('lenLabel');
+$('#btn-generate').textContent = t('generate');
+$('#verify-title').textContent = t('verifySection');
+$('#lbl-verify-pw').textContent = t('verifyPw');
+$('#lbl-verify-hash').textContent = t('verifyHash');
+$('#btn-verify').textContent = t('verifyBtn');
+$('#password').placeholder = 'mySecretPass123';
+
+function randomBytes(n) {
+  const a = new Uint8Array(n);
+  crypto.getRandomValues(a);
+  return a;
+}
+
+function toBase64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+function fromBase64(b64) {
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+
+// standard Argon2 PHC encoded format: $argon2id$v=19$m=65536,t=3,p=4$<salt>$<hash>
+function encodeHash(type, m, t_, p, salt, hash) {
+  return `$${type}$v=19$m=${m},t=${t_},p=${p}$${toBase64(salt).replace(/=/g,'')}$${toBase64(hash).replace(/=/g,'')}`;
+}
+
+function parseEncodedHash(str) {
+  // $argon2id$v=19$m=65536,t=3,p=4$SALT$HASH
+  const re = /^\$(argon2(?:id|i|d))\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)\$([A-Za-z0-9+/=]+)\$([A-Za-z0-9+/=]+)$/;
+  const m = str.trim().match(re);
+  if (!m) return null;
+  const [, type, version, mem, iter, par, saltB64, hashB64] = m;
+  return {
+    type, version: +version, memory: +mem, iterations: +iter, parallelism: +par,
+    salt: fromBase64(saltB64), hash: fromBase64(hashB64),
+    hashLen: fromBase64(hashB64).length,
+  };
+}
+
+async function doGenerate() {
+  const pw = $('#password').value;
+  if (!pw) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('enterPw')}</span>`; return; }
+  $('#status').innerHTML = `<span style="opacity:.7">${t('generating')}</span>`;
+  $('#hash-output').textContent = '';
+  try {
+    const type = $('#argon-type').value;
+    const memory = +$('#memory').value;
+    const iterations = +$('#iterations').value;
+    const parallelism = +$('#parallelism').value;
+    const hashLen = +$('#hash-len').value;
+    const salt = randomBytes(16);
+    const saltB64 = toBase64(salt);
+    if (!window.argon2) throw new Error('argon2 library not loaded');
+    const res = await argon2.hash({
+      password: pw,
+      salt: saltB64,
+      parallelism,
+      memoryCost: memory,
+      timeCost: iterations,
+      hashLength: hashLen,
+      type: type === 'argon2id' ? argon2.ArgonType.Argon2id : type === 'argon2i' ? argon2.ArgonType.Argon2i : argon2.ArgonType.Argon2d,
+      hashType: argon2.HashType.Encoded,
+    });
+    // res.encoded is the standard PHC string; some versions return hash + rawSalt separately
+    let encoded = res.encoded || encodeHash(type, memory, iterations, parallelism, salt, fromBase64(toBase64(res.hashRaw || res.hash)));
+    // If encoded doesn't contain salt info, reconstruct
+    if (encoded && !encoded.startsWith('$')) {
+      encoded = encodeHash(type, memory, iterations, parallelism, salt, fromBase64(toBase64(res.hashRaw || res.hash)));
+    }
+    $('#hash-output').textContent = encoded;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${type} • ${memory} KiB • t=${iterations} • p=${parallelism} • ${hashLen}B</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${e.message}</span>`;
+  }
+}
+
+async function doVerify() {
+  const pw = $('#verify-password').value;
+  const hashStr = $('#verify-hash').value.trim();
+  if (!pw || !hashStr) { $('#verify-result').innerHTML = ''; return; }
+  try {
+    const parts = parseEncodedHash(hashStr);
+    if (!parts) { $('#verify-result').innerHTML = `<div class="no-match">${t('invalid')}</div>`; return; }
+    if (!window.argon2) throw new Error('argon2 library not loaded');
+    const res = await argon2.hash({
+      password: pw,
+      salt: toBase64(parts.salt),
+      parallelism: parts.parallelism,
+      memoryCost: parts.memory,
+      timeCost: parts.iterations,
+      hashLength: parts.hashLen,
+      type: parts.type === 'argon2id' ? argon2.ArgonType.Argon2id : parts.type === 'argon2i' ? argon2.ArgonType.Argon2i : argon2.ArgonType.Argon2d,
+      hashType: argon2.HashType.Encoded,
+    });
+    const computedHashB64 = toBase64(fromBase64(toBase64(res.hashRaw || res.hash))).replace(/=/g,'');
+    const expectedB64 = toBase64(parts.hash).replace(/=/g,'');
+    const match = computedHashB64 === expectedB64;
+    $('#verify-result').innerHTML = `<div class="${match?'match':'no-match'}">${match?t('match'):t('noMatch')}</div>`;
+  } catch(e) {
+    $('#verify-result').innerHTML = `<div class="no-match">${t('invalid')} (${e.message})</div>`;
+  }
+}
+
+$('#btn-generate').onclick = doGenerate;
+$('#btn-verify').onclick = doVerify;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText(document.getElementById('hash-output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('password').value='demo123';doGenerate()">${t('example')}</button>`;
+
+// expose for toolbar buttons
+window.doGenerate = doGenerate;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔒', href:'/dev/bcrypt-generator.html', name:'Bcrypt Generator'},
+    {icon:'🔑', href:'/dev/scrypt.html', name:'Scrypt Generator'},
+    {icon:'#️⃣', href:'/dev/hash.html', name:'Hash Generator'},
+    {icon:'🔐', href:'/dev/password-generator.html', name:'Password Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

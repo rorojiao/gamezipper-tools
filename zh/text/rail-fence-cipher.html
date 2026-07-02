@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>栅栏密码 编码 / 解码 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="使用栅栏（之字形）置换密码加密或解密文本。可选择 2-10 条栅栏。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/rail-fence-cipher.html">
+  <meta property="og:title" content="栅栏密码 编码 / 解码">
+  <meta property="og:description" content="使用栅栏（之字形）置换密码加密或解密文本。可选择 2-10 条栅栏。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/rail-fence-cipher.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="栅栏密码 编码 / 解码">
+  <meta name="twitter:description" content="使用栅栏（之字形）置换密码加密或解密文本。可选择 2-10 条栅栏。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<style>
+.cipher-output{background:var(--gz-bg-alt);border:1px solid var(--gz-border,#444);border-radius:12px;padding:16px;font-family:monospace;font-size:1.05em;line-height:1.6;word-break:break-all;white-space:pre-wrap;min-height:60px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Rail Fence Cipher Encoder & Decoder","description":"Free rail fence cipher encoder and decoder. Encrypt or decrypt text with the zigzag transposition cipher. Choose 2-10 rails, preserve or strip spaces — instant, no signup, runs in your browser.","url": "https://tools.gamezipper.com/zh/text/rail-fence-cipher.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is the rail fence cipher?", "acceptedAnswer": {"@type": "Answer", "text": "The rail fence cipher is a classical transposition cipher that writes the message in a zigzag pattern across multiple horizontal 'rails', then reads off each rail in sequence to produce the ciphertext. Unlike substitution ciphers, the letters themselves are unchanged — only their order is scrambled."}}, {"@type": "Question", "name": "How does the rail fence cipher work?", "acceptedAnswer": {"@type": "Answer", "text": "With 3 rails, the letters of HELLO WORLD are placed diagonally up-and-down across 3 rows (rails). The cipher then concatenates the rows. More rails create a more complex zigzag. Decryption reverses the process by reconstructing the zigzag pattern."}}, {"@type": "Question", "name": "How many rails should I use?", "acceptedAnswer": {"@type": "Answer", "text": "The number of rails is the key. 2 rails is the simplest and weakest. 3-5 rails are common in puzzles. More rails (6-10) create a more complex scramble but the message length limits how many rails are meaningful. Both sender and receiver must agree on the rail count."}}, {"@type": "Question", "name": "Is the rail fence cipher secure?", "acceptedAnswer": {"@type": "Answer", "text": "No. The rail fence cipher provides no real security by modern standards. It is easily broken by trying every possible rail count (brute force). It is used today only in education, puzzle games, escape rooms and CTF challenges to teach transposition concepts."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/rail-fence-cipher.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/rail-fence-cipher.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/rail-fence-cipher.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="cipher-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Rail Fence Cipher Encoder & Decoder',
+    toolDesc: 'Encrypt or decrypt text with the rail fence (zigzag) transposition cipher. Choose 2-10 rails.',
+    mode: 'Mode',
+    encode: 'Encode',
+    decode: 'Decode',
+    rails: 'Rails',
+    stripSpaces: 'Strip spaces',
+    step1: 'Type or paste your text in the input area',
+    step2: 'Choose the number of rails (the key) and Encode or Decode mode',
+    step3: 'The result appears instantly — click Copy to copy it',
+    step4: 'Toggle Strip spaces to remove spaces before processing',
+  },
+  zh: {
+    toolTitle: '栅栏密码 编码 / 解码',
+    toolDesc: '使用栅栏（之字形）置换密码加密或解密文本。可选择 2-10 条栅栏。',
+    mode: '模式',
+    encode: '加密',
+    decode: '解密',
+    rails: '栅栏数',
+    stripSpaces: '去除空格',
+    step1: '在输入区输入或粘贴文本',
+    step2: '选择栅栏数量（密钥）和加密/解密模式',
+    step3: '结果即时显示 — 点击复制按钮复制结果',
+    step4: '勾选「去除空格」可在处理前移除空格',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let rails = 3, mode = 'encode', strip = true;
+
+function railFenceEncrypt(text, numRails) {
+  if (numRails < 2) return text;
+  const rails = Array.from({length: numRails}, () => []);
+  let r = 0, dir = 1;
+  for (const ch of text) {
+    rails[r].push(ch);
+    if (r === 0) dir = 1;
+    else if (r === numRails - 1) dir = -1;
+    r += dir;
+  }
+  return rails.map(rail => rail.join('')).join('');
+}
+
+function railFenceDecrypt(text, numRails) {
+  if (numRails < 2 || text.length === 0) return text;
+  const len = text.length;
+  // figure out how many chars per rail
+  const counts = new Array(numRails).fill(0);
+  let r = 0, dir = 1;
+  for (let i = 0; i < len; i++) {
+    counts[r]++;
+    if (r === 0) dir = 1;
+    else if (r === numRails - 1) dir = -1;
+    r += dir;
+  }
+  // slice ciphertext into rail segments
+  const segments = [];
+  let idx = 0;
+  for (let i = 0; i < numRails; i++) {
+    segments.push(text.slice(idx, idx + counts[i]));
+    idx += counts[i];
+  }
+  // read back in zigzag order
+  const ptrs = new Array(numRails).fill(0);
+  let result = '';
+  r = 0, dir = 1;
+  for (let i = 0; i < len; i++) {
+    result += segments[r][ptrs[r]++];
+    if (r === 0) dir = 1;
+    else if (r === numRails - 1) dir = -1;
+    r += dir;
+  }
+  return result;
+}
+
+function update() {
+  let txt = $('#input').value;
+  if (strip) txt = txt.replace(/\s+/g, '');
+  const result = mode === 'encode'
+    ? railFenceEncrypt(txt, rails)
+    : railFenceDecrypt(txt, rails);
+  $('#output').textContent = result;
+}
+
+function loadExample() {
+  $('#input').value = 'MEET ME AT MIDNIGHT';
+  update();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; }
+
+$('#input').addEventListener('input', update);
+
+$('#toolbar').innerHTML = `
+  <select class="gz-select" onchange="mode=this.value;update()">
+    <option value="encode">${t('encode')}</option>
+    <option value="decode">${t('decode')}</option>
+  </select>
+  <label style="font-size:.85em;display:inline-flex;align-items:center;gap:4px">${t('rails')}
+    <select class="gz-select" onchange="rails=+this.value;update()">
+      ${Array.from({length:9},(_,i)=>`<option value="${i+2}" ${i+2===3?'selected':''}>${i+2}</option>`).join('')}
+    </select>
+  </label>
+  <label style="font-size:.85em;display:inline-flex;align-items:center;gap:4px">
+    <input type="checkbox" checked onchange="strip=this.checked;update()"> ${t('stripSpaces')}
+  </label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/text/rot13.html', name:'ROT13'},
+    {icon:'🔐', href:'/dev/caesar-cipher.html', name:'Caesar Cipher'},
+    {icon:'🔤', href:'/text/atbash-cipher.html', name:'Atbash Cipher'},
+    {icon:'🔐', href:'/text/playfair.html', name:'Playfair Cipher'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
