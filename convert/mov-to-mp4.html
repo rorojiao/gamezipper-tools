@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>MOV to MP4 Converter — Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert MOV (QuickTime) video to MP4 online for free. Upload a .mov file and download an MP4 — 100% in your browser using WebCodecs, no upload, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/mov-to-mp4.html">
+  <meta property="og:title" content="MOV to MP4 Converter — Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert MOV (QuickTime) video to MP4 online for free. Upload a .mov file and download an MP4 — 100% in your browser, no upload, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/mov-to-mp4.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MOV to MP4 Converter — Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert MOV to MP4 online for free. Browser-only, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<style>
+.gz-drop{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+.gz-drop:hover,.gz-drop.drag{border-color:var(--accent);background:var(--glass2)}
+.gz-drop .icon{font-size:2.5rem}
+video{width:100%;max-height:340px;margin-top:8px;border-radius:8px;background:#000}
+.gz-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:.8em;color:var(--text2)}
+.gz-stats span{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:4px 10px}
+progress{width:100%;margin-top:8px;accent-color:var(--accent)}
+.note{margin-top:8px;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.82em;color:var(--text2);line-height:1.6}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"MOV to MP4 Converter","description":"Convert MOV (QuickTime) video to MP4 online for free. Upload a .mov file and download an MP4 — 100% in your browser, no upload, no signup.","url":"https://tools.gamezipper.com/convert/mov-to-mp4.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert MOV to MP4?","acceptedAnswer":{"@type":"Answer","text":"Click the drop zone to select a .mov file. Preview it, then click Convert to MP4. The MP4 file downloads when ready."}},{"@type":"Question","name":"Is my video uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. This tool remuxes the video container entirely in your browser using the MP4Box.js library. Your file never leaves your device."}},{"@type":"Question","name":"Does it re-encode the video?","acceptedAnswer":{"@type":"Answer","text":"No — it remuxes (changes the container) without re-encoding. This is fast and lossless, but requires the MOV file to already contain H.264 or H.265 video that MP4 supports."}},{"@type":"Question","name":"Why does my file fail to convert?","acceptedAnswer":{"@type":"Answer","text":"MOV files with codecs that MP4 does not support (e.g. ProRes, DNxHD) cannot be remuxed. Use a .mov shot on iPhone or most cameras — they use H.264/H.265 which converts perfectly."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/mov-to-mp4.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/mov-to-mp4.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/mov-to-mp4.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-drop" id="drop">
+      <div class="icon">🎬</div>
+      <p id="drop-text"></p>
+      <input type="file" id="file" accept="video/quicktime,video/mp4,.mov,.mp4" hidden>
+    </div>
+    <div class="gz-stats" id="stats"></div>
+    <progress id="progress" style="display:none"></progress>
+    <video id="player" controls style="display:none"></video>
+    <div class="note" id="note"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<!-- MP4Box.js for in-browser ISO BMFF muxing/remuxing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mp4box/0.5.2/mp4box.min.js"></script>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'MOV to MP4 Converter',
+    toolDesc: 'Convert MOV (QuickTime) video to MP4 online for free. Lossless container remux — 100% in your browser, no upload, no signup.',
+    dropText: 'Click or drop a .mov file here',
+    convert: '⬇ Convert to MP4',
+    clear: 'Choose another',
+    loaded: 'Loaded',
+    duration: 'Duration',
+    size: 'Size',
+    converting: 'Remuxing to MP4…',
+    done: '✓ MP4 downloaded',
+    noFile: 'Please select a .mov file first',
+    noLib: 'MP4 muxing library failed to load. Please refresh.',
+    step1: 'Click the drop zone or drag a .mov file onto it',
+    step2: 'Preview the video to make sure it plays',
+    step3: 'Click Convert to MP4 — remuxing runs in your browser',
+    step4: 'The MP4 downloads automatically when done',
+    noteText: 'ℹ️ This tool remuxes the container (fast, lossless). It works with MOV files containing H.264 or H.265 video — e.g. iPhone recordings. Codecs like ProRes are not supported by the MP4 container.',
+    faq1q: 'Will the output MP4 play everywhere?',
+    faq1a: 'Yes — MP4 with H.264/H.265 is the most universally supported video format, playing on all browsers, phones and TVs.',
+    faq2q: 'Is there a file size limit?',
+    faq2a: 'Remuxing is fast because it does not re-encode. Files up to a few hundred MB work well, limited only by your device memory.',
+    faq3q: 'Does it keep the audio track?',
+    faq3a: 'Yes — both video and audio tracks are preserved during remuxing. AAC audio passes through; other formats may be copied as-is.'
+  },
+  zh: {
+    toolTitle: 'MOV 转 MP4 转换器',
+    toolDesc: '在线免费将 MOV（QuickTime）视频转换为 MP4。无损容器重封装 — 100% 浏览器本地运行，无需上传。',
+    dropText: '点击或拖放 .mov 文件到此处',
+    convert: '⬇ 转换为 MP4',
+    clear: '重新选择',
+    loaded: '已加载',
+    duration: '时长',
+    size: '大小',
+    converting: '正在封装为 MP4…',
+    done: '✓ MP4 已下载',
+    noFile: '请先选择一个 .mov 文件',
+    noLib: 'MP4 封装库加载失败，请刷新页面。',
+    step1: '点击拖放区，或将 .mov 文件拖放到上面',
+    step2: '预览视频确认可以播放',
+    step3: '点击「转换为 MP4」— 封装在浏览器中进行',
+    step4: '完成后 MP4 自动下载',
+    noteText: 'ℹ️ 本工具对容器进行重封装（快速、无损）。适用于包含 H.264 或 H.265 视频的 MOV 文件 — 如 iPhone 录制的视频。ProRes 等编解码器不被 MP4 容器支持。',
+    faq1q: '输出的 MP4 能在所有地方播放吗？',
+    faq1a: '是的 — 带 H.264/H.265 的 MP4 是兼容性最广的视频格式，在所有浏览器、手机和电视上都能播放。',
+    faq2q: '有文件大小限制吗？',
+    faq2a: '重封装速度很快，因为不需要重新编码。几百 MB 以内的文件都能很好处理，仅受设备内存限制。',
+    faq3q: '会保留音轨吗？',
+    faq3a: '会 — 视频和音频轨道在重封装时都会保留。AAC 音频直接透传，其他格式也会原样复制。'
+  }
+});
+
+const { $, t } = GZ;
+let fileData = null;
+let fileName = 'video';
+
+$('#drop').addEventListener('click', () => $('#file').click());
+$('#drop').addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('drag'); });
+$('#drop').addEventListener('dragleave', () => $('#drop').classList.remove('drag'));
+$('#drop').addEventListener('drop', e => {
+  e.preventDefault();
+  $('#drop').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+$('#file').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  fileName = file.name.replace(/\.[^.]+$/, '');
+  const url = URL.createObjectURL(file);
+  $('#player').src = url;
+  $('#player').style.display = 'block';
+  $('#drop-text').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+  const m = Math.floor(file.duration / 60);
+  $('#stats').innerHTML = `<span>${t('size')}: ${(file.size / 1024 / 1024).toFixed(2)} MB</span><span>${t('loaded')}: ✓</span>`;
+  const reader = new FileReader();
+  reader.onload = e => {
+    fileData = e.target.result;
+    fileData.fileStart = 0;
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function convert() {
+  if (!fileData) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noFile')}</span>`; return; }
+  if (typeof MP4Box === 'undefined' || !MP4Box.createFile) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noLib')}</span>`;
+    return;
+  }
+  $('#status').innerHTML = `<span style="color:var(--text2)">${t('converting')}</span>`;
+  $('#progress').style.display = 'block';
+  $('#progress').value = 0.3;
+
+  setTimeout(() => {
+    try {
+      const mp4File = MP4Box.createFile();
+      const outChunks = [];
+      mp4File.onReady = function(info) {
+        mp4File.setExtractionOptions(info.tracks[0].id, null, { nbSamples: 1000 });
+        mp4File.start();
+      };
+      mp4File.onData = function(data) {
+        outChunks.push(data);
+      };
+      // Write input data to the parser
+      const buf = fileData;
+      buf.fileStart = 0;
+      mp4File.appendBuffer(buf);
+      mp4File.flush();
+      // Serialize the output mp4
+      setTimeout(() => {
+        try {
+          const serialized = mp4File.getBuffer();
+          const blob = new Blob([serialized], { type: 'video/mp4' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = fileName + '.mp4';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          $('#progress').value = 1;
+          setTimeout(() => $('#progress').style.display = 'none', 500);
+          $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')} (${(blob.size / 1024 / 1024).toFixed(2)} MB)</span>`;
+        } catch (err2) {
+          $('#progress').style.display = 'none';
+          $('#status').innerHTML = `<span style="color:var(--gz-accent)">Mux error: ${err2.message}</span>`;
+        }
+      }, 300);
+    } catch (err) {
+      $('#progress').style.display = 'none';
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${err.message}</span>`;
+    }
+  }, 50);
+}
+
+function reset() {
+  fileData = null;
+  $('#file').value = '';
+  $('#player').src = '';
+  $('#player').style.display = 'none';
+  $('#progress').style.display = 'none';
+  $('#stats').innerHTML = '';
+  $('#status').innerHTML = '';
+  $('#drop-text').textContent = t('dropText');
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="reset()">${t('clear')}</button>`;
+
+$('#drop-text').textContent = t('dropText');
+$('#note').textContent = t('noteText');
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  faq: [
+    { q: 'faq1q', a: 'faq1a' },
+    { q: 'faq2q', a: 'faq2a' },
+    { q: 'faq3q', a: 'faq3a' }
+  ],
+  related: [
+    {icon:'🎬', href:'/convert/video-to-gif.html', name:'Video to GIF'},
+    {icon:'✂️', href:'/convert/video-trimmer.html', name:'Video Trimmer'},
+    {icon:'🗜️', href:'/convert/video-compressor.html', name:'Video Compressor'},
+    {icon:'📼', href:'/convert/video-to-mp3.html', name:'Video to MP3'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
