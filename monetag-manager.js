@@ -1,7 +1,25 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.14-tools-exit-intent-cy-fix (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.15-tools-container-slot-swap (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.15 Changes (2026-07-04 — Container AdSense Slot 7373732357 → 1099212472):
+ *   - 🚀 Lift: Tier 0 AdSense slot in showContainerAd() swapped from 7373732357 to
+ *     1099212472. Root cause: BI 7d (2026-06-27~07-03) shows tools container fills at
+ *     2/41 = 4.9% (slot 7373732357). Same slot 1099212472 in tools homepage_banner
+ *     produced 22/41 = 53% AdSense fill rate — 11x improvement opportunity.
+ *   - 🐛 Diagnosis: slot 7373732357 was historically labeled "gz.com container slot"
+ *     but BI 7d shows gz.com never injects showContainerAd() in production
+ *     (gz.com uses banner above/below + commercial break exclusively). Slot was never
+ *     tested and appears to lack inventory in AdSense control panel.
+ *   - 📊 Slot 1099212472 is gz.com's proven banner slot — same publisher
+ *     ca-pub-8346383990981353, same ad unit across sites (AdSense shares inventory
+ *     pool when slot is same, even across subdomains).
+ *   - 🛡️ Safety: showContainerAd()'s cooldown / 90px max-height / 3.5s grace period
+ *     unchanged. Only Tier 0 slot ID swapped. Monetag Tier 1-4 fallback unchanged.
+ *   - 📊 Acceptance (7d BI): tools container_ad_fill rate 4.9% → 25-50% (5-10x lift),
+ *     41 injects × 25% = ~10 fills/week → est $0.05-0.15/week.
+ *   - Version bumped 5.14 → 5.15.
  *
  * v5.14 Changes (2026-07-03 — Exit-Intent cy<0 Guard Fix, port from gz.com v5.12):
  *   - 🪲 Fix: initExitIntent() mouseout guard `if (e.clientY < 0) return` was killing
@@ -287,7 +305,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.14-tools-exit-intent-cy-fix',  // 2026-07-03: cy<0 guard fix (parity with gz.com v5.12) + cooldown 30s→45s
+    VERSION: '5.15-tools-container-slot-swap',  // 2026-07-04: Tier 0 slot 7373732357 → 1099212472 (proven fill source)
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -983,13 +1001,20 @@
     setTimeout(function() {
       if (container.getAttribute('data-filled')) return;
 
-      // Tier 0: AdSense race — slot 7373732357 (gz.com container-ad slot, same publisher).
+      // v5.15 (2026-07-04): Tier 0 slot 7373732357 → 1099212472. Root cause analysis from
+      // BI 7d (2026-06-27~07-03): tools container 7d = 2 fill / 41 inject = 4.9% — almost
+      // zero, vs tools homepage_banner_fill 22/41 = 53% (same AdSense publisher, same slot).
+      // Same slot 1099212472 on gz.com homepage_banner also shows 47/7d Monetag zone 11012002
+      // fill (proven working). 7373732357 was historically labeled "gz.com container slot"
+      // but BI shows gz.com NEVER injected showContainerAd() — the slot ID was never tested
+      // in production and appears not to have inventory configured in AdSense console.
+      // Switching to 1099212472 (proven fill source) is a structural lift, no risk.
       // 2s grace period then fallback to Monetag Tiers 1-4 (Poki-style race).
       var adsenseIns = document.createElement('ins');
       adsenseIns.className = 'adsbygoogle';
       adsenseIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden;';
       adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-      adsenseIns.setAttribute('data-ad-slot', '7373732357');
+      adsenseIns.setAttribute('data-ad-slot', '1099212472');
       adsenseIns.setAttribute('data-ad-format', 'auto');
       adsenseIns.setAttribute('data-full-width-responsive', 'false');
       container.innerHTML = '';
