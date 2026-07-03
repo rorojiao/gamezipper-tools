@@ -1,7 +1,18 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.15-tools-container-slot-swap (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.15.1-tools-container-slotid-sync (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.15.1 Changes (2026-07-04 — P0 sync trackAdEvent slotId 7373732357 → 1099212472):
+ *   - 🩹 Bug fix: trackAdEvent('container_ad_fill'/'adsense_container_ad_no_fill') meta
+ *     slotId was still hard-coded to '7373732357' even after v5.15 swapped the actual
+ *     `data-ad-slot` to '1099212472'. Net effect: BI meta said one slot but the slot
+ *     actually requested was a different one — query by slotId would return no rows
+ *     for the new slot and confuse A/B analysis.
+ *   - Fix: meta slotId synced to '1099212472' to match the slot actually requested.
+ *     No behavioral change for users (only BI meta field corrected). Slot rendering,
+ *     cooldown, grace period, Monetag Tier 1-4 fallback all unchanged from v5.15.
+ *   - Version bumped 5.15 → 5.15.1.
  *
  * v5.15 Changes (2026-07-04 — Container AdSense Slot 7373732357 → 1099212472):
  *   - 🚀 Lift: Tier 0 AdSense slot in showContainerAd() swapped from 7373732357 to
