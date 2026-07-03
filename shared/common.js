@@ -93,7 +93,7 @@
   // production code is currently v5.13-tools-cb-monetag-slot. Cloudflare CDN serves
   // the same content regardless, but pinned cache versions prevent stale browser
   // caches during partial deploys.
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260703514';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=202607031220fix';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260701v5140';s4.defer=true;document.head.appendChild(s4);
