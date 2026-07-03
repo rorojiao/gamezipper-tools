@@ -305,7 +305,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.15-tools-container-slot-swap',  // 2026-07-04: Tier 0 slot 7373732357 → 1099212472 (proven fill source)
+    VERSION: '5.15.1-tools-container-slotid-sync',  // 2026-07-04: P0 fix sync trackAdEvent slotId 7373732357 → 1099212472
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -1039,13 +1039,13 @@
         if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 60)) {
           container.setAttribute('data-filled', '1');
           markShown();
-          trackAdEvent('container_ad_fill', { network: 'adsense', containerId: 'gz-tools-ad-below', slotId: '7373732357' });
+          trackAdEvent('container_ad_fill', { network: 'adsense', containerId: 'gz-tools-ad-below', slotId: '1099212472' });
           clearInterval(adsenseTimer);
           return;
         }
         if (Date.now() - adsenseStart > 3500) {
           clearInterval(adsenseTimer);
-          trackAdEvent('adsense_container_ad_no_fill', { containerId: 'gz-tools-ad-below', slotId: '7373732357' });
+          trackAdEvent('adsense_container_ad_no_fill', { containerId: 'gz-tools-ad-below', slotId: '1099212472' });
           if (!container.getAttribute('data-filled')) startMonetagWaterfall();
         }
       }, 250);

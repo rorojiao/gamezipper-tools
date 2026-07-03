@@ -94,10 +94,10 @@
   // the same content regardless, but pinned cache versions prevent stale browser
   // caches during partial deploys.
   // v5.15 (2026-07-04): bump cache to v=20260704v515slot (v5.15 container slot swap).
-  //   production code is currently v5.15-tools-container-slot-swap. Cloudflare CDN serves
-  //   the same content regardless, but pinned cache versions prevent stale browser
-  //   caches during partial deploys.
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260704v515slot';s1.defer=true;document.head.appendChild(s1);
+  // v5.5.8 (2026-07-04): bump cache to v=20260704v516obs (P0 fix: window.GZ_TRACK_AD_EVENT
+  //   undefined → window.gzAnalytics.sendAd so tryInjectAfterRelated funnel events
+  //   actually reach BI server). Cloudflare CDN will serve the new code on next reload.
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260704v516obs';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260701v5140';s4.defer=true;document.head.appendChild(s4);
@@ -304,22 +304,29 @@ const GZ = (function(){
     updateLangBtn();
   }
 
-  // ── v5.5.7 deferred AdSense inject + observability ───────────────────────
+  // ── v5.5.8 deferred AdSense inject + observability (P0 fix) ──────────────
   //  Wrap the v5.5.5 `gz-tools-after-related-slot` injection into a top-level
   //  function. Run at DOMContentLoaded (where tools-result-rec.js has populated
   //  `.gz-related`) + 800ms / 2500ms retries for late-render hub pages.
   //  Idempotent — getElementById short-circuits if already injected.
   //  v5.5.7: emit trackAdEvent for full funnel observability (zero events in
   //    v5.5.5/v5.5.6 made it impossible to know if the slot was injecting
-  //    successfully or being silently caught). BI sees path-level injection
-  //    rate for the first time.
+  //    successfully or being silently caught).
+  //  v5.5.8 (2026-07-04): P0 fix — v5.5.7 used undefined `window.GZ_TRACK_AD_EVENT`
+  //    so all 5 events were silent no-ops. Switch to the actual gz-analytics.js
+  //    exposed API `window.gzAnalytics.sendAd()` (which ps() into gz_ad_event
+  //    beacon stream for BI). Same pattern monetag-manager.js uses internally.
+  //    v5.5.8 also: bump cache to v=20260704v516obs so CDN serves v5.5.8 code.
+  function trackAfterRelated(type, data) {
+    try { (window.gzAnalytics && window.gzAnalytics.sendAd ? window.gzAnalytics.sendAd(type, data) : null); } catch(e) {}
+  }
   function tryInjectAfterRelated() {
     if (location.pathname.indexOf('/', 1) <= 1) {
-      try { (window.GZ_TRACK_AD_EVENT || function(){})('gz_after_related_skip_hub', { path: location.pathname }); } catch(e) {}
+      trackAfterRelated('gz_after_related_skip_hub', { path: location.pathname });
       return;
     }
     if (document.getElementById('gz-tools-after-related-slot')) {
-      try { (window.GZ_TRACK_AD_EVENT || function(){})('gz_after_related_already_injected', {}); } catch(e) {}
+      trackAfterRelated('gz_after_related_already_injected', {});
       return;
     }
     try {
@@ -345,14 +352,14 @@ const GZ = (function(){
       } else {
         document.body.appendChild(slotWrapper);
       }
-      try { (window.GZ_TRACK_AD_EVENT || function(){})('gz_after_related_injected', { path: location.pathname, placement: placement }); } catch(e) {}
+      trackAfterRelated('gz_after_related_injected', { path: location.pathname, placement: placement });
       // Lazy-load via IntersectionObserver — request ad only when within 200px of viewport
       if (typeof IntersectionObserver !== 'undefined') {
         var io = new IntersectionObserver(function(entries) {
           for (var j = 0; j < entries.length; j++) {
             if (entries[j].isIntersecting) {
               try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-              try { (window.GZ_TRACK_AD_EVENT || function(){})('gz_after_related_ad_requested', { path: location.pathname }); } catch(e) {}
+              trackAfterRelated('gz_after_related_ad_requested', { path: location.pathname });
               io.unobserve(slotWrapper);
             }
           }
@@ -363,7 +370,7 @@ const GZ = (function(){
         try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
       }
     } catch(e) {
-      try { (window.GZ_TRACK_AD_EVENT || function(){})('gz_after_related_inject_error', { error: String(e) }); } catch(e) {}
+      trackAfterRelated('gz_after_related_inject_error', { error: String(e) });
     }
   }
   // Schedule 3 attempts. tools-result-rec.js populates `.gz-related` inside a
