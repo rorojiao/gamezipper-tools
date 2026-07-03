@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Markdown to Plain Text Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Strip Markdown formatting and convert to clean plain text. Remove headings, bold, links, code blocks, lists and images instantly. Free, 100% browser-based, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/markdown-to-plaintext.html">
+  <meta property="og:title" content="Markdown to Plain Text Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Strip Markdown formatting and convert to clean plain text. Remove headings, bold, links, code blocks, lists and images instantly. Free, 100% browser-based, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/markdown-to-plaintext.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Markdown to Plain Text Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Strip Markdown formatting and convert to clean plain text. Remove headings, bold, links, code blocks, lists and images instantly. Free, 100% browser-based, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Markdown to Plain Text Converter","description":"Strip Markdown formatting and convert to clean plain text. Remove headings, bold, links, code blocks, lists and images instantly. Free, 100% browser-based, no signup.","url":"https://tools.gamezipper.com/text/markdown-to-plaintext.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert Markdown to plain text?","acceptedAnswer":{"@type":"Answer","text":"Paste your Markdown into the input area. The tool instantly strips all formatting — headings, bold, italic, links, images, code blocks and lists — leaving clean readable text."}},{"@type":"Question","name":"What Markdown elements are removed?","acceptedAnswer":{"@type":"Answer","text":"The converter removes heading markers (#), emphasis (* _ **), link syntax [text](url), image syntax ![alt](url), code blocks (```), inline code (`), blockquotes (>), horizontal rules (---), list markers (- * 1.) and HTML tags."}},{"@type":"Question","name":"Is my text uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All processing happens entirely in your browser. Your Markdown text never leaves your device."}},{"@type":"Question","name":"Can I keep line breaks or collapse them?","acceptedAnswer":{"@type":"Answer","text":"Yes. Toggle the options to preserve original line breaks or collapse multiple blank lines into a single paragraph break."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/markdown-to-plaintext.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/markdown-to-plaintext.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/markdown-to-plaintext.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" style="min-height:280px"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly style="min-height:280px"></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Markdown to Plain Text Converter',
+    toolDesc: 'Strip all Markdown formatting and convert to clean, readable plain text. Removes headings, bold, links, images, code blocks and lists — 100% browser-based.',
+    collapseBlanks: 'Collapse blank lines',
+    stripLists: 'Strip list markers',
+    done: '✓ Converted',
+    step1: 'Paste your Markdown text in the input area',
+    step2: 'Toggle options for blank lines and list markers',
+    step3: 'The plain text output updates automatically',
+    step4: 'Copy the result to your clipboard',
+  },
+  zh: {
+    toolTitle: 'Markdown 转纯文本转换器',
+    toolDesc: '去除所有 Markdown 格式，转换为干净易读的纯文本。移除标题、粗体、链接、图片、代码块和列表 — 100% 浏览器本地运行。',
+    collapseBlanks: '压缩空行',
+    stripLists: '移除列表标记',
+    done: '✓ 转换成功',
+    step1: '在输入区粘贴 Markdown 文本',
+    step2: '切换空行压缩和列表标记移除选项',
+    step3: '纯文本输出自动更新',
+    step4: '复制结果到剪贴板',
+  }
+});
+
+let collapseBlanks = true;
+let stripLists = true;
+const { $, copyText, t } = GZ;
+
+function stripMd(md) {
+  let text = md;
+
+  // Remove HTML tags
+  text = text.replace(/<[^>]+>/g, '');
+
+  // Remove fenced code blocks
+  text = text.replace(/```[\s\S]*?```/g, m => m.replace(/```\w*\n?/g, '').replace(/```/g, ''));
+
+  // Remove images: ![alt](url)
+  text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
+
+  // Convert links: [text](url) -> text
+  text = text.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+
+  // Remove reference links: [text][ref] and [ref]: url
+  text = text.replace(/\[([^\]]*)\]\[[^\]]*\]/g, '$1');
+  text = text.replace(/^\[[^\]]*\]:\s*.*$/gm, '');
+
+  // Remove headings: # ## ### etc
+  text = text.replace(/^#{1,6}\s+/gm, '');
+
+  // Remove bold/italic markers
+  text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '$1');
+  text = text.replace(/\*\*([^*]+)\*\*/g, '$1');
+  text = text.replace(/__([^_]+)__/g, '$1');
+  text = text.replace(/(?<!\w)\*([^*\n]+)\*(?!\w)/g, '$1');
+  text = text.replace(/(?<!\w)_([^_\n]+)_(?!\w)/g, '$1');
+
+  // Remove inline code
+  text = text.replace(/`([^`]+)`/g, '$1');
+
+  // Remove blockquote markers
+  text = text.replace(/^>\s?/gm, '');
+
+  // Remove horizontal rules
+  text = text.replace(/^[-*_]{3,}\s*$/gm, '');
+
+  if (stripLists) {
+    // Remove unordered list markers
+    text = text.replace(/^[\s]*[-*+]\s+/gm, '');
+    // Remove ordered list markers
+    text = text.replace(/^[\s]*\d+\.\s+/gm, '');
+  }
+
+  // Remove strikethrough
+  text = text.replace(/~~([^~]+)~~/g, '$1');
+
+  if (collapseBlanks) {
+    text = text.replace(/\n{3,}/g, '\n\n');
+  }
+
+  return text.trim() + '\n';
+}
+
+function doConvert() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').value = ''; $('#status').innerHTML = ''; return; }
+  $('#output').value = stripMd(inp);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = `# My Project
+
+This is a **bold** and *italic* description with a [link](https://example.com).
+
+## Features
+
+- Fast and free
+- No signup required
+- Works offline
+
+### Installation
+
+Run \`npm install\` then start the server:
+
+\`\`\`
+npm start
+\`\`\`
+
+> Note: Requires Node.js 18+.
+
+![Logo](https://example.com/logo.png)`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" checked onchange="collapseBlanks=this.checked;doConvert()"> ${t('collapseBlanks')}</label>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" checked onchange="stripLists=this.checked;doConvert()"> ${t('stripLists')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/text/markdown-to-html.html', name:'MD to HTML'},
+    {icon:'📑', href:'/text/html-to-markdown.html', name:'HTML to MD'},
+    {icon:'✍️', href:'/text/markdown-editor.html', name:'MD Editor'},
+    {icon:'🧹', href:'/text/remove-html-tags.html', name:'Remove HTML Tags'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

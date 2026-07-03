@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Pipe-Separated to CSV Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert pipe-separated (|) data to standard CSV instantly. Handles quoted fields, custom delimiters and headers. Free pipe to CSV converter — 100% browser-based, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/pipe-to-csv.html">
+  <meta property="og:title" content="Pipe-Separated to CSV Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert pipe-separated (|) data to standard CSV instantly. Handles quoted fields, custom delimiters and headers. Free pipe to CSV converter — 100% browser-based, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/pipe-to-csv.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Pipe-Separated to CSV Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert pipe-separated (|) data to standard CSV instantly. Handles quoted fields, custom delimiters and headers. Free pipe to CSV converter — 100% browser-based, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Pipe-Separated to CSV Converter","description":"Convert pipe-separated (|) data to standard CSV instantly. Handles quoted fields, custom delimiters and headers. Free pipe to CSV converter — 100% browser-based, no upload.","url":"https://tools.gamezipper.com/convert/pipe-to-csv.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert pipe-separated data to CSV?","acceptedAnswer":{"@type":"Answer","text":"Paste your pipe-delimited data into the input area and click Convert. The tool splits each line on the pipe character and joins fields with commas, quoting any field that contains commas, quotes or newlines per RFC 4180."}},{"@type":"Question","name":"What is pipe-separated data?","acceptedAnswer":{"@type":"Answer","text":"Pipe-separated values use the vertical bar character (|) as a field delimiter instead of commas. This format is common in legacy systems, log files and data exports where field values may contain commas."}},{"@type":"Question","name":"Can I use a custom delimiter instead of pipe?","acceptedAnswer":{"@type":"Answer","text":"Yes. The delimiter input field lets you change the source separator to any character — semicolon, tab, tilde, caret or any custom string."}},{"@type":"Question","name":"Is my data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser using JavaScript. Your data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/pipe-to-csv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/pipe-to-csv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/pipe-to-csv.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" style="min-height:280px"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly style="min-height:280px"></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Pipe-Separated to CSV Converter',
+    toolDesc: 'Convert pipe-delimited (|) data to standard CSV instantly. Custom delimiter support, RFC 4180 quoting — 100% browser-based, no upload, no signup.',
+    delimiter: 'Delimiter',
+    convert: 'Convert',
+    done: '✓ Converted',
+    step1: 'Paste your pipe-separated data in the input area',
+    step2: 'Change the delimiter if needed (default is |)',
+    step3: 'Click Convert to generate CSV output',
+    step4: 'Copy or download the CSV result',
+  },
+  zh: {
+    toolTitle: '管道符分隔转 CSV 转换器',
+    toolDesc: '即时将管道符 (|) 分隔数据转换为标准 CSV。支持自定义分隔符，符合 RFC 4180 引号规范 — 100% 浏览器本地运行，无需上传。',
+    delimiter: '分隔符',
+    convert: '转换',
+    done: '✓ 转换成功',
+    step1: '在输入区粘贴管道符分隔数据',
+    step2: '如需更改分隔符（默认为 |）',
+    step3: '点击「转换」生成 CSV 输出',
+    step4: '复制或下载 CSV 结果',
+  }
+});
+
+let delimiter = '|';
+const { $, copyText, t } = GZ;
+
+function parseDelimitedLine(line, delim) {
+  if (!delim || delim.length === 0) delim = '|';
+  const fields = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { cur += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (line.substr(i, delim.length) === delim) { fields.push(cur); cur = ''; i += delim.length - 1; }
+      else { cur += ch; }
+    }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+function csvField(val) {
+  if (/[",\n\r]/.test(val)) {
+    return '"' + val.replace(/"/g, '""') + '"';
+  }
+  return val;
+}
+
+function doConvert() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').value = ''; $('#status').innerHTML = ''; return; }
+  const lines = inp.split(/\r?\n/).filter(l => l.length > 0);
+  const csvLines = lines.map(line => {
+    const fields = parseDelimitedLine(line, delimiter);
+    return fields.map(csvField).join(',');
+  });
+  $('#output').value = csvLines.join('\n') + '\n';
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')} — ${lines.length} ${lines.length === 1 ? 'row' : 'rows'}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = 'Name|Age|City|Notes\nAlice|30|New York|Likes coffee\nBob|25|London, UK|"Enjoys ""coding"""\nCarol|28|Tokyo|No issues';
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <label style="font-size:.85em;display:inline-flex;align-items:center;gap:4px">${t('delimiter')}: <input type="text" value="|" style="width:40px;text-align:center" onchange="delimiter=this.value||'|';doConvert()"></label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/tab-to-csv.html', name:'TSV to CSV'},
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📊', href:'/text/csv-formatter.html', name:'CSV Formatter'},
+    {icon:'📊', href:'/convert/tab-to-csv.html', name:'Tab to CSV'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
