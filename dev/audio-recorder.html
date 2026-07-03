@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Online Voice Recorder - Record Audio from Microphone | GameZipper Tools</title>
+  <meta name="description" content="Free online voice recorder. Record audio from your microphone and download as WAV or WebM — no signup, no upload, 100% in your browser. Trim, playback and export instantly.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/audio-recorder.html">
+  <meta property="og:title" content="Online Voice Recorder - Record Audio from Microphone | GameZipper Tools">
+  <meta property="og:description" content="Free online voice recorder. Record audio from your microphone and download as WAV or WebM — no signup, no upload, 100% in your browser. Trim, playback and export instantly.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/audio-recorder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Online Voice Recorder - Record Audio from Microphone | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<style>
+.ar-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.ar-big-btn{width:72px;height:72px;border-radius:50%;border:none;background:linear-gradient(135deg,#e94560,#c9302c);color:#fff;font-size:1.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(233,69,96,.45);transition:transform .15s, box-shadow .15s;flex-shrink:0}
+.ar-big-btn:hover{transform:scale(1.05)}
+.ar-big-btn.recording{background:linear-gradient(135deg,#e94560,#8b0000);animation:ar-pulse 1.4s infinite}
+@keyframes ar-pulse{0%,100%{box-shadow:0 4px 18px rgba(233,69,96,.45)}50%{box-shadow:0 4px 28px rgba(233,69,96,.85)}}
+.ar-timer{font-size:1.8rem;font-weight:700;font-family:monospace;color:var(--text);min-width:120px}
+.ar-level{flex:1;min-width:120px;height:10px;background:var(--glass2);border-radius:5px;overflow:hidden;border:1px solid var(--border)}
+.ar-level-bar{height:100%;width:0%;background:linear-gradient(90deg,#00d672,#ffc107,#e94560);transition:width .08s}
+.ar-status{font-size:.9rem;color:var(--text2);margin-bottom:14px}
+.ar-recording-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+.ar-recording-card audio{width:100%;margin:8px 0}
+.ar-recording-card .meta{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:var(--text2);margin-bottom:6px;flex-wrap:wrap;gap:8px}
+.ar-recording-card .meta .name{font-weight:600;color:var(--text)}
+.ar-empty{text-align:center;padding:40px 20px;color:var(--text2);line-height:1.7}
+.ar-empty .icon{font-size:3rem;display:block;margin-bottom:10px}
+.ar-format-sel{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:.9rem}
+.ar-format-sel:focus{outline:none;border-color:var(--accent)}
+.ar-note{font-size:.85rem;color:var(--text2);margin-top:14px;padding:12px;background:var(--glass2);border-radius:8px;border:1px solid var(--border);line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Voice Recorder","description":"Free online voice recorder. Record audio from your microphone and download as WAV or WebM — no signup, no upload, 100% in your browser. Trim, playback and export instantly.","url":"https://tools.gamezipper.com/dev/audio-recorder.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is my voice recording uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. The microphone audio is captured and encoded entirely in your browser using the MediaRecorder API. The recording never leaves your device unless you choose to download it."}},{"@type":"Question","name":"What audio formats can I export?","acceptedAnswer":{"@type":"Answer","text":"The recorder captures in WebM (Opus) by default, which most modern browsers and players support. The tool also offers a WAV export option for maximum compatibility with audio editors and DAWs."}},{"@type":"Question","name":"Why does the browser ask for microphone permission?","acceptedAnswer":{"@type":"Answer","text":"All browsers require explicit user consent before a website can access the microphone. Click Allow when prompted — the permission only applies to this page."}},{"@type":"Question","name":"Why does recording fail on some browsers?","acceptedAnswer":{"@type":"Answer","text":"Microphone access requires HTTPS (or localhost). If you are on HTTP, the API is blocked. Some older browsers also lack MediaRecorder support — use a current version of Chrome, Firefox, Edge or Safari."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/audio-recorder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/audio-recorder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/audio-recorder.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="ar-controls">
+      <button class="ar-big-btn" id="recBtn" title="Record">●</button>
+      <span class="ar-timer" id="timer">00:00</span>
+      <div class="ar-level"><div class="ar-level-bar" id="level"></div></div>
+      <select class="ar-format-sel" id="format">
+        <option value="webm">WebM (Opus)</option>
+        <option value="wav">WAV (PCM)</option>
+      </select>
+    </div>
+    <div class="ar-status" id="status"></div>
+    <div id="recordings"></div>
+    <div class="ar-note" id="note"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Voice Recorder',
+    toolDesc: 'Record audio from your microphone and download as WebM or WAV. 100% in your browser — no upload, no signup, no time limit.',
+    ready: 'Ready — click the red button to start recording',
+    recording: '🔴 Recording… click to stop',
+    processing: 'Processing audio…',
+    permission: 'Microphone permission denied. Please allow access and try again.',
+    unsupported: 'Your browser does not support audio recording (MediaRecorder API).',
+    download: 'Download',
+    delete: 'Delete',
+    empty: 'Your recordings will appear here. Click the red button to start.',
+    recordingName: 'Recording',
+    note: 'Audio is captured locally with the MediaRecorder API and never uploaded. WAV export uses PCM 16-bit at the source sample rate. HTTPS is required for microphone access.',
+    step1: 'Choose your preferred format (WebM or WAV)',
+    step2: 'Click the red record button and allow microphone access',
+    step3: 'Speak, sing or play — watch the live level meter',
+    step4: 'Click stop, then playback, download or delete the recording',
+  },
+  zh: {
+    toolTitle: '在线录音器',
+    toolDesc: '用麦克风录音并下载为 WebM 或 WAV。100% 浏览器本地运行 — 无需上传、无需注册、无时长限制。',
+    ready: '就绪 — 点击红色按钮开始录音',
+    recording: '🔴 录音中… 点击停止',
+    processing: '正在处理音频…',
+    permission: '麦克风权限被拒绝，请允许访问后重试。',
+    unsupported: '您的浏览器不支持录音功能（MediaRecorder API）。',
+    download: '下载',
+    delete: '删除',
+    empty: '录音将显示在这里。点击红色按钮开始录音。',
+    recordingName: '录音',
+    note: '音频通过 MediaRecorder API 在本地采集，不会上传。WAV 导出为 16 位 PCM，采样率与源一致。麦克风访问需要 HTTPS 环境。',
+    step1: '选择格式（WebM 或 WAV）',
+    step2: '点击红色录音按钮并允许麦克风权限',
+    step3: '说话、唱歌或演奏 — 观察实时电平条',
+    step4: '点击停止，然后播放、下载或删除录音',
+  }
+});
+
+const { $, t, showToast } = GZ;
+let mediaRecorder = null;
+let chunks = [];
+let stream = null;
+let audioCtx = null;
+let analyser = null;
+let dataArr = null;
+let rafId = null;
+let startTime = 0;
+let recordings = [];
+let recCounter = 0;
+
+const recBtn = $('#recBtn');
+const timerEl = $('#timer');
+const levelBar = $('#level');
+const statusEl = $('#status');
+const recordingsEl = $('#recordings');
+
+statusEl.textContent = t('ready');
+renderEmpty();
+
+function renderEmpty() {
+  if (!recordings.length) {
+    recordingsEl.innerHTML = `<div class="ar-empty"><span class="icon">🎙️</span>${t('empty')}</div>`;
+  }
+}
+
+async function toggleRecord() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+    showToast(t('unsupported'), 'error');
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  } catch (e) {
+    showToast(t('permission'), 'error');
+    return;
+  }
+
+  // Pick mime type
+  const wantFmt = $('#format').value;
+  let mimeType = '';
+  if (wantFmt === 'wav' || !MediaRecorder.isTypeSupported('audio/webm')) {
+    mimeType = ''; // default; we will decode to WAV post-record
+  } else {
+    mimeType = 'audio/webm';
+  }
+  try {
+    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+  } catch (e) {
+    showToast(t('unsupported'), 'error');
+    stream.getTracks().forEach(tr => tr.stop());
+    return;
+  }
+
+  chunks = [];
+  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    statusEl.textContent = t('processing');
+    const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+    finalizeRecording(blob, wantFmt);
+    cleanupStream();
+  };
+
+  // Level meter
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const src = audioCtx.createMediaStreamSource(stream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  dataArr = new Uint8Array(analyser.frequencyBinCount);
+  src.connect(analyser);
+
+  mediaRecorder.start();
+  startTime = performance.now();
+  recBtn.classList.add('recording');
+  recBtn.textContent = '■';
+  statusEl.textContent = t('recording');
+  timerLoop();
+}
+
+function timerLoop() {
+  if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+  const elapsed = (performance.now() - startTime) / 1000;
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const ss = String(Math.floor(elapsed % 60)).padStart(2, '0');
+  timerEl.textContent = mm + ':' + ss;
+
+  if (analyser) {
+    analyser.getByteFrequencyData(dataArr);
+    let sum = 0;
+    for (let i = 0; i < dataArr.length; i++) sum += dataArr[i];
+    const avg = sum / dataArr.length;
+    levelBar.style.width = Math.min(100, (avg / 128) * 100) + '%';
+  }
+  rafId = requestAnimationFrame(timerLoop);
+}
+
+function cleanupStream() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  if (stream) { stream.getTracks().forEach(tr => tr.stop()); stream = null; }
+  if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; }
+  analyser = null;
+  recBtn.classList.remove('recording');
+  recBtn.textContent = '●';
+  levelBar.style.width = '0%';
+}
+
+async function finalizeRecording(blob, wantFmt) {
+  recCounter++;
+  let outBlob = blob;
+  let outType = blob.type;
+
+  if (wantFmt === 'wav') {
+    try {
+      const arrayBuf = await blob.arrayBuffer();
+      const tmpCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuf = await tmpCtx.decodeAudioData(arrayBuf);
+      outBlob = audioBufferToWav(audioBuf);
+      outType = 'audio/wav';
+      tmpCtx.close().catch(()=>{});
+    } catch (e) {
+      showToast('WAV conversion failed, keeping original format', 'error');
+    }
+  }
+
+  const ext = outType.includes('wav') ? 'wav' : 'webm';
+  const name = `${t('recordingName')} ${recCounter}.${ext}`;
+  const url = URL.createObjectURL(outBlob);
+  const dur = await getDuration(url);
+
+  recordings.unshift({ id: recCounter, name, url, blob: outBlob, type: outType, dur, ts: new Date() });
+  renderRecordings();
+  statusEl.textContent = t('ready');
+  timerEl.textContent = '00:00';
+}
+
+function getDuration(url) {
+  return new Promise(resolve => {
+    const a = document.createElement('audio');
+    a.preload = 'metadata';
+    a.onloadedmetadata = () => resolve(isFinite(a.duration) ? a.duration : 0);
+    a.onerror = () => resolve(0);
+    a.src = url;
+  });
+}
+
+function fmtDur(s) {
+  if (!s || !isFinite(s)) return '--:--';
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(Math.floor(s % 60)).padStart(2, '0');
+  return mm + ':' + ss;
+}
+
+function renderRecordings() {
+  if (!recordings.length) { renderEmpty(); return; }
+  recordingsEl.innerHTML = recordings.map(r => `
+    <div class="ar-recording-card">
+      <div class="meta">
+        <span class="name">🎵 ${escapeHtml(r.name)}</span>
+        <span>${fmtDur(r.dur)} · ${(r.blob.size / 1024).toFixed(1)} KB · ${r.type}</span>
+      </div>
+      <audio controls src="${r.url}"></audio>
+      <div>
+        <a class="gz-btn" href="${r.url}" download="${escapeAttr(r.name)}">${t('download')}</a>
+        <button class="gz-btn gz-btn-secondary" onclick="deleteRec(${r.id})">${t('delete')}</button>
+      </div>
+    </div>`).join('');
+}
+
+function deleteRec(id) {
+  const r = recordings.find(x => x.id === id);
+  if (r) URL.revokeObjectURL(r.url);
+  recordings = recordings.filter(x => x.id !== id);
+  renderRecordings();
+}
+
+// Encode AudioBuffer to 16-bit PCM WAV Blob
+function audioBufferToWav(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const numSamples = buffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = numCh * bytesPerSample;
+  const dataSize = numSamples * blockAlign;
+  const buf = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buf);
+
+  function writeStr(off, s) { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); }
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);          // PCM
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  const channels = [];
+  for (let c = 0; c < numCh; c++) channels.push(buffer.getChannelData(c));
+  let off = 44;
+  for (let i = 0; i < numSamples; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, channels[c][i]));
+      view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+function escapeHtml(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeAttr(s) { return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+recBtn.addEventListener('click', toggleRecord);
+window.deleteRec = deleteRec;
+window.addEventListener('beforeunload', cleanupStream);
+
+$('#note').textContent = t('note');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔊', href:'/dev/decibel-meter.html', name:'Decibel Meter'},
+    {icon:'🎚️', href:'/dev/audio-tuner.html', name:'Audio Tuner'},
+    {icon:'🎵', href:'/convert/mp3-to-wav.html', name:'MP3 → WAV'},
+    {icon:'🎶', href:'/dev/bpm-detector.html', name:'BPM Detector'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
