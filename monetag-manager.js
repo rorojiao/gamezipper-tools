@@ -1,7 +1,24 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.13-tools-cb-monetag-slot (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.14-tools-exit-intent-cy-fix (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.14 Changes (2026-07-03 — Exit-Intent cy<0 Guard Fix, port from gz.com v5.12):
+ *   - 🪲 Fix: initExitIntent() mouseout guard `if (e.clientY < 0) return` was killing
+ *     40.8% of real exit gestures (BI 30d on gz.com: 75/184 with-cy exit_mouse had cy<0).
+ *     Same root cause on tools — but tools has 12 exit_mouse total in 30d (low because
+ *     tools visitors often finish tasks quickly then leave via navigation, not mouseout).
+ *     Even at this low volume, every missed exit_intent costs us impressions.
+ *   - 🔓 Loosen: Accept clientY <= 30 OR clientY < 0 (parity with gz.com v5.12).
+ *     Combined test: if clientY is a number AND > 30, NOT exit intent.
+ *   - 📊 Observability: trackAdEvent('exit_intent_guard_rejected', ...) on cy>30
+ *     rejections — BI sees full funnel (guard → detected → blocked → fired).
+ *   - 🎯 Cap: raise exitIntentCooldownMs 30s → 45s (parity with gz.com v5.12)
+ *     to prevent over-firing once the guard fix unlocks more events.
+ *   - 📊 Acceptance (7d BI):
+ *     - exit_intent_detected 30d 0 → 7d target 3+ (any lift)
+ *     - exit_intent_guard_rejected 7d target 10+ (visible funnel)
+ *     - exit_intent_fill (new event) 7d target 1+ (actual fills)
  *
  * v5.13 Changes (2026-06-30 — Commercial-Break Monetag Slot + Exit-Intent clientY 30px):
  *   - 🪲 Fix: Commercial-break Monetag race (T+0s parallel with AdSense Tier 1) was broken
@@ -266,11 +283,11 @@
       popunderInteractionDelay: 5000,  // 5s after first interaction
       adLoadTimeout: 5000,
       exitIntentMinDwellMs: 15000,      // v5.8: 15s minimum on page (was 30s; tools task flow exits faster than games)
-      exitIntentCooldownMs: 30*1000,    // v5.13: 60s→30s (parity with gz.com v5.11); tools quick sessions benefit
+      exitIntentCooldownMs: 45*1000,    // v5.14: 30s→45s (parity with gz.com v5.12); guard fix unlocks more events
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.13-tools-cb-monetag-slot',  // 2026-06-30: CB race real fix (Monetag in dedicated slot with ins tag) + exit-intent clientY 10→30 + cooldown 60s→30s
+    VERSION: '5.14-tools-exit-intent-cy-fix',  // 2026-07-03: cy<0 guard fix (parity with gz.com v5.12) + cooldown 30s→45s
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -1328,12 +1345,19 @@
     var lastExitIntentAt = 0;
 
     document.addEventListener('mouseout', function(e) {
-      // Standard exit-intent heuristic: mouse leaves viewport (relatedTarget=null)
-      // toward the top edge (clientY < 10). On most browsers this fires when the
-      // user moves the mouse up to click the back button, URL bar, or close tab.
+      // v5.14 (2026-07-03 — Exit-Intent cy<0 Guard Fix, port from gz.com v5.12):
+      //   Previous guard `if (e.clientY < 0) return` silently rejected 40.8% of real
+      //   exit gestures (BI 30d on gz.com: 75/184 with-cy exit_mouse had cy < 0).
+      //   Standard exit-intent libraries (ExitBee, OptinMonster) treat cy < 0 as
+      //   "mouse has left viewport at top" — the EXACT gesture we want to catch.
+      //   Combined check: if clientY is a number AND > 30, it's NOT exit intent.
       if (e.relatedTarget !== null && e.relatedTarget !== undefined) return;
-      if (typeof e.clientY !== 'number' || e.clientY > 30) return;  // v5.13: loosen 10→30 (parity with gz.com v5.10)
-      if (e.clientY < 0) return; // already left the viewport, too late
+      if (typeof e.clientY === 'number' && e.clientY > 30) {
+        // v5.14 observability: log guard rejections so BI shows the full funnel
+        trackAdEvent('exit_intent_guard_rejected', { reason: 'cy_above_30', cy: e.clientY });
+        return;
+      }
+      // Below: clientY <= 30, clientY < 0, or clientY undefined — all valid exit intent signals
 
       // Guard 1: minimum dwell time
       if (now() - pageLoadTime < CONFIG.TIMING.exitIntentMinDwellMs) return;
