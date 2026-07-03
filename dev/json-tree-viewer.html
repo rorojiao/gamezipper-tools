@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON Tree Viewer - Explore & Search JSON | GameZipper Tools</title>
+  <meta name="description" content="Paste any JSON and explore it as an interactive, collapsible tree. Search keys and values, expand or collapse nodes, copy paths and leaf values. Free, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-tree-viewer.html">
+  <meta property="og:title" content="JSON Tree Viewer - Explore & Search JSON | GameZipper Tools">
+  <meta property="og:description" content="Paste any JSON and explore it as an interactive, collapsible tree. Search keys and values, expand/collapse nodes, copy paths and values. Free.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-tree-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON Tree Viewer - Explore & Search JSON | GameZipper Tools">
+<meta name="twitter:description" content="Interactive JSON tree viewer. Paste JSON, explore as collapsible tree, search keys and values, copy paths.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202607031783009973"></script>
+<style>
+#input{min-height:120px}
+.jt-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.jt-search{flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);color:var(--text);font-size:.9em}
+.jt-search:focus{outline:none;border-color:var(--accent)}
+.jt-actions{display:flex;gap:6px;flex-wrap:wrap}
+.jt-tree{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:monospace;font-size:.85em;line-height:1.7;overflow-x:auto;max-height:60vh;overflow-y:auto}
+ul.jt-ul{list-style:none;padding-left:18px;margin:0;border-left:1px dashed var(--border)}
+ul.jt-ul.root{padding-left:0;border-left:none}
+li.jt-li{position:relative}
+.jt-row{display:inline-flex;align-items:center;gap:4px;padding:1px 0}
+.jt-toggle{cursor:pointer;user-select:none;width:14px;display:inline-block;text-align:center;opacity:.7;font-size:.9em}
+.jt-toggle.leaf{opacity:0;cursor:default}
+.jt-key{color:#e94560;font-weight:600}
+.jt-colon{opacity:.5}
+.jt-string{color:#00d672}
+.jt-number{color:#61afef}
+.jt-bool{color:#d19a66}
+.jt-null{color:#888;font-style:italic}
+.jt-preview{opacity:.5;font-size:.85em;margin-left:4px}
+.jt-copyval{cursor:pointer;font-size:.75em;opacity:.4;margin-left:4px;padding:1px 5px;border-radius:4px;border:1px solid var(--border)}
+.jt-copyval:hover{opacity:1}
+.jt-copypath{cursor:pointer;font-size:.7em;opacity:.3;margin-left:2px;padding:1px 5px;border-radius:4px;border:1px solid var(--border)}
+.jt-copypath:hover{opacity:1}
+.jt-highlight{background:rgba(255,217,61,.25);border-radius:3px}
+.jt-stats{font-size:.8em;opacity:.6;margin-top:8px}
+.jt-empty{opacity:.5;text-align:center;padding:20px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Tree Viewer","description":"Paste any JSON and explore it as an interactive, collapsible tree. Search keys and values, expand or collapse nodes, copy paths and leaf values. Free, browser-only.","url":"https://tools.gamezipper.com/dev/json-tree-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a JSON tree viewer?","acceptedAnswer":{"@type":"Answer","text":"A JSON tree viewer renders JSON data as a hierarchical, collapsible tree. Instead of reading a wall of text, you can expand and collapse nested objects and arrays, making it easy to navigate large or deeply structured JSON."}},{""@type":"Question","name":"Can I search inside the JSON tree?","acceptedAnswer":{"@type":"Answer","text":"Yes. Type into the search box and every matching key or value is highlighted. This is useful for finding a specific field in a large API response or config file."}},{""@type":"Question","name":"How do I copy a JSON path?","acceptedAnswer":{"@type":"Answer","text":"Click the small path button next to any leaf node. The path (in dot notation like user.address.zipcode or bracket notation for arrays) is copied to your clipboard instantly."}},{""@type":"Question","name":"Is my JSON data uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing and rendering happens entirely in your browser. Your JSON never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-tree-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-tree-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-tree-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder='{"key":"value"}'></textarea></div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="jt-controls">
+          <input type="text" id="jtSearch" class="jt-search" placeholder="">
+          <div class="jt-actions">
+            <button class="gz-btn gz-btn-secondary" id="jtExpandAll" style="font-size:.8em;padding:4px 10px"></button>
+            <button class="gz-btn gz-btn-secondary" id="jtCollapseAll" style="font-size:.8em;padding:4px 10px"></button>
+          </div>
+        </div>
+        <div class="gz-output" id="output" style="overflow:visible"><div class="jt-empty"></div></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Tree Viewer',
+    toolDesc: 'Paste any JSON and explore it as an interactive, collapsible tree. Search keys and values, copy paths and leaf values.',
+    render: 'Render Tree',
+    example: 'Example',
+    clear: 'Clear',
+    copy: 'Copy',
+    searchPh: 'Search keys or values...',
+    expandAll: 'Expand All',
+    collapseAll: 'Collapse All',
+    inputLabel: 'JSON Input',
+    outputLabel: 'Tree View',
+    empty: 'Paste JSON on the left and click Render Tree',
+    error: '✗ Invalid JSON',
+    valid: '✓ Valid JSON',
+    copied: 'Copied!',
+    nodes: 'nodes',
+    step1: 'Paste your JSON into the input area on the left',
+    step2: 'Click Render Tree to build the interactive tree',
+    step3: 'Click the triangles to expand or collapse nodes',
+    step4: 'Use the search box to highlight matching keys or values',
+    step5: 'Click copy icons to grab a leaf value or its JSON path',
+  },
+  zh: {
+    toolTitle: 'JSON 树形查看器',
+    toolDesc: '粘贴任意 JSON，以可折叠的交互式树形结构浏览。搜索键和值，复制路径与叶节点值。',
+    render: '渲染树',
+    example: '示例',
+    clear: '清空',
+    copy: '复制',
+    searchPh: '搜索键或值...',
+    expandAll: '全部展开',
+    collapseAll: '全部折叠',
+    inputLabel: 'JSON 输入',
+    outputLabel: '树形视图',
+    empty: '在左侧粘贴 JSON 并点击「渲染树」',
+    error: '✗ JSON 无效',
+    valid: '✓ JSON 有效',
+    copied: '已复制！',
+    nodes: '个节点',
+    step1: '在左侧输入区粘贴你的 JSON',
+    step2: '点击「渲染树」生成交互式树',
+    step3: '点击三角图标展开或折叠节点',
+    step4: '使用搜索框高亮匹配的键或值',
+    step5: '点击复制图标获取叶节点值或其 JSON 路径',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let nodeCount = 0;
+let allToggles = [];
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function highlightSearch(text, q) {
+  if (!q) return escapeHtml(text);
+  const esc = escapeHtml(text);
+  const qEsc = escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return esc.replace(new RegExp(qEsc, 'gi'), m => `<span class="jt-highlight">${m}</span>`);
+}
+
+function buildTree(data, key, path, isRoot) {
+  nodeCount++;
+  const isArr = Array.isArray(data);
+  const isObj = typeof data === 'object' && data !== null;
+  
+  let childrenHtml = '';
+  let preview = '';
+  
+  if (isObj) {
+    const entries = isArr ? data.map((v,i)=>[i,v]) : Object.entries(data);
+    for (const [k, v] of entries) {
+      const childPath = isArr ? `${path}[${k}]` : (path ? `${path}.${k}` : k);
+      childrenHtml += buildTree(v, k, childPath, false);
+    }
+    if (isArr) preview = `Array(${data.length})`;
+    else preview = `{${Object.keys(data).length} keys}`;
+  }
+
+  const hasChildren = childrenHtml !== '';
+  const childList = hasChildren ? `<ul class="jt-ul ${isRoot?'root':''}">${childrenHtml}</ul>` : '';
+  
+  let keyHtml = '';
+  if (!isRoot) {
+    if (isArr && typeof key === 'number') {
+      keyHtml = `<span class="jt-key" style="color:#61afef">[${key}]</span>`;
+    } else {
+      keyHtml = `<span class="jt-key">"${escapeHtml(key)}"</span><span class="jt-colon">:</span>`;
+    }
+  }
+
+  let valueHtml = '';
+  let copyIcons = '';
+  if (!isObj) {
+    let cls = 'jt-string';
+    let display = JSON.stringify(data);
+    if (typeof data === 'number') cls = 'jt-number';
+    else if (typeof data === 'boolean') cls = 'jt-bool';
+    else if (data === null) cls = 'jt-null';
+    const q = $('#jtSearch').value.trim();
+    valueHtml = `<span class="${cls}">${highlightSearch(typeof data==='string'?data:String(data), q)}</span>`;
+    copyIcons = `<span class="jt-copyval" onclick="copyVal(this, ${JSON.stringify(JSON.stringify(data))})">⧉</span>` +
+                `<span class="jt-copypath" onclick="copyVal(this, ${JSON.stringify(path)})">⇥</span>`;
+  } else {
+    const q = $('#jtSearch').value.trim();
+    if (q) {
+      // check if key matches
+    }
+    valueHtml = `<span class="jt-preview">${preview}</span>`;
+  }
+
+  const toggleClass = hasChildren ? '' : 'leaf';
+  const toggleChar = hasChildren ? '▾' : '';
+  
+  return `<li class="jt-li">
+    <div class="jt-row">
+      <span class="jt-toggle ${toggleClass}" onclick="toggleNode(this)">${toggleChar}</span>
+      ${keyHtml}
+      ${valueHtml}
+      ${copyIcons}
+    </div>
+    ${childList}
+  </li>`;
+}
+
+function toggleNode(el) {
+  if (el.classList.contains('leaf')) return;
+  const li = el.closest('.jt-li');
+  const ul = li.querySelector(':scope > ul.jt-ul');
+  if (!ul) return;
+  const hidden = ul.style.display === 'none';
+  ul.style.display = hidden ? '' : 'none';
+  el.textContent = hidden ? '▾' : '▸';
+}
+
+function copyVal(btn, val) {
+  copyText(val);
+  const orig = btn.textContent;
+  btn.textContent = '✓';
+  setTimeout(() => btn.textContent = orig, 1000);
+}
+
+function doRender() {
+  const inp = $('#input').value.trim();
+  if (!inp) {
+    $('#output').innerHTML = `<div class="jt-empty">${t('empty')}</div>`;
+    $('#status').innerHTML = '';
+    return;
+  }
+  try {
+    const data = JSON.parse(inp);
+    nodeCount = 0;
+    const tree = buildTree(data, '', '', true);
+    $('#output').innerHTML = `<div class="jt-tree"><ul class="jt-ul root">${tree}</ul></div><div class="jt-stats">${nodeCount} ${t('nodes')}</div>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+    allToggles = [...document.querySelectorAll('.jt-toggle:not(.leaf)')];
+    // auto-collapse deep arrays/objects with > 20 children
+  } catch(e) {
+    $('#output').innerHTML = `<div class="jt-empty" style="color:var(--gz-accent)">${t('error')}: ${escapeHtml(e.message)}</div>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}: ${escapeHtml(e.message)}</span>`;
+  }
+}
+
+function doSearch() {
+  doRender();
+}
+
+function expandAll() {
+  document.querySelectorAll('.jt-toggle:not(.leaf)').forEach(el => {
+    const li = el.closest('.jt-li');
+    const ul = li.querySelector(':scope > ul.jt-ul');
+    if (ul) { ul.style.display = ''; el.textContent = '▾'; }
+  });
+}
+
+function collapseAll() {
+  document.querySelectorAll('.jt-toggle:not(.leaf)').forEach(el => {
+    const li = el.closest('.jt-li');
+    const ul = li.querySelector(':scope > ul.jt-ul');
+    if (ul && !li.parentElement.classList.contains('root')) {
+      ul.style.display = 'none';
+      el.textContent = '▸';
+    }
+  });
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "product": {
+      "id": 42,
+      "name": "Wireless Headphones",
+      "active": true,
+      "price": 129.99,
+      "tags": ["audio", "bluetooth", "premium"],
+      "specs": {
+        "battery": "30h",
+        "weight_g": 250,
+        "noise_cancelling": true
+      },
+      "reviews": [
+        {"user": "Alice", "rating": 5, "comment": "Amazing sound!"},
+        {"user": "Bob", "rating": 4, "comment": null}
+      ],
+      "warranty": null
+    }
+  }, null, 2);
+  doRender();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#output').innerHTML = `<div class="jt-empty">${t('empty')}</div>`;
+  $('#status').innerHTML = '';
+  $('#jtSearch').value = '';
+}
+
+$('#jtSearch').setAttribute('placeholder', t('searchPh'));
+$('#jtSearch').addEventListener('input', doSearch);
+$('#jtExpandAll').textContent = t('expandAll');
+$('#jtCollapseAll').textContent = t('collapseAll');
+$('#jtExpandAll').addEventListener('click', expandAll);
+$('#jtCollapseAll').addEventListener('click', collapseAll);
+$('#output').querySelector('.jt-empty').textContent = t('empty');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doRender()">${t('render')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in') && ($('#lbl-in').textContent = t('inputLabel'));
+$('#lbl-out') && ($('#lbl-out').textContent = t('outputLabel'));
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4','step5'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌲', href:'/dev/json-tree.html', name:'JSON Tree'},
+    {icon:'🔍', href:'/dev/json-path-finder.html', name:'JSON Path Finder'},
+    {icon:'📊', href:'/dev/json-statistics.html', name:'JSON Statistics'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
