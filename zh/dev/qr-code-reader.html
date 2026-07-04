@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>二维码读取器 / 扫描器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线免费扫描和解码二维码。使用摄像头或上传图片 — 提取 URL、文本、Wi-Fi 等。100% 浏览器本地运行，无需上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/qr-code-reader.html">
+  <meta property="og:title" content="二维码读取器 / 扫描器">
+  <meta property="og:description" content="在线免费扫描和解码二维码。使用摄像头或上传图片 — 提取 URL、文本、Wi-Fi 等。100% 浏览器本地运行，无需上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/qr-code-reader.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="二维码读取器 / 扫描器">
+<meta name="twitter:description" content="在线免费扫描和解码二维码。使用摄像头或上传图片 — 提取 URL、文本、Wi-Fi 等。100% 浏览器本地运行，无需上传。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v516ab2"></script>
+<style>
+.scan-area{position:relative;max-width:400px;margin:1rem auto;border-radius:12px;overflow:hidden;background:#000}
+.scan-area video,.scan-area canvas,.scan-area img{display:block;width:100%;height:auto}
+.scan-overlay{position:absolute;inset:0;pointer-events:none}
+.scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60%;height:60%;border:3px solid var(--accent);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.3)}
+.mode-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.mode-btn{padding:10px 20px;border-radius:10px;background:var(--glass2);border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:.9rem}
+.mode-btn.active,.mode-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.result-box{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:16px;margin:1rem 0;word-break:break-all}
+.result-box .label{font-size:.8em;color:var(--text2);margin-bottom:4px}
+.result-box .value{font-size:1rem;font-family:monospace}
+.result-box a{color:var(--accent)}
+.scan-history{margin:1rem 0}
+.scan-history .item{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin:4px 0;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.scan-history .item .time{color:var(--text2);font-size:.75rem;white-space:nowrap}
+.gz-drop{border:2px dashed var(--border);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:.2s;margin:1rem auto;max-width:400px}
+.gz-drop:hover,.gz-drop.drag{border-color:var(--accent);background:var(--glass2)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"QR Code Reader","description":"Read and decode QR codes online for free. Scan via webcam or upload an image — instantly extract URLs, text, Wi-Fi, vCard and more. 100% browser-only, no upload, no signup.","url": "https://tools.gamezipper.com/zh/dev/qr-code-reader.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I scan a QR code with my camera?","acceptedAnswer":{"@type":"Answer","text":"Click the Camera tab, allow camera access when prompted, then point your camera at a QR code. The code is decoded instantly — no photo is taken or stored."}},{"@type":"Question","name":"Can I scan a QR code from an image file?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click the Upload tab, then drag a QR code image onto the drop zone or click to browse. PNG, JPG, WebP, GIF and BMP are supported."}},{"@type":"Question","name":"What types of QR codes can this read?","acceptedAnswer":{"@type":"Answer","text":"All standard QR codes including URLs, plain text, email addresses, phone numbers, SMS, Wi-Fi credentials, vCard contact cards, calendar events and geo locations."}},{"@type":"Question","name":"Is my camera data private?","acceptedAnswer":{"@type":"Answer","text":"Absolutely. Camera frames are processed in your browser and never uploaded. No video is recorded, stored or transmitted — decoding happens frame by frame in real time."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/qr-code-reader.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/qr-code-reader.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/qr-code-reader.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="mode-btns" id="modes"></div>
+    <div id="camera-section">
+      <div class="scan-area" id="scanArea">
+        <video id="video" playsinline></video>
+        <div class="scan-overlay"><div class="scan-frame"></div></div>
+      </div>
+      <canvas id="canvas" style="display:none"></canvas>
+      <div id="camera-status" style="text-align:center;margin:8px;color:var(--text2);font-size:.85rem"></div>
+    </div>
+    <div id="upload-section" style="display:none">
+      <div class="gz-drop" id="drop">
+        <div style="font-size:2rem">📷</div>
+        <p id="drop-text"></p>
+        <input type="file" id="file" accept="image/*" hidden>
+      </div>
+      <div id="upload-preview" style="text-align:center"></div>
+      <canvas id="canvas2" style="display:none"></canvas>
+    </div>
+    <div id="result-section" style="display:none">
+      <div class="result-box">
+        <div class="label" id="result-label"></div>
+        <div class="value" id="result-value"></div>
+      </div>
+      <div style="text-align:center">
+        <button class="gz-btn" id="copy-btn" onclick="copyResult()"></button>
+        <button class="gz-btn gz-btn-secondary" id="open-btn" onclick="openResult()" style="display:none"></button>
+      </div>
+    </div>
+    <div class="scan-history" id="history-section" style="display:none">
+      <h3 id="history-title" style="font-size:.9rem;margin-bottom:8px"></h3>
+      <div id="history-list"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<!-- jsQR for in-browser QR code decoding -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'QR Code Reader & Scanner',
+    toolDesc: 'Scan and decode QR codes online for free. Use your webcam or upload an image — extract URLs, text, Wi-Fi and more. 100% browser-only, no upload.',
+    modeCamera: '📷 Camera',
+    modeUpload: '🖼️ Upload Image',
+    dropText: 'Drop a QR code image here or click to upload',
+    cameraStarting: 'Starting camera…',
+    cameraDenied: 'Camera access denied. Please allow camera permission or use Upload mode.',
+    cameraError: 'Could not access camera. Try Upload mode instead.',
+    scanning: 'Point your camera at a QR code…',
+    resultLabel: 'Result',
+    copy: 'Copy',
+    open: 'Open Link ↗',
+    history: 'Scan History',
+    noResult: 'No QR code found in this image. Try a clearer or larger image.',
+    step1: 'Choose Camera mode (scan live) or Upload mode (from image)',
+    step2: 'For camera: allow access and point at a QR code',
+    step3: 'For upload: drag a QR image or click to browse',
+    step4: 'Copy the result or click Open Link if it is a URL',
+    faq1q: 'Why is my camera not working?',
+    faq1a: 'Make sure you have granted camera permission for this site. On desktop, ensure no other app is using the camera. On mobile, use HTTPS (this site is HTTPS). Some browsers block camera on insecure connections.',
+    faq2q: 'Can it read damaged or blurry QR codes?',
+    faq2a: 'jsQR is quite robust, but very damaged, blurry, or low-contrast codes may fail. For best results use a well-lit, high-resolution image with the QR code filling most of the frame.',
+    faq3q: 'What happens to my scanned data?',
+    faq3a: 'Nothing. All decoding happens in your browser. Your camera feed is never recorded or uploaded. Scan history is stored only in your browser session and cleared when you close the tab.'
+  },
+  zh: {
+    toolTitle: '二维码读取器 / 扫描器',
+    toolDesc: '在线免费扫描和解码二维码。使用摄像头或上传图片 — 提取 URL、文本、Wi-Fi 等。100% 浏览器本地运行，无需上传。',
+    modeCamera: '📷 摄像头',
+    modeUpload: '🖼️ 上传图片',
+    dropText: '拖放二维码图片到此处或点击上传',
+    cameraStarting: '正在启动摄像头…',
+    cameraDenied: '摄像头访问被拒绝。请允许摄像头权限或使用上传模式。',
+    cameraError: '无法访问摄像头。请尝试上传模式。',
+    scanning: '将摄像头对准二维码…',
+    resultLabel: '结果',
+    copy: '复制',
+    open: '打开链接 ↗',
+    history: '扫描历史',
+    noResult: '未在此图片中找到二维码。请尝试更清晰或更大的图片。',
+    step1: '选择摄像头模式（实时扫描）或上传模式（从图片）',
+    step2: '摄像头模式：允许访问并对准二维码',
+    step3: '上传模式：拖放二维码图片或点击浏览',
+    step4: '复制结果，如果是 URL 则点击打开链接',
+    faq1q: '为什么摄像头不工作？',
+    faq1a: '请确保已授予此网站的摄像头权限。在桌面端，确保没有其他应用正在使用摄像头。在移动端，使用 HTTPS 连接（本站已是 HTTPS）。某些浏览器在不安全连接上会阻止摄像头。',
+    faq2q: '能读取损坏或模糊的二维码吗？',
+    faq2a: 'jsQR 相当强大，但非常损坏、模糊或低对比度的码可能会失败。为获得最佳效果，请使用光线充足、高分辨率的图片，让二维码占据画面大部分。',
+    faq3q: '我扫描的数据会怎样？',
+    faq3a: '什么都不会发生。所有解码都在你的浏览器中进行。摄像头画面永远不会被录制或上传。扫描历史仅存储在浏览器会话中，关闭标签页时清除。'
+  }
+});
+
+const { $, copyText, t } = GZ;
+let stream = null;
+let scanning = false;
+let history = [];
+
+$('#modes').innerHTML = `
+  <button class="mode-btn active" onclick="setMode('camera')">${t('modeCamera')}</button>
+  <button class="mode-btn" onclick="setMode('upload')">${t('modeUpload')}</button>`;
+$('#drop-text').textContent = t('dropText');
+$('#result-label').textContent = t('resultLabel');
+$('#copy-btn').textContent = t('copy');
+$('#history-title').textContent = t('history');
+
+function setMode(m) {
+  document.querySelectorAll('.mode-btn').forEach((b, i) => {
+    b.classList.toggle('active', (m === 'camera' && i === 0) || (m === 'upload' && i === 1));
+  });
+  if (m === 'camera') {
+    $('#camera-section').style.display = 'block';
+    $('#upload-section').style.display = 'none';
+    startCamera();
+  } else {
+    stopCamera();
+    $('#camera-section').style.display = 'none';
+    $('#upload-section').style.display = 'block';
+  }
+}
+
+async function startCamera() {
+  $('#camera-status').textContent = t('cameraStarting');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = $('#video');
+    video.srcObject = stream;
+    await video.play();
+    scanning = true;
+    $('#camera-status').textContent = t('scanning');
+    scanLoop();
+  } catch (e) {
+    $('#camera-status').textContent = e.name === 'NotAllowedError' ? t('cameraDenied') : t('cameraError');
+  }
+}
+
+function stopCamera() {
+  scanning = false;
+  if (stream) {
+    stream.getTracks().forEach(tr => tr.stop());
+    stream = null;
+  }
+}
+
+function scanLoop() {
+  if (!scanning) return;
+  const video = $('#video');
+  const canvas = $('#canvas');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imgData.data, imgData.width, imgData.height);
+    if (code) {
+      showResult(code.data);
+      // Brief pause to avoid duplicate
+      scanning = false;
+      setTimeout(() => { if (stream) { scanning = true; scanLoop(); } }, 2000);
+      return;
+    }
+  }
+  requestAnimationFrame(scanLoop);
+}
+
+// Upload mode
+const dz = $('#drop'), fi = $('#file');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fi.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      $('#upload-preview').innerHTML = `<img src="${img.src}" style="max-width:300px;border-radius:8px">`;
+      const canvas = $('#canvas2');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imgData.data, imgData.width, imgData.height);
+      if (code) {
+        showResult(code.data);
+      } else {
+        $('#result-section').style.display = 'none';
+        alert(t('noResult'));
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function showResult(data) {
+  $('#result-section').style.display = 'block';
+  const isUrl = /^https?:\/\//i.test(data);
+  if (isUrl) {
+    $('#result-value').innerHTML = `<a href="${data}" target="_blank" rel="noopener">${data}</a>`;
+    $('#open-btn').style.display = 'inline-flex';
+    $('#open-btn').onclick = () => window.open(data, '_blank');
+  } else {
+    $('#result-value').textContent = data;
+    $('#open-btn').style.display = 'none';
+  }
+  // Add to history
+  const time = new Date().toLocaleTimeString();
+  history.unshift({ data, time });
+  history = history.slice(0, 10);
+  renderHistory();
+  // Scroll to result
+  $('#result-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyResult() {
+  copyText($('#result-value').textContent);
+}
+
+function renderHistory() {
+  if (!history.length) { $('#history-section').style.display = 'none'; return; }
+  $('#history-section').style.display = 'block';
+  $('#history-list').innerHTML = history.map(h => `
+    <div class="item">
+      <span>${h.data.length > 60 ? h.data.substring(0, 60) + '…' : h.data}</span>
+      <span class="time">${h.time}</span>
+    </div>`).join('');
+}
+
+window.addEventListener('beforeunload', stopCamera);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1', 'step2', 'step3', 'step4'],
+  faqs: ['faq1q:faq1a', 'faq2q:faq2a', 'faq3q:faq3a'],
+  related: [
+    { icon: '📱', href: '/convert/qrcode.html', name: 'QR Code Generator' },
+    { icon: '🏷️', href: '/dev/barcode-generator.html', name: 'Barcode Generator' },
+    { icon: '📋', href: '/dev/json.html', name: 'JSON Formatter' },
+    { icon: '🔗', href: '/dev/url-encode.html', name: 'URL Encoder' },
+  ]
+});
+
+// Auto-start camera on load
+startCamera();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
