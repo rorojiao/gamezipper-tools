@@ -97,7 +97,7 @@
   // v5.5.8 (2026-07-04): bump cache to v=20260704v516obs (P0 fix: window.GZ_TRACK_AD_EVENT
   //   undefined → window.gzAnalytics.sendAd so tryInjectAfterRelated funnel events
   //   actually reach BI server). Cloudflare CDN will serve the new code on next reload.
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260704v516obs';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260704v558ar';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260701v5140';s4.defer=true;document.head.appendChild(s4);
@@ -318,7 +318,37 @@ const GZ = (function(){
   //    beacon stream for BI). Same pattern monetag-manager.js uses internally.
   //    v5.5.8 also: bump cache to v=20260704v516obs so CDN serves v5.5.8 code.
   function trackAfterRelated(type, data) {
-    try { (window.gzAnalytics && window.gzAnalytics.sendAd ? window.gzAnalytics.sendAd(type, data) : null); } catch(e) {}
+    // v5.5.8 (2026-07-04): P0 fix — v5.5.7 only called window.gzAnalytics.sendAd
+    //   when that object already existed. On every tools page common.js is
+    //   parser-blocking (no defer) but gz-analytics.js loads via appendChild with
+    //   `defer=true`, so by the time tryInjectAfterRelated() fires at
+    //   DOMContentLoaded, gzAnalytics is still UNDEFINED → v5.5.7 was a silent
+    //   no-op and BI never saw gz_after_related_* events (data confirms 0 events
+    //   since 2026-06-28 slot introduce).
+    //   Fix: if gzAnalytics is ready use it; otherwise use the same sendBeacon
+    //   fallback monetag-manager.js uses (pattern copied verbatim so vid/sid get
+    //   attached). vid/sid are simple inline localStorage/sessionStorage getters
+    //   — kept tiny to avoid duplicating gz-analytics.js's uuid generator.
+    try {
+      var payload = Object.assign({ t: type, ts: Date.now() }, data || {});
+      if (window.gzAnalytics && typeof window.gzAnalytics.sendAd === 'function') {
+        window.gzAnalytics.sendAd(type, payload);
+      } else if (window.GZ_COLLECT_ENDPOINT && navigator.sendBeacon) {
+        var vid = '';
+        var sid = '';
+        try { vid = localStorage.getItem('gz_vid') || ''; } catch(ev) {}
+        try { sid = sessionStorage.getItem('gz_sid') || ''; } catch(es) {}
+        var beaconPayload = JSON.stringify([{
+          site: location.hostname,
+          path: location.pathname,
+          vid: vid, sid: sid,
+          e: 'gz_ad_event',
+          d: payload,
+          t: Date.now()
+        }]);
+        navigator.sendBeacon(window.GZ_COLLECT_ENDPOINT, beaconPayload);
+      }
+    } catch(e) {}
   }
   function tryInjectAfterRelated() {
     if (location.pathname.indexOf('/', 1) <= 1) {
