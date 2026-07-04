@@ -97,10 +97,10 @@
   // v5.5.8 (2026-07-04): bump cache to v=20260704v516obs (P0 fix: window.GZ_TRACK_AD_EVENT
   //   undefined → window.gzAnalytics.sendAd so tryInjectAfterRelated funnel events
   //   actually reach BI server). Cloudflare CDN will serve the new code on next reload.
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260705v516ar2';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260705v516ar3';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
-  var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260701v5140';s4.defer=true;document.head.appendChild(s4);
+  var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260705v516aa';s4.defer=true;document.head.appendChild(s4);
   var s3=document.createElement('script');s3.src='/shared/tools-sticky-ad.js';s3.defer=true;document.head.appendChild(s3);
   // 2026-06-14: load gz-analytics.js globally so every tools page fires page_view
   // with vid/sid (replaces per-page new Image().src hits to site-analytics.gamezipper.com
@@ -111,7 +111,7 @@
   // current deploy). Old v=20260618P0fix was 14 days stale; though Cloudflare CDN serves
   // current source, the pinned cache suffix prevents a stale-browser window if the JS file
   // is rolled back or hot-reloaded during debugging.
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=202607029dac2e93ecb";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=2026070501a3c9f1040376";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
