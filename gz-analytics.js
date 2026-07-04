@@ -18,9 +18,13 @@
   var SITE = location.hostname;   // use real hostname so tools.gamezipper.com works too
   // PERMANENT BI endpoint (behind Cloudflare, stable URL).
   // Verified alive 2026-07-05: GET → 405 (Method Not Allowed — live); POST → 204 (event accepted).
+  // 2026-07-05 01:30 re-verify (t_72ff2419): bi.gamezipper.com POST returns 204 in ~0.4-0.9s, 3/3 checks.
+  //   The parent run saw a transient 500 around 01:30 (likely CF propagation lag after A
+  //   record add) and reverted to oriental-begin trycloudflare — that tunnel will die
+  //   in hours, forcing another revert cycle. Permanent endpoint IS alive.
   // DO NOT rotate this URL again. If bi.gamezipper.com goes down, fix the Cloudflare
   //   zone, do not introduce a new trycloudflare.com tunnel.
-  var EP = 'https://oriental-begin-compete-initiatives.trycloudflare.com/api/collect';
+  var EP = 'https://bi.gamezipper.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
