@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>WAV 转 MP3 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线免费将 WAV（及其他音频）转换为压缩 MP3。可选择比特率，即时下载 — 100% 浏览器本地运行，无需上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/wav-to-mp3.html">
+  <meta property="og:title" content="WAV 转 MP3 转换器">
+  <meta property="og:description" content="在线免费将 WAV（及其他音频）转换为压缩 MP3。可选择比特率，即时下载 — 100% 浏览器本地运行，无需上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/wav-to-mp3.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="WAV 转 MP3 转换器">
+<meta name="twitter:description" content="在线免费将 WAV（及其他音频）转换为压缩 MP3。可选择比特率，即时下载 — 100% 浏览器本地运行，无需上传。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260704v516obs"></script>
+<style>
+.gz-drop{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+.gz-drop:hover,.gz-drop.drag{border-color:var(--accent);background:var(--glass2)}
+.gz-drop .icon{font-size:2.5rem}
+audio{width:100%;margin-top:8px;border-radius:8px}
+.gz-controls{margin:12px 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.gz-controls label{display:flex;flex-direction:column;gap:4px;font-size:.8em;color:var(--text2)}
+.gz-controls select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text);font-size:.9em}
+.gz-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:.8em;color:var(--text2)}
+.gz-stats span{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:4px 10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"WAV to MP3 Converter","description":"Convert WAV to MP3 online for free. Upload a WAV file and download a compressed MP3 — choose bitrate, 100% in your browser, no upload, no signup.","url": "https://tools.gamezipper.com/zh/convert/wav-to-mp3.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert WAV to MP3?","acceptedAnswer":{"@type":"Answer","text":"Click the drop zone or browse to select a WAV file. Choose your bitrate, then click Convert to MP3. The MP3 file downloads automatically."}},{"@type":"Question","name":"Is my audio uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All audio decoding and encoding happens entirely in your browser using the Web Audio API and LAME encoder. Your files never leave your device."}},{"@type":"Question","name":"What bitrate should I choose?","acceptedAnswer":{"@type":"Answer","text":"128 kbps is good for speech, 192 kbps for general music, and 320 kbps for high quality. Higher bitrate means better quality but larger files."}},{"@type":"Question","name":"Why does conversion take time?","acceptedAnswer":{"@type":"Answer","text":"MP3 encoding is CPU-intensive. A 3-minute song typically takes 5–15 seconds depending on your device and chosen bitrate."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/wav-to-mp3.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/wav-to-mp3.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/wav-to-mp3.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-drop" id="drop">
+      <div class="icon">🔊</div>
+      <p id="drop-text"></p>
+      <input type="file" id="file" accept="audio/wav,audio/x-wav,.wav,audio/mpeg,audio/mp3,.mp3,audio/ogg,.ogg,audio/flac,.flac" hidden>
+    </div>
+    <div class="gz-controls" id="controls" style="display:none"></div>
+    <div class="gz-stats" id="stats"></div>
+    <progress id="progress" style="display:none;width:100%;margin-top:8px;accent-color:var(--accent)"></progress>
+    <audio id="player" controls style="display:none"></audio>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<!-- lamejs for in-browser MP3 encoding -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'WAV to MP3 Converter',
+    toolDesc: 'Convert WAV (and other audio) to compressed MP3 online for free. Choose bitrate, instant download — 100% browser-only, no upload.',
+    dropText: 'Click or drop a WAV / audio file here',
+    convert: '⬇ Convert to MP3',
+    clear: 'Choose another',
+    bitrate: 'Bitrate',
+    loaded: 'Loaded',
+    duration: 'Duration',
+    channels: 'Channels',
+    converting: 'Encoding MP3…',
+    progress: 'Progress',
+    done: '✓ MP3 downloaded',
+    noFile: 'Please select an audio file first',
+    noEncoder: 'MP3 encoder library failed to load. Please refresh.',
+    step1: 'Click the drop zone or drag a WAV/audio file onto it',
+    step2: 'Choose your bitrate (128, 192 or 320 kbps)',
+    step3: 'Click Convert to MP3 — encoding runs in your browser',
+    step4: 'The MP3 downloads automatically when done',
+    faq1q: 'Which input formats are supported?',
+    faq1a: 'WAV is the primary input. MP3, OGG, FLAC and M4A also work if your browser can decode them. Output is always MP3.',
+    faq2q: 'What is the maximum file size?',
+    faq2a: 'There is no hard limit, but encoding is memory-intensive. Files under 50 MB convert reliably on modern devices.',
+    faq3q: 'Will the MP3 lose quality?',
+    faq3a: 'MP3 is a lossy format, so some quality is lost. 320 kbps is nearly indistinguishable from the source; lower bitrates save space but reduce fidelity.'
+  },
+  zh: {
+    toolTitle: 'WAV 转 MP3 转换器',
+    toolDesc: '在线免费将 WAV（及其他音频）转换为压缩 MP3。可选择比特率，即时下载 — 100% 浏览器本地运行，无需上传。',
+    dropText: '点击或拖放 WAV / 音频文件到此处',
+    convert: '⬇ 转换为 MP3',
+    clear: '重新选择',
+    bitrate: '比特率',
+    loaded: '已加载',
+    duration: '时长',
+    channels: '声道',
+    converting: '正在编码 MP3…',
+    progress: '进度',
+    done: '✓ MP3 已下载',
+    noFile: '请先选择一个音频文件',
+    noEncoder: 'MP3 编码库加载失败，请刷新页面。',
+    step1: '点击拖放区，或将 WAV/音频文件拖放到上面',
+    step2: '选择比特率（128、192 或 320 kbps）',
+    step3: '点击「转换为 MP3」— 编码在浏览器中进行',
+    step4: '完成后 MP3 自动下载',
+    faq1q: '支持哪些输入格式？',
+    faq1a: 'WAV 是主要输入格式。如果浏览器可以解码，MP3、OGG、FLAC 和 M4A 也可用。输出始终为 MP3。',
+    faq2q: '最大文件大小是多少？',
+    faq2a: '没有硬性限制，但编码很消耗内存。50 MB 以下的文件在现代设备上能可靠转换。',
+    faq3q: 'MP3 会损失音质吗？',
+    faq3a: 'MP3 是有损格式，会损失一些音质。320 kbps 几乎与源文件无法区分；较低比特率节省空间但降低保真度。'
+  }
+});
+
+const { $, t } = GZ;
+let audioBuffer = null;
+let fileName = 'audio';
+
+$('#drop').addEventListener('click', () => $('#file').click());
+$('#drop').addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('drag'); });
+$('#drop').addEventListener('dragleave', () => $('#drop').classList.remove('drag'));
+$('#drop').addEventListener('drop', e => {
+  e.preventDefault();
+  $('#drop').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+$('#file').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  fileName = file.name.replace(/\.[^.]+$/, '');
+  const url = URL.createObjectURL(file);
+  $('#player').src = url;
+  $('#player').style.display = 'block';
+  $('#drop-text').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+  $('#controls').style.display = 'flex';
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioBuffer = await ctx.decodeAudioData(e.target.buffer.slice(0));
+      const dur = audioBuffer.duration;
+      const m = Math.floor(dur / 60);
+      const s = Math.floor(dur % 60).toString().padStart(2, '0');
+      $('#stats').innerHTML = `<span>${t('duration')}: ${m}:${s}</span><span>${t('channels')}: ${audioBuffer.numberOfChannels}</span><span>${t('loaded')}: ✓</span>`;
+    } catch (err) {
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">Decode error: ${err.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function convert() {
+  if (!audioBuffer) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noFile')}</span>`; return; }
+  if (typeof lamejs === 'undefined' || !lamejs.Mp3Encoder) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noEncoder')}</span>`;
+    return;
+  }
+  $('#status').innerHTML = `<span style="color:var(--text2)">${t('converting')}</span>`;
+  $('#progress').style.display = 'block';
+  $('#progress').value = 0;
+
+  setTimeout(() => {
+    try {
+      const bitrate = +$('#bitrate').value;
+      const channels = audioBuffer.numberOfChannels;
+      const sampleRate = audioBuffer.sampleRate;
+      const encoder = new lamejs.Mp3Encoder(channels, sampleRate, bitrate);
+      const blockSize = 1152;
+      const mp3Data = [];
+      const left = audioBuffer.getChannelData(0);
+      const right = channels > 1 ? audioBuffer.getChannelData(1) : left;
+      const leftInt16 = new Int16Array(left.length);
+      const rightInt16 = new Int16Array(right.length);
+      for (let i = 0; i < left.length; i++) {
+        leftInt16[i] = Math.max(-32768, Math.min(32767, left[i] * 32767));
+        rightInt16[i] = Math.max(-32768, Math.min(32767, right[i] * 32767));
+      }
+      const totalBlocks = Math.ceil(left.length / blockSize);
+      let blocksDone = 0;
+      function encodeChunk() {
+        const remaining = Math.min(blockSize, left.length - blocksDone * blockSize);
+        if (remaining <= 0) {
+          const end = encoder.flush();
+          if (end.length > 0) mp3Data.push(new Uint8Array(end));
+          const blob = new Blob(mp3Data, { type: 'audio/mp3' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = fileName + '.mp3';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          $('#progress').style.display = 'none';
+          $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')} (${(blob.size / 1024).toFixed(0)} KB)</span>`;
+          return;
+        }
+        const offset = blocksDone * blockSize;
+        const lChunk = leftInt16.subarray(offset, offset + remaining);
+        const rChunk = rightInt16.subarray(offset, offset + remaining);
+        const enc = channels > 1 ? encoder.encodeBuffer(lChunk, rChunk) : encoder.encodeBuffer(lChunk);
+        if (enc.length > 0) mp3Data.push(new Uint8Array(enc));
+        blocksDone++;
+        $('#progress').value = blocksDone / totalBlocks;
+        setTimeout(encodeChunk, 0); // yield to keep UI responsive
+      }
+      encodeChunk();
+    } catch (err) {
+      $('#progress').style.display = 'none';
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${err.message}</span>`;
+    }
+  }, 50);
+}
+
+function reset() {
+  audioBuffer = null;
+  $('#file').value = '';
+  $('#player').src = '';
+  $('#player').style.display = 'none';
+  $('#controls').style.display = 'none';
+  $('#progress').style.display = 'none';
+  $('#stats').innerHTML = '';
+  $('#status').innerHTML = '';
+  $('#drop-text').textContent = t('dropText');
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="reset()">${t('clear')}</button>`;
+
+$('#controls').innerHTML = `
+  <label>${t('bitrate')}<select id="bitrate">
+    <option value="64">64 kbps</option>
+    <option value="96">96 kbps</option>
+    <option value="128" selected>128 kbps</option>
+    <option value="192">192 kbps</option>
+    <option value="256">256 kbps</option>
+    <option value="320">320 kbps</option>
+  </select></label>`;
+
+$('#drop-text').textContent = t('dropText');
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  faq: [
+    { q: 'faq1q', a: 'faq1a' },
+    { q: 'faq2q', a: 'faq2a' },
+    { q: 'faq3q', a: 'faq3a' }
+  ],
+  related: [
+    {icon:'🎵', href:'/convert/mp3-to-wav.html', name:'MP3 to WAV'},
+    {icon:'🎶', href:'/convert/audio-converter.html', name:'Audio Converter'},
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🏷️', href:'/convert/mp3-tag-editor.html', name:'MP3 Tag Editor'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

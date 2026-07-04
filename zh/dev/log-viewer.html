@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>日志文件查看器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="直接在浏览器中打开和搜索服务器日志、应用日志和访问日志 — 无需上传、无需注册。支持 ERROR/WARN/INFO 语法高亮、正则过滤和日志级别切换。100% 隐私安全。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/log-viewer.html">
+  <meta property="og:title" content="日志文件查看器">
+  <meta property="og:description" content="直接在浏览器中打开和搜索服务器日志、应用日志和访问日志 — 无需上传、无需注册。支持 ERROR/WARN/INFO 语法高亮、正则过滤和日志级别切换。100% 隐私安全。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/log-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="日志文件查看器">
+<meta name="twitter:description" content="直接在浏览器中打开和搜索服务器日志、应用日志和访问日志 — 无需上传、无需注册。支持 ERROR/WARN/INFO 语法高亮、正则过滤和日志级别切换。100% 隐私安全。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260704v516obs"></script>
+<style>
+.log-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.log-toolbar input[type=text]{flex:1;min-width:200px;padding:6px 10px;border-radius:8px;background:var(--glass2);border:1px solid var(--border);color:var(--text);font-size:.9em}
+.log-filter-btns{display:flex;gap:4px}
+.log-filter-btn{padding:4px 10px;border-radius:6px;font-size:.8em;cursor:pointer;opacity:.5;transition:opacity .2s}
+.log-filter-btn.active{opacity:1}
+.log-viewer{max-height:65vh;overflow-y:auto;background:#0d1117;border:1px solid var(--border);border-radius:12px;font-family:'Cascadia Code',Consolas,monospace;font-size:.82em;line-height:1.6}
+.log-line{padding:2px 12px;white-space:pre-wrap;word-break:break-all;border-left:3px solid transparent}
+.log-line:hover{background:rgba(255,255,255,.05)}
+.log-line .ln{color:#555;margin-right:8px;user-select:none;display:inline-block;width:50px;text-align:right}
+.log-line.error{border-left-color:#f85149;background:rgba(248,81,73,.08)}
+.log-line.error .msg{color:#f85149}
+.log-line.warn{border-left-color:#d29922;background:rgba(210,153,34,.08)}
+.log-line.warn .msg{color:#d29922}
+.log-line.info .msg{color:#79c0ff}
+.log-line.debug .msg{color:#8b949e}
+.log-line.trace .msg{color:#8b949e}
+.log-line.fatal{border-left-color:#f85149;background:rgba(248,81,73,.15)}
+.log-stats{display:flex;gap:12px;font-size:.8em;color:var(--text2);margin-top:8px;flex-wrap:wrap}
+.log-stat{padding:3px 8px;border-radius:6px;background:var(--glass2)}
+.drop-zone{text-align:center;padding:30px;border:2px dashed var(--border);border-radius:12px;cursor:pointer}
+.drop-zone:hover{border-color:var(--gz-accent)}
+mark{background:rgba(255,235,59,.3);color:inherit;border-radius:2px;padding:0 1px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Log File Viewer","description":"Free online log file viewer. Open and search server logs, app logs and access logs in your browser — no upload, no signup. Syntax highlighting for ERROR/WARN/INFO, regex filtering and log-level highlighting.","url": "https://tools.gamezipper.com/zh/dev/log-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is this log viewer free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free. Open, search and filter any log file in your browser with no signup or limits."}}, {"@type": "Question", "name": "Are my log files uploaded anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Log files are processed entirely in your browser. Nothing is sent to any server, keeping your logs private."}}, {"@type": "Question", "name": "What log levels are highlighted?", "acceptedAnswer": {"@type": "Answer", "text": "The viewer automatically highlights ERROR (red), WARN (yellow), INFO (blue), DEBUG and TRACE (gray), and FATAL levels with color-coded backgrounds and borders."}}, {"@type": "Question", "name": "Can I search with regex?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The search box supports plain text and regular expressions. Toggle log levels on or off to filter what you see."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/log-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/log-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/log-viewer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="log-main">
+      <div id="drop-zone" class="drop-zone">
+        <p style="font-size:2.5rem;margin:0 0 8px">📋</p>
+        <p id="drop-text" style="margin:0;font-size:1.1em"></p>
+        <p style="margin:4px 0 0;font-size:.85em;color:var(--text2)" id="drop-hint"></p>
+        <input type="file" id="file-input" accept=".log,.txt,.out,text/*" style="display:none">
+      </div>
+      <div id="viewer-area" style="display:none">
+        <div class="log-toolbar">
+          <input type="text" id="search" placeholder="Search / regex...">
+          <label style="font-size:.8em;display:flex;align-items:center;gap:4px"><input type="checkbox" id="regex-mode"> Regex</label>
+          <div class="log-filter-btns">
+            <span class="log-filter-btn active" data-level="error" style="color:#f85149">ERROR</span>
+            <span class="log-filter-btn active" data-level="warn" style="color:#d29922">WARN</span>
+            <span class="log-filter-btn active" data-level="info" style="color:#79c0ff">INFO</span>
+            <span class="log-filter-btn active" data-level="debug" style="color:#8b949e">DEBUG</span>
+            <span class="log-filter-btn active" data-level="other" style="color:var(--text2)">OTHER</span>
+          </div>
+          <button class="gz-btn gz-btn-secondary" id="export-btn">📥</button>
+          <button class="gz-btn gz-btn-secondary" id="close-viewer">✕</button>
+        </div>
+        <div class="log-stats" id="stats"></div>
+        <div class="log-viewer" id="viewer"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Log File Viewer',
+    toolDesc: 'Open and search server logs, app logs and access logs directly in your browser — no upload, no signup. Syntax highlighting for ERROR/WARN/INFO, regex filtering and log-level toggle. 100% private.',
+    dropText: 'Click to choose a log file or drag & drop here',
+    dropHint: 'Supports .log, .txt, .out — your file stays in your browser',
+    step1: 'Click the drop zone or drag a log file onto it',
+    step2: 'Use the search box to find text (toggle Regex for pattern matching)',
+    step3: 'Click ERROR/WARN/INFO/DEBUG buttons to toggle log levels',
+    step4: 'Use 📥 to export the filtered results as a text file',
+  },
+  zh: {
+    toolTitle: '日志文件查看器',
+    toolDesc: '直接在浏览器中打开和搜索服务器日志、应用日志和访问日志 — 无需上传、无需注册。支持 ERROR/WARN/INFO 语法高亮、正则过滤和日志级别切换。100% 隐私安全。',
+    dropText: '点击选择日志文件或拖放到此处',
+    dropHint: '支持 .log、.txt、.out — 文件仅在你的浏览器中处理',
+    step1: '点击拖放区域或将日志文件拖放到此处',
+    step2: '使用搜索框查找文本（勾选 Regex 进行正则匹配）',
+    step3: '点击 ERROR/WARN/INFO/DEBUG 按钮切换显示的日志级别',
+    step4: '使用 📥 将过滤后的结果导出为文本文件',
+  }
+});
+
+const { $, t } = GZ;
+let logLines = [];
+let activeLevels = {error:true,warn:true,info:true,debug:true,other:true};
+
+function getLevel(line) {
+  const upper = line.toUpperCase();
+  if (/\b(FATAL|ERROR|ERR)\b/.test(upper)) return 'fatal';
+  if (/\b(WARN|WARNING)\b/.test(upper)) return 'warn';
+  if (/\b(INFO)\b/.test(upper)) return 'info';
+  if (/\b(DEBUG|DBG)\b/.test(upper)) return 'debug';
+  if (/\b(TRACE)\b/.test(upper)) return 'trace';
+  return 'other';
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function loadFile(file) {
+  const text = await file.text();
+  logLines = text.split('\n');
+  $('#drop-zone').style.display = 'none';
+  $('#viewer-area').style.display = 'block';
+  renderStats();
+  render();
+}
+
+function renderStats() {
+  const stats = {error:0,warn:0,info:0,debug:0,other:0};
+  logLines.forEach(l => { const lv = getLevel(l); if (lv === 'fatal') stats.error++; else stats[lv] = stats[lv] !== undefined ? stats[lv] + 1 : 1; });
+  $('#stats').innerHTML = `
+    <span class="log-stat">📄 ${logLines.length} lines</span>
+    <span class="log-stat" style="color:#f85149">🔴 ${stats.error} errors</span>
+    <span class="log-stat" style="color:#d29922">🟡 ${stats.warn} warnings</span>
+    <span class="log-stat" style="color:#79c0ff">🔵 ${stats.info} info</span>
+    <span class="log-stat" style="color:#8b949e">⚪ ${stats.debug} debug</span>
+  `;
+}
+
+function render() {
+  const search = $('#search').value;
+  const useRegex = $('#regex-mode').checked;
+  let regex = null;
+  if (search) { try { regex = useRegex ? new RegExp(search, 'gi') : new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); } catch(e) { regex = null; } }
+  const viewer = $('#viewer');
+  const frag = document.createDocumentFragment();
+  let shown = 0;
+  const maxLines = 5000;
+  for (let i = 0; i < logLines.length && shown < maxLines; i++) {
+    const line = logLines[i];
+    const lv = getLevel(line);
+    const lvKey = lv === 'fatal' ? 'error' : (lv === 'trace' ? 'debug' : lv);
+    if (!activeLevels[lvKey] && lvKey !== 'other') continue;
+    if (!activeLevels.other && lvKey === 'other') continue;
+    if (regex && !regex.test(line)) { regex.lastIndex = 0; continue; }
+    let display = escapeHtml(line);
+    if (regex) { display = display.replace(regex, m => `<mark>${m}</mark>`); regex.lastIndex = 0; }
+    const div = document.createElement('div');
+    div.className = 'log-line ' + lvKey;
+    div.innerHTML = `<span class="ln">${i + 1}</span><span class="msg">${display}</span>`;
+    frag.appendChild(div);
+    shown++;
+  }
+  viewer.innerHTML = '';
+  viewer.appendChild(frag);
+  if (logLines.length > maxLines) {
+    const note = document.createElement('div');
+    note.style.cssText = 'padding:8px;text-align:center;color:#8b949e;font-size:.8em';
+    note.textContent = `Showing first ${shown} matching lines of ${logLines.length} total. Refine your search to narrow results.`;
+    viewer.appendChild(note);
+  }
+}
+
+$('#drop-text').textContent = t('dropText');
+$('#drop-hint').textContent = t('dropHint');
+$('#drop-zone').onclick = () => $('#file-input').click();
+$('#file-input').onchange = (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); };
+$('#drop-zone').ondragover = (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--gz-accent)'; };
+$('#drop-zone').ondragleave = (e) => { e.currentTarget.style.borderColor = ''; };
+$('#drop-zone').ondrop = (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); };
+$('#search').oninput = () => render();
+$('#regex-mode').onchange = () => render();
+document.querySelectorAll('.log-filter-btn').forEach(btn => {
+  btn.onclick = () => {
+    const lv = btn.dataset.level;
+    activeLevels[lv] = !activeLevels[lv];
+    btn.classList.toggle('active', activeLevels[lv]);
+    render();
+  };
+});
+$('#export-btn').onclick = () => {
+  const lines = [];
+  document.querySelectorAll('#viewer .log-line').forEach(el => lines.push(el.textContent.trim()));
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'filtered-log.txt';
+  a.click();
+};
+$('#close-viewer').onclick = () => { logLines = []; $('#viewer-area').style.display = 'none'; $('#drop-zone').style.display = 'block'; $('#file-input').value = ''; $('#search').value = ''; };
+
+$('#toolbar').innerHTML = '';
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📊', href:'/dev/file-diff.html', name:'File Diff'},
+    {icon:'🌐', href:'/dev/http-headers.html', name:'HTTP Headers'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

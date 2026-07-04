@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JSON 转 Markdown 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 JSON 数据转换为干净的 Markdown 表格、嵌套标题或项目符号列表。粘贴 JSON，即时获得格式化 Markdown — 100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-to-markdown.html">
+  <meta property="og:title" content="JSON 转 Markdown 转换器">
+  <meta property="og:description" content="将 JSON 数据转换为干净的 Markdown 表格、嵌套标题或项目符号列表。粘贴 JSON，即时获得格式化 Markdown — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-to-markdown.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 转 Markdown 转换器">
+<meta name="twitter:description" content="将 JSON 数据转换为干净的 Markdown 表格、嵌套标题或项目符号列表。粘贴 JSON，即时获得格式化 Markdown — 100% 浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260704v516obs"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to Markdown Converter","description":"Convert JSON data to clean Markdown tables, lists and nested headings instantly. Free JSON to Markdown converter — 100% browser-based, no upload, no signup.","url": "https://tools.gamezipper.com/zh/dev/json-to-markdown.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert JSON to Markdown?","acceptedAnswer":{"@type":"Answer","text":"Paste your JSON data into the input area and choose an output mode. The tool will instantly generate a Markdown table for arrays of objects, nested headings for objects, or a bulleted list for simple values."}},{"@type":"Question","name":"What JSON structures are supported?","acceptedAnswer":{"@type":"Answer","text":"The converter handles arrays of flat objects (renders a Markdown table), nested objects (renders as hierarchical headings), arrays of primitives (bulleted lists) and mixed structures. All processing happens locally in your browser."}},{"@type":"Question","name":"Is my JSON data uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser using JavaScript. Your JSON data never leaves your device."}},{"@type":"Question","name":"Can I convert an array of objects to a Markdown table?","acceptedAnswer":{"@type":"Answer","text":"Yes. If your JSON is an array of objects with the same keys, the tool generates a properly aligned Markdown table with headers and a separator row automatically."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-markdown.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-markdown.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-markdown.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" style="min-height:280px"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly style="min-height:280px"></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to Markdown Converter',
+    toolDesc: 'Convert JSON data to clean Markdown tables, nested headings or bulleted lists. Paste JSON and get formatted Markdown instantly — 100% browser-based.',
+    modeTable: 'Table (arrays)',
+    modeHeadings: 'Headings (nested)',
+    modeList: 'List (simple)',
+    convert: 'Convert',
+    jsonInvalid: '✗ Invalid JSON',
+    jsonValid: '✓ Converted',
+    step1: 'Paste or type your JSON data in the input area',
+    step2: 'Choose an output mode: table, headings or list',
+    step3: 'Click Convert to generate Markdown',
+    step4: 'Copy the result and paste it into your README or docs',
+  },
+  zh: {
+    toolTitle: 'JSON 转 Markdown 转换器',
+    toolDesc: '将 JSON 数据转换为干净的 Markdown 表格、嵌套标题或项目符号列表。粘贴 JSON，即时获得格式化 Markdown — 100% 浏览器本地运行。',
+    modeTable: '表格（数组）',
+    modeHeadings: '标题（嵌套）',
+    modeList: '列表（简单）',
+    convert: '转换',
+    jsonInvalid: '✗ JSON 无效',
+    jsonValid: '✓ 转换成功',
+    step1: '在输入区粘贴或输入 JSON 数据',
+    step2: '选择输出模式：表格、标题或列表',
+    step3: '点击「转换」生成 Markdown',
+    step4: '复制结果并粘贴到 README 或文档中',
+  }
+});
+
+let mode = 'table';
+const { $, copyText, t } = GZ;
+
+function escMd(s) {
+  if (s === null || s === undefined) return '';
+  if (typeof s === 'object') return '`' + JSON.stringify(s) + '`';
+  return String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ');
+}
+
+function isArrayObj(data) {
+  return Array.isArray(data) && data.length > 0 && data.every(o => o && typeof o === 'object' && !Array.isArray(o));
+}
+
+function toTable(data) {
+  const keys = [...new Set(data.flatMap(o => Object.keys(o)))];
+  if (!keys.length) return '';
+  let md = '| ' + keys.join(' | ') + ' |\n';
+  md += '|' + keys.map(() => '---').join('|') + '|\n';
+  for (const row of data) {
+    md += '| ' + keys.map(k => escMd(row[k])).join(' | ') + ' |\n';
+  }
+  return md;
+}
+
+function toHeadings(data, level) {
+  level = level || 1;
+  let md = '';
+  if (Array.isArray(data)) {
+    data.forEach((item, i) => {
+      md += `${'#'.repeat(Math.min(level, 6))} [${i}]\n\n`;
+      md += toHeadings(item, level + 1);
+    });
+  } else if (data && typeof data === 'object') {
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== null && typeof v === 'object') {
+        md += `${'#'.repeat(Math.min(level, 6))} ${k}\n\n`;
+        md += toHeadings(v, level + 1);
+      } else {
+        md += `- **${k}:** ${escMd(v)}\n`;
+      }
+    }
+    md += '\n';
+  } else {
+    md += `${escMd(data)}\n\n`;
+  }
+  return md;
+}
+
+function toList(data, indent) {
+  indent = indent || '';
+  let md = '';
+  if (Array.isArray(data)) {
+    data.forEach(item => {
+      if (item !== null && typeof item === 'object') {
+        md += toList(item, indent + '  ');
+      } else {
+        md += `${indent}- ${escMd(item)}\n`;
+      }
+    });
+  } else if (data && typeof data === 'object') {
+    for (const [k, v] of Object.entries(data)) {
+      if (v !== null && typeof v === 'object') {
+        md += `${indent}- **${k}:**\n`;
+        md += toList(v, indent + '  ');
+      } else {
+        md += `${indent}- **${k}:** ${escMd(v)}\n`;
+      }
+    }
+  } else {
+    md += `${indent}- ${escMd(data)}\n`;
+  }
+  return md;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').value = ''; $('#status').innerHTML = ''; return; }
+  let data;
+  try {
+    data = JSON.parse(inp);
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('jsonInvalid')}: ${e.message}</span>`;
+    $('#output').value = '';
+    return;
+  }
+  let md = '';
+  if (mode === 'table' && isArrayObj(data)) {
+    md = toTable(data);
+  } else if (mode === 'table' && data && typeof data === 'object' && !Array.isArray(data)) {
+    md = toTable([data]);
+  } else if (mode === 'headings') {
+    md = toHeadings(data);
+  } else {
+    md = toList(data);
+  }
+  $('#output').value = md.trim() + '\n';
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('jsonValid')}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify([
+    {name: 'GameZipper', version: '1.0', license: 'MIT'},
+    {name: 'JSON Tool', version: '2.3', license: 'Apache-2.0'},
+    {name: 'MD Writer', version: '0.9', license: 'GPL-3.0'}
+  ], null, 2);
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <select class="gz-select" onchange="mode=this.value;doConvert()">
+    <option value="table">${t('modeTable')}</option>
+    <option value="headings">${t('modeHeadings')}</option>
+    <option value="list">${t('modeList')}</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📑', href:'/text/html-to-markdown.html', name:'HTML to Markdown'},
+    {icon:'🗂️', href:'/text/markdown-to-json.html', name:'MD to JSON'},
+    {icon:'📋', href:'/convert/json-to-yaml.html', name:'JSON to YAML'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

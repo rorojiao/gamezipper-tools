@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>SQL 转 Prisma Schema 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 SQL CREATE TABLE 语句转换为 Prisma schema.prisma 格式。映射列类型、主键、外键、唯一约束和索引 — 免费、私密、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/sql-to-prisma.html">
+  <meta property="og:title" content="SQL 转 Prisma Schema 转换器">
+  <meta property="og:description" content="将 SQL CREATE TABLE 语句转换为 Prisma schema.prisma 格式。映射列类型、主键、外键、唯一约束和索引 — 免费、私密、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/sql-to-prisma.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SQL 转 Prisma Schema 转换器">
+<meta name="twitter:description" content="将 SQL CREATE TABLE 语句转换为 Prisma schema.prisma 格式。映射列类型、主键、外键、唯一约束和索引 — 免费、私密、浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260704v516obs"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.5;max-height:600px;overflow:auto;padding:12px;background:var(--glass);border-radius:8px}
+#input{min-height:200px;font-family:monospace;font-size:.85em}
+#status{margin-top:8px;font-size:.85em}
+.opt-row{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0;padding:8px;background:var(--glass);border-radius:8px}
+.opt-row label{display:flex;align-items:center;gap:4px;font-size:.8rem;cursor:pointer}
+.stat-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.75rem;background:var(--glass2);margin:2px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SQL to Prisma Schema Converter","description":"Convert SQL CREATE TABLE statements to Prisma schema (schema.prisma) online for free. Maps SQL types to Prisma types, handles primary keys, foreign keys, indexes and relations — runs in your browser, no signup.","url": "https://tools.gamezipper.com/zh/dev/sql-to-prisma.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert SQL to Prisma schema?","acceptedAnswer":{"@type":"Answer","text":"Paste your SQL CREATE TABLE statements into the input area and click Convert. The tool parses each table, maps SQL column types to Prisma types, detects primary keys, foreign keys, NOT NULL constraints, defaults, and generates clean model definitions."}},{"@type":"Question","name":"What SQL databases are supported?","acceptedAnswer":{"@type":"Answer","text":"The converter supports PostgreSQL, MySQL, SQLite and SQL Server syntax. It maps common types: VARCHAR→String, INT→Int, BIGINT→BigInt, BOOLEAN→Boolean, TIMESTAMP→DateTime, DECIMAL→Decimal, TEXT→String, JSON→Json, and UUID→String."}},{"@type":"Question","name":"Does it handle foreign key relations?","acceptedAnswer":{"@type":"Answer","text":"Yes. FOREIGN KEY constraints are detected and converted to Prisma relation fields with @relation attributes. One-to-many and many-to-one relationships are automatically inferred from the constraint direction."}},{"@type":"Question","name":"Is my SQL safe?","acceptedAnswer":{"@type":"Answer","text":"Yes. All conversion happens entirely in your browser. No SQL is ever sent to any server — perfect for proprietary database schemas."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/sql-to-prisma.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sql-to-prisma.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/sql-to-prisma.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="options"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="-- Paste SQL CREATE TABLE here...&#10;CREATE TABLE users (&#10;  id SERIAL PRIMARY KEY,&#10;  email VARCHAR(255) UNIQUE NOT NULL,&#10;  created_at TIMESTAMP DEFAULT NOW()&#10;);"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SQL to Prisma Schema Converter',
+    toolDesc: 'Convert SQL CREATE TABLE statements to Prisma schema.prisma format. Maps column types, primary keys, foreign keys, unique constraints and indexes — free, private, browser-based.',
+    convert: 'Convert to Prisma',
+    postgres: 'PostgreSQL',
+    mysql: 'MySQL',
+    sqlite: 'SQLite',
+    atlas: 'Add @map (snake_case)',
+    step1: 'Paste your SQL CREATE TABLE statements',
+    step2: 'Select database provider (PostgreSQL/MySQL/SQLite)',
+    step3: 'Click Convert to generate Prisma models',
+    step4: 'Copy the result into your schema.prisma file',
+  },
+  zh: {
+    toolTitle: 'SQL 转 Prisma Schema 转换器',
+    toolDesc: '将 SQL CREATE TABLE 语句转换为 Prisma schema.prisma 格式。映射列类型、主键、外键、唯一约束和索引 — 免费、私密、浏览器本地运行。',
+    convert: '转换为 Prisma',
+    postgres: 'PostgreSQL',
+    mysql: 'MySQL',
+    sqlite: 'SQLite',
+    atlas: '添加 @map（蛇形命名）',
+    step1: '粘贴 SQL CREATE TABLE 语句',
+    step2: '选择数据库提供商（PostgreSQL/MySQL/SQLite）',
+    step3: '点击转换生成 Prisma 模型',
+    step4: '复制结果到你的 schema.prisma 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let provider = 'postgresql';
+let addMap = false;
+
+const typeMap = {
+  postgresql: {
+    'serial': 'Int @default(autoincrement())',
+    'bigserial': 'BigInt @default(autoincrement())',
+    'int': 'Int', 'integer': 'Int', 'int4': 'Int',
+    'bigint': 'BigInt', 'int8': 'BigInt',
+    'smallint': 'Int', 'int2': 'Int',
+    'decimal': 'Decimal', 'numeric': 'Decimal',
+    'real': 'Float', 'float4': 'Float',
+    'double': 'Float', 'float8': 'Float', 'double precision': 'Float',
+    'varchar': 'String', 'character varying': 'String', 'text': 'String', 'char': 'String',
+    'uuid': 'String @default(uuid())',
+    'boolean': 'Boolean', 'bool': 'Boolean',
+    'timestamp': 'DateTime', 'timestamptz': 'DateTime', 'timestamp with time zone': 'DateTime',
+    'date': 'DateTime', 'time': 'String',
+    'json': 'Json', 'jsonb': 'Json',
+    'bytea': 'Bytes',
+  },
+  mysql: {
+    'int': 'Int', 'integer': 'Int',
+    'bigint': 'BigInt',
+    'tinyint': 'Int', 'smallint': 'Int', 'mediumint': 'Int',
+    'decimal': 'Decimal', 'numeric': 'Decimal',
+    'float': 'Float', 'double': 'Float',
+    'varchar': 'String', 'text': 'String', 'char': 'String',
+    'longtext': 'String', 'mediumtext': 'String', 'tinytext': 'String',
+    'boolean': 'Boolean', 'bool': 'Boolean', 'tinyint(1)': 'Boolean',
+    'datetime': 'DateTime', 'timestamp': 'DateTime',
+    'date': 'DateTime', 'time': 'String',
+    'json': 'Json',
+    'blob': 'Bytes',
+    'enum': 'String',
+  },
+  sqlite: {
+    'integer': 'Int', 'int': 'Int',
+    'text': 'String', 'varchar': 'String', 'char': 'String',
+    'real': 'Float', 'double': 'Float', 'float': 'Float',
+    'numeric': 'Decimal', 'decimal': 'Decimal',
+    'boolean': 'Boolean', 'bool': 'Boolean',
+    'datetime': 'DateTime', 'date': 'DateTime',
+    'blob': 'Bytes',
+    'json': 'Json',
+  }
+};
+
+function toPascalCase(str) {
+  return str.replace(/(^|[_\s])([a-z])/g, (_, sep, c) => c.toUpperCase());
+}
+
+function toCamelCase(str) {
+  const pascal = toPascalCase(str);
+  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
+}
+
+function mapType(sqlType, provider) {
+  const map = typeMap[provider] || typeMap.postgresql;
+  const normalized = sqlType.toLowerCase().replace(/\(\d+\)/g, '').trim();
+  return map[normalized] || 'String';
+}
+
+function parseCreateTable(sql) {
+  const tables = [];
+  const tableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[]?(\w+)[`"\]]?\s*\(([\s\S]*?)\)\s*;/gi;
+  let match;
+  while ((match = tableRegex.exec(sql)) !== null) {
+    const tableName = match[1];
+    const body = match[2];
+    const columns = [];
+    const constraints = [];
+
+    // Split by commas at top level
+    let depth = 0;
+    let current = '';
+    for (const char of body) {
+      if (char === '(') depth++;
+      if (char === ')') depth--;
+      if (char === ',' && depth === 0) {
+        processLine(current.trim(), columns, constraints);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    if (current.trim()) processLine(current.trim(), columns, constraints);
+
+    tables.push({ name: tableName, columns, constraints });
+  }
+  return tables;
+}
+
+function processLine(line, columns, constraints) {
+  if (!line) return;
+  const upper = line.toUpperCase();
+
+  // Primary key constraint
+  if (upper.startsWith('PRIMARY KEY')) {
+    const m = line.match(/PRIMARY\s+KEY\s*\(([^)]+)\)/i);
+    if (m) constraints.push({ type: 'pk', columns: m[1].split(',').map(s => s.trim().replace(/[`"\[\]]/g, '')) });
+    return;
+  }
+  // Foreign key constraint
+  if (upper.startsWith('FOREIGN KEY') || upper.startsWith('CONSTRAINT') && upper.includes('FOREIGN KEY')) {
+    const m = line.match(/FOREIGN\s+KEY\s*\(([^)]+)\)\s*REFERENCES\s+[`"\[]?(\w+)[`"\]]?\s*\(([^)]+)\)/i);
+    if (m) constraints.push({ type: 'fk', column: m[1].trim().replace(/[`"\[\]]/g, ''), refTable: m[2], refColumn: m[3].trim().replace(/[`"\[\]]/g, '') });
+    return;
+  }
+  // Unique constraint
+  if (upper.startsWith('UNIQUE') || (upper.startsWith('CONSTRAINT') && upper.includes('UNIQUE'))) {
+    const m = line.match(/UNIQUE\s*\(([^)]+)\)/i);
+    if (m) constraints.push({ type: 'unique', columns: m[1].split(',').map(s => s.trim().replace(/[`"\[\]]/g, '')) });
+    return;
+  }
+  // Index
+  if (upper.startsWith('INDEX') || upper.startsWith('KEY')) return;
+  // Check constraint
+  if (upper.startsWith('CHECK') || upper.startsWith('CONSTRAINT')) return;
+
+  // Regular column definition
+  const colMatch = line.match(/^[`"\[]?(\w+)[`"\]]?\s+(\w+)(\([^)]+\))?(.*)$/);
+  if (colMatch) {
+    const [, name, type, size, rest] = colMatch;
+    const attrs = rest || '';
+    columns.push({
+      name: name.replace(/[`"\[\]]/g, ''),
+      sqlType: type + (size || ''),
+      isPrimaryKey: /PRIMARY\s+KEY/i.test(attrs) || type.toLowerCase() === 'serial' || type.toLowerCase() === 'bigserial',
+      isNotNull: /NOT\s+NULL/i.test(attrs),
+      isUnique: /UNIQUE/i.test(attrs),
+      default: (attrs.match(/DEFAULT\s+([^,\s]+)/i) || [])[1],
+      isAutoIncrement: /AUTO_?INCREMENT/i.test(attrs) || type.toLowerCase() === 'serial' || type.toLowerCase() === 'bigserial',
+    });
+  }
+}
+
+function convertSQLToPrisma(sql) {
+  const tables = parseCreateTable(sql);
+  if (tables.length === 0) throw new Error('No CREATE TABLE statements found');
+
+  let output = `// Prisma schema generated from SQL\n`;
+  output += `// Provider: ${provider}\n\n`;
+  output += `generator client {\n  provider = "prisma-client-js"\n}\n\n`;
+  output += `datasource db {\n  provider = "${provider}"\n  url      = env("DATABASE_URL")\n}\n\n`;
+
+  const stats = { models: tables.length, fields: 0, relations: 0 };
+
+  tables.forEach(table => {
+    const modelName = toPascalCase(table.name);
+    output += `model ${modelName} {\n`;
+
+    // Find PK columns
+    const pkConstraint = table.constraints.find(c => c.type === 'pk');
+    const pkCols = pkConstraint ? pkConstraint.columns : [];
+
+    // Columns
+    table.columns.forEach(col => {
+      stats.fields++;
+      const fieldName = toCamelCase(col.name);
+      let prismaType = mapType(col.sqlType, provider);
+
+      // Handle auto-increment for PK
+      const isPK = col.isPrimaryKey || pkCols.includes(col.name);
+      if (isPK && (col.isAutoIncrement || /serial/i.test(col.sqlType))) {
+        if (provider === 'postgresql') prismaType = 'Int @default(autoincrement())';
+        else prismaType = 'Int @default(autoincrement())';
+      }
+
+      // Handle default values
+      if (col.default) {
+        const dv = col.default.toUpperCase();
+        if (dv === 'NOW()' || dv === 'CURRENT_TIMESTAMP') {
+          prismaType += ' @default(now())';
+        } else if (dv === 'TRUE' || dv === 'FALSE') {
+          prismaType += ` @default(${col.default})`;
+        } else if (/^-?\d+\.?\d*$/.test(col.default)) {
+          prismaType += ` @default(${col.default})`;
+        } else {
+          prismaType += ` @default("${col.default.replace(/['"]/g, '')}")`;
+        }
+      }
+
+      if (isPK) prismaType += ' @id';
+      if (col.isUnique) prismaType += ' @unique';
+
+      const mapAttr = addMap && fieldName !== col.name ? ` @map("${col.name}")` : '';
+      output += `  ${fieldName}  ${prismaType}${mapAttr}\n`;
+    });
+
+    // Relations (foreign keys)
+    table.constraints.filter(c => c.type === 'fk').forEach(fk => {
+      stats.relations++;
+      const refModel = toPascalCase(fk.refTable);
+      const fieldName = toCamelCase(fk.refTable);
+      const mapAttr = addMap ? ` @map("${fk.column}")` : '';
+      // Check if the FK column also exists as a regular column — if so, skip duplicate
+      output += `  ${fieldName}  ${refModel}? @relation(fields: [${toCamelCase(fk.column)}], references: [id])${mapAttr}\n`;
+    });
+
+    // Table map
+    const tableMap = addMap ? `  @@map("${table.name}")\n` : '';
+    output += tableMap;
+    output += `}\n\n`;
+  });
+
+  return { code: output.trim(), stats };
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const { code, stats } = convertSQLToPrisma(inp);
+    $('#output').textContent = code;
+    const badges = [
+      `<span class="stat-badge">📊 ${stats.models} models</span>`,
+      `<span class="stat-badge">📝 ${stats.fields} fields</span>`,
+      stats.relations ? `<span class="stat-badge">🔗 ${stats.relations} relations</span>` : '',
+    ].join('');
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Converted</span> ${badges}`;
+  } catch(e) {
+    $('#output').textContent = '';
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(100),
+  role VARCHAR(20) DEFAULT 'user',
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  content TEXT,
+  published BOOLEAN DEFAULT FALSE,
+  view_count INTEGER DEFAULT 0,
+  author_id INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+CREATE TABLE comments (
+  id SERIAL PRIMARY KEY,
+  body TEXT NOT NULL,
+  post_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  FOREIGN KEY (post_id) REFERENCES posts(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#options').innerHTML = `
+  <label>Provider:
+    <select id="opt-provider" class="gz-select">
+      <option value="postgresql">${t('postgres')}</option>
+      <option value="mysql">${t('mysql')}</option>
+      <option value="sqlite">${t('sqlite')}</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="opt-map"> ${t('atlas')}</label>
+`;
+$('#opt-provider').addEventListener('change', e => { provider = e.target.value; doConvert(); });
+$('#opt-map').addEventListener('change', e => { addMap = e.target.checked; doConvert(); });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">⚡ ${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">📋 ${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">📋 ${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">🗑️ ${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🗃️', href:'/convert/csv-to-sql.html', name:'CSV to SQL'},
+    {icon:'📊', href:'/dev/sql.html', name:'SQL Formatter'},
+    {icon:'🐍', href:'/dev/json-to-python.html', name:'JSON to Python'},
+    {icon:'📘', href:'/dev/json-to-typescript.html', name:'JSON to TS'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Excel to JSON Converter (XLSX to JSON) - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert Excel spreadsheets (.xlsx, .xls) to JSON online for free. Upload a spreadsheet and get clean JSON with headers as keys. Choose sheet, array or object format — 100% in your browser, no upload, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/excel-to-json.html">
+  <meta property="og:title" content="Excel to JSON Converter (XLSX to JSON) - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert Excel spreadsheets (.xlsx, .xls) to JSON online for free. Get clean JSON with headers as keys. 100% in your browser, no upload, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/excel-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Excel to JSON Converter (XLSX to JSON) - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert Excel spreadsheets to JSON for free. Get clean JSON — browser-only, no upload, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260704v516obs"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+.e2j-drop{border:2px dashed var(--border);border-radius:16px;padding:40px 24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px}
+.e2j-drop:hover,.e2j-drop.dragover{border-color:var(--accent);background:var(--glass)}
+.e2j-drop .icon{font-size:3rem;margin-bottom:10px}
+.e2j-info{font-size:.85em;opacity:.7;margin-top:6px}
+.e2j-sheets{margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.e2j-sheets select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass2);color:inherit}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:100px}
+.e2j-stats{font-size:.85em;opacity:.7;margin-top:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Excel to JSON Converter","description":"Convert Excel spreadsheets (.xlsx, .xls) to JSON online for free. Upload a spreadsheet and get clean JSON with headers as keys. 100% in your browser, no upload, no signup.","url":"https://tools.gamezipper.com/convert/excel-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert Excel to JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Upload your .xlsx or .xls file, choose a sheet if there are multiple, select the output format (array of rows or array of objects with header keys), and the JSON appears instantly. Copy or download it from the toolbar."}}, {"@type": "Question", "name": "What is the difference between row array and header-key format?", "acceptedAnswer": {"@type": "Answer", "text": "Row array format outputs each row as a simple array of values: [[\"Name\",\"Age\"],[\"Alice\",30]]. Header-key format uses the first row as keys: [{\"Name\":\"Alice\",\"Age\":30}]. Header-key is usually better for APIs and apps."}}, {"@type": "Question", "name": "Does it support multiple sheets?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. If your workbook has multiple sheets, a dropdown appears letting you choose which sheet to convert. Each sheet can be converted independently."}}, {"@type": "Question", "name": "Is my spreadsheet data uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The spreadsheet is parsed entirely in your browser using the SheetJS (xlsx) library. Your data never leaves your computer."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/excel-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/excel-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/excel-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="e2j-drop" id="drop">
+      <div class="icon">📊➡️🔧</div>
+      <div id="dropLabel"></div>
+      <div class="e2j-info" id="dropInfo"></div>
+      <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+    </div>
+    <div class="e2j-sheets" id="sheetWrap" style="display:none">
+      <span id="sheetLabel"></span>
+      <select id="sheetSel"></select>
+      <span style="opacity:.7;font-size:.85em" id="formatLabel"></span>
+      <select id="formatSel">
+        <option value="header">Header Keys</option>
+        <option value="array">Row Array</option>
+      </select>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div class="e2j-stats" id="stats"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Excel to JSON Converter',
+    toolDesc: 'Convert Excel spreadsheets (.xlsx, .xls) to clean JSON — headers as keys or row arrays. Multiple sheets supported. 100% browser-based, no upload, no signup.',
+    chooseFile: 'Choose .xlsx / .xls file or drag it here',
+    info: 'Supports .xlsx, .xls, .csv • Parsed locally with SheetJS',
+    copy: 'Copy JSON',
+    download: '⬇ Download .json',
+    clear: 'Clear',
+    output: 'JSON Output',
+    sheet: 'Sheet:',
+    format: 'Format:',
+    noFile: 'Please choose a spreadsheet file.',
+    error: 'Error: ',
+    success: '✓ Converted!',
+    rows: 'rows',
+    step1: 'Click the drop zone or drag your Excel file onto it',
+    step2: 'Choose the sheet and output format (header keys or row array)',
+    step3: 'The JSON output updates instantly in the panel',
+    step4: 'Click Copy to copy JSON or Download to save as .json',
+  },
+  zh: {
+    toolTitle: 'Excel 转 JSON 转换器',
+    toolDesc: '将 Excel 电子表格 (.xlsx, .xls) 转换为干净的 JSON — 表头作为键或行数组。支持多工作表。100% 浏览器本地处理，无需上传、无需注册。',
+    chooseFile: '选择 .xlsx / .xls 文件或拖拽到此处',
+    info: '支持 .xlsx、.xls、.csv • 使用 SheetJS 本地解析',
+    copy: '复制 JSON',
+    download: '⬇ 下载 .json',
+    clear: '清空',
+    output: 'JSON 输出',
+    sheet: '工作表：',
+    format: '格式：',
+    noFile: '请选择一个电子表格文件。',
+    error: '错误：',
+    success: '✓ 转换成功！',
+    rows: '行',
+    step1: '点击上传区域或将 Excel 文件拖拽到此处',
+    step2: '选择工作表和输出格式（表头键或行数组）',
+    step3: 'JSON 输出会即时显示在面板中',
+    step4: '点击「复制」复制 JSON 或「下载」保存为 .json 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let workbook = null;
+
+$('#dropLabel').textContent = t('chooseFile');
+$('#dropInfo').textContent = t('info');
+$('#sheetLabel').textContent = t('sheet');
+$('#formatLabel').textContent = t('format');
+$('#lbl-out').textContent = t('output');
+
+const drop = $('#drop');
+drop.addEventListener('click', () => $('#file').click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('dragover'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+$('#file').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+async function handleFile(f) {
+  if (!f) return;
+  try {
+    const buf = await f.arrayBuffer();
+    workbook = XLSX.read(buf, { type: 'array' });
+    const sel = $('#sheetSel');
+    sel.innerHTML = '';
+    workbook.SheetNames.forEach(n => { const o = document.createElement('option'); o.value = o.textContent = n; sel.appendChild(o); });
+    $('#sheetWrap').style.display = workbook.SheetNames.length > 0 ? 'flex' : 'none';
+    drop.querySelector('.icon').textContent = '📊';
+    $('#dropLabel').textContent = f.name;
+    $('#dropInfo').textContent = (f.size / 1024).toFixed(1) + ' KB';
+    doConvert();
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('success')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--accent)">${t('error')}${e.message}</span>`;
+  }
+}
+
+function doConvert() {
+  if (!workbook) return;
+  const sheetName = $('#sheetSel').value;
+  const sheet = workbook.Sheets[sheetName];
+  const format = $('#formatSel').value;
+  let json;
+  if (format === 'header') {
+    json = XLSX.utils.sheet_to_json(sheet, { defval: null });
+  } else {
+    json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+  }
+  const str = JSON.stringify(json, null, 2);
+  $('#output').textContent = str;
+  const rows = Array.isArray(json) ? json.length : 0;
+  $('#stats').textContent = `${rows} ${t('rows')} • ${format === 'header' ? 'Header Keys' : 'Row Array'}`;
+}
+
+$('#sheetSel').addEventListener('change', doConvert);
+$('#formatSel').addEventListener('change', doConvert);
+
+function doDownload() {
+  const str = $('#output').textContent;
+  if (!str) return;
+  const blob = new Blob([str], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'converted.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function doClear() { workbook = null; $('#output').textContent = ''; $('#sheetWrap').style.display = 'none'; $('#stats').textContent = ''; $('#status').innerHTML = ''; $('#dropLabel').textContent = t('chooseFile'); $('#dropInfo').textContent = t('info'); }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-excel.html', name:'CSV to Excel'},
+    {icon:'🔧', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📈', href:'/convert/xlsx-viewer.html', name:'XLSX Viewer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

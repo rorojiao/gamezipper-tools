@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>在线视频播放器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="直接在浏览器中播放任何视频文件 — 无需上传、无需注册。完整的播放控制、0.25× 至 4× 变速、播放列表和循环模式。100% 隐私安全。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/video-player.html">
+  <meta property="og:title" content="在线视频播放器">
+  <meta property="og:description" content="直接在浏览器中播放任何视频文件 — 无需上传、无需注册。完整的播放控制、0.25× 至 4× 变速、播放列表和循环模式。100% 隐私安全。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/video-player.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线视频播放器">
+<meta name="twitter:description" content="直接在浏览器中播放任何视频文件 — 无需上传、无需注册。完整的播放控制、0.25× 至 4× 变速、播放列表和循环模式。100% 隐私安全。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260704v516obs"></script>
+<style>
+.video-container{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9}
+.video-container video{width:100%;height:100%;display:block}
+.video-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.video-toolbar .spacer{flex:1}
+.video-speed{padding:4px 8px;border-radius:6px;background:var(--glass2);border:1px solid var(--border);color:var(--text)}
+.playlist{margin-top:12px;max-height:200px;overflow-y:auto}
+.playlist-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .2s}
+.playlist-item:hover{background:var(--glass2)}
+.playlist-item.active{background:var(--glass);border-left:3px solid var(--gz-accent)}
+.playlist-item .name{flex:1;font-size:.85em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drop-zone{text-align:center;padding:30px;border:2px dashed var(--border);border-radius:12px;cursor:pointer}
+.drop-zone:hover{border-color:var(--gz-accent)}
+.format-badges{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.format-badge{padding:2px 8px;border-radius:4px;font-size:.75em;background:var(--glass2);border:1px solid var(--border)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Video Player","description":"Free online video player. Play MP4, WebM, OGG and MOV files directly in your browser — no upload, no signup. Full playback controls, speed adjustment, playlist and loop mode.","url": "https://tools.gamezipper.com/zh/dev/video-player.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is this video player free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, completely free with no signup or limits. All playback happens locally in your browser."}}, {"@type": "Question", "name": "Are my videos uploaded anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Videos are loaded directly from your device into the browser. Nothing is uploaded to any server."}}, {"@type": "Question", "name": "What video formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The player supports MP4, WebM, OGG and any format your browser can decode natively, including some MOV files."}}, {"@type": "Question", "name": "Can I play multiple videos in a playlist?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Select multiple files and the player will create a playlist. You can loop the entire playlist or repeat a single video."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/video-player.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/video-player.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/video-player.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="video-main">
+      <div id="drop-zone" class="drop-zone">
+        <p style="font-size:2.5rem;margin:0 0 8px">🎬</p>
+        <p id="drop-text" style="margin:0;font-size:1.1em"></p>
+        <p style="margin:4px 0 0;font-size:.85em;color:var(--text2)" id="drop-hint"></p>
+        <div class="format-badges">
+          <span class="format-badge">MP4</span><span class="format-badge">WebM</span><span class="format-badge">OGG</span><span class="format-badge">MOV</span>
+        </div>
+        <input type="file" id="file-input" accept="video/*" multiple style="display:none">
+      </div>
+      <div id="player-area" style="display:none">
+        <div class="video-container">
+          <video id="video" controls></video>
+        </div>
+        <div class="video-toolbar">
+          <button class="gz-btn" id="prev-video">⏮</button>
+          <button class="gz-btn gz-btn-secondary" id="loop-toggle">🔁</button>
+          <button class="gz-btn" id="next-video">⏭</button>
+          <span style="font-size:.85em;color:var(--text2);margin-left:4px" id="now-playing"></span>
+          <div class="spacer"></div>
+          <label style="font-size:.8em;color:var(--text2)">Speed</label>
+          <select class="gz-select" id="speed-select" style="width:auto">
+            <option value="0.25">0.25×</option>
+            <option value="0.5">0.5×</option>
+            <option value="0.75">0.75×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.25">1.25×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+            <option value="3">3×</option>
+            <option value="4">4×</option>
+          </select>
+          <button class="gz-btn gz-btn-secondary" id="fullscreen-video">⛶</button>
+          <button class="gz-btn gz-btn-secondary" id="close-player">✕</button>
+        </div>
+        <div class="playlist" id="playlist"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Video Player',
+    toolDesc: 'Play any video file directly in your browser — no upload, no signup. Full playback controls, speed adjustment from 0.25× to 4×, playlist and loop mode. 100% private.',
+    dropText: 'Click to choose a video or drag & drop here',
+    dropHint: 'Supports MP4, WebM, OGG, MOV — your file stays in your browser',
+    step1: 'Click the drop zone or drag video file(s) onto it',
+    step2: 'Use the video controls to play, pause, seek and adjust volume',
+    step3: 'Change playback speed from 0.25× to 4× using the speed selector',
+    step4: 'Add multiple files to create a playlist — use ⏮/⏭ to navigate',
+  },
+  zh: {
+    toolTitle: '在线视频播放器',
+    toolDesc: '直接在浏览器中播放任何视频文件 — 无需上传、无需注册。完整的播放控制、0.25× 至 4× 变速、播放列表和循环模式。100% 隐私安全。',
+    dropText: '点击选择视频文件或拖放到此处',
+    dropHint: '支持 MP4、WebM、OGG、MOV — 文件仅在你的浏览器中处理',
+    step1: '点击拖放区域或将视频拖放到此处',
+    step2: '使用播放控件播放、暂停、拖动进度条和调节音量',
+    step3: '通过速度选择器调整播放速度（0.25× 至 4×）',
+    step4: '添加多个文件创建播放列表 — 使用 ⏮/⏭ 切换视频',
+  }
+});
+
+const { $, t } = GZ;
+let playlist = [];
+let currentIdx = 0;
+let loopMode = false;
+const video = $('#video');
+
+function loadFiles(files) {
+  const videos = Array.from(files).filter(f => f.type.startsWith('video/'));
+  if (!videos.length) return;
+  playlist = playlist.concat(videos);
+  $('#drop-zone').style.display = 'none';
+  $('#player-area').style.display = 'block';
+  renderPlaylist();
+  if (playlist.length === videos.length) playIdx(0);
+}
+
+function playIdx(idx) {
+  currentIdx = idx;
+  const file = playlist[idx];
+  video.src = URL.createObjectURL(file);
+  video.play();
+  $('#now-playing').textContent = `${idx + 1}/${playlist.length}: ${file.name}`;
+  renderPlaylist();
+}
+
+function renderPlaylist() {
+  const container = $('#playlist');
+  container.innerHTML = '';
+  playlist.forEach((file, i) => {
+    const item = document.createElement('div');
+    item.className = 'playlist-item' + (i === currentIdx ? ' active' : '');
+    item.innerHTML = `<span class="icon">${i === currentIdx ? '▶' : '🎬'}</span><span class="name">${file.name}</span><span style="font-size:.75em;color:var(--text2)">${(file.size/1048576).toFixed(1)}MB</span>`;
+    item.onclick = () => playIdx(i);
+    container.appendChild(item);
+  });
+}
+
+$('#drop-text').textContent = t('dropText');
+$('#drop-hint').textContent = t('dropHint');
+$('#drop-zone').onclick = () => $('#file-input').click();
+$('#file-input').onchange = (e) => loadFiles(e.target.files);
+$('#drop-zone').ondragover = (e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--gz-accent)'; };
+$('#drop-zone').ondragleave = (e) => { e.currentTarget.style.borderColor = ''; };
+$('#drop-zone').ondrop = (e) => { e.preventDefault(); loadFiles(e.dataTransfer.files); };
+
+$('#prev-video').onclick = () => currentIdx > 0 && playIdx(currentIdx - 1);
+$('#next-video').onclick = () => currentIdx < playlist.length - 1 && playIdx(currentIdx + 1);
+$('#loop-toggle').onclick = (e) => { loopMode = !loopMode; video.loop = loopMode; e.currentTarget.style.opacity = loopMode ? '1' : '0.5'; };
+$('#speed-select').onchange = (e) => video.playbackRate = parseFloat(e.target.value);
+$('#fullscreen-video').onclick = () => video.requestFullscreen();
+$('#close-player').onclick = () => { playlist = []; video.pause(); video.src = ''; $('#player-area').style.display = 'none'; $('#drop-zone').style.display = 'block'; $('#file-input').value = ''; };
+video.onended = () => { if (!loopMode && currentIdx < playlist.length - 1) playIdx(currentIdx + 1); };
+
+$('#toolbar').innerHTML = '';
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔊', href:'/dev/audio-player.html', name:'Audio Player'},
+    {icon:'🎥', href:'/convert/screen-recorder.html', name:'Screen Recorder'},
+    {icon:'🎞️', href:'/convert/video-trimmer.html', name:'Video Trimmer'},
+    {icon:'✂️', href:'/convert/video-compressor.html', name:'Video Compressor'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

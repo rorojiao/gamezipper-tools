@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>手写签名板 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="用鼠标或手指在线绘制你的签名。可选画笔颜色和粗细，下载为透明 PNG 或 JPG — 100% 浏览器本地运行，无需上传。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/signature-pad.html">
+  <meta property="og:title" content="手写签名板">
+  <meta property="og:description" content="用鼠标或手指在线绘制你的签名。可选画笔颜色和粗细，下载为透明 PNG 或 JPG — 100% 浏览器本地运行，无需上传。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/signature-pad.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="手写签名板">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260704v516obs"></script>
+<style>
+.sp-wrap{display:flex;flex-direction:column;gap:14px}
+.sp-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp-controls label{font-size:.8rem;color:var(--text2);font-weight:600;margin-right:4px}
+.sp-color{width:38px;height:34px;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer;padding:2px}
+.sp-thickness{width:120px}
+.sp-canvas-box{background:#fff;border:2px dashed var(--border);border-radius:14px;overflow:hidden;position:relative;touch-action:none}
+.sp-canvas-box canvas{display:block;width:100%;height:340px;cursor:crosshair}
+.sp-baseline{position:absolute;left:6%;right:6%;bottom:56px;border-bottom:1.5px solid #d33;height:0;pointer-events:none}
+.sp-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#bbb;font-size:1rem;pointer-events:none;font-style:italic}
+.sp-actions{display:flex;gap:10px;flex-wrap:wrap}
+.sp-format-sel{padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:.9rem}
+.sp-format-sel:focus{outline:none;border-color:var(--accent)}
+.sp-note{font-size:.85rem;color:var(--text2);margin-top:4px;padding:11px;background:var(--glass2);border-radius:8px;border:1px solid var(--border);line-height:1.55}
+.sp-swatch{display:inline-flex;gap:6px}
+.sp-swatch span{display:inline-block;width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s,border-color .12s}
+.sp-swatch span:hover{transform:scale(1.12)}
+.sp-swatch span.active{border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Signature Pad","description":"Free online signature pad. Draw your signature with mouse or finger, pick pen color and thickness, download as transparent PNG or JPG. 100% browser-only — no upload, no signup.","url": "https://tools.gamezipper.com/zh/image/signature-pad.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can I download my signature with a transparent background?","acceptedAnswer":{"@type":"Answer","text":"Yes. Select the PNG (transparent) format option before clicking Download. PNG preserves a fully transparent background so you can place the signature over any document. JPG is also available for solid-white backgrounds."}},{"@type":"Question","name":"Does the signature pad work on touch devices?","acceptedAnswer":{"@type":"Answer","text":"Yes. The canvas supports both mouse and touch (finger or stylus) input. On a phone or tablet just draw directly on the screen. Pressure-sensitive styluses like Apple Pencil are supported where available."}},{"@type":"Question","name":"Is my signature uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. The signature is drawn and rendered entirely on an HTML5 canvas in your browser. The image data never leaves your device unless you click Download to save it yourself."}},{"@type":"Question","name":"How do I make my signature look smooth?","acceptedAnswer":{"@type":"Answer","text":"Use a lower pen thickness (1-3 px) and draw at a steady speed. The canvas uses quadratic-curve smoothing between points to produce clean, natural strokes. You can undo the last stroke or clear the pad and start over anytime."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/signature-pad.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/signature-pad.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/signature-pad.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="sp-wrap">
+      <div class="sp-controls">
+        <label id="lbl-pen"></label>
+        <div class="sp-swatch" id="swatches">
+          <span data-color="#0a0a0a" style="background:#0a0a0a" class="active"></span>
+          <span data-color="#1a4fa3" style="background:#1a4fa3"></span>
+          <span data-color="#0b6b3a" style="background:#0b6b3a"></span>
+          <span data-color="#9c1d1d" style="background:#9c1d1d"></span>
+        </div>
+        <input type="color" class="sp-color" id="color" value="#0a0a0a" title="Custom color">
+        <label id="lbl-thickness"></label>
+        <input type="range" class="sp-thickness" id="thickness" min="1" max="10" value="2">
+        <span id="thickness-val" style="font-size:.8rem;color:var(--text2);font-family:monospace;min-width:30px">2px</span>
+      </div>
+      <div class="sp-canvas-box" id="canvasBox">
+        <canvas id="canvas"></canvas>
+        <div class="sp-baseline"></div>
+        <div class="sp-hint" id="hint"></div>
+      </div>
+      <div class="sp-actions">
+        <button class="gz-btn" id="undoBtn">↶ Undo</button>
+        <button class="gz-btn gz-btn-secondary" id="clearBtn">Clear</button>
+        <select class="sp-format-sel" id="format">
+          <option value="png">PNG (transparent)</option>
+          <option value="jpg">JPG (white bg)</option>
+        </select>
+        <button class="gz-btn" id="downloadBtn">⬇ Download</button>
+      </div>
+      <div class="sp-note" id="note"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Signature Pad',
+    toolDesc: 'Draw your signature online with mouse or finger. Pick pen color and thickness, then download as transparent PNG or JPG — 100% browser-only, no upload.',
+    lblPen: 'Pen color',
+    lblThickness: 'Thickness',
+    undo: 'Undo',
+    clear: 'Clear',
+    download: 'Download',
+    hint: '✍️ Draw your signature here',
+    note: 'Tip: works with mouse, touch and stylus. Choose PNG for a transparent background you can drop into any document, or JPG for a white background.',
+    empty: 'Please draw a signature first',
+    step1: 'Pick a pen color and adjust the thickness slider',
+    step2: 'Draw your signature on the white pad with mouse, finger or stylus',
+    step3: 'Use Undo to remove the last stroke, or Clear to start over',
+    step4: 'Choose PNG (transparent) or JPG and click Download to save',
+  },
+  zh: {
+    toolTitle: '手写签名板',
+    toolDesc: '用鼠标或手指在线绘制你的签名。可选画笔颜色和粗细，下载为透明 PNG 或 JPG — 100% 浏览器本地运行，无需上传。',
+    lblPen: '画笔颜色',
+    lblThickness: '粗细',
+    undo: '撤销',
+    clear: '清空',
+    download: '下载',
+    hint: '✍️ 在此绘制签名',
+    note: '提示：支持鼠标、触摸和触控笔。选择 PNG 可获得透明背景（可放入任意文档），或选择 JPG 获得白色背景。',
+    empty: '请先绘制签名',
+    step1: '选择画笔颜色并调整粗细滑块',
+    step2: '用鼠标、手指或触控笔在白色区域绘制签名',
+    step3: '使用「撤销」删除上一笔，或「清空」重新开始',
+    step4: '选择 PNG（透明）或 JPG，点击「下载」保存',
+  }
+});
+
+const { $, t } = GZ;
+const canvas = $('#canvas');
+const ctx = canvas.getContext('2d');
+const box = $('#canvasBox');
+const hint = $('#hint');
+
+let strokes = [];      // array of strokes, each stroke = array of {x,y}
+let current = null;
+let drawing = false;
+let color = '#0a0a0a';
+let thickness = 2;
+let dpr = window.devicePixelRatio || 1;
+
+function resize() {
+  const w = box.clientWidth;
+  const h = 340;
+  // Save existing pixels
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width; tmp.height = canvas.height;
+  tmp.getContext('2d').drawImage(canvas, 0, 0);
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.height = h + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  redraw();
+}
+
+function redraw() {
+  ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+  for (const stroke of strokes) {
+    if (stroke.length < 1) continue;
+    ctx.strokeStyle = stroke[0].color;
+    ctx.lineWidth = stroke[0].thickness;
+    ctx.beginPath();
+    ctx.moveTo(stroke[0].x, stroke[0].y);
+    if (stroke.length === 1) {
+      // dot
+      ctx.lineTo(stroke[0].x + 0.1, stroke[0].y + 0.1);
+    } else {
+      for (let i = 1; i < stroke.length - 1; i++) {
+        const midX = (stroke[i].x + stroke[i + 1].x) / 2;
+        const midY = (stroke[i].y + stroke[i + 1].y) / 2;
+        ctx.quadraticCurveTo(stroke[i].x, stroke[i].y, midX, midY);
+      }
+      const last = stroke[stroke.length - 1];
+      ctx.lineTo(last.x, last.y);
+    }
+    ctx.stroke();
+  }
+  hint.style.display = strokes.length ? 'none' : 'block';
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const p = e.touches ? e.touches[0] : e;
+  return { x: p.clientX - rect.left, y: p.clientY - rect.top };
+}
+
+function start(e) {
+  e.preventDefault();
+  drawing = true;
+  const pos = getPos(e);
+  current = [{ ...pos, color, thickness }];
+  strokes.push(current);
+  hint.style.display = 'none';
+}
+
+function move(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const pos = getPos(e);
+  current.push(pos);
+  redraw();
+}
+
+function end(e) {
+  if (!drawing) return;
+  e && e.preventDefault();
+  drawing = false;
+  current = null;
+}
+
+canvas.addEventListener('mousedown', start);
+canvas.addEventListener('mousemove', move);
+window.addEventListener('mouseup', end);
+canvas.addEventListener('touchstart', start, { passive: false });
+canvas.addEventListener('touchmove', move, { passive: false });
+canvas.addEventListener('touchend', end, { passive: false });
+
+// Controls
+$('#color').addEventListener('input', e => {
+  color = e.target.value;
+  document.querySelectorAll('.sp-swatch span').forEach(s => s.classList.remove('active'));
+});
+document.querySelectorAll('.sp-swatch span').forEach(s => {
+  s.addEventListener('click', () => {
+    color = s.dataset.color;
+    $('#color').value = color;
+    document.querySelectorAll('.sp-swatch span').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+  });
+});
+$('#thickness').addEventListener('input', e => {
+  thickness = +e.target.value;
+  $('#thickness-val').textContent = thickness + 'px';
+});
+$('#undoBtn').addEventListener('click', () => { strokes.pop(); redraw(); });
+$('#clearBtn').addEventListener('click', () => { strokes = []; redraw(); });
+$('#downloadBtn').addEventListener('click', () => {
+  if (!strokes.length) { alert(t('empty')); return; }
+  const fmt = $('#format').value;
+  // Crop to bounding box of strokes for a tight signature image
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const stroke of strokes) {
+    for (const p of stroke) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+  }
+  const pad = 12;
+  const cropX = Math.max(0, minX - pad);
+  const cropY = Math.max(0, minY - pad);
+  const cropW = Math.min(canvas.width / dpr, maxX + pad) - cropX;
+  const cropH = Math.min(canvas.height / dpr, maxY + pad) - cropY;
+  const out = document.createElement('canvas');
+  out.width = Math.max(1, Math.round(cropW * dpr));
+  out.height = Math.max(1, Math.round(cropH * dpr));
+  const octx = out.getContext('2d');
+  if (fmt === 'jpg') { octx.fillStyle = '#ffffff'; octx.fillRect(0, 0, out.width, out.height); }
+  octx.drawImage(canvas, cropX * dpr, cropY * dpr, cropW * dpr, cropH * dpr, 0, 0, out.width, out.height);
+  const mime = fmt === 'jpg' ? 'image/jpeg' : 'image/png';
+  const url = out.toDataURL(mime, 0.95);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'signature.' + (fmt === 'jpg' ? 'jpg' : 'png');
+  a.click();
+});
+
+// Labels
+$('#lbl-pen').textContent = t('lblPen');
+$('#lbl-thickness').textContent = t('lblThickness');
+$('#undoBtn').textContent = '↶ ' + t('undo');
+$('#clearBtn').textContent = t('clear');
+$('#downloadBtn').textContent = '⬇ ' + t('download');
+$('#hint').textContent = t('hint');
+$('#note').textContent = t('note');
+window.addEventListener('resize', resize);
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✍️', href:'/image/signature-generator.html', name:'Signature Generator'},
+    {icon:'🖼️', href:'/image/add-text-to-image.html', name:'Add Text to Image'},
+    {icon:'🎨', href:'/image/drawing-pad.html', name:'Drawing Pad'},
+    {icon:'📄', href:'/convert/pdf-annotator.html', name:'PDF Annotator'},
+  ]
+});
+
+resize();
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
