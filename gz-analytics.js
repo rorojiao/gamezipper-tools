@@ -20,7 +20,7 @@
   // Verified alive 2026-07-05: GET → 405 (Method Not Allowed — live); POST → 204 (event accepted).
   // DO NOT rotate this URL again. If bi.gamezipper.com goes down, fix the Cloudflare
   //   zone, do not introduce a new trycloudflare.com tunnel.
-  var EP = 'https://oriental-begin-compete-initiatives.trycloudflare.com/api/collect';
+  var EP = 'https://bi.gamezipper.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
