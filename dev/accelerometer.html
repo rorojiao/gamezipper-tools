@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Accelerometer Tester - Free Online Sensor Tool | GameZipper Tools</title>
+  <meta name="description" content="Test your phone's accelerometer in real time. See X, Y, Z acceleration, tilt angle, total G-force, shake detection and gravity — live in your browser. Free, private, no app install.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/accelerometer.html">
+  <meta property="og:title" content="Accelerometer Tester - Free Online Sensor Tool | GameZipper Tools">
+  <meta property="og:description" content="Test your phone's accelerometer in real time. See X, Y, Z acceleration, tilt angle, total G-force, shake detection and gravity — live in your browser. Free, private, no app install.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/accelerometer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Accelerometer Tester - Free Online Sensor Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v516ab2"></script>
+<style>
+.axis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.axis-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+.axis-card .label{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.axis-card .val{font-size:2rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;margin:4px 0}
+.axis-card .unit{font-size:.7rem;color:var(--text2)}
+.big-stat{text-align:center;margin:12px 0;padding:14px;background:var(--glass2);border:1px solid var(--border);border-radius:16px}
+.big-stat .num{font-size:2.6rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#vis{width:100%;height:240px;background:var(--glass);border:1px solid var(--border);border-radius:14px;display:block}
+.perm-warn{background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);border-radius:12px;padding:14px;margin:10px 0;display:none}
+.shake-alert{background:rgba(220,53,69,.18);border:1px solid rgba(220,53,69,.5);border-radius:10px;padding:8px;text-align:center;font-weight:700;display:none;margin:8px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Accelerometer Tester","description":"Test your phone's accelerometer in real time. See X, Y, Z acceleration, tilt angle, total G-force, shake detection and gravity — live in your browser.","url":"https://tools.gamezipper.com/dev/accelerometer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the accelerometer tester work?","acceptedAnswer":{"@type":"Answer","text":"It uses the browser DeviceMotionEvent API to read your device's built-in accelerometer sensor and display the X, Y, Z acceleration values in real time."}},{"@type":"Question","name":"Does it work on desktop computers?","acceptedAnswer":{"@type":"Answer","text":"Most desktop computers don't have accelerometers, so the tool works best on phones and tablets. On desktop, the sensor will show no data."}},{"@type":"Question","name":"Is my data sent anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All sensor readings stay in your browser. Nothing is uploaded to any server — 100% private."}},{"@type":"Question","name":"Why do I need to grant permission on iOS?","acceptedAnswer":{"@type":"Answer","text":"iOS 13+ requires explicit user permission before a web page can access motion sensors. Tap the button and allow access to start reading data."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/accelerometer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/accelerometer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/accelerometer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="perm-warn" id="permWarn"></div>
+    <div class="shake-alert" id="shakeAlert"></div>
+    <div class="big-stat"><div class="label" id="lbl-gforce"></div><div class="num" id="gforce">0.00</div><div class="unit">G</div></div>
+    <div class="axis-grid">
+      <div class="axis-card"><div class="label">X</div><div class="val" id="x">0.00</div><div class="unit">m/s²</div></div>
+      <div class="axis-card"><div class="label">Y</div><div class="val" id="y">0.00</div><div class="unit">m/s²</div></div>
+      <div class="axis-card"><div class="label">Z</div><div class="val" id="z">0.00</div><div class="unit">m/s²</div></div>
+    </div>
+    <canvas id="vis"></canvas>
+    <div id="status" style="margin-top:10px;font-size:.85rem;color:var(--text2)"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Accelerometer Tester',
+    toolDesc: 'Test your phone accelerometer in real time — X/Y/Z acceleration, total G-force, tilt angle and shake detection. 100% in your browser.',
+    gforce: 'Total G-Force',
+    start: '▶ Start',
+    stop: '⏹ Stop',
+    permission: '🔑 Grant Permission',
+    permMsg: 'iOS Safari requires permission to access motion sensors. Tap the button above to allow access.',
+    running: 'Sensor running… move your device!',
+    stopped: 'Sensor stopped.',
+    notSupported: '⚠ Your device/browser does not support the DeviceMotion API. Try a phone or tablet.',
+    shake: '📳 SHAKE DETECTED!',
+    step1: 'Open this page on a phone or tablet with a built-in accelerometer',
+    step2: 'Tap "Grant Permission" on iOS, or "Start" on Android',
+    step3: 'Tilt, rotate and shake your device to see live X/Y/Z values',
+    step4: 'Watch the total G-force and shake detection indicator',
+  },
+  zh: {
+    toolTitle: '加速度计测试器',
+    toolDesc: '实时测试手机加速度计 — X/Y/Z 轴加速度、总 G 力、倾斜角度和摇晃检测。完全在浏览器中运行。',
+    gforce: '总 G 力',
+    start: '▶ 开始',
+    stop: '⏹ 停止',
+    permission: '🔑 授权',
+    permMsg: 'iOS Safari 需要授权才能访问运动传感器。请点击上方按钮允许访问。',
+    running: '传感器运行中… 移动你的设备！',
+    stopped: '传感器已停止。',
+    notSupported: '⚠ 你的设备/浏览器不支持 DeviceMotion API。请使用手机或平板。',
+    shake: '📳 检测到摇晃！',
+    step1: '在带有内置加速度计的手机或平板上打开本页',
+    step2: 'iOS 点击「授权」，Android 点击「开始」',
+    step3: '倾斜、旋转和摇晃设备，查看实时 X/Y/Z 数值',
+    step4: '观察总 G 力和摇晃检测指示器',
+  }
+});
+
+const { $, t } = GZ;
+let running = false;
+let history = [];
+const MAX_HIST = 200;
+
+const canvas = $('#vis');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas(){ canvas.width = canvas.offsetWidth; canvas.height = 240; }
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+function handleMotion(e){
+  const acc = e.accelerationIncludingGravity || e.acceleration;
+  if(!acc) return;
+  const x = acc.x || 0, y = acc.y || 0, z = acc.z || 0;
+  $('#x').textContent = x.toFixed(2);
+  $('#y').textContent = y.toFixed(2);
+  $('#z').textContent = z.toFixed(2);
+  const total = Math.sqrt(x*x + y*y + z*z) / 9.81;
+  $('#gforce').textContent = total.toFixed(2);
+  if(total > 2.5){ $('#shakeAlert').style.display='block'; setTimeout(()=>$('#shakeAlert').style.display='none',800); }
+  history.push(total);
+  if(history.length > MAX_HIST) history.shift();
+  draw();
+}
+
+function draw(){
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg') || '#0a0a1a';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<5;i++){
+    const yy = (canvas.height/5)*i;
+    ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(canvas.width,yy); ctx.stroke();
+  }
+  // line
+  if(history.length < 2) return;
+  const maxV = Math.max(3, ...history);
+  ctx.strokeStyle = '#4ecdc4';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  history.forEach((v,i)=>{
+    const px = (i/(MAX_HIST-1))*canvas.width;
+    const py = canvas.height - (v/maxV)*canvas.height*0.9;
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+  // fill
+  ctx.lineTo(canvas.width,canvas.height); ctx.lineTo(0,canvas.height); ctx.closePath();
+  ctx.fillStyle = 'rgba(78,205,196,0.1)'; ctx.fill();
+}
+
+async function requestPermission(){
+  if(typeof DeviceMotionEvent.requestPermission === 'function'){
+    try{
+      const r = await DeviceMotionEvent.requestPermission();
+      if(r === 'granted'){ start(); } else { $('#status').textContent = 'Permission denied.'; }
+    }catch(err){ $('#status').textContent = 'Error: '+err.message; }
+  } else { start(); }
+}
+
+function start(){
+  if(running) return;
+  running = true;
+  window.addEventListener('devicemotion', handleMotion);
+  $('#status').textContent = t('running');
+}
+
+function stop(){
+  running = false;
+  window.removeEventListener('devicemotion', handleMotion);
+  $('#status').textContent = t('stopped');
+}
+
+const needsPerm = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+if(typeof DeviceMotionEvent === 'undefined'){ $('#status').textContent = t('notSupported'); }
+
+$('#toolbar').innerHTML = needsPerm
+  ? `<button class="gz-btn" onclick="requestPermission()">${t('permission')}</button><button class="gz-btn gz-btn-secondary" onclick="stop()">${t('stop')}</button>`
+  : `<button class="gz-btn" onclick="start()">${t('start')}</button><button class="gz-btn gz-btn-secondary" onclick="stop()">${t('stop')}</button>`;
+
+if(needsPerm) $('#permWarn').style.display='block';
+$('#permWarn').textContent = t('permMsg');
+$('#lbl-gforce').textContent = t('gforce');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📐', href:'/dev/gyroscope.html', name:'Gyroscope'},
+    {icon:'🧲', href:'/dev/magnetometer.html', name:'Magnetometer'},
+    {icon:'🔊', href:'/dev/decibel-meter.html', name:'Decibel Meter'},
+    {icon:'🌐', href:'/dev/bubble-level.html', name:'Bubble Level'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
