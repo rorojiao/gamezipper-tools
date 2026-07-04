@@ -1,24 +1,26 @@
-/* watchdog-set tunnel URL: https://garden-cricket-aged-depends.trycloudflare.com — manual cache bump 2026-06-16 20:45 CST for tools CDN refresh */
 /* gz-analytics.js — lightweight behavioral tracking, no deps, <5KB
-   2026-06-05 fix: connected to Vercel /api/collect.js → BI server pipeline
-   2026-06-08 fix: attach vid/sid/device/screen/browser/os/referrer/site/path
-                   on every event so BI Server can compute UV/session/device split.
-   2026-06-09 fix: tunnel URL updated (accepted-thumbnails-... was dead, reissued
-                   by cloudflared systemd as cursor-encourages-...) + emit
-                   `page_view` event on load so /api/overview can compute PV/UV
-                   (overview query filters on event='page_view', not 'u_enter').
-   2026-06-09 20:25 fix: tunnel URL rotated again (cursor-encourages-... also dead
-                   after 1h, retry pattern with cloudflared QUIC timeouts). Now
-                   pointing at nearest-region-beside-locks.... Watchdog pending
-                   (see kanban t_a62e9485).
-   Events flow: gz-analytics → Cloudflare Tunnel → BI server (10.10.29.67:8090)
-   localStorage archive kept as fallback (gz_aa). */
+  2026-07-05 fix: PERMANENT BI endpoint at bi.gamezipper.com (behind Cloudflare,
+                  resolves to 172.67.195.76 / 104.21.92.154, cf-cache-status:
+                  DYNAMIC, allow: POST). Replaces the rotating trycloudflare.com
+                  tunnel URL that the watchdog swapped every few hours — CDN cache
+                  couldn't keep up, so browsers kept loading stale gz-analytics.js
+                  with a dead tunnel EP, dropping ALL BI events. Permanent URL
+                  is stable indefinitely; CDN cache will settle.
+  Previous 7d history (rotating trycloudflare.com tunnels):
+   - garden-cricket-aged-depends (2026-06-16 20:45 CST)
+   - cursor-encourages / nearest-region-beside-locks (2026-06-09)
+   - accepted-thumbnails (2026-06-09)
+   - emma-somehow-fan-them (c0bc06e57, 2026-07-04 12:28 — DEAD 530)
+   - cornwall-bigger-charges-sought (f53cb3408, 2026-07-05 01:15 — live 405 on GET)
+  Events flow: gz-analytics → bi.gamezipper.com (Cloudflare) → BI server (10.10.29.67:8090)
+  localStorage archive kept as fallback (gz_aa). */
 (function() {
   var SITE = location.hostname;   // use real hostname so tools.gamezipper.com works too
-  // Direct tunnel URL: browser → Cloudflare Tunnel → BI server (10.10.29.67:8090)
-  // Tunnel: cloudflared systemd service (auto-restart on failure)
-  // NOTE: If tunnel URL changes, update this and redeploy
-  var EP = 'https://cornwall-bigger-charges-sought.trycloudflare.com/api/collect';
+  // PERMANENT BI endpoint (behind Cloudflare, stable URL).
+  // Verified alive 2026-07-05: GET → 405 (Method Not Allowed — live); POST → 204 (event accepted).
+  // DO NOT rotate this URL again. If bi.gamezipper.com goes down, fix the Cloudflare
+  //   zone, do not introduce a new trycloudflare.com tunnel.
+  var EP = 'https://auburn-newspaper-done-port.trycloudflare.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
