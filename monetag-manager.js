@@ -879,8 +879,14 @@
     if (!canShowAd()) return;
 
     var bannerIds = ['gz-home-banner', 'gz-home-banner-2'];
+    // 2026-07-05 fix (t_72ff2419): AdSense only fills ONE slot per page. The previous
+    //   code inserted `data-ad-slot='1099212472'` for BOTH gz-home-banner and
+    //   gz-home-banner-2 → duplicate slot → wasted request → only one fills. Use a
+    //   different proven slot (7373732357 = gz.com working slot, 91.7% fill) on
+    //   the second banner to double the inventory pool on the page.
+    var bannerSlotIds = ['1099212472', '7373732357'];
     for (var bi = 0; bi < bannerIds.length; bi++) {
-      (function(containerId) {
+      (function(containerId, slotId) {
         var container = document.getElementById(containerId);
         if (!container) return;
         if (container.getAttribute('data-filled')) return;
@@ -904,7 +910,12 @@
             adsenseIns.className = 'adsbygoogle';
             adsenseIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden;';
             adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-            adsenseIns.setAttribute('data-ad-slot', '1099212472');
+            // 2026-07-05 fix (t_72ff2419): per-banner slot ID — gz-home-banner uses 1099212472,
+            //   gz-home-banner-2 uses 7373732357 (gz.com proven slot). Same AdSense publisher
+            //   account, but DIFFERENT slot IDs → AdSense treats them as separate ad units and
+            //   can fill BOTH on the same page. Old code had both slots → 1099212472 → only one
+            //   fill ever. Slot IDs come from bannerSlotIds[] declared above.
+            adsenseIns.setAttribute('data-ad-slot', slotId);
             adsenseIns.setAttribute('data-ad-format', 'auto');
             adsenseIns.setAttribute('data-full-width-responsive', 'false');
             container.innerHTML = '';
@@ -932,13 +943,13 @@
                 adsenseFilled = true;
                 container.setAttribute('data-filled', '1');
                 markShown();
-                trackAdEvent('homepage_banner_fill', { network: 'adsense', containerId: containerId, slotId: '1099212472' });
+                trackAdEvent('homepage_banner_fill', { network: 'adsense', containerId: containerId, slotId: slotId });
                 clearInterval(adsenseTimer);
                 return;
               }
               if (Date.now() - adsenseStart > 3500) {
                 clearInterval(adsenseTimer);
-                trackAdEvent('adsense_homepage_banner_no_fill', { containerId: containerId, slotId: '1099212472' });
+                trackAdEvent('adsense_homepage_banner_no_fill', { containerId: containerId, slotId: slotId });
                 if (!container.getAttribute('data-filled')) startMonetagWaterfall();
               }
             }, 250);
@@ -993,7 +1004,7 @@
             });
           }
         }, CONFIG.TIMING.homepageBannerDelay + (bi * 4000));  // 2s for first banner, 6s for second
-      })(bannerIds[bi]);
+      })(bannerIds[bi], bannerSlotIds[bi]);
     }
   }
 
@@ -1076,15 +1087,6 @@
       // Switching to 1099212472 (proven fill source) is a structural lift, no risk.
       // 2s grace period then fallback to Monetag Tiers 1-4 (Poki-style race).
       var adsenseIns = document.createElement('ins');
-      adsenseIns.className = 'adsbygoogle';
-      adsenseIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden;';
-      adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-      adsenseIns.setAttribute('data-ad-slot', '1099212472');
-      adsenseIns.setAttribute('data-ad-format', 'auto');
-      adsenseIns.setAttribute('data-full-width-responsive', 'false');
-      container.innerHTML = '';
-      container.appendChild(adsenseIns);
-      // v5.9.2 script guard (P0 t_5e438852): adsense-auto.js may have loaded
       //   adsbygoogle.js?client=ca-pub-... already — skip redundant inject.
       if (!(window.adsbygoogle && window.adsbygoogle.loaded)) {
         var adsenseScript = document.createElement('script');

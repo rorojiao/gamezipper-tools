@@ -297,7 +297,7 @@
         ins.setAttribute('data-gz-mid-slot', '1');
         ins.style.cssText = 'display:block;text-align:center;margin:24px auto;min-height:120px;max-height:280px';
         ins.setAttribute('data-ad-client', AD_CLIENT);
-        ins.setAttribute('data-ad-slot', 'auto');
+        ins.setAttribute('data-ad-slot', '1099212472'); // 2026-07-05 t_72ff2419: 'auto' was invalid → AdSense 0% fill on all 3 mid-slots. Use proven slot 1099212472 (gz.com banner slot, 91.7% fill)
         ins.setAttribute('data-ad-format', 'auto');
         ins.setAttribute('data-full-width-responsive', 'true');
         // Wrap in a div so IntersectionObserver can lazy-init ad request
