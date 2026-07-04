@@ -1087,6 +1087,15 @@
       // Switching to 1099212472 (proven fill source) is a structural lift, no risk.
       // 2s grace period then fallback to Monetag Tiers 1-4 (Poki-style race).
       var adsenseIns = document.createElement('ins');
+      adsenseIns.className = 'adsbygoogle';
+      adsenseIns.style.cssText = 'display:block;width:100%;max-height:100px;overflow:hidden;';
+      adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
+      adsenseIns.setAttribute('data-ad-slot', '1099212472');
+      adsenseIns.setAttribute('data-ad-format', 'auto');
+      adsenseIns.setAttribute('data-full-width-responsive', 'false');
+      container.innerHTML = '';
+      container.appendChild(adsenseIns);
+      // v5.9.2 script guard (P0 t_5e438852): adsense-auto.js may have loaded
       //   adsbygoogle.js?client=ca-pub-... already — skip redundant inject.
       if (!(window.adsbygoogle && window.adsbygoogle.loaded)) {
         var adsenseScript = document.createElement('script');
