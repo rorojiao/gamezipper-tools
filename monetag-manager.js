@@ -1,7 +1,29 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.15.1-tools-container-slotid-sync (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.16-tools-ad-below-position-hub-skip (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.16 Changes (2026-07-05 — P0 fixes for tools container AdSense 0% fill rate):
+ *   - 🐛 Fix #1 (root cause of v5.15 not delivering expected 5-10x lift): gz-tools-ad-below
+ *     div was positioned UNDER the <footer> on tools pages (AdSense treats footer-area
+ *     ads as low-quality inventory → 0% fill). BI 7d (2026-06-27~07-04) showed
+ *     tools container 2 fill / 45 no_fill = 4.4% — same slot 1099212472 in gz-home-banner
+ *     produced 87.9% fill rate. Single-variable difference = DOM position. v5.15 only
+ *     swapped the slot ID, didn't move the container — partial fix.
+ *   - Fix #1 in showContainerAd() auto-inject fallback: extend selector set to include
+ *     .gz-container (tools pages use <div class="gz-container"> not <main>) + use
+ *     <footer>/.gz-footer/[class*="footer"] as a last-ditch anchor. This handles hub
+ *     pages where common.js renderFooter hasn't run yet.
+ *   - 🐛 Fix #2: On hub pages (/) that already have #gz-home-banner OR #gz-home-banner-2
+ *     (same slot 1099212472), skip showContainerAd() entirely. BI 7d shows 20+
+ *     adsense_container_ad_no_fill on / alone (vs 27 fills in gz-home-banner) — AdSense
+ *     only fills one slot per page. Skipping recovers ~1 fill/day on hub pages.
+ *   - 📊 Tool sub-pages (/calc/age-calculator.html etc.) don't have gz-home-banner so
+ *     they still get the container ad — that's where 2 fills did happen (1 on /calc/
+ *     age-calculator.html + 1 on /zh/calc/bmi-calculator.html).
+ *   - 🛡️ Safety: same Tier 0/1/2/3/4 waterfall as v5.15.1. No new ad calls — just
+ *     smarter placement + smarter skip logic. Expected lift: tools container fill rate
+ *     4.4% → 30-60% over 24-48h.
  *
  * v5.15.1 Changes (2026-07-04 — P0 sync trackAdEvent slotId 7373732357 → 1099212472):
  *   - 🩹 Bug fix: trackAdEvent('container_ad_fill'/'adsense_container_ad_no_fill') meta
@@ -316,7 +338,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.15.1-tools-container-slotid-sync',  // 2026-07-04: P0 fix sync trackAdEvent slotId 7373732357 → 1099212472
+    VERSION: '5.16-tools-ad-below-position-hub-skip',  // 2026-07-05: P0 fix — move gz-tools-ad-below to BEFORE footer (was under footer → AdSense treats footer-area as low-quality → 0% fill) + skip showContainerAd on hub pages that already have gz-home-banner (same slot 1099212472 duplicates)
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -993,16 +1015,48 @@
         container = document.createElement('div');
         container.id = 'gz-tools-ad-below';
         container.style.cssText = 'max-width:728px;margin:24px auto;text-align:center;min-height:90px;overflow:hidden;clear:both;';
-        // Prefer end of <main> so it sits naturally below tool results; fall back to <body>.
-        var main = document.querySelector('main');
-        if (main && main.parentNode) {
-          main.parentNode.insertBefore(container, main.nextSibling);
+        // v5.16 (2026-07-05): P0 fix — tools HTML uses <div class="gz-container"> not
+        //   <main>, so previous `querySelector('main')` always returned null and the
+        //   div was body-appended (under footer → AdSense treats footer-area as low-
+        //   quality → 0% fill rate). Fix: ALSO match `.gz-container`, AND if neither
+        //   matches, prefer to insert before any existing <footer> / .gz-footer /
+        //   `[class*="footer"]` element. Body-appendChild is the last resort.
+        //   This handles the 2 remaining cases: (a) common.js renderFooter not yet
+        //   called (race), (b) hub pages where common.js never created adBelow.
+        var footer = document.querySelector('footer, .gz-footer, [class*="footer"]');
+        var mainOrContainer = document.querySelector('main') || document.querySelector('.gz-container, .gz-tool-container, main article, .gz-main, article');
+        if (mainOrContainer && mainOrContainer.parentNode) {
+          mainOrContainer.parentNode.insertBefore(container, mainOrContainer.nextSibling);
+        } else if (footer && footer.parentNode) {
+          document.body.insertBefore(container, footer);
         } else {
           document.body.appendChild(container);
         }
         trackAdEvent('container_div_auto_injected', { containerId: 'gz-tools-ad-below', reason: 'missing_on_page' });
       } catch(e) {
         trackAdEvent('container_div_inject_error', { error: String(e) });
+        return;
+      }
+    }
+    // v5.16 (2026-07-05): P0 fix #2 — On hub pages (/) common.js renderFooter()
+    //   ALSO creates a gz-tools-ad-below div (under the footer), and the page
+    //   ALREADY has a #gz-home-banner div requesting slot 1099212472. BI 7d
+    //   (2026-06-27 ~ 07-04) shows / (and /zh/) homepage has 27+ gz-home-banner
+    //   fills but 20+ adsense_container_ad_no_fill on gz-tools-ad-below — same
+    //   slot ID, same page, AdSense only fills ONE per page. Skipping here
+    //   recovers ~1 fill/day on hub pages + reduces wasted AdSense requests.
+    //   Tool sub-pages (/calc/age-calculator.html etc.) don't have gz-home-banner
+    //   so they still get the container ad.
+    if (state.isHubPage) {
+      var hasHomeBanner = document.getElementById('gz-home-banner') ||
+                          document.getElementById('gz-home-banner-2');
+      if (hasHomeBanner) {
+        trackAdEvent('container_ad_skip_hub_has_banner', {
+          containerId: 'gz-tools-ad-below',
+          reason: 'same_slot_already_on_page',
+          bannerId: hasHomeBanner.id,
+          path: location.pathname
+        });
         return;
       }
     }

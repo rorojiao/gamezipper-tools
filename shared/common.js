@@ -97,7 +97,7 @@
   // v5.5.8 (2026-07-04): bump cache to v=20260704v516obs (P0 fix: window.GZ_TRACK_AD_EVENT
   //   undefined → window.gzAnalytics.sendAd so tryInjectAfterRelated funnel events
   //   actually reach BI server). Cloudflare CDN will serve the new code on next reload.
-  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260704v558ar';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.js?v=20260705v516ar2';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260701v5140';s4.defer=true;document.head.appendChild(s4);
@@ -218,7 +218,7 @@ const GZ = (function(){
     //   tryInjectAfterRelated() guarantees visibility.
 
     const linkStyle = 'background:var(--glass2);padding:6px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:.8em;border:1px solid var(--border)';
-    const gameLinks = picked.map(function(g){return '<a href="https://gamezipper.com'+g.u+'" style="'+linkStyle+'">'+g.e+' '+g.n+'</a>';}).join('');
+    const gameLinks = picked.map(function(g){return '<a href="https://gamezipper.com'+g.u+'" style="'+linkStyle+'">'+g.e+' '+g.n+'</a>'}).join('');
     const games = document.createElement('section');
     games.style.cssText = 'max-width:1100px;margin:30px auto 0;padding:20px 24px;background:var(--glass);border:1px solid var(--border);border-radius:20px;text-align:center';
     games.innerHTML = '<h3 style="margin:0 0 12px;font-size:1rem"><a href="https://gamezipper.com" style="color:var(--accent);text-decoration:none">🎮 Take a Break — Play Free Games</a></h3><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'+gameLinks+'<a href="https://gamezipper.com" style="background:var(--accent);color:#000;padding:6px 14px;border-radius:10px;text-decoration:none;font-size:.8em;font-weight:700">All Games →</a></div>';
@@ -226,10 +226,22 @@ const GZ = (function(){
     const footer = document.createElement('footer');
     footer.className = 'gz-footer';
     footer.innerHTML = `
-      <p>${t('madeWith')} <a href="https://gamezipper.com">GameZipper</a> · 
+      <p>${t('madeWith')} <a href="https://gamezipper.com">GameZipper</a> ·
       <a href="https://gamezipper.com">${t('gamesAt')} gamezipper.com 🎮</a></p>
       <p style="margin-top:6px;font-size:0.75rem">${t('privacyNote')}</p>`;
     document.body.appendChild(footer);
+    // v5.16 (2026-07-05): P0 fix — gz-tools-ad-below must sit BETWEEN games section and
+    //   footer, NOT under footer (AdSense treats footer-area ads as low-quality → 0%
+    //   fill rate). BI 7d (2026-06-27 ~ 07-04) shows tools container 2 fill / 45 no_fill
+    //   = 4.4% on slot 1099212472 vs same slot in gz-home-banner 87.9% fill — single
+    //   root cause is DOM position. Fix: after footer is appended, MOVE adBelow to be
+    //   the immediate previous sibling of footer (above games section). Idempotent —
+    //   if already in place, parentNode.insertBefore is a no-op for equal position.
+    //   Mirrors v5.15 slot swap (which didn't fix position — only which AdSense slot
+    //   is used). Both fixes are structural lift.
+    if (adBelow && adBelow.parentNode === document.body) {
+      try { document.body.insertBefore(adBelow, footer); } catch(em) { /* non-fatal */ }
+    }
   }
 
   function renderToolPage(opts) {
