@@ -1,7 +1,32 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.16-tools-ad-below-position-hub-skip (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.17-exit-intent-cooldown-fix (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.17 Changes (2026-07-05 — P0 Exit-Intent Cooldown Bug Fix):
+ *   - 🪲 Fix: initExitIntent() Guard 3 was using canShowAd() which has 2-minute
+ *     minBetweenAds cooldown. This silently blocked exit-intent on EVERY tool page
+ *     that had recently fired a commercial break (popunder) — the most common case
+ *     since users run a tool, see the popunder, then leave. BI 7d evidence:
+ *     - tools exit_intent_detected: 0 events in 7d (should be 5-15/day based on
+ *       gz.com v5.9 which produces ~5/day with same mouseout volume)
+ *     - tools exit_intent_guard_rejected: 0 events (Guard 3 blocked before trackAdEvent
+ *       in some paths — observability gap, fixed in v5.17 by moving trackAdEvent BEFORE
+ *       the canShowAdExitIntent() check)
+ *   - 🐛 Diagnosis: gz.com v5.9 (2026-06-24) has the correct pattern — uses
+ *     canShowAdExitIntent() which bypasses firstAdDelay/minBetweenAds but keeps
+ *     global daily + session caps. Exit-intent is its own slot, not a commercial_break.
+ *   - ✅ Fix: Guard 3 now calls canShowAdExitIntent() (parity with gz.com v5.9).
+ *   - ✅ Fix: trackAdEvent('exit_intent_detected') moved BEFORE canShowAdExitIntent()
+ *     (parity with gz.com v5.9 line 1909-1916) so we see the full funnel
+ *     (detected → blocked → fired) in BI.
+ *   - 📊 Acceptance (7d BI):
+ *     - exit_intent_detected 0 → target 10+ (any lift proves fix works)
+ *     - exit_intent_blocked 0 → target 5+ (observable global-cap blocks)
+ *     - exit_intent_fill 0 → target 1+ (actual fills)
+ *   - 🛡️ Safety: No new ad calls. Just re-enables an existing slot that was dormant.
+ *     Daily/session caps unchanged. Popunder guard unchanged.
+ *   - Version bumped 5.16 → 5.17.
  *
  * v5.16 Changes (2026-07-05 — P0 fixes for tools container AdSense 0% fill rate):
  *   - 🐛 Fix #1 (root cause of v5.15 not delivering expected 5-10x lift): gz-tools-ad-below
@@ -1437,7 +1462,7 @@
   //   - 30s minimum on-page dwell (avoid punishing quick bounces)
   //   - 5-min cooldown between exit-intent breaks
   //   - Skip on hub pages (entry points, no engagement to interrupt)
-  //   - Respect canShowAd() (frequency caps still apply)
+  //   - Respect canShowAdExitIntent() (global caps, not type-specific cooldown — v5.17 fix)
   //   - Suppressed if popunder recently fired (avoid double ad-stacking)
   function initExitIntent() {
     if (!state.isToolPage) return;
@@ -1466,15 +1491,31 @@
       // Guard 2: cooldown since last exit-intent break
       if (now() - lastExitIntentAt < CONFIG.TIMING.exitIntentCooldownMs) return;
 
-      // Guard 3: respect frequency cap
-      if (!canShowAd()) return;
-
-      // Guard 4: don't double-stack with a recent popunder (within 60s)
+      // Guard 3: don't double-stack with a recent popunder (within 60s)
       var lastPopunder = storageGet('popunder_last') || 0;
       if (now() - lastPopunder < 60 * 1000) return;
 
+      // v5.17 (2026-07-05 — Exit-Intent Cooldown Bug Fix):
+      //   Track detection BEFORE canShowAdExitIntent() check (parity with gz.com v5.9).
+      //   Previously: canShowAd() had 2-min minBetweenAds cooldown that silently
+      //   blocked exit-intent on every tool page after a commercial break (popunder).
+      //   Users run a tool → see popunder → leave via mouseout → blocked by cooldown.
+      //   BI 7d evidence: 0 exit_intent_detected events vs gz.com ~5/day baseline.
+      //   Now: canShowAdExitIntent() bypasses firstAdDelay/minBetweenAds (exit-intent
+      //   is its own slot) but keeps global daily + session caps. trackAdEvent fires
+      //   FIRST so BI sees the full funnel (detected → blocked → fired).
       lastExitIntentAt = now();
       trackAdEvent('exit_intent_detected', {});
+
+      // Guard 4: respect global ad caps (daily + session) but skip type-specific
+      // commercialBreakCooldown — exit-intent is a separate ad slot, not a
+      // commercial_break. User is about to leave anyway, so we want to attempt a
+      // fill even if a commercial_break just fired 10s ago.
+      if (!canShowAdExitIntent()) {
+        trackAdEvent('exit_intent_blocked', { reason: 'global_caps_reached' });
+        return;
+      }
+
       // v5.7: re-use the same showPokiOverlay path (delayed entry, e.g. 1s)
       // so the user perceives it as a natural break rather than a punishment.
       setTimeout(function() { showPokiOverlay('exit_intent'); }, 800);
