@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>INI to JSON Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert INI config files to JSON instantly. Free INI to JSON converter — handles sections, key-value pairs, comments, quotes and auto type detection. 100% browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/ini-to-json.html">
+  <meta property="og:title" content="INI to JSON Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert INI config files to JSON instantly. Free INI to JSON converter — handles sections, key-value pairs, comments, quotes and auto type detection. 100% browser-only, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/ini-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="INI to JSON Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:200px}
+#status{margin-top:8px;font-size:.85em}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"INI to JSON Converter","description":"Convert INI config files to JSON instantly. Free INI to JSON converter — handles sections, key-value pairs, comments, quotes and auto type detection. 100% browser-only, no upload.","url":"https://tools.gamezipper.com/dev/ini-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert an INI file to JSON?","acceptedAnswer":{"@type":"Answer","text":"Paste your INI content into the input area. The JSON output is generated instantly in real time, with sections becoming nested objects."}},{"@type":"Question","name":"Does it handle INI sections and comments?","acceptedAnswer":{"@type":"Answer","text":"Yes. Sections like [database] become nested JSON objects. Comments starting with ; or # are ignored. Keys without a section go into a root-level object."}},{"@type":"Question","name":"Are values auto-typed?","acceptedAnswer":{"@type":"Answer","text":"Yes. Values that look like numbers become JSON numbers, true/false become booleans, and null becomes null. Everything else stays a string. You can toggle raw string mode."}},{"@type":"Question","name":"Is my INI data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing and conversion happens entirely in your browser. Your configuration files are never sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ini-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ini-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ini-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="[database]&#10;host=localhost&#10;port=5432&#10;name=myapp&#10;&#10;[cache]&#10;enabled=true&#10;ttl=3600"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'INI to JSON Converter',
+    toolDesc: 'Convert INI configuration files to JSON instantly. Handles sections, key-value pairs, comments, quotes and auto type detection.',
+    inputLabel: 'INI Input',
+    outputLabel: 'JSON Output',
+    convert: 'Convert',
+    autoType: 'Auto-type values',
+    copy: 'Copy JSON',
+    clear: 'Clear',
+    example: 'Example',
+    valid: '✓ Converted successfully',
+    step1: 'Paste your INI content into the input area',
+    step2: 'The JSON output is generated automatically in real time',
+    step3: 'Toggle Auto-type to control number/boolean detection',
+    step4: 'Click Copy JSON to copy the result to clipboard',
+  },
+  zh: {
+    toolTitle: 'INI 转 JSON 转换器',
+    toolDesc: '即时将 INI 配置文件转换为 JSON。支持段落、键值对、注释、引号和自动类型推断。',
+    inputLabel: 'INI 输入',
+    outputLabel: 'JSON 输出',
+    convert: '转换',
+    autoType: '自动类型推断',
+    copy: '复制 JSON',
+    clear: '清空',
+    example: '示例',
+    valid: '✓ 转换成功',
+    step1: '在输入区粘贴 INI 内容',
+    step2: 'JSON 输出会实时自动生成',
+    step3: '切换「自动类型推断」控制数字/布尔值检测',
+    step4: '点击「复制 JSON」将结果复制到剪贴板',
+  }
+});
+
+let autoType = true;
+const { $, copyText, t } = GZ;
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function parseINI(text) {
+  const result = {};
+  let currentSection = result;
+  const lines = text.split(/\r?\n/);
+  for (let raw of lines) {
+    let line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith(';') || line.startsWith('#')) continue;
+    // Section header
+    const secMatch = line.match(/^\[(.+)\]$/);
+    if (secMatch) {
+      const secName = secMatch[1].trim();
+      if (!result[secName]) result[secName] = {};
+      currentSection = result[secName];
+      continue;
+    }
+    // Key-value
+    const eqIdx = line.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = line.substring(0, eqIdx).trim();
+    let value = line.substring(eqIdx + 1).trim();
+    // Strip inline comments ( ; or # after a space, but not inside quotes )
+    if (value.startsWith('"') && value.endsWith('"') && value.length >= 2) {
+      value = value.substring(1, value.length - 1);
+    } else {
+      // remove trailing inline comment
+      const cmt = value.search(/\s+[;#]/);
+      if (cmt !== -1) value = value.substring(0, cmt).trim();
+    }
+    if (autoType) {
+      if (/^-?\d+$/.test(value)) value = parseInt(value, 10);
+      else if (/^-?\d+\.\d+([eE][+-]?\d+)?$/.test(value)) value = parseFloat(value);
+      else if (value === 'true') value = true;
+      else if (value === 'false') value = false;
+      else if (value === 'null') value = null;
+    }
+    currentSection[key] = value;
+  }
+  return result;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj = parseINI(inp);
+    const json = JSON.stringify(obj, null, 2);
+    $('#output').innerHTML = syntaxHighlight(json);
+    const keys = Object.keys(obj).length;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span> <span style="opacity:.7">(${keys} top-level keys)</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+    $('#output').textContent = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = `; Application configuration
+[database]
+host = localhost
+port = 5432
+name = myapp_prod
+ssl = false
+pool_size = 10
+
+[redis]
+host = 127.0.0.1
+port = 6379
+ttl = 3600
+enabled = true
+
+[logging]
+level = info
+format = json
+max_file_size = 10485760`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer">
+    <input type="checkbox" id="autoTypeChk" checked onchange="autoType=this.checked;doConvert()"> ${t('autoType')}
+  </label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-out').textContent = t('outputLabel');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⚙️', href:'/dev/env-to-json.html', name:'ENV to JSON'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📄', href:'/dev/yaml.html', name:'YAML Formatter'},
+    {icon:'🗂️', href:'/dev/json-to-yaml.html', name:'JSON to YAML'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
