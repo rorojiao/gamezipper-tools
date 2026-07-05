@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>ENV to JSON Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert .env files to JSON instantly. Handles KEY=value pairs, quotes, comments, multiline, export prefix and inline comments — 100% browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/env-to-json.html">
+  <meta property="og:title" content="ENV to JSON Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert .env files to JSON instantly. Handles KEY=value pairs, quotes, comments, multiline, export prefix and inline comments — 100% browser-only, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/env-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ENV to JSON Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert .env files to JSON instantly. Handles KEY=value pairs, quotes, comments, multiline, export prefix and inline comments — 100% browser-only, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:100px}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"ENV to JSON Converter","description":"Convert .env files to JSON instantly. Handles KEY=value pairs, quotes, comments, multiline, export prefix and inline comments — 100% browser-only, no upload.","url":"https://tools.gamezipper.com/dev/env-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert a .env file to JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your .env content into the input area. The tool parses each KEY=value line and builds a JSON object automatically. Click Copy or Download to save the result."}}, {"@type": "Question", "name": "Does this handle quoted values and comments?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Single and double-quoted values are unwrapped, inline comments after # are stripped, full-line comments are skipped, and the export prefix is removed automatically."}}, {"@type": "Question", "name": "Is my .env data secure?", "acceptedAnswer": {"@type": "Answer", "text": "Absolutely. All parsing happens in your browser. Your environment variables and secrets never leave your device — no server upload, no tracking."}}, {"@type": "Question", "name": "Can I convert JSON back to .env format?", "acceptedAnswer": {"@type": "Answer", "text": "This tool converts .env to JSON. For the reverse direction, use a JSON to properties or JSON to env converter. Many dotenv libraries also accept JSON config directly."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/env-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/env-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/env-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" style="min-height:250px"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'ENV to JSON Converter',
+    toolDesc: 'Convert .env files to JSON instantly. Handles quotes, comments, multiline values, export prefix and auto type detection — 100% in your browser.',
+    convert: 'Convert',
+    keys: 'keys',
+    converted: '✓ Converted',
+    errEmpty: 'Please paste .env content first',
+    autoType: 'Auto-detect types',
+    step1: 'Paste your .env content in the input area',
+    step2: 'Each KEY=value line becomes a JSON property',
+    step3: 'Enable auto-type to convert numbers and booleans',
+    step4: 'Click Copy or Download to save the JSON',
+  },
+  zh: {
+    toolTitle: 'ENV 转 JSON 转换器',
+    toolDesc: '将 .env 文件即时转换为 JSON。处理引号、注释、多行值、export 前缀和自动类型推断 — 100% 浏览器本地运行。',
+    convert: '转换',
+    keys: '个键',
+    converted: '✓ 转换成功',
+    errEmpty: '请先粘贴 .env 内容',
+    autoType: '自动类型推断',
+    step1: '在输入区粘贴 .env 内容',
+    step2: '每行 KEY=value 将变为一个 JSON 属性',
+    step3: '启用自动类型以转换数字和布尔值',
+    step4: '点击「复制」或「下载」保存 JSON',
+  }
+});
+
+let autoType = true;
+const { $, copyText, t } = GZ;
+
+function unquote(val) {
+  val = val.trim();
+  // Remove inline comment (only if not inside quotes)
+  if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+    return val.slice(1, -1).replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\'/g, "'").replace(/\\"/g, '"');
+  }
+  // Strip inline comment: KEY=value # comment
+  const commentIdx = val.indexOf(' #');
+  if (commentIdx > 0) val = val.substring(0, commentIdx).trim();
+  return val.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+}
+
+function autoDetect(v) {
+  if (!autoType) return v;
+  if (v === 'true' || v === 'True' || v === 'TRUE') return true;
+  if (v === 'false' || v === 'False' || v === 'FALSE') return false;
+  if (v === 'null' || v === 'NULL') return null;
+  if (v === '') return '';
+  if (/^-?\d+$/.test(v)) { const n = parseInt(v, 10); if (Math.abs(n) < 1e15) return n; }
+  if (/^-?\d+\.\d+([eE][+-]?\d+)?$/.test(v)) { const n = parseFloat(v); if (isFinite(n)) return n; }
+  return v;
+}
+
+function parseEnv(text) {
+  const result = {};
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  let currentKey = null;
+  let multilineBuffer = '';
+
+  for (let line of lines) {
+    // Skip empty lines
+    if (line.trim() === '') { currentKey = null; continue; }
+    // Skip comments
+    if (/^\s*#/.test(line) || /^\s*\/\//.test(line)) continue;
+
+    // Handle multiline continuation (value ends with \)
+    if (currentKey && line.startsWith(' ') && multilineBuffer) {
+      multilineBuffer += '\n' + line.replace(/\\\s*$/, '');
+      if (!line.endsWith('\\')) {
+        result[currentKey] = autoDetect(unquote(multilineBuffer.trim()));
+        currentKey = null;
+        multilineBuffer = '';
+      }
+      continue;
+    }
+
+    // Parse KEY=value
+    const eqIdx = line.indexOf('=');
+    if (eqIdx === -1) continue;
+
+    let key = line.substring(0, eqIdx).trim();
+    // Remove optional 'export ' prefix
+    key = key.replace(/^export\s+/, '');
+    // Validate key
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) continue;
+
+    let val = line.substring(eqIdx + 1);
+
+    // Check for multiline (ends with backslash)
+    if (val.trimEnd().endsWith('\\') && !(val.trim().startsWith('"') || val.trim().startsWith("'"))) {
+      currentKey = key;
+      multilineBuffer = val.trimEnd().slice(0, -1);
+      continue;
+    }
+
+    result[key] = autoDetect(unquote(val));
+    currentKey = null;
+    multilineBuffer = '';
+  }
+
+  return result;
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('errEmpty')}</span>`; return; }
+  try {
+    const obj = parseEnv(inp);
+    const count = Object.keys(obj).length;
+    if (count === 0) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">No valid KEY=value pairs found</span>`; return; }
+    const result = JSON.stringify(obj, null, 2);
+    $('#output').innerHTML = syntaxHighlight(result);
+    $('#output').dataset.raw = result;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('converted')} — ${count} ${t('keys')}</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ ${e.message}</span>`;
+  }
+}
+
+function downloadResult() {
+  const raw = $('#output').dataset.raw || '';
+  if (!raw) return;
+  const blob = new Blob([raw], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'config.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadExample() {
+  $('#input').value = `# Database configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=myapp_dev
+DB_SSL=false
+
+# API Keys (example only)
+API_KEY="sk-test-12345"
+SECRET_KEY='my-secret-here'
+
+# Feature flags
+DEBUG=true
+CACHE_TTL=3600
+
+export NODE_ENV=development
+LOG_LEVEL=info  # verbose logging`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; $('#output').dataset.raw = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')||'Example'}</button>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer">
+    <input type="checkbox" ${autoType?'checked':''} onchange="autoType=this.checked;doConvert()"> ${t('autoType')}
+  </label>
+  <button class="gz-btn" onclick="copyText($('#output').dataset.raw||'')">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadResult()">${t('download')||'⬇ Download'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'⚙️', href:'/dev/ini-formatter.html', name:'INI Formatter'},
+    {icon:'📝', href:'/dev/yaml-formatter.html', name:'YAML Formatter'},
+    {icon:'🔧', href:'/dev/toml-formatter.html', name:'TOML Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
