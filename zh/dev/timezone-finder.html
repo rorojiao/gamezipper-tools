@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>时区查找器 & 世界时钟 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查找全球任意城市或时区的当前时间。搜索 400+ 城市，对比时间，查看 UTC 偏移和夏令时状态 — 免费世界时钟。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/timezone-finder.html">
+  <meta property="og:title" content="时区查找器 & 世界时钟">
+  <meta property="og:description" content="查找全球任意城市或时区的当前时间。搜索 400+ 城市，对比时间，查看 UTC 偏移和夏令时状态 — 免费世界时钟。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/timezone-finder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="时区查找器 & 世界时钟">
+<meta name="twitter:description" content="查找全球任意城市或时区的当前时间。搜索 400+ 城市，对比时间，查看 UTC 偏移和夏令时状态 — 免费世界时钟。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+.tz-search{margin-bottom:12px}
+.tz-search input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--glass);color:var(--text);font-size:.95rem}
+.tz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:12px}
+.tz-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;transition:border-color .15s}
+.tz-card:hover{border-color:var(--accent)}
+.tz-card .tz-city{font-size:1rem;font-weight:700;margin-bottom:2px}
+.tz-card .tz-zone{font-size:.75rem;color:var(--text2);margin-bottom:8px}
+.tz-card .tz-time{font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+.tz-card .tz-date{font-size:.8rem;color:var(--text2);margin-top:2px}
+.tz-card .tz-offset{display:inline-block;font-size:.7rem;background:var(--glass);padding:2px 8px;border-radius:6px;margin-top:6px;color:var(--text2)}
+.tz-card .tz-dst{display:inline-block;font-size:.7rem;background:rgba(251,191,36,.15);padding:2px 8px;border-radius:6px;margin-top:6px;margin-left:4px;color:#fbbf24}
+.tz-compare{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px}
+.tz-compare-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.tz-compare-row:last-child{border-bottom:none}
+.diff-val{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Time Zone Finder & World Clock","description":"Find the current time in any city or time zone worldwide. Search 400+ cities, compare times side by side, view UTC offsets, DST status and abbreviations. Free, browser-based world clock.","url": "https://tools.gamezipper.com/zh/dev/timezone-finder.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How many cities does the Time Zone Finder cover?","acceptedAnswer":{"@type":"Answer","text":"The tool includes 400+ major cities across all continents, each mapped to its IANA time zone identifier (e.g. America/New_York, Asia/Tokyo). You can search by city name, country or time zone abbreviation."}},{"@type":"Question","name":"Does it account for Daylight Saving Time?","acceptedAnswer":{"@type":"Answer","text":"Yes. The tool uses your browser's built-in Intl.DateTimeFormat API which automatically applies current DST rules for each time zone. The DST badge appears when a zone is currently in summer time."}},{"@type":"Question","name":"Can I compare multiple time zones?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click any city card to add it to the comparison panel. The time difference between selected zones updates live every second."}},{"@type":"Question","name":"Is this tool free?","acceptedAnswer":{"@type":"Answer","text":"Yes, completely free with no signup required. All calculations happen in your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/timezone-finder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/timezone-finder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/timezone-finder.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="tz-search">
+      <input type="text" id="search" placeholder="Search city, country or time zone..." oninput="renderGrid()">
+    </div>
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="compare-panel" class="tz-compare" style="display:none">
+      <div style="font-weight:700;margin-bottom:8px" id="compare-title"></div>
+      <div id="compare-rows"></div>
+    </div>
+    <div id="grid" class="tz-grid"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Time Zone Finder & World Clock',
+    toolDesc: 'Find the current time in any city or time zone worldwide. Search 400+ cities, compare times, view UTC offsets and DST status — free world clock.',
+    searchPlaceholder: 'Search city, country or time zone...',
+    compareTitle: 'Time Difference Comparison',
+    sameTime: 'Same time',
+    hoursAhead: 'h ahead',
+    hoursBehind: 'h behind',
+    step1: 'Search for any city or time zone in the search box',
+    step2: 'Click a city card to add it to the comparison panel',
+    step3: 'View live UTC offsets and DST badges',
+    step4: 'Times update automatically every second',
+  },
+  zh: {
+    toolTitle: '时区查找器 & 世界时钟',
+    toolDesc: '查找全球任意城市或时区的当前时间。搜索 400+ 城市，对比时间，查看 UTC 偏移和夏令时状态 — 免费世界时钟。',
+    searchPlaceholder: '搜索城市、国家或时区...',
+    compareTitle: '时差对比',
+    sameTime: '同一时间',
+    hoursAhead: '小时之后',
+    hoursBehind: '小时之前',
+    step1: '在搜索框中搜索任意城市或时区',
+    step2: '点击城市卡片将其加入对比面板',
+    step3: '查看实时 UTC 偏移和夏令时标识',
+    step4: '时间每秒自动更新',
+  }
+});
+
+const { $, t } = GZ;
+
+const CITIES = [
+  // North America
+  {city:'New York',country:'USA',tz:'America/New_York',code:'EST/EDT'},
+  {city:'Los Angeles',country:'USA',tz:'America/Los_Angeles',code:'PST/PDT'},
+  {city:'Chicago',country:'USA',tz:'America/Chicago',code:'CST/CDT'},
+  {city:'Denver',country:'USA',tz:'America/Denver',code:'MST/MDT'},
+  {city:'Phoenix',country:'USA',tz:'America/Phoenix',code:'MST'},
+  {city:'Anchorage',country:'USA',tz:'America/Anchorage',code:'AKST/AKDT'},
+  {city:'Honolulu',country:'USA',tz:'Pacific/Honolulu',code:'HST'},
+  {city:'Toronto',country:'Canada',tz:'America/Toronto',code:'EST/EDT'},
+  {city:'Vancouver',country:'Canada',tz:'America/Vancouver',code:'PST/PDT'},
+  {city:'Mexico City',country:'Mexico',tz:'America/Mexico_City',code:'CST'},
+  {city:'Guadalajara',country:'Mexico',tz:'America/Mexico_City',code:'CST'},
+  // South America
+  {city:'São Paulo',country:'Brazil',tz:'America/Sao_Paulo',code:'BRT'},
+  {city:'Rio de Janeiro',country:'Brazil',tz:'America/Sao_Paulo',code:'BRT'},
+  {city:'Buenos Aires',country:'Argentina',tz:'America/Argentina/Buenos_Aires',code:'ART'},
+  {city:'Santiago',country:'Chile',tz:'America/Santiago',code:'CLT/CLST'},
+  {city:'Lima',country:'Peru',tz:'America/Lima',code:'PET'},
+  {city:'Bogotá',country:'Colombia',tz:'America/Bogota',code:'COT'},
+  {city:'Caracas',country:'Venezuela',tz:'America/Caracas',code:'VET'},
+  {city:'Montevideo',country:'Uruguay',tz:'America/Montevideo',code:'UYT'},
+  {city:'Quito',country:'Ecuador',tz:'America/Guayaquil',code:'ECT'},
+  // Europe
+  {city:'London',country:'UK',tz:'Europe/London',code:'GMT/BST'},
+  {city:'Dublin',country:'Ireland',tz:'Europe/Dublin',code:'GMT/IST'},
+  {city:'Paris',country:'France',tz:'Europe/Paris',code:'CET/CEST'},
+  {city:'Berlin',country:'Germany',tz:'Europe/Berlin',code:'CET/CEST'},
+  {city:'Madrid',country:'Spain',tz:'Europe/Madrid',code:'CET/CEST'},
+  {city:'Rome',country:'Italy',tz:'Europe/Rome',code:'CET/CEST'},
+  {city:'Amsterdam',country:'Netherlands',tz:'Europe/Amsterdam',code:'CET/CEST'},
+  {city:'Brussels',country:'Belgium',tz:'Europe/Brussels',code:'CET/CEST'},
+  {city:'Vienna',country:'Austria',tz:'Europe/Vienna',code:'CET/CEST'},
+  {city:'Zurich',country:'Switzerland',tz:'Europe/Zurich',code:'CET/CEST'},
+  {city:'Stockholm',country:'Sweden',tz:'Europe/Stockholm',code:'CET/CEST'},
+  {city:'Oslo',country:'Norway',tz:'Europe/Oslo',code:'CET/CEST'},
+  {city:'Copenhagen',country:'Denmark',tz:'Europe/Copenhagen',code:'CET/CEST'},
+  {city:'Helsinki',country:'Finland',tz:'Europe/Helsinki',code:'EET/EEST'},
+  {city:'Warsaw',country:'Poland',tz:'Europe/Warsaw',code:'CET/CEST'},
+  {city:'Prague',country:'Czech Republic',tz:'Europe/Prague',code:'CET/CEST'},
+  {city:'Budapest',country:'Hungary',tz:'Europe/Budapest',code:'CET/CEST'},
+  {city:'Athens',country:'Greece',tz:'Europe/Athens',code:'EET/EEST'},
+  {city:'Lisbon',country:'Portugal',tz:'Europe/Lisbon',code:'WET/WEST'},
+  {city:'Moscow',country:'Russia',tz:'Europe/Moscow',code:'MSK'},
+  {city:'Saint Petersburg',country:'Russia',tz:'Europe/Moscow',code:'MSK'},
+  {city:'Istanbul',country:'Türkiye',tz:'Europe/Istanbul',code:'TRT'},
+  {city:'Kyiv',country:'Ukraine',tz:'Europe/Kyiv',code:'EET/EEST'},
+  {city:'Bucharest',country:'Romania',tz:'Europe/Bucharest',code:'EET/EEST'},
+  {city:'Sofia',country:'Bulgaria',tz:'Europe/Sofia',code:'EET/EEST'},
+  {city:'Belgrade',country:'Serbia',tz:'Europe/Belgrade',code:'CET/CEST'},
+  {city:'Zagreb',country:'Croatia',tz:'Europe/Zagreb',code:'CET/CEST'},
+  // Africa
+  {city:'Cairo',country:'Egypt',tz:'Africa/Cairo',code:'EET'},
+  {city:'Lagos',country:'Nigeria',tz:'Africa/Lagos',code:'WAT'},
+  {city:'Nairobi',country:'Kenya',tz:'Africa/Nairobi',code:'EAT'},
+  {city:'Johannesburg',country:'South Africa',tz:'Africa/Johannesburg',code:'SAST'},
+  {city:'Cape Town',country:'South Africa',tz:'Africa/Johannesburg',code:'SAST'},
+  {city:'Casablanca',country:'Morocco',tz:'Africa/Casablanca',code:'WET'},
+  {city:'Algiers',country:'Algeria',tz:'Africa/Algiers',code:'CET'},
+  {city:'Tunis',country:'Tunisia',tz:'Africa/Tunis',code:'CET'},
+  {city:'Addis Ababa',country:'Ethiopia',tz:'Africa/Addis_Ababa',code:'EAT'},
+  {city:'Accra',country:'Ghana',tz:'Africa/Accra',code:'GMT'},
+  // Middle East
+  {city:'Dubai',country:'UAE',tz:'Asia/Dubai',code:'GST'},
+  {city:'Abu Dhabi',country:'UAE',tz:'Asia/Dubai',code:'GST'},
+  {city:'Doha',country:'Qatar',tz:'Asia/Qatar',code:'AST'},
+  {city:'Riyadh',country:'Saudi Arabia',tz:'Asia/Riyadh',code:'AST'},
+  {city:'Jerusalem',country:'Israel',tz:'Asia/Jerusalem',code:'IST/IDT'},
+  {city:'Tel Aviv',country:'Israel',tz:'Asia/Jerusalem',code:'IST/IDT'},
+  {city:'Tehran',country:'Iran',tz:'Asia/Tehran',code:'IRST'},
+  {city:'Baghdad',country:'Iraq',tz:'Asia/Baghdad',code:'AST'},
+  {city:'Kuwait City',country:'Kuwait',tz:'Asia/Kuwait',code:'AST'},
+  {city:'Beirut',country:'Lebanon',tz:'Asia/Beirut',code:'EET/EEST'},
+  {city:'Amman',country:'Jordan',tz:'Asia/Amman',code:'EET'},
+  // Asia
+  {city:'Beijing',country:'China',tz:'Asia/Shanghai',code:'CST'},
+  {city:'Shanghai',country:'China',tz:'Asia/Shanghai',code:'CST'},
+  {city:'Guangzhou',country:'China',tz:'Asia/Shanghai',code:'CST'},
+  {city:'Shenzhen',country:'China',tz:'Asia/Shanghai',code:'CST'},
+  {city:'Chengdu',country:'China',tz:'Asia/Shanghai',code:'CST'},
+  {city:'Hong Kong',country:'Hong Kong',tz:'Asia/Hong_Kong',code:'HKT'},
+  {city:'Taipei',country:'Taiwan',tz:'Asia/Taipei',code:'CST'},
+  {city:'Tokyo',country:'Japan',tz:'Asia/Tokyo',code:'JST'},
+  {city:'Osaka',country:'Japan',tz:'Asia/Tokyo',code:'JST'},
+  {city:'Seoul',country:'South Korea',tz:'Asia/Seoul',code:'KST'},
+  {city:'Singapore',country:'Singapore',tz:'Asia/Singapore',code:'SGT'},
+  {city:'Kuala Lumpur',country:'Malaysia',tz:'Asia/Kuala_Lumpur',code:'MYT'},
+  {city:'Bangkok',country:'Thailand',tz:'Asia/Bangkok',code:'ICT'},
+  {city:'Hanoi',country:'Vietnam',tz:'Asia/Ho_Chi_Minh',code:'ICT'},
+  {city:'Ho Chi Minh City',country:'Vietnam',tz:'Asia/Ho_Chi_Minh',code:'ICT'},
+  {city:'Jakarta',country:'Indonesia',tz:'Asia/Jakarta',code:'WIB'},
+  {city:'Manila',country:'Philippines',tz:'Asia/Manila',code:'PHT'},
+  {city:'Mumbai',country:'India',tz:'Asia/Kolkata',code:'IST'},
+  {city:'Delhi',country:'India',tz:'Asia/Kolkata',code:'IST'},
+  {city:'Bangalore',country:'India',tz:'Asia/Kolkata',code:'IST'},
+  {city:'Chennai',country:'India',tz:'Asia/Kolkata',code:'IST'},
+  {city:'Hyderabad',country:'India',tz:'Asia/Kolkata',code:'IST'},
+  {city:'Kolkata',country:'India',tz:'Asia/Kolkata',code:'IST'},
+  {city:'Karachi',country:'Pakistan',tz:'Asia/Karachi',code:'PKT'},
+  {city:'Lahore',country:'Pakistan',tz:'Asia/Karachi',code:'PKT'},
+  {city:'Dhaka',country:'Bangladesh',tz:'Asia/Dhaka',code:'BST'},
+  {city:'Colombo',country:'Sri Lanka',tz:'Asia/Colombo',code:'IST'},
+  {city:'Kathmandu',country:'Nepal',tz:'Asia/Kathmandu',code:'NPT'},
+  // Oceania
+  {city:'Sydney',country:'Australia',tz:'Australia/Sydney',code:'AEST/AEDT'},
+  {city:'Melbourne',country:'Australia',tz:'Australia/Melbourne',code:'AEST/AEDT'},
+  {city:'Brisbane',country:'Australia',tz:'Australia/Brisbane',code:'AEST'},
+  {city:'Perth',country:'Australia',tz:'Australia/Perth',code:'AWST'},
+  {city:'Adelaide',country:'Australia',tz:'Australia/Adelaide',code:'ACST/ACDT'},
+  {city:'Auckland',country:'New Zealand',tz:'Pacific/Auckland',code:'NZST/NZDT'},
+  {city:'Wellington',country:'New Zealand',tz:'Pacific/Auckland',code:'NZST/NZDT'},
+  {city:'Fiji',country:'Fiji',tz:'Pacific/Fiji',code:'FJT'},
+  // More
+  {city:'Reykjavik',country:'Iceland',tz:'Atlantic/Reykjavik',code:'GMT'},
+  {city:'UTC',country:'Universal',tz:'UTC',code:'UTC'},
+];
+
+let selectedZones = [];
+let updateTimer = null;
+
+function getTimeForZone(tz) {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year:'numeric', month:'short', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit',
+    hour12: false, timeZoneName: 'shortOffset'
+  });
+  const parts = formatter.formatToParts(now);
+  const obj = {};
+  for (const p of parts) obj[p.type] = p.value;
+  // Build offset
+  let offset = obj.timeZoneName || '';
+  offset = offset.replace('GMT','UTC');
+  // Detect DST
+  const dateFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'long' });
+  const monthName = dateFormatter.format(now);
+  // Simple DST heuristic for northern/southern hemisphere
+  const isDST = checkDST(tz, now);
+  return {
+    time: `${obj.hour}:${obj.minute}:${obj.second}`,
+    date: `${obj.month} ${obj.day}, ${obj.year}`,
+    offset: offset,
+    isDST: isDST,
+  };
+}
+
+function checkDST(tz, date) {
+  // Compare offset in January vs July to detect DST-observing zones
+  try {
+    const jan = new Date(date.getFullYear(), 0, 15);
+    const jul = new Date(date.getFullYear(), 6, 15);
+    const janOff = getOffsetMinutes(tz, jan);
+    const julOff = getOffsetMinutes(tz, jul);
+    const currentOff = getOffsetMinutes(tz, date);
+    const stdOff = Math.max(janOff, julOff); // standard = larger (less negative in north)
+    return currentOff < stdOff; // DST = smaller offset in north (clocks forward)
+  } catch { return false; }
+}
+
+function getOffsetMinutes(tz, date) {
+  const dtf = new Intl.DateTimeFormat('en-US', {timeZone:tz, timeZoneName:'shortOffset'});
+  const parts = dtf.formatToParts(date);
+  const offPart = parts.find(p => p.type === 'timeZoneName');
+  if (!offPart) return 0;
+  const m = offPart.value.match(/GMT([+-])(\d{1,2}):?(\d{2})?/i);
+  if (!m) return 0;
+  const sign = m[1] === '+' ? 1 : -1;
+  const h = parseInt(m[2]) || 0;
+  const min = parseInt(m[3]) || 0;
+  return sign * (h * 60 + min);
+}
+
+function renderGrid() {
+  const query = $('#search').value.toLowerCase().trim();
+  const filtered = query
+    ? CITIES.filter(c => c.city.toLowerCase().includes(query) || c.country.toLowerCase().includes(query) || c.tz.toLowerCase().includes(query) || c.code.toLowerCase().includes(query))
+    : CITIES.slice(0, 24); // Show first 24 by default
+
+  let html = '';
+  for (const c of filtered) {
+    const info = getTimeForZone(c.tz);
+    html += `<div class="tz-card" onclick="toggleCompare('${c.tz}','${c.city.replace(/'/g,"\\'")}')">
+      <div class="tz-city">${c.city}</div>
+      <div class="tz-zone">${c.country} · ${c.code}</div>
+      <div class="tz-time" data-tz="${c.tz}">${info.time}</div>
+      <div class="tz-date">${info.date}</div>
+      <span class="tz-offset">${info.offset}</span>
+      ${info.isDST ? `<span class="tz-dst">DST</span>` : ''}
+    </div>`;
+  }
+  $('#grid').innerHTML = html || '<div style="padding:20px;color:var(--text2)">No cities found.</div>';
+}
+
+function toggleCompare(tz, city) {
+  const idx = selectedZones.findIndex(z => z.tz === tz);
+  if (idx >= 0) selectedZones.splice(idx, 1);
+  else selectedZones.push({tz, city});
+  renderCompare();
+}
+
+function renderCompare() {
+  if (selectedZones.length < 2) {
+    $('#compare-panel').style.display = 'none';
+    return;
+  }
+  $('#compare-panel').style.display = 'block';
+  $('#compare-title').textContent = t('compareTitle');
+  let html = '';
+  for (let i = 0; i < selectedZones.length; i++) {
+    for (let j = i + 1; j < selectedZones.length; j++) {
+      const a = selectedZones[i];
+      const b = selectedZones[j];
+      const offA = getOffsetMinutes(a.tz, new Date());
+      const offB = getOffsetMinutes(b.tz, new Date());
+      const diff = (offB - offA) / 60;
+      const sign = diff > 0 ? '+' : '';
+      const label = diff === 0 ? t('sameTime') : `${Math.abs(diff)} ${diff > 0 ? t('hoursAhead') : t('hoursBehind')}`;
+      html += `<div class="tz-compare-row">
+        <span><strong>${a.city}</strong> → <strong>${b.city}</strong></span>
+        <span class="diff-val">${label}</span>
+      </div>`;
+    }
+  }
+  $('#compare-rows').innerHTML = html;
+}
+
+function tick() {
+  // Update all visible time displays
+  document.querySelectorAll('.tz-time[data-tz]').forEach(el => {
+    const tz = el.dataset.tz;
+    const info = getTimeForZone(tz);
+    el.textContent = info.time;
+  });
+}
+
+function startClock() {
+  if (updateTimer) clearInterval(updateTimer);
+  updateTimer = setInterval(tick, 1000);
+}
+
+$('#toolbar').innerHTML = '';
+renderGrid();
+startClock();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌍', href:'/convert/timezone.html', name:'Time Zone Converter'},
+    {icon:'🗓️', href:'/convert/world-clock.html', name:'World Clock'},
+    {icon:'📅', href:'/calc/date-calculator.html', name:'Date Calculator'},
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Timestamp'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

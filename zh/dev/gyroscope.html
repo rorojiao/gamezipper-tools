@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>陀螺仪测试器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="实时测试手机陀螺仪 — alpha、beta、gamma 旋转角度、3D 立方体可视化和罗盘方向。免费且私密。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/gyroscope.html">
+  <meta property="og:title" content="陀螺仪测试器">
+  <meta property="og:description" content="实时测试手机陀螺仪 — alpha、beta、gamma 旋转角度、3D 立方体可视化和罗盘方向。免费且私密。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/gyroscope.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="陀螺仪测试器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+.rot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.rot-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+.rot-card .label{font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.rot-card .val{font-size:1.8rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;margin:4px 0}
+.rot-card .desc{font-size:.7rem;color:var(--text2)}
+#cube3d{width:100%;height:280px;background:var(--glass);border:1px solid var(--border);border-radius:14px;display:block;perspective:600px}
+.cube-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.cube{width:120px;height:120px;position:relative;transform-style:preserve-3d;transition:transform .05s linear}
+.cube .face{position:absolute;width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:900;color:#fff;border:2px solid rgba(255,255,255,.3)}
+.f-front{background:rgba(78,205,196,.6);transform:translateZ(60px)}
+.f-back{background:rgba(255,107,107,.6);transform:rotateY(180deg) translateZ(60px)}
+.f-right{background:rgba(255,159,67,.6);transform:rotateY(90deg) translateZ(60px)}
+.f-left{background:rgba(85,239,196,.6);transform:rotateY(-90deg) translateZ(60px)}
+.f-top{background:rgba(149,117,205,.6);transform:rotateX(90deg) translateZ(60px)}
+.f-bottom{background:rgba(240,165,73,.6);transform:rotateX(-90deg) translateZ(60px)}
+.perm-warn{background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);border-radius:12px;padding:14px;margin:10px 0;display:none}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Gyroscope Tester","description":"Test your phone's gyroscope in real time. See alpha, beta, gamma rotation angles, compass heading and orientation — live in your browser.","url": "https://tools.gamezipper.com/zh/dev/gyroscope.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a gyroscope?","acceptedAnswer":{"@type":"Answer","text":"A gyroscope is a sensor that measures the angular velocity or rotation of your device along the X, Y, and Z axes. It detects orientation and movement."}},{"@type":"Question","name":"What do alpha, beta and gamma angles mean?","acceptedAnswer":{"@type":"Answer","text":"Alpha (Z-axis) is the compass direction, beta (X-axis) is front-to-back tilt, and gamma (Y-axis) is left-to-right tilt. All are measured in degrees from 0 to 360."}},{"@type":"Question","name":"Is my sensor data private?","acceptedAnswer":{"@type":"Answer","text":"Yes. All sensor readings are processed locally in your browser. Nothing is sent to any server — 100% private."}},{"@type":"Question","name":"Why doesn't it work on my laptop?","acceptedAnswer":{"@type":"Answer","text":"Most laptops don't have gyroscopes. The tool works best on phones and tablets with built-in orientation sensors."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/gyroscope.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/gyroscope.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/gyroscope.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="perm-warn" id="permWarn"></div>
+    <div id="cube3d"><div class="cube-wrap"><div class="cube" id="cube">
+      <div class="face f-front">F</div>
+      <div class="face f-back">B</div>
+      <div class="face f-right">R</div>
+      <div class="face f-left">L</div>
+      <div class="face f-top">T</div>
+      <div class="face f-bottom">D</div>
+    </div></div></div>
+    <div class="rot-grid">
+      <div class="rot-card"><div class="label">α (Alpha)</div><div class="val" id="alpha">0°</div><div class="desc" id="desc-a">Compass / Z-axis</div></div>
+      <div class="rot-card"><div class="label">β (Beta)</div><div class="val" id="beta">0°</div><div class="desc" id="desc-b">Front-back tilt</div></div>
+      <div class="rot-card"><div class="label">γ (Gamma)</div><div class="val" id="gamma">0°</div><div class="desc" id="desc-g">Left-right tilt</div></div>
+    </div>
+    <div id="status" style="margin-top:10px;font-size:.85rem;color:var(--text2)"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Gyroscope Tester',
+    toolDesc: 'Test your phone gyroscope in real time — alpha, beta, gamma rotation angles, 3D cube visualization and compass heading. Free and private.',
+    start: '▶ Start',
+    stop: '⏹ Stop',
+    permission: '🔑 Grant Permission',
+    permMsg: 'iOS Safari requires permission to access orientation sensors. Tap the button above.',
+    running: 'Sensor running… rotate your device!',
+    stopped: 'Sensor stopped.',
+    notSupported: '⚠ Your device/browser does not support the DeviceOrientation API. Try a phone or tablet.',
+    step1: 'Open this page on a phone or tablet with a built-in gyroscope',
+    step2: 'Tap "Grant Permission" on iOS, or "Start" on Android',
+    step3: 'Rotate your device to see the live alpha, beta and gamma angles',
+    step4: 'Watch the 3D cube mirror your device orientation in real time',
+  },
+  zh: {
+    toolTitle: '陀螺仪测试器',
+    toolDesc: '实时测试手机陀螺仪 — alpha、beta、gamma 旋转角度、3D 立方体可视化和罗盘方向。免费且私密。',
+    start: '▶ 开始',
+    stop: '⏹ 停止',
+    permission: '🔑 授权',
+    permMsg: 'iOS Safari 需要授权才能访问方向传感器。请点击上方按钮。',
+    running: '传感器运行中… 旋转你的设备！',
+    stopped: '传感器已停止。',
+    notSupported: '⚠ 你的设备/浏览器不支持 DeviceOrientation API。请使用手机或平板。',
+    step1: '在带有内置陀螺仪的手机或平板上打开本页',
+    step2: 'iOS 点击「授权」，Android 点击「开始」',
+    step3: '旋转设备查看实时 alpha、beta、gamma 角度',
+    step4: '观察 3D 立方体实时镜像你设备的朝向',
+  }
+});
+
+const { $, t } = GZ;
+let running = false;
+
+function handleOrientation(e){
+  const a = e.alpha || 0, b = e.beta || 0, g = e.gamma || 0;
+  $('#alpha').textContent = a.toFixed(0) + '°';
+  $('#beta').textContent = b.toFixed(0) + '°';
+  $('#gamma').textContent = g.toFixed(0) + '°';
+  $('#cube').style.transform = `rotateZ(${a}deg) rotateX(${b}deg) rotateY(${g}deg)`;
+}
+
+async function requestPermission(){
+  if(typeof DeviceOrientationEvent.requestPermission === 'function'){
+    try{
+      const r = await DeviceOrientationEvent.requestPermission();
+      if(r === 'granted'){ start(); } else { $('#status').textContent = 'Permission denied.'; }
+    }catch(err){ $('#status').textContent = 'Error: '+err.message; }
+  } else { start(); }
+}
+
+function start(){
+  if(running) return;
+  running = true;
+  window.addEventListener('deviceorientation', handleOrientation);
+  $('#status').textContent = t('running');
+}
+
+function stop(){
+  running = false;
+  window.removeEventListener('deviceorientation', handleOrientation);
+  $('#status').textContent = t('stopped');
+}
+
+const needsPerm = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
+if(typeof DeviceOrientationEvent === 'undefined'){ $('#status').textContent = t('notSupported'); }
+
+$('#toolbar').innerHTML = needsPerm
+  ? `<button class="gz-btn" onclick="requestPermission()">${t('permission')}</button><button class="gz-btn gz-btn-secondary" onclick="stop()">${t('stop')}</button>`
+  : `<button class="gz-btn" onclick="start()">${t('start')}</button><button class="gz-btn gz-btn-secondary" onclick="stop()">${t('stop')}</button>`;
+
+if(needsPerm) $('#permWarn').style.display='block';
+$('#permWarn').textContent = t('permMsg');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📳', href:'/dev/accelerometer.html', name:'Accelerometer'},
+    {icon:'🧭', href:'/dev/online-compass.html', name:'Compass'},
+    {icon:'📐', href:'/dev/bubble-level.html', name:'Bubble Level'},
+    {icon:'🧲', href:'/dev/magnetometer.html', name:'Magnetometer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

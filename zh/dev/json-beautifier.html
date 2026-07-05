@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JSON 美化器 / 格式化 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="美化、格式化 JSON，支持自定义缩进、语法高亮和实时校验。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-beautifier.html">
+  <meta property="og:title" content="JSON 美化器 / 格式化">
+  <meta property="og:description" content="美化、格式化 JSON，支持自定义缩进、语法高亮和实时校验。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-beautifier.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 美化器 / 格式化">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#input,#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Beautifier & Pretty Print","description":"Beautify and pretty-print JSON with custom indentation (2/4/8 spaces or tabs), trailing comma control, key quoting and syntax highlighting. Free, browser-only, no signup.","url": "https://tools.gamezipper.com/zh/dev/json-beautifier.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does JSON beautifier do?","acceptedAnswer":{"@type":"Answer","text":"A JSON beautifier takes minified or messy JSON and reformats it with consistent indentation, line breaks and spacing so it is easy for humans to read. It also validates the JSON and reports syntax errors with line and column numbers."}},{"@type":"Question","name":"What indentation options are available?","acceptedAnswer":{"@type":"Answer","text":"You can choose 2 spaces, 4 spaces, 8 spaces, or a tab character for indentation. The default is 2 spaces, which matches most modern style guides and linters."}},{"@type":"Question","name":"Is my JSON data private?","acceptedAnswer":{"@type":"Answer","text":"Yes. All beautification happens entirely in your browser using the native JSON.parse and JSON.stringify APIs. No data is ever uploaded to any server."}},{"@type":"Question","name":"Can this tool handle JSON5 or JSONC?","acceptedAnswer":{"@type":"Answer","text":"This tool parses standard JSON (RFC 8259). For JSON with comments (JSONC) or JSON5 syntax, use the dedicated JSONC to JSON or JSON5 to JSON converters, which strip comments and trailing commas before beautifying."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-beautifier.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-beautifier.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-beautifier.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="18" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Beautifier & Pretty Print',
+    toolDesc: 'Pretty-print and beautify JSON with custom indentation, syntax highlighting and live validation.',
+    beautify: 'Beautify',
+    minify: 'Minify',
+    indent: 'indent',
+    example: 'Example',
+    copy: 'Copy',
+    clear: 'Clear',
+    inputLbl: 'Input JSON',
+    outputLbl: 'Beautified JSON',
+    validJson: '✓ Valid JSON',
+    invalidJson: '✗ Invalid JSON',
+    step1: 'Paste or type your JSON into the input area',
+    step2: 'Choose indentation — 2, 4, 8 spaces or tabs',
+    step3: 'Click Beautify to pretty-print with syntax highlighting',
+    step4: 'Use Copy to copy the formatted result',
+  },
+  zh: {
+    toolTitle: 'JSON 美化器 / 格式化',
+    toolDesc: '美化、格式化 JSON，支持自定义缩进、语法高亮和实时校验。',
+    beautify: '美化',
+    minify: '压缩',
+    indent: '缩进',
+    example: '示例',
+    copy: '复制',
+    clear: '清空',
+    inputLbl: '输入 JSON',
+    outputLbl: '美化后 JSON',
+    validJson: '✓ JSON 有效',
+    invalidJson: '✗ JSON 无效',
+    step1: '在输入区粘贴或输入 JSON',
+    step2: '选择缩进方式 — 2、4、8 空格或制表符',
+    step3: '点击「美化」格式化并高亮显示',
+    step4: '点击「复制」将结果复制到剪贴板',
+  }
+});
+
+let indent = 2;
+
+const { $, copyText, t } = GZ;
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function doBeautify() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    const obj = JSON.parse(inp);
+    const formatted = JSON.stringify(obj, null, indent);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validJson')}</span>`;
+  } catch(e) { showError(e); }
+}
+
+function doMinify() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  try {
+    $('#output').textContent = JSON.stringify(JSON.parse(inp));
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('validJson')}</span>`;
+  } catch(e) { showError(e); }
+}
+
+function showError(e) {
+  const msg = e.message;
+  const posMatch = msg.match(/position (\d+)/);
+  let info = `<span style="color:var(--gz-accent)">${t('invalidJson')}: ${msg}</span>`;
+  if (posMatch) {
+    const pos = parseInt(posMatch[1]);
+    const before = $('#input').value.substring(0, pos);
+    const line = before.split('\n').length;
+    const col = pos - before.lastIndexOf('\n');
+    info += ` <span style="opacity:.7">(Line ${line}, Col ${col})</span>`;
+  }
+  $('#status').innerHTML = info;
+  $('#output').innerHTML = `<span style="color:var(--gz-accent)">${msg}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({"name":"GameZipper","version":"2.0","features":["tools","games","fun"],"config":{"theme":"dark","lang":"en","debug":false},"stats":{"users":125000,"uptime":99.98,"tags":["fast","free","secure"]},"active":true}, null, 0);
+  doBeautify();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doBeautify);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doBeautify()">${t('beautify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="indent=this.value==='\\t'?'\t':+this.value;doBeautify()">
+    <option value="2">2 ${t('indent')}</option>
+    <option value="4">4 ${t('indent')}</option>
+    <option value="8">8 ${t('indent')}</option>
+    <option value="\t">Tab</option>
+  </select>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔤', href:'/dev/json-sort.html', name:'JSON Sort'},
+    {icon:'📉', href:'/dev/json-minifier.html', name:'JSON Minifier'},
+    {icon:'🌳', href:'/dev/json-tree.html', name:'JSON Tree'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>购物清单生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="创建按超市货架分类的智能购物清单。添加商品及价格，自动归类到果蔬、乳制品、肉类、干货等，跟踪预算并边买边勾选。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/grocery-list-maker.html">
+  <meta property="og:title" content="购物清单生成器">
+  <meta property="og:description" content="创建按超市货架分类的智能购物清单。添加商品及价格，自动归类到果蔬、乳制品、肉类、干货等，跟踪预算并边买边勾选。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/grocery-list-maker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="购物清单生成器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Grocery List Maker","description":"Create a smart grocery shopping list organized by store aisle. Add items, auto-sort by category (produce, dairy, meat, pantry, frozen, household), track budget and check off as you shop. Free, browser-only, no signup.","url": "https://tools.gamezipper.com/zh/text/grocery-list-maker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the grocery list sort items?", "acceptedAnswer": {"@type": "Answer", "text": "Every item you add is matched against a built-in category database and sorted into store aisles: produce, dairy, meat, bakery, pantry, frozen, beverages, snacks, household and personal care. This makes your shopping trip faster."}}, {"@type": "Question", "name": "Can I track my spending budget?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enter a price and quantity for each item and the tool shows a running total. You can set a budget and see how much you have left in real time."}}, {"@type": "Question", "name": "Does my list get saved?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Your list and checked items are automatically saved to your browser's local storage. Come back later and pick up where you left off."}}, {"@type": "Question", "name": "Is my shopping data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Everything runs in your browser. No items, prices or personal info are sent to any server."}}]}</script>
+<style>
+.add-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.add-row input,.add-row select{padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.9rem}
+#new-name{flex:2;min-width:160px}
+#new-qty{width:70px}
+#new-price{width:90px}
+#new-cat{flex:1;min-width:120px}
+.budget-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.9rem;flex-wrap:wrap}
+.budget-row input{width:100px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)}
+#total{font-weight:700}
+#remaining.over{color:var(--gz-accent)}
+.cat-block{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:10px}
+.cat-block h4{margin:0 0 6px;font-size:.9rem;display:flex;align-items:center;gap:6px}
+.item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.88rem}
+.item input[type=checkbox]{accent-color:var(--gz-success);width:18px;height:18px}
+.item.done label{text-decoration:line-through;opacity:.5}
+.item .qty{opacity:.7;font-size:.82rem}
+.item .price{margin-left:auto;opacity:.85}
+.item .del{opacity:0;background:none;border:none;color:var(--gz-accent);cursor:pointer;font-size:.9rem;padding:2px 6px}
+.item:hover .del{opacity:1}
+.progress-bar-track{height:6px;background:var(--glass2);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.progress-bar-fill{height:100%;background:var(--gz-success);border-radius:4px;transition:width .3s}
+</style>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/grocery-list-maker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/grocery-list-maker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/grocery-list-maker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="add-row">
+      <input id="new-name" type="text" placeholder="Item name (e.g. Milk)">
+      <input id="new-qty" type="number" min="1" value="1" placeholder="Qty">
+      <input id="new-price" type="number" min="0" step="0.01" placeholder="Price">
+      <select id="new-cat"></select>
+      <button class="gz-btn" onclick="addItem()">+</button>
+    </div>
+    <div class="budget-row">
+      <span id="lbl-budget"></span>
+      <input id="budget" type="number" min="0" step="0.01" value="100" oninput="render()">
+      <span id="lbl-total"></span> <span id="total">$0.00</span>
+      <span id="lbl-rem"></span> <span id="remaining">$100.00</span>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="prog" style="width:0%"></div></div>
+    <div id="list"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Grocery List Maker',
+    toolDesc: 'Create a smart grocery shopping list sorted by store aisle. Add items with prices, auto-categorize into produce, dairy, meat, pantry and more, track your budget and check off as you shop.',
+    itemPh: 'Item name (e.g. Milk)',
+    qty: 'Qty',
+    price: 'Price',
+    cat: 'Category',
+    budget: 'Budget:',
+    total: 'Total:',
+    remaining: 'Left:',
+    copy: 'Copy List',
+    print: 'Print',
+    clear: 'Clear All',
+    auto: 'Auto-detect',
+    step1: 'Type an item name, set quantity and price (optional)',
+    step2: 'Pick a category or let the tool auto-detect it',
+    step3: 'Set your budget to see the running total and remaining',
+    step4: 'Check items off as you shop, print or copy the list',
+  },
+  zh: {
+    toolTitle: '购物清单生成器',
+    toolDesc: '创建按超市货架分类的智能购物清单。添加商品及价格，自动归类到果蔬、乳制品、肉类、干货等，跟踪预算并边买边勾选。',
+    itemPh: '商品名称（如 牛奶）',
+    qty: '数量',
+    price: '价格',
+    cat: '分类',
+    budget: '预算：',
+    total: '合计：',
+    remaining: '剩余：',
+    copy: '复制清单',
+    print: '打印',
+    clear: '全部清除',
+    auto: '自动识别',
+    step1: '输入商品名称，设置数量和价格（可选）',
+    step2: '选择分类或让工具自动识别',
+    step3: '设置预算以查看实时合计和剩余金额',
+    step4: '购物时逐项勾选，打印或复制清单',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Category definitions with keywords (English + common)
+const CATS = {
+  produce: {en:'🍎 Produce', zh:'🍎 果蔬', kw:['apple','banana','orange','tomato','lettuce','onion','garlic','potato','carrot','broccoli','spinach','kale','pepper','lemon','lime','avocado','berry','strawberry','blueberry','grape','fruit','vegetable','salad','herb','cilantro','basil','parsley','ginger','cucumber','celery','mushroom','corn','fruit','veg','菜','果','蔬','葱','蒜','姜','土豆','胡萝卜','西红柿','苹果','香蕉','橙','柠檬']},
+  dairy: {en:'🥛 Dairy', zh:'🥛 乳制品', kw:['milk','cheese','yogurt','butter','cream','eggs','egg','cream','sour cream','cottage cheese','牛奶','奶酪','酸奶','黄油','奶油','鸡蛋','蛋']},
+  meat: {en:'🥩 Meat & Fish', zh:'🥩 肉类海鲜', kw:['chicken','beef','pork','turkey','fish','salmon','tuna','shrimp','bacon','sausage','steak','ground','lamb','ham','meat','鸡','牛','猪','鱼','虾','肉','培根','香肠']},
+  bakery: {en:'🍞 Bakery', zh:'🍞 烘焙', kw:['bread','bagel','muffin','croissant','tortilla','bun','roll','cake','donut','pastry','pita','面包','贝果','蛋糕','馒头','包子','饼']},
+  pantry: {en:'🥫 Pantry', zh:'🥫 干货杂货', kw:['rice','pasta','flour','sugar','salt','oil','olive oil','vinegar','soy sauce','sauce','canned','beans','lentil','cereal','oatmeal','oats','nuts','peanut','almond','spice','coffee','tea','honey','jam','peanut butter','米','面','粉','糖','盐','油','酱油','醋','咖啡','茶','蜂蜜','坚果','调料','豆','麦片']},
+  frozen: {en:'🧊 Frozen', zh:'🧊 冷冻', kw:['frozen','ice cream','pizza','fries',' nuggets','dumplings','wonton','frozen','冰淇淋','冷冻','速冻','饺子','馄饨','披萨']},
+  beverages: {en:'🥤 Beverages', zh:'🥤 饮料', kw:['water','juice','soda','cola','beer','wine','juice','drink','tea','coffee','seltzer','sparkling','水','果汁','汽水','可乐','啤酒','红酒','饮料','饮品']},
+  snacks: {en:'🍫 Snacks', zh:'🍫 零食', kw:['chips','cookies','crackers','chocolate','candy','popcorn','pretzel','snack','granola','bar','薯片','饼干','巧克力','糖果','爆米花','零食']},
+  household: {en:'🧻 Household', zh:'🧻 家居日用', kw:['paper','towel','tissue','toilet','soap','detergent','dish','cleaning','trash','bag','foil','wrap','battery','candle','纸','巾','卷','皂','洗','清洁','垃圾袋','电池']},
+  personal: {en:'🧴 Personal Care', zh:'🧴 个护', kw:['shampoo','toothpaste','toothbrush','deodorant','razor','shave','lotion','skincare','makeup','tampon','pad','diaper','洗发','牙膏','牙刷','剃须','护肤','化妆']},
+  other: {en:'📦 Other', zh:'📦 其他', kw:[]},
+};
+
+function detectCat(name) {
+  const n = (name||'').toLowerCase();
+  for (const [key,info] of Object.entries(CATS)) {
+    if (key==='other') continue;
+    if ((info.kw||[]).some(k => n.includes(k))) return key;
+  }
+  return 'other';
+}
+
+// Fill category select
+const lang = (GZI18n.getLang && GZI18n.getLang()) || document.documentElement.lang || 'en';
+$('#new-cat').innerHTML = `<option value="auto">${t('auto')}</option>` +
+  Object.keys(CATS).map(k => `<option value="${k}">${lang==='zh'?CATS[k].zh:CATS[k].en}</option>`).join('');
+
+let items = [];
+function loadSaved() { try { const s = localStorage.getItem('gz-grocery'); if (s) items = JSON.parse(s); } catch(e){} }
+function save() { try { localStorage.setItem('gz-grocery', JSON.stringify(items)); } catch(e){} }
+
+function addItem() {
+  const name = $('#new-name').value.trim();
+  if (!name) return;
+  const qty = Math.max(1, parseInt($('#new-qty').value)||1);
+  const price = parseFloat($('#new-price').value)||0;
+  let cat = $('#new-cat').value;
+  if (cat==='auto') cat = detectCat(name);
+  items.push({ name, qty, price, cat, done:false });
+  $('#new-name').value=''; $('#new-qty').value=1; $('#new-price').value='';
+  save(); render();
+  $('#new-name').focus();
+}
+
+function toggleDone(i) { items[i].done = !items[i].done; save(); render(); }
+function delItem(i) { items.splice(i,1); save(); render(); }
+
+function clearAll() { items = []; save(); render(); }
+
+function fmtMoney(n) { return '$' + (n||0).toFixed(2); }
+
+function render() {
+  const list = $('#list');
+  list.innerHTML = '';
+  // Group by category
+  const grouped = {};
+  for (let i=0;i<items.length;i++) {
+    const c = items[i].cat || 'other';
+    if (!grouped[c]) grouped[c] = [];
+    grouped[c].push(i);
+  }
+  const order = ['produce','dairy','meat','bakery','pantry','frozen','beverages','snacks','household','personal','other'];
+  for (const c of order) {
+    if (!grouped[c]) continue;
+    const info = CATS[c];
+    const block = document.createElement('div');
+    block.className = 'cat-block';
+    let html = `<h4>${lang==='zh'?info.zh:info.en}</h4>`;
+    for (const i of grouped[c]) {
+      const it = items[i];
+      const lineTotal = it.qty * it.price;
+      html += `<div class="item ${it.done?'done':''}">
+        <input type="checkbox" ${it.done?'checked':''} onchange="toggleDone(${i})">
+        <label>${it.name}</label>
+        <span class="qty">×${it.qty}</span>
+        ${it.price>0?`<span class="price">${fmtMoney(lineTotal)}</span>`:''}
+        <button class="del" onclick="delItem(${i})">✕</button>
+      </div>`;
+    }
+    block.innerHTML = html;
+    list.appendChild(block);
+  }
+  if (!items.length) { list.innerHTML = '<div style="opacity:.5;padding:12px;font-style:italic">—</div>'; }
+
+  // Totals
+  const total = items.reduce((s,it)=> s + it.qty*it.price, 0);
+  const budget = parseFloat($('#budget').value)||0;
+  const remaining = budget - total;
+  $('#total').textContent = fmtMoney(total);
+  const remEl = $('#remaining');
+  remEl.textContent = fmtMoney(Math.abs(remaining)) + (remaining<0?' over':'');
+  remEl.classList.toggle('over', remaining<0);
+
+  // Progress (checked items)
+  const done = items.filter(it=>it.done).length;
+  const pct = items.length ? (done/items.length*100) : 0;
+  $('#prog').style.width = pct + '%';
+}
+
+function copyList() {
+  const lines = [];
+  document.querySelectorAll('#list .cat-block').forEach(b => {
+    lines.push(b.querySelector('h4').textContent);
+    b.querySelectorAll('.item').forEach(it => {
+      const cb = it.querySelector('input[type=checkbox]'); const lbl = it.querySelector('label').textContent; const qty = it.querySelector('.qty')?.textContent||'';
+      lines.push('  ' + (cb.checked?'[x] ':'[ ] ') + lbl + ' ' + qty);
+    });
+  });
+  copyText(lines.join('\n'));
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="copyList()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="window.print()">${t('print')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+
+$('#new-name').setAttribute('placeholder', t('itemPh'));
+$('#new-qty').setAttribute('placeholder', t('qty'));
+$('#new-price').setAttribute('placeholder', t('price'));
+$('#lbl-budget').textContent = t('budget');
+$('#lbl-total').textContent = t('total');
+$('#lbl-rem').textContent = t('remaining');
+
+$('#new-name').addEventListener('keydown', e => { if (e.key==='Enter') addItem(); });
+
+loadSaved();
+render();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✅', href:'/text/checklist.html', name:'Checklist Maker'},
+    {icon:'🧾', href:'/text/packing-list-generator.html', name:'Packing List'},
+    {icon:'💰', href:'/calc/budget-planner.html', name:'Budget Planner'},
+    {icon:'🛒', href:'/calc/grocery-budget-calculator.html', name:'Grocery Budget'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

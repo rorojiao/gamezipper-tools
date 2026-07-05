@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>磁力计 & 金属探测器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="把手机变成磁力计和金属探测器。实时测量 X、Y、Z 轴磁场强度（µT）。免费私密，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/magnetometer.html">
+  <meta property="og:title" content="磁力计 & 金属探测器">
+  <meta property="og:description" content="把手机变成磁力计和金属探测器。实时测量 X、Y、Z 轴磁场强度（µT）。免费私密，浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/magnetometer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="磁力计 & 金属探测器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+.mag-meter{text-align:center;margin:12px 0;padding:20px;background:var(--glass2);border:1px solid var(--border);border-radius:16px}
+.mag-meter .num{font-size:3rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums}
+.mag-meter .unit{font-size:1rem;color:var(--text2);margin-top:4px}
+.bar-track{width:100%;height:24px;background:var(--glass);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:10px 0;position:relative}
+.bar-fill{height:100%;background:linear-gradient(90deg,#4ecdc4,#ffe66d,#ff6b6b);transition:width .1s linear;width:0%}
+.bar-label{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:.75rem;font-weight:700;color:#fff;line-height:24px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.axis-row{display:grid;grid-template-columns:60px 1fr 80px;gap:10px;align-items:center;margin:8px 0}
+.axis-row .ax{font-weight:700;color:var(--accent)}
+#chart{width:100%;height:180px;background:var(--glass);border:1px solid var(--border);border-radius:14px;display:block}
+.perm-warn{background:rgba(255,193,7,.15);border:1px solid rgba(255,193,7,.4);border-radius:12px;padding:14px;margin:10px 0;display:none}
+.metal-alert{background:rgba(220,53,69,.2);border:1px solid rgba(220,53,69,.5);border-radius:10px;padding:10px;text-align:center;font-weight:700;display:none;margin:8px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Magnetometer & Metal Detector","description":"Turn your phone into a magnetometer and metal detector. Measure magnetic field strength in microtesla along X, Y, Z axes — live in your browser.","url": "https://tools.gamezipper.com/zh/dev/magnetometer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the magnetometer work?","acceptedAnswer":{"@type":"Answer","text":"It uses the browser Magnetometer API (on supported Android devices) to read the magnetic field sensor built into your phone. Values are shown in microtesla (µT)."}},{"@type":"Question","name":"Can it really detect metal?","acceptedAnswer":{"@type":"Answer","text":"Yes, ferromagnetic metals like iron and steel distort Earth's magnetic field. Bring a metal object near your phone and watch the reading spike. It cannot detect non-magnetic metals like aluminum or copper."}},{"@type":"Question","name":"What is the normal Earth magnetic field?","acceptedAnswer":{"@type":"Answer","text":"The Earth's magnetic field ranges from 25 to 65 microtesla (µT) depending on your location. A reading far outside this range indicates a nearby magnetic or metal object."}},{"@type":"Question","name":"Is my sensor data private?","acceptedAnswer":{"@type":"Answer","text":"Yes. All readings stay in your browser. Nothing is uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/magnetometer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/magnetometer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/magnetometer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="perm-warn" id="permWarn"></div>
+    <div class="metal-alert" id="metalAlert"></div>
+    <div class="mag-meter"><div class="num" id="total">0</div><div class="unit">µT (total magnetic field)</div></div>
+    <div class="bar-track"><div class="bar-fill" id="barFill"></div><div class="bar-label" id="barLabel">0 µT</div></div>
+    <div class="axis-row"><span class="ax">X</span><div class="bar-track" style="margin:0"><div class="bar-fill" id="barX" style="background:#ff6b6b"></div></div><span id="valX">0 µT</span></div>
+    <div class="axis-row"><span class="ax">Y</span><div class="bar-track" style="margin:0"><div class="bar-fill" id="barY" style="background:#4ecdc4"></div></div><span id="valY">0 µT</span></div>
+    <div class="axis-row"><span class="ax">Z</span><div class="bar-track" style="margin:0"><div class="bar-fill" id="barZ" style="background:#9375cd"></div></div><span id="valZ">0 µT</span></div>
+    <canvas id="chart"></canvas>
+    <div id="status" style="margin-top:10px;font-size:.85rem;color:var(--text2)"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Magnetometer & Metal Detector',
+    toolDesc: 'Turn your phone into a magnetometer and metal detector. Measure magnetic field strength in µT along X, Y, Z — live in your browser. Free and private.',
+    start: '▶ Start',
+    stop: '⏹ Stop',
+    metalDetected: '🧲 STRONG MAGNETIC FIELD DETECTED!',
+    notSupported: '⚠ Your device/browser does not support the Magnetometer API. Try Chrome on Android. Desktop and iOS Safari are not supported.',
+    running: 'Sensor running… bring metal near your phone!',
+    stopped: 'Sensor stopped.',
+    step1: 'Open this page on an Android phone using Chrome (the Magnetometer API is not available on iOS or desktop)',
+    step2: 'Tap "Start" to begin reading the magnetic field',
+    step3: 'Watch the total reading — Earth baseline is 25-65 µT',
+    step4: 'Bring a magnet, iron or steel object near your phone to see the value spike',
+  },
+  zh: {
+    toolTitle: '磁力计 & 金属探测器',
+    toolDesc: '把手机变成磁力计和金属探测器。实时测量 X、Y、Z 轴磁场强度（µT）。免费私密，浏览器本地运行。',
+    start: '▶ 开始',
+    stop: '⏹ 停止',
+    metalDetected: '🧲 检测到强磁场！',
+    notSupported: '⚠ 你的设备/浏览器不支持 Magnetometer API。请使用 Android 版 Chrome。不支持 iOS 和桌面端。',
+    running: '传感器运行中… 把金属靠近手机！',
+    stopped: '传感器已停止。',
+    step1: '在 Android 手机上用 Chrome 打开本页（不支持 iOS 和桌面端）',
+    step2: '点击「开始」读取磁场',
+    step3: '观察总读数 — 地球磁场基线为 25-65 µT',
+    step4: '将磁铁、铁或钢制品靠近手机，观察数值飙升',
+  }
+});
+
+const { $, t } = GZ;
+let sensor = null;
+let history = [];
+const MAX_HIST = 150;
+const chart = $('#chart');
+const ctx = chart.getContext('2d');
+function resizeChart(){ chart.width = chart.offsetWidth; chart.height = 180; }
+window.addEventListener('resize', resizeChart); resizeChart();
+
+function update(x, y, z){
+  const total = Math.sqrt(x*x + y*y + z*z);
+  $('#total').textContent = total.toFixed(1);
+  $('#barLabel').textContent = total.toFixed(1) + ' µT';
+  const pct = Math.min(100, (total / 200) * 100);
+  $('#barFill').style.width = pct + '%';
+  $('#valX').textContent = x.toFixed(1) + ' µT';
+  $('#valY').textContent = y.toFixed(1) + ' µT';
+  $('#valZ').textContent = z.toFixed(1) + ' µT';
+  $('#barX').style.width = Math.min(100, Math.abs(x)) + '%';
+  $('#barY').style.width = Math.min(100, Math.abs(y)) + '%';
+  $('#barZ').style.width = Math.min(100, Math.abs(z)) + '%';
+  if(total > 80){
+    $('#metalAlert').style.display = 'block';
+    $('#metalAlert').textContent = t('metalDetected');
+  } else { $('#metalAlert').style.display = 'none'; }
+  history.push(total);
+  if(history.length > MAX_HIST) history.shift();
+  drawChart();
+}
+
+function drawChart(){
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg') || '#0a0a1a';
+  ctx.fillRect(0,0,chart.width,chart.height);
+  if(history.length < 2) return;
+  const max = Math.max(80, ...history);
+  ctx.strokeStyle = '#4ecdc4'; ctx.lineWidth = 2; ctx.beginPath();
+  history.forEach((v,i)=>{
+    const px = (i/(MAX_HIST-1))*chart.width;
+    const py = chart.height - (v/max)*chart.height*0.9;
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+  ctx.lineTo(chart.width,chart.height); ctx.lineTo(0,chart.height); ctx.closePath();
+  ctx.fillStyle = 'rgba(78,205,196,0.12)'; ctx.fill();
+}
+
+async function start(){
+  if(!('Magnetometer' in window)){ $('#status').textContent = t('notSupported'); return; }
+  try{
+    if(navigator.permissions){
+      const p = await navigator.permissions.query({name:'magnetometer'});
+      if(p.state === 'denied'){ $('#status').textContent = t('notSupported'); return; }
+    }
+    sensor = new Magnetometer({frequency: 30 });
+    sensor.addEventListener('reading', () => update(sensor.x, sensor.y, sensor.z));
+    sensor.start();
+    $('#status').textContent = t('running');
+  }catch(err){ $('#status').textContent = t('notSupported'); }
+}
+
+function stop(){
+  if(sensor){ sensor.stop(); sensor = null; }
+  $('#status').textContent = t('stopped');
+}
+
+if(!('Magnetometer' in window)){ $('#status').textContent = t('notSupported'); }
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="start()">${t('start')}</button><button class="gz-btn gz-btn-secondary" onclick="stop()">${t('stop')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📳', href:'/dev/accelerometer.html', name:'Accelerometer'},
+    {icon:'📐', href:'/dev/gyroscope.html', name:'Gyroscope'},
+    {icon:'🧭', href:'/dev/online-compass.html', name:'Compass'},
+    {icon:'🔊', href:'/dev/decibel-meter.html', name:'Decibel Meter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

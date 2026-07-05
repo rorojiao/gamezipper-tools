@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>气压计 & 海拔仪 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="把手机变成气压计和海拔仪。实时测量大气压（hPa）、估算海拔、预测天气趋势 — 免费私密。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/barometer.html">
+  <meta property="og:title" content="气压计 & 海拔仪">
+  <meta property="og:description" content="把手机变成气压计和海拔仪。实时测量大气压（hPa）、估算海拔、预测天气趋势 — 免费私密。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/barometer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="气压计 & 海拔仪">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+.pressure-display{text-align:center;margin:16px 0;padding:24px;background:var(--glass2);border:1px solid var(--border);border-radius:18px}
+.pressure-display .num{font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums}
+.pressure-display .unit{font-size:1.1rem;color:var(--text2);margin-top:4px}
+.pressure-display .sea-level{font-size:.85rem;color:var(--text3);margin-top:6px}
+.alt-display{text-align:center;margin:12px 0;padding:16px;background:var(--glass);border:1px solid var(--border);border-radius:14px}
+.alt-display .num{font-size:2.2rem;font-weight:800;color:var(--accent)}
+#chart{width:100%;height:200px;background:var(--glass);border:1px solid var(--border);border-radius:14px;display:block}
+.weather-trend{text-align:center;padding:10px;border-radius:10px;margin:10px 0;font-weight:700}
+.trend-stable{background:rgba(78,205,196,.15);color:#4ecdc4}
+.trend-falling{background:rgba(108,117,125,.15);color:#adb5bd}
+.trend-rising{background:rgba(255,193,7,.15);color:#ffc107}
+.gauge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.gauge-card{text-align:center;padding:12px;background:var(--glass);border:1px solid var(--border);border-radius:12px}
+.gauge-card .lbl{font-size:.7rem;color:var(--text3);text-transform:uppercase}
+.gauge-card .v{font-size:1.3rem;font-weight:800;color:var(--accent);margin-top:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Barometer & Altimeter","description":"Turn your phone into a barometer and altimeter. Measure atmospheric pressure in hPa, estimate altitude and detect weather changes — live in your browser.","url": "https://tools.gamezipper.com/zh/dev/barometer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the barometer work?","acceptedAnswer":{"@type":"Answer","text":"It uses the browser Ambient Pressure Sensor API (Barometer) available on supported Android devices to read atmospheric pressure in hectopascals (hPa)."}},{"@type":"Question","name":"How is altitude calculated?","acceptedAnswer":{"@type":"Answer","text":"Altitude is calculated from atmospheric pressure using the international barometric formula. Sea-level pressure is assumed at 1013.25 hPa unless you enter your local value."}},{"@type":"Question","name":"What does a falling pressure mean?","acceptedAnswer":{"@type":"Answer","text":"A falling barometer typically indicates deteriorating weather — rain or storms are coming. A rising barometer suggests improving or stable weather conditions."}},{"@type":"Question","name":"Is my pressure data private?","acceptedAnswer":{"@type":"Answer","text":"Yes. All sensor readings stay in your browser. Nothing is uploaded to any server — 100% private."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/barometer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/barometer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/barometer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="pressure-display">
+      <div class="num" id="pressure">--</div>
+      <div class="unit">hPa (mbar)</div>
+      <div class="sea-level" id="seaLevel"></div>
+    </div>
+    <div class="weather-trend trend-stable" id="trend">— Stable</div>
+    <div class="alt-display">
+      <div class="lbl" id="altLabel" style="font-size:.8rem;color:var(--text3);text-transform:uppercase">Estimated Altitude</div>
+      <div class="num" id="altitude">-- <span style="font-size:1rem">m</span></div>
+    </div>
+    <div class="gauge-grid">
+      <div class="gauge-card"><div class="lbl">inHg</div><div class="v" id="inHg">--</div></div>
+      <div class="gauge-card"><div class="lbl">mmHg</div><div class="v" id="mmHg">--</div></div>
+      <div class="gauge-card"><div class="lbl">PSI</div><div class="v" id="psi">--</div></div>
+    </div>
+    <canvas id="chart"></canvas>
+    <div id="status" style="margin-top:10px;font-size:.85rem;color:var(--text2)"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Barometer & Altimeter',
+    toolDesc: 'Turn your phone into a barometer and altimeter. Measure atmospheric pressure in hPa, estimate altitude and detect weather trends — free and private.',
+    start: '▶ Start',
+    stop: '⏹ Stop',
+    seaLevelLbl: 'Sea-level reference: 1013.25 hPa',
+    notSupported: '⚠ Your device/browser does not support the Barometric Pressure Sensor API. Try Chrome on Android (Galaxy, Pixel etc).',
+    running: 'Sensor running… pressure updating live!',
+    stopped: 'Sensor stopped.',
+    trendStable: '— Stable (fair weather)',
+    trendRising: '↑ Rising (improving weather)',
+    trendFalling: '↓ Falling (rain/storm coming)',
+    step1: 'Open this page on an Android phone with a pressure sensor (Samsung Galaxy, Google Pixel, etc.)',
+    step2: 'Tap "Start" to read atmospheric pressure',
+    step3: 'Watch the live pressure in hPa, inHg, mmHg and PSI',
+    step4: 'Use the trend indicator to predict weather — falling pressure means rain is coming',
+  },
+  zh: {
+    toolTitle: '气压计 & 海拔仪',
+    toolDesc: '把手机变成气压计和海拔仪。实时测量大气压（hPa）、估算海拔、预测天气趋势 — 免费私密。',
+    start: '▶ 开始',
+    stop: '⏹ 停止',
+    seaLevelLbl: '海平面参考值：1013.25 hPa',
+    notSupported: '⚠ 你的设备/浏览器不支持气压传感器 API。请使用 Android 版 Chrome（三星 Galaxy、Google Pixel 等）。',
+    running: '传感器运行中… 气压实时更新！',
+    stopped: '传感器已停止。',
+    trendStable: '— 稳定（晴朗）',
+    trendRising: '↑ 上升（天气转好）',
+    trendFalling: '↓ 下降（即将下雨/风暴）',
+    step1: '在带气压传感器的 Android 手机上打开（三星 Galaxy、Google Pixel 等）',
+    step2: '点击「开始」读取大气压',
+    step3: '实时查看 hPa、inHg、mmHg 和 PSI',
+    step4: '用趋势指示器预测天气 — 气压下降表示即将下雨',
+  }
+});
+
+const { $, t } = GZ;
+let sensor = null;
+let history = [];
+const MAX_HIST = 120;
+const SEA_LEVEL = 1013.25;
+const chart = $('#chart');
+const ctx = chart.getContext('2d');
+function resizeChart(){ chart.width = chart.offsetWidth; chart.height = 200; }
+window.addEventListener('resize', resizeChart); resizeChart();
+
+function updateReading(hpa){
+  $('#pressure').textContent = hpa.toFixed(1);
+  $('#inHg').textContent = (hpa * 0.02953).toFixed(2);
+  $('#mmHg').textContent = (hpa * 0.75006).toFixed(1);
+  $('#psi').textContent = (hpa * 0.014504).toFixed(2);
+  // Altitude via barometric formula
+  const alt = 44330 * (1 - Math.pow(hpa / SEA_LEVEL, 0.1903));
+  $('#altitude').innerHTML = alt.toFixed(0) + ' <span style="font-size:1rem">m</span>';
+  history.push(hpa);
+  if(history.length > MAX_HIST) history.shift();
+  // Trend
+  if(history.length > 20){
+    const recent = history.slice(-10).reduce((a,b)=>a+b,0)/10;
+    const older = history.slice(-20,-10).reduce((a,b)=>a+b,0)/10;
+    const diff = recent - older;
+    const el = $('#trend');
+    if(Math.abs(diff) < 0.5){ el.textContent = t('trendStable'); el.className='weather-trend trend-stable'; }
+    else if(diff > 0){ el.textContent = t('trendRising'); el.className='weather-trend trend-rising'; }
+    else { el.textContent = t('trendFalling'); el.className='weather-trend trend-falling'; }
+  }
+  drawChart();
+}
+
+function drawChart(){
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg') || '#0a0a1a';
+  ctx.fillRect(0,0,chart.width,chart.height);
+  // baseline at 1013.25
+  const min = 980, max = 1040;
+  const baseY = chart.height - ((SEA_LEVEL - min)/(max-min))*chart.height;
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,baseY); ctx.lineTo(chart.width,baseY); ctx.stroke(); ctx.setLineDash([]);
+  if(history.length < 2) return;
+  ctx.strokeStyle = '#4ecdc4'; ctx.lineWidth = 2; ctx.beginPath();
+  history.forEach((v,i)=>{
+    const px = (i/(MAX_HIST-1))*chart.width;
+    const py = chart.height - ((v - min)/(max-min))*chart.height;
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  });
+  ctx.stroke();
+  ctx.lineTo(chart.width,chart.height); ctx.lineTo(0,chart.height); ctx.closePath();
+  ctx.fillStyle = 'rgba(78,205,196,0.1)'; ctx.fill();
+}
+
+async function start(){
+  if(!('BarometricPressure' in window) && !('AmbientPressureSensor' in window)){
+    $('#status').textContent = t('notSupported'); return;
+  }
+  try{
+    if(navigator.permissions){
+      const p = await navigator.permissions.query({name:'barometric-pressure-sensor'});
+      if(p.state === 'denied'){ $('#status').textContent = t('notSupported'); return; }
+    }
+    const SensorCtor = window.BarometricPressure || window.AmbientPressureSensor;
+    sensor = new SensorCtor({frequency: 5});
+    sensor.addEventListener('reading', () => updateReading(sensor.pressure || sensor.reading));
+    sensor.start();
+    $('#status').textContent = t('running');
+  }catch(err){ $('#status').textContent = t('notSupported'); }
+}
+
+function stop(){
+  if(sensor){ sensor.stop(); sensor = null; }
+  $('#status').textContent = t('stopped');
+}
+
+if(!('BarometricPressure' in window) && !('AmbientPressureSensor' in window)){
+  $('#status').textContent = t('notSupported');
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="start()">${t('start')}</button><button class="gz-btn gz-btn-secondary" onclick="stop()">${t('stop')}</button>`;
+$('#seaLevel').textContent = t('seaLevelLbl');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📳', href:'/dev/accelerometer.html', name:'Accelerometer'},
+    {icon:'📐', href:'/dev/gyroscope.html', name:'Gyroscope'},
+    {icon:'🧲', href:'/dev/magnetometer.html', name:'Magnetometer'},
+    {icon:'🌡️', href:'/dev/decibel-meter.html', name:'Decibel Meter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

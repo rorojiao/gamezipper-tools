@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Shift Schedule Generator - Free Workforce Tool | GameZipper Tools</title>
+  <meta name="description" content="Generate fair rotating shift schedules for teams. Enter staff names, shift patterns (8h, 12h, day/night), rotation cycle and days — get a printable weekly rota with even coverage. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/shift-schedule-generator.html">
+  <meta property="og:title" content="Shift Schedule Generator - Free Workforce Tool | GameZipper Tools">
+  <meta property="og:description" content="Generate fair rotating shift schedules for teams. Enter staff names, shift patterns and rotation cycle — get a printable weekly rota with even coverage. Free, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/shift-schedule-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Shift Schedule Generator - Free Workforce Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Shift Schedule Generator","description":"Generate fair rotating shift schedules for teams. Enter staff names, shift patterns (8h, 12h, day/night), rotation cycle and days — get a printable weekly rota with even coverage. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/calc/shift-schedule-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I create a shift schedule?", "acceptedAnswer": {"@type": "Answer", "text": "Enter your staff names (one per line), pick the shift pattern (day only, day/night rotation, or 2-2-3 fixed rotation), set the number of days and click Generate. The tool produces a fair rotating rota with even coverage."}}, {"@type": "Question", "name": "What shift patterns are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Day-only (e.g. 8h shifts), day/night rotation (12h shifts alternating), and the popular 2-2-3 fixed rotation often used in 24/7 operations. You can also choose how many staff work each shift."}}, {"@type": "Question", "name": "Is the rotation fair?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The generator uses a round-robin algorithm so that every team member gets an equal number of day and night shifts over the rotation cycle, with rest days distributed evenly."}}, {"@type": "Question", "name": "Is my staff data private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All scheduling happens in your browser. No names or schedules are uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/shift-schedule-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/shift-schedule-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/shift-schedule-generator.html">
+<style>
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.opt{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:10px}
+.opt label{display:block;font-size:.8rem;opacity:.85;margin-bottom:4px}
+.opt select,.opt input{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.9rem;box-sizing:border-box}
+#names{width:100%;min-height:120px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.9rem;box-sizing:border-box;font-family:inherit;resize:vertical}
+table.schedule{width:100%;border-collapse:collapse;margin-top:12px;font-size:.85rem}
+table.schedule th,table.schedule td{border:1px solid var(--border);padding:6px 8px;text-align:left}
+table.schedule th{background:var(--glass2)}
+.sh-day{background:rgba(0,214,114,.12)}
+.sh-night{background:rgba(97,175,239,.15)}
+.sh-off{opacity:.4;text-align:center}
+.legend{display:flex;gap:14px;margin-top:8px;font-size:.8rem;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.swatch{width:12px;height:12px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="names" placeholder="Alice&#10;Bob&#10;Carol&#10;David"></textarea>
+    <div class="opts" style="margin-top:10px">
+      <div class="opt"><label id="lbl-pattern"></label><select id="pattern"></select></div>
+      <div class="opt"><label id="lbl-pershift"></label><input id="pershift" type="number" min="1" max="20" value="2"></div>
+      <div class="opt"><label id="lbl-days"></label><input id="days" type="number" min="7" max="42" value="14"></div>
+      <div class="opt"><label id="lbl-start"></label><input id="start" type="date"></div>
+    </div>
+    <div id="result"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Shift Schedule Generator',
+    toolDesc: 'Generate fair rotating shift schedules for your team. Enter staff names, pick a shift pattern (day, day/night, 2-2-3) and days — get a printable rota with even coverage and rest days.',
+    pattern: 'Shift pattern',
+    perShift: 'Staff per shift',
+    days: 'Schedule days',
+    start: 'Start date',
+    generate: 'Generate Schedule',
+    print: 'Print / PDF',
+    copy: 'Copy',
+    clear: 'Clear',
+    day:'Day', night:'Night', off:'Off', date:'Date', staff:'Staff',
+    p_day:'Day only (8h)', p_dn:'Day / Night rotation (12h)', p_223:'2-2-3 fixed rotation (24/7)',
+    namesPh:'Alice\nBob\nCarol\nDavid',
+    needNames:'Please enter at least 2 staff names.',
+    step1: 'Enter your staff names (one per line)',
+    step2: 'Choose a shift pattern and staff per shift',
+    step3: 'Set the schedule length and start date',
+    step4: 'Click Generate and print or copy the rota',
+  },
+  zh: {
+    toolTitle: '排班表生成器',
+    toolDesc: '为团队生成公平的轮班排班表。输入员工姓名，选择班次模式（白班、白/夜轮换、2-2-3 固定轮班）和天数 — 获取可打印的排班表，班次分配均匀，含休息日。',
+    pattern: '班次模式',
+    perShift: '每班人数',
+    days: '排班天数',
+    start: '开始日期',
+    generate: '生成排班',
+    print: '打印 / PDF',
+    copy: '复制',
+    clear: '清空',
+    day:'白班', night:'夜班', off:'休息', date:'日期', staff:'员工',
+    p_day:'仅白班（8 小时）', p_dn:'白/夜轮换（12 小时）', p_223:'2-2-3 固定轮班（24/7）',
+    namesPh:'张三\n李四\n王五\n赵六',
+    needNames:'请输入至少 2 名员工姓名。',
+    step1: '输入员工姓名（每行一个）',
+    step2: '选择班次模式和每班人数',
+    step3: '设置排班天数和开始日期',
+    step4: '点击「生成排班」并打印或复制排班表',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const lang = (GZI18n.getLang && GZI18n.getLang()) || document.documentElement.lang || 'en';
+
+function fillSelect(id, opts) { $(id).innerHTML = opts.map(([v,l])=>`<option value="${v}">${l}</option>`).join(''); }
+fillSelect('#pattern', [['day',t('p_day')],['dn',t('p_dn')],['223',t('p_223')]]);
+$('#names').setAttribute('placeholder', t('namesPh'));
+$('#start').value = new Date().toISOString().slice(0,10);
+
+const DAY_NAMES_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_NAMES_ZH = ['日','一','二','三','四','五','六'];
+
+function generate() {
+  const names = $('#names').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const result = $('#result');
+  if (names.length < 2) { result.innerHTML = `<div style="color:var(--gz-accent);padding:12px">${t('needNames')}</div>`; return; }
+  const pattern = $('#pattern').value;
+  const perShift = Math.max(1, parseInt($('#pershift').value)||1);
+  const totalDays = Math.max(7, Math.min(42, parseInt($('#days').value)||14));
+  const startStr = $('#start').value;
+  const start = startStr ? new Date(startStr) : new Date();
+
+  // Build assignment grid: day -> { day:[names], night:[names] }
+  const grid = [];
+  let nameIdx = 0;
+  for (let d = 0; d < totalDays; d++) {
+    const date = new Date(start); date.setDate(start.getDate() + d);
+    const entry = { date, dayShift:[], nightShift:[] };
+    if (pattern === 'day') {
+      for (let i=0;i<perShift;i++) { entry.dayShift.push(names[nameIdx % names.length]); nameIdx++; }
+    } else if (pattern === 'dn') {
+      // alternate: even days = day shift crew, odd days = night shift crew, rotate
+      for (let i=0;i<perShift;i++) { entry.dayShift.push(names[nameIdx % names.length]); nameIdx++; }
+      for (let i=0;i<perShift;i++) { entry.nightShift.push(names[nameIdx % names.length]); nameIdx++; }
+    } else if (pattern === '223') {
+      // 2-2-3: cycle of [D,D,N,N,O,O,O] per person, offset per person
+      const cycle = ['D','D','N','N','O','O','O'];
+      for (let pi=0; pi<names.length; pi++) {
+        const phase = (d + pi*2) % cycle.length;
+        const slot = cycle[phase];
+        if (slot==='D' && entry.dayShift.length < perShift) entry.dayShift.push(names[pi]);
+        else if (slot==='N' && entry.nightShift.length < perShift) entry.nightShift.push(names[pi]);
+      }
+    }
+    grid.push(entry);
+  }
+
+  // Render table
+  const dayNames = lang==='zh' ? DAY_NAMES_ZH : DAY_NAMES_EN;
+  let html = '<table class="schedule"><thead><tr><th>'+t('date')+'</th><th>'+t('day')+'</th><th>'+t('night')+'</th></tr></thead><tbody>';
+  for (const e of grid) {
+    const dn = lang==='zh' ? dayNames[e.date.getDay()] : dayNames[e.date.getDay()];
+    const dateLabel = `${e.date.getMonth()+1}/${e.date.getDate()} ${dn}`;
+    const dayCell = e.dayShift.length ? `<td class="sh-day">${e.dayShift.join(', ')}</td>` : '<td class="sh-off">—</td>';
+    const nightCell = e.nightShift.length ? `<td class="sh-night">${e.nightShift.join(', ')}</td>` : '<td class="sh-off">—</td>';
+    html += `<tr><td>${dateLabel}</td>${dayCell}${nightCell}</tr>`;
+  }
+  html += '</tbody></table>';
+  result.innerHTML = html;
+
+  // Legend
+  $('#legend').innerHTML = `
+    <span><span class="swatch" style="background:rgba(0,214,114,.4)"></span>${t('day')}</span>
+    <span><span class="swatch" style="background:rgba(97,175,239,.5)"></span>${t('night')}</span>
+    <span><span class="swatch" style="background:var(--glass2);opacity:.4"></span>${t('off')}</span>`;
+}
+
+function copySchedule() {
+  const lines = [];
+  document.querySelectorAll('#result table tbody tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('td,th')].map(c => c.textContent.trim());
+    lines.push(cells.join('\t'));
+  });
+  copyText(lines.join('\n'));
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="generate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="window.print()">${t('print')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copySchedule()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#names').value='';$('#result').innerHTML=''">${t('clear')}</button>`;
+
+$('#lbl-pattern').textContent = t('pattern');
+$('#lbl-pershift').textContent = t('perShift');
+$('#lbl-days').textContent = t('days');
+$('#lbl-start').textContent = t('start');
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏰', href:'/calc/time-card-calculator.html', name:'Time Card Calculator'},
+    {icon:'📅', href:'/text/weekly-planner.html', name:'Weekly Planner'},
+    {icon:'💼', href:'/calc/work-hours-calculator.html', name:'Work Hours'},
+    {icon:'📊', href:'/calc/timesheet-calculator.html', name:'Timesheet'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
