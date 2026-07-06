@@ -3,8 +3,6 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -33,12 +31,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    continue-on-error: true  # CDN conflicts happen; don't send failure emails
     steps:
-      # CRITICAL: gamezipper.com and gamezipper-tools share the same GitHub account.
-      # When both deploy simultaneously, GitHub Pages CDN rejects one with
-      # "Deployment failed, try again later". Stagger deploys by 60s.
-      - name: Stagger deploy (avoid CDN conflict with gamezipper.com)
-        run: sleep 60
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
@@ -47,11 +41,6 @@ jobs:
           reporting_interval: 5000
           timeout: 600000
       - name: Retry on failure
-        if: failure()
-        run: |
-          echo "First deploy failed, waiting 30s and retrying..."
-          sleep 30
-      - name: Retry deploy
         id: retry_deployment
         if: failure()
         uses: actions/deploy-pages@v4
