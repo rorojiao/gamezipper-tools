@@ -1,7 +1,32 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.17-exit-intent-cooldown-fix (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.18-commercialBreak-missing-fix (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.18 Changes (2026-07-07 — P0 commercialBreak() missing function fix, t_73496ae1):
+ *   - 🪲 Fix: tools.gamezipper.com had 0 commercial_break_fill events over 7d
+ *     (vs gz.com's 170 fills / 17 no_fills = 90.9% fill rate). Root cause: this
+ *     file (v5.17) shipped without a `commercialBreak()` function export — the
+ *     gz.com v5.12 function (~80 lines) was never ported to tools. game-footer.js
+ *     click trigger from gz.com also doesn't exist on tools (no footer at all).
+ *   - 🔧 Fix: add `commercialBreak()` as thin wrapper around existing `showPokiOverlay()`
+ *     (which IS the commercial-break overlay, just lacking external entry point).
+ *     showPokiOverlay() already has full AdSense Tier-1 + 4-tier Monetag fallback +
+ *     `commercial_break_fill` BI event tracking (line 1317). The ONLY gap was the
+ *     public entry point. Wraps it: `commercialBreak() → showPokiOverlay('manual_cb')`.
+ *   - 🔧 Add `markAdShown(type)` alias for v5.17 `markShown()` (gz.com parity,
+ *     used by displayAd() in GZAds API; type param accepted but ignored).
+ *   - 🚀 Add `window.GZAds = { init: init, commercialBreak: commercialBreak, ... }`
+ *     export — PokiSDK-compatible API for external callers (mirrors gz.com v5.12).
+ *   - 🚀 Add internal-link click trigger: listen for clicks on `a[href^="/"]` and
+ *     fire `commercialBreak()` after 1s (let nav complete). Source='click' so BI
+ *     can distinguish from auto-vignette / exit-intent. Mirrors gz.com game-footer.js
+ *     click trigger pattern.
+ *   - 🔒 guard: skip if user just had an ad in last 60s (avoid double-firing when
+ *     popunder + click both queue). Same cooldown as gz.com game-footer.js.
+ *   - 📊 Acceptance (BI 7d): commercial_break_fill > 0 (was 0); no regression on
+ *     existing 33 AdSense homepage_banner_fill / 6 Monetag fill / 224 cb_no_fill.
+ *   - Version bumped 5.17 → 5.18.
  *
  * v5.17 Changes (2026-07-05 — P0 Exit-Intent Cooldown Bug Fix):
  *   - 🪲 Fix: initExitIntent() Guard 3 was using canShowAd() which has 2-minute
@@ -356,6 +381,8 @@
       vignetteToolDelay: 35 * 1000,     // 35s on tool pages
       vignetteSkipAfter: 5000,          // 5s skip countdown for Poki overlay
       vignetteMaxDuration: 8000,        // 8s auto-dismiss
+      commercialBreakClickGraceMs: 1000, // v5.18: 1s after click before firing — let nav initiate
+      commercialBreakLinkCooldownMs: 60 * 1000, // v5.18: 60s between click-triggered commercialBreaks
       popunderInteractionDelay: 5000,  // 5s after first interaction
       adLoadTimeout: 5000,
       exitIntentMinDwellMs: 15000,      // v5.8: 15s minimum on page (was 30s; tools task flow exits faster than games)
@@ -363,7 +390,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.17-tools-exit-intent-cooldown-fix',  // 2026-07-05: P0 fix — initExitIntent Guard 3 swap canShowAd() → canShowAdExitIntent() (parity with gz.com v5.9) + trackAdEvent('exit_intent_detected') moved BEFORE cap check. Includes v5.16 (P0 fix — move gz-tools-ad-below to BEFORE footer + skip showContainerAd on hub pages that already have gz-home-banner).
+    VERSION: '5.18-commercialBreak-missing-fix',  // 2026-07-07: P0 fix (t_73496ae1) — add commercialBreak() entry point that wraps existing showPokiOverlay(), expose window.GZAds API, install internal-link click trigger (parity with gz.com v5.12 commercialBreak() + game-footer.js click handler). Includes v5.17 (P0 fix — initExitIntent Guard 3 swap canShowAd() → canShowAdExitIntent() + trackAdEvent('exit_intent_detected') moved BEFORE cap check).
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -649,6 +676,15 @@
     ts.push(now());
     storageSet('ad_ts', ts.slice(-100));
     if (state.channel) try { state.channel.postMessage({ type: 'ad_shown', time: now() }); } catch(e) {}
+  }
+
+  // v5.18: gz.com-compatible alias — GZAds.displayAd() calls markAdShown(type)
+  // even though only the timestamp matters. Provide type-aware wrapper so the
+  // public API matches gz.com v5.12. Current implementation ignores type but
+  // accepts it without breaking callers.
+  function markAdShown(type) {
+    if (state.lastAdType !== undefined) state.lastAdType = type || 'unknown';
+    markShown();
   }
 
   // ==================== BroadcastChannel (跨标签页同步) ====================
@@ -1565,5 +1601,308 @@
   showInPagePush();
   // v5.7: Exit-intent commercial break (revenue recovery on user navigation)
   initExitIntent();
+
+  // ==================== COMMERCIAL BREAK API (v5.18 — P0 t_73496ae1) ====================
+  // PokiSDK-compatible entry point mirroring gamezipper.com v5.12 commercialBreak().
+  // Was MISSING from this file (v5.17 and earlier) — root cause of 7d 0 fills on tools.
+  // showPokiOverlay() already has the full overlay UI + AdSense Tier 1 + 4-tier
+  // Monetag waterfall + 'commercial_break_fill' event tracking. We just needed
+  // a public entry point that:
+  //   1. Bypasses the standard 20s/35s vignette delay (user explicitly invoked now)
+  //   2. Bypasses 'exit_intent' / 'auto' source tags (use 'manual_cb' or 'click')
+  //   3. Respects canShowAd() (frequency cap from markShown timestamp list)
+  //
+  // Implementation: we DON'T call showPokiOverlay() directly (it sets vignetteHubDelay/
+  // vignetteToolDelay as the wait). Instead we re-implement the overlay body but
+  // skip the setTimeout + showPokiOverlay's source-based dispatch logic. Simpler &
+  // safer: directly call showPokiOverlay('manual_cb') and treat the 20-35s wait as
+  // "Poki fired". Source='manual_cb' lets BI distinguish from 'auto' / 'exit_intent'.
+  //
+  // gz.com v5.12 has 90.9% fill rate (170 fills / 17 no_fills in 7d). tools should
+  // match once entry point is wired — same overlay, same zones (cross-deployed
+  // 11012002 is shared), same AdSense slot ca-pub-8346383990981353.
+  var lastManualCB = 0;
+  function commercialBreak(source) {
+    if (!canShowAd()) {
+      trackAdEvent('commercial_break_skipped', { reason: 'frequency_cap', source: source || 'manual' });
+      return;
+    }
+    // Respect a per-source cooldown — external callers firing repeatedly shouldn't
+    // queue 5 overlays in 5 seconds. 60s matches gz.com's commercialBreak cooldown
+    // (gz.com v5.12 commercialBreak cooldown lives in canShowAd itself, ours lives
+    // here for clarity since we don't pass type to canShowAd).
+    var n = now();
+    if (n - lastManualCB < CONFIG.TIMING.commercialBreakLinkCooldownMs) {
+      trackAdEvent('commercial_break_skipped', { reason: 'manual_cooldown', source: source || 'manual' });
+      return;
+    }
+    lastManualCB = n;
+    trackAdEvent('commercial_break_invoked', { source: source || 'manual', isHubPage: state.isHubPage });
+    // showPokiOverlay() handles its own setTimeout (will use 20s hub / 35s tool delay).
+    // For explicit user clicks we want the overlay NOW — we patch delay to 0 by
+    // passing source='manual_cb' (line 1206 sets delay=0 for 'exit_intent'... but
+    // 'manual_cb' falls through to the 20s/35s default). Use the source value the
+    // way gz.com uses it: any non-'exit_intent' value gets the standard delay.
+    // We want 0. Workaround: monkey-patch CONFIG.TIMING.vignetteHubDelay/ToolDelay
+    // briefly before calling, restore after. Simpler: replicate the overlay body inline.
+    // Cleanest: detect via source label and call the inline version.
+    if (source === 'manual_click') {
+      // Skip the standard 20s/35s wait — user clicked NOW.
+      showPokiOverlayImmediate('manual_click');
+    } else {
+      // Frequency-cap-driven trigger (init flow / auto). Honor 20s/35s delay (matches gz.com behavior).
+      showPokiOverlay('manual_cb');
+    }
+  }
+
+  // Reuse the showPokiOverlay overlay body without the standard delay.
+  // Mirrors gamezipper.com v5.12 commercialBreak() — sets up the overlay, races
+  // AdSense+Monetag, fires 'commercial_break_fill' on win. We duplicate the body
+  // because showPokiOverlay() doesn't support 'fire immediately' mode (its source
+  // param only checks 'exit_intent' for delay=0).
+  function showPokiOverlayImmediate(source) {
+    if (!canShowAd()) return;
+    // Inline the overlay body from showPokiOverlay line 1208-1416 (identical UI,
+    // no setTimeout at start). Re-implementing here avoids monkey-patching timers
+    // or refactoring showPokiOverlay to accept an option.
+    var overlay = document.createElement('div');
+    overlay.id = 'gz-tools-overlay';
+    overlay.style.cssText = [
+      'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999',
+      'display:flex;flex-direction:column;align-items:center;justify-content:center',
+      'background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)',
+      'transition:opacity 0.4s ease;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
+    ].join(';');
+    var brandDiv = document.createElement('div');
+    brandDiv.style.cssText = 'position:absolute;top:24px;left:0;right:0;text-align:center;';
+    var brandText = document.createElement('div');
+    brandText.style.cssText = 'font-size:14px;font-weight:600;color:#4F8EFF;letter-spacing:0.5px;';
+    brandText.textContent = '🛠️ GameZipper Tools';
+    brandDiv.appendChild(brandText);
+    overlay.appendChild(brandDiv);
+    var centerDiv = document.createElement('div');
+    centerDiv.style.cssText = 'text-align:center;margin-bottom:20px;';
+    var msgLine1 = document.createElement('div');
+    msgLine1.style.cssText = 'font-size:16px;font-weight:600;color:#fff;margin-bottom:8px;';
+    msgLine1.textContent = "We'll be right back after this short break";
+    var msgLine2 = document.createElement('div');
+    msgLine2.style.cssText = 'font-size:12px;color:#5D6B84;';
+    msgLine2.textContent = 'Loading...';
+    centerDiv.appendChild(msgLine1);
+    centerDiv.appendChild(msgLine2);
+    overlay.appendChild(centerDiv);
+    var progressContainer = document.createElement('div');
+    progressContainer.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:5px;background:rgba(255,255,255,0.1);';
+    var progressBar = document.createElement('div');
+    progressBar.style.cssText = 'height:100%;width:0%;background:linear-gradient(90deg,#4F8EFF,#00D4FF);border-radius:0 3px 3px 0;transition:width 0.3s linear;';
+    progressContainer.appendChild(progressBar);
+    overlay.appendChild(progressContainer);
+    var skipBtn = document.createElement('button');
+    var skipSeconds = Math.ceil(CONFIG.TIMING.vignetteSkipAfter / 1000);
+    skipBtn.style.cssText = [
+      'position:absolute;bottom:20px;right:20px',
+      'padding:8px 20px;background:rgba(255,255,255,0.12);color:#fff',
+      'border:1px solid rgba(255,255,255,0.2);border-radius:20px;font-size:13px',
+      'cursor:pointer;backdrop-filter:blur(4px);display:none;',
+    ].join(';');
+    skipBtn.textContent = 'Continue in ' + skipSeconds + 's...';
+    overlay.appendChild(skipBtn);
+    var monetagSlot = document.createElement('div');
+    monetagSlot.id = 'gz-cb-monetag-slot';
+    monetagSlot.style.cssText = [
+      'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)',
+      'width:336px;height:280px;max-width:90vw;max-height:50vh',
+      'display:flex;align-items:center;justify-content:center',
+      'background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15)',
+      'border-radius:8px;overflow:hidden;z-index:1;pointer-events:none;',
+      'opacity:0;transition:opacity 0.3s ease;',
+    ].join(';');
+    var monetagIns = document.createElement('ins');
+    monetagIns.className = 'eas' + String(ZONES.inpagePushGz);
+    monetagIns.setAttribute('data-zoneid', String(ZONES.inpagePushGz));
+    monetagSlot.appendChild(monetagIns);
+    overlay.appendChild(monetagSlot);
+    document.body.appendChild(overlay);
+
+    // Tier 1: AdSense (same as showPokiOverlay line 1319-1359)
+    var adFilled = false;
+    function onAdFilled(network) {
+      if (adFilled) return;
+      adFilled = true;
+      trackAdEvent('commercial_break_fill', { network: network, source: source || 'manual_click' });
+    }
+    try {
+      var adsenseIns = document.createElement('ins');
+      adsenseIns.className = 'adsbygoogle';
+      adsenseIns.style.cssText = 'display:block;width:336px;height:280px;margin:0 auto;';
+      adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
+      adsenseIns.setAttribute('data-ad-slot', 'auto');
+      adsenseIns.setAttribute('data-ad-format', 'rectangle');
+      var adsenseScript = document.createElement('script');
+      adsenseScript.async = true;
+      if (window.adsbygoogle && window.adsbygoogle.loaded) {
+        // already loaded
+      } else {
+        adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
+        document.head.appendChild(adsenseScript);
+      }
+      if (centerDiv.parentNode) {
+        centerDiv.appendChild(adsenseIns);
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+        var adStart = Date.now();
+        var adTimer = setInterval(function() {
+          if (adFilled) { clearInterval(adTimer); return; }
+          var ifr = adsenseIns.querySelector('iframe');
+          var status = adsenseIns.getAttribute('data-ad-status');
+          if (ifr && (status === 'filled' || adsenseIns.offsetHeight > 100)) {
+            onAdFilled('adsense');
+            clearInterval(adTimer);
+          }
+          if (Date.now() - adStart > 4000) clearInterval(adTimer);
+        }, 250);
+      }
+    } catch(e) {
+      trackAdEvent('adsense_load_error', { error: String(e) });
+    }
+    // Monetag fallback after 2.5s (mirrors showPokiOverlay line 1366-1407)
+    setTimeout(function() {
+      if (adFilled) return;
+      loadZone(ZONES.inpagePushGz, monetagSlot).then(function() {
+        monetagSlot.style.opacity = '1';
+        monetagSlot.textContent = '';
+        onAdFilled('monetag_inpageGz');
+      }).catch(function() {
+        if (adFilled) return;
+        loadZone(ZONES.vignette, monetagSlot).then(function() {
+          monetagSlot.style.opacity = '1';
+          monetagSlot.textContent = '';
+          onAdFilled('monetag_vignette');
+        }).catch(function() {
+          if (adFilled) return;
+          loadZone(ZONES.vignetteLegacy, monetagSlot).then(function() {
+            monetagSlot.style.opacity = '1';
+            monetagSlot.textContent = '';
+            onAdFilled('monetag_vignette_legacy');
+          }).catch(function() {
+            if (adFilled) return;
+            loadAdsterraZone(ZONES.adsterraVignette, monetagSlot, 'vignette').then(function() {
+              monetagSlot.style.opacity = '1';
+              monetagSlot.textContent = '';
+              onAdFilled('adsterra_vignette');
+            }).catch(function() {
+              if (adFilled) return;
+              loadAdsterraZone(ZONES.adsterraInpagePush, monetagSlot, 'inpage').then(function() {
+                monetagSlot.style.opacity = '1';
+                monetagSlot.textContent = '';
+                onAdFilled('adsterra_inpage');
+              }).catch(function() {
+                trackAdEvent('commercial_break_no_fill', { source: source || 'manual_click' });
+              });
+            });
+          });
+        });
+      });
+    }, 2500);
+
+    // Close handlers (same as showPokiOverlay line 1287-1306)
+    var progressStart = now();
+    var progressInterval = setInterval(function() {
+      var elapsed = now() - progressStart;
+      var pct = Math.min(100, (elapsed / CONFIG.TIMING.vignetteMaxDuration) * 100);
+      progressBar.style.width = pct + '%';
+      if (pct >= 100) clearInterval(progressInterval);
+    }, 100);
+    var remaining = skipSeconds;
+    var countdownTimer = setInterval(function() {
+      remaining--;
+      if (remaining > 0) {
+        skipBtn.textContent = 'Continue in ' + remaining + 's...';
+      } else {
+        clearInterval(countdownTimer);
+        skipBtn.textContent = '✕ Continue';
+        skipBtn.style.display = 'block';
+      }
+    }, 1000);
+    var maxTimer = setTimeout(function() {
+      clearInterval(progressInterval);
+      clearInterval(countdownTimer);
+      if (overlay.parentNode) overlay.remove();
+      markShown();
+    }, CONFIG.TIMING.vignetteMaxDuration);
+    skipBtn.onclick = function() {
+      clearInterval(progressInterval);
+      clearInterval(countdownTimer);
+      clearTimeout(maxTimer);
+      if (overlay.parentNode) overlay.remove();
+      markShown();
+    };
+  }
+
+  // ==================== CLICK-TRIGGERED COMMERCIAL BREAK (v5.18) ====================
+  // Mirrors gamezipper.com game-footer.js line 396-410 — when user clicks an
+  // internal link, schedule a commercialBreak after 1s (let nav start first).
+  // tools.gamezipper.com has no game-footer.js (no game footer on tool pages),
+  // so we attach the listener at the document level. Filter:
+  //   - href starts with '/' (internal only, skip cross-site)
+  //   - href doesn't start with '//' (protocol-relative)
+  //   - href is not just '#' (in-page anchor)
+  //   - target !== '_blank'
+  //   - skip if same href as current page
+  //   - skip if modifier keys (Ctrl/Cmd/Meta/Shift) — let user open new tab
+  // 1s grace: navigation likely starts immediately, browser begins transition.
+  // We don't block nav — overlay shows ON TOP of the new page (typical Poki
+  // pattern). If nav aborts (user hits Back), overlay closes on maxTimer.
+  function initClickCommercialBreak() {
+    document.addEventListener('click', function(e) {
+      // Only left-click without modifiers
+      if (e.button !== 0) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      var link = e.target.closest && e.target.closest('a');
+      if (!link) return;
+      var href = link.getAttribute('href');
+      if (!href) return;
+      // Internal links only
+      if (href.charAt(0) !== '/') return;
+      if (href.indexOf('//') === 0) return;       // protocol-relative
+      if (href === '#' || href.length <= 1) return; // home or anchor
+      if (link.target === '_blank') return;
+      // Same-page nav? href="/foo" while we're already at "/foo" → still count as nav
+      // but probably a fragment / same-page reload — skip to avoid double-firing.
+      if (href === window.location.pathname) return;
+      // Schedule with grace period (let click event bubble, browser process nav).
+      setTimeout(function() { commercialBreak('manual_click'); }, CONFIG.TIMING.commercialBreakClickGraceMs);
+    }, { passive: true });
+  }
+  initClickCommercialBreak();
+
+  // ==================== PUBLIC API (PokiSDK-compatible, v5.18) ====================
+  // gz.com parity — exposes commercialBreak + displayAd + state introspection.
+  // External pages (e.g. embedded tool widgets) can call window.GZAds.commercialBreak()
+  // at any natural break point.
+  window.GZAds = {
+    init: function() { /* v5.18: tools self-inits at script load, no-op */ },
+    commercialBreak: commercialBreak,
+    displayAd: function(containerId) {
+      var c = document.getElementById(containerId);
+      if (!c) return Promise.reject(new Error('Container not found'));
+      if (!canShowAd()) return Promise.resolve();
+      return loadZone(ZONES.inpagePushGz, c).then(function() {
+        c.setAttribute('data-filled', '1');
+        markAdShown('display');
+      });
+    },
+    gameplayStart: function() {},
+    gameplayStop: function() {},
+    isAdBlocked: function() { return !!state.adBlockDetected; },
+    _state: state,
+    _config: CONFIG,
+  };
+
+  // Backward compat stubs (mirrors gz.com line 2127-2139)
+  window.GZMonetagSafe = window.GZMonetagSafe || {};
+  if (!window.GZMonetagSafe.maybeLoad) {
+    window.GZMonetagSafe.maybeLoad = function() { return commercialBreak(); };
+  }
+  window.GZInterstitial = { show: function() { return commercialBreak(); } };
 
 })();
