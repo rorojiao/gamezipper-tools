@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Broken Link Checker - Free SEO Tool | GameZipper Tools</title>
+  <meta name="description" content="Find broken links in any webpage or list of URLs. Scan links for 404 errors, dead links and redirects. Export results. Free broken link checker — browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/seo/broken-link-checker.html">
+  <meta property="og:title" content="Broken Link Checker - Free SEO Tool | GameZipper Tools">
+  <meta property="og:description" content="Find broken links in any webpage or list of URLs. Scan links for 404 errors, dead links and redirects. Export results. Free, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/seo/broken-link-checker.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Broken Link Checker - Free SEO Tool | GameZipper Tools">
+  <meta name="twitter:description" content="Find broken links, 404 errors and dead URLs. Free broken link checker — browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+.link-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:8px 12px;border-radius:6px;margin-bottom:4px;align-items:center;font-size:.85em}
+.link-row.ok{background:rgba(0,214,114,.08)}
+.link-row.broken{background:rgba(233,69,96,.08)}
+.link-row.redirect{background:rgba(240,160,32,.08)}
+.link-row.pending{opacity:.5}
+.link-status{font-weight:bold;font-family:monospace;width:50px;text-align:center}
+.link-status.ok{color:#00d672}
+.link-status.broken{color:#e94560}
+.link-status.redirect{color:#f0a020}
+.link-url{font-family:monospace;word-break:break-all;opacity:.85}
+.link-type{font-size:.8em;opacity:.6}
+.progress{height:4px;background:var(--gz-bg-alt,#15152a);border-radius:2px;overflow:hidden;margin-bottom:12px}
+.progress-bar{height:100%;background:var(--gz-accent,#4ecdc4);transition:width .3s;width:0%}
+.summary-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px}
+.summary-item{text-align:center;padding:12px;border-radius:8px}
+.summary-num{font-size:1.8em;font-weight:bold}
+.summary-label{font-size:.75em;opacity:.7}
+.input-tabs{display:flex;gap:4px;margin-bottom:12px}
+.input-tab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85em;border:1px solid var(--gz-border,#333)}
+.input-tab.active{background:var(--gz-accent,#4ecdc4);color:#000}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Broken Link Checker","description":"Find broken links in any webpage or list of URLs. Scan links for 404 errors, dead links and redirects. Export results. Free broken link checker — browser-only, no signup.","url":"https://tools.gamezipper.com/seo/broken-link-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the broken link checker work?", "acceptedAnswer": {"@type": "Answer", "text": "Enter a webpage URL or paste a list of URLs. The tool fetches each link and reports the HTTP status code. Links returning 4xx or 5xx are marked as broken, 3xx as redirects, and 2xx as OK. Checking happens through a CORS proxy."}}, {"@type": "Question", "name": "What HTTP status codes indicate a broken link?", "acceptedAnswer": {"@type": "Answer", "text": "Broken links typically return 404 (Not Found), 403 (Forbidden), 500 (Server Error), 502 (Bad Gateway), or 503 (Service Unavailable). Redirects (301, 302, 307) are not broken but may need updating."}}, {"@type": "Question", "name": "Is there a limit on how many links I can check?", "acceptedAnswer": {"@type": "Answer", "text": "For performance, checking is batched with small delays to avoid rate limiting. Most webpages have 50-200 links. For very large lists, consider splitting into batches of 50-100 URLs."}}, {"@type": "Question", "name": "Why do some links show as error?", "acceptedAnswer": {"@type": "Answer", "text": "Some websites block cross-origin requests (CORS). Those may show as 'error' even if the link works in a browser. This is a browser limitation — the link itself may be fine."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/seo/broken-link-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/seo/broken-link-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/seo/broken-link-checker.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="input-tabs">
+      <div class="input-tab active" id="tabPage"></div>
+      <div class="input-tab" id="tabList"></div>
+    </div>
+    <div id="pageMode">
+      <input type="text" id="pageUrl" placeholder="https://example.com" class="gz-input" style="width:100%;margin-bottom:8px">
+      <button class="gz-btn" id="scanPageBtn"></button>
+    </div>
+    <div id="listMode" style="display:none">
+      <textarea id="urlList" rows="6" placeholder="https://example.com/page1&#10;https://example.com/page2" style="width:100%;font-family:monospace;font-size:.85em;margin-bottom:8px"></textarea>
+      <button class="gz-btn" id="scanListBtn"></button>
+    </div>
+    <div id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Broken Link Checker',
+    toolDesc: 'Scan a webpage or URL list for broken links, 404 errors and redirects. Get a clear report with status codes. Free, browser-only.',
+    checkPage: 'Check Page Links',
+    checkList: 'Check URL List',
+    scanPage: 'Scan Page',
+    scanList: 'Scan URLs',
+    scanning: 'Scanning...',
+    total: 'Total',
+    ok: 'OK (2xx)',
+    broken: 'Broken',
+    redirect: 'Redirect',
+    error: 'Error',
+    noLinks: 'No links found to check.',
+    exportCsv: 'Export CSV',
+    clear: 'Clear',
+    step1: 'Enter a webpage URL or paste a list of URLs',
+    step2: 'Click Scan to check each link',
+    step3: 'Review status codes — red means broken',
+    step4: 'Export results to CSV if needed',
+  },
+  zh: {
+    toolTitle: '死链检查器',
+    toolDesc: '扫描网页或 URL 列表中的死链、404 错误和重定向。获取清晰的状态码报告。免费，浏览器本地运行。',
+    checkPage: '检查页面链接',
+    checkList: '检查 URL 列表',
+    scanPage: '扫描页面',
+    scanList: '扫描 URL',
+    scanning: '扫描中...',
+    total: '总计',
+    ok: '正常（2xx）',
+    broken: '死链',
+    redirect: '重定向',
+    error: '错误',
+    noLinks: '未找到可检查的链接。',
+    exportCsv: '导出 CSV',
+    clear: '清除',
+    step1: '输入网页 URL 或粘贴 URL 列表',
+    step2: '点击扫描检查每个链接',
+    step3: '查看状态码 — 红色表示死链',
+    step4: '如需导出结果为 CSV',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'page';
+let results = [];
+
+$('#tabPage').textContent = t('checkPage');
+$('#tabList').textContent = t('checkList');
+$('#scanPageBtn').textContent = t('scanPage');
+$('#scanListBtn').textContent = t('scanList');
+
+$('#tabPage').onclick = () => { mode='page'; $('#tabPage').classList.add('active'); $('#tabList').classList.remove('active'); $('#pageMode').style.display='block'; $('#listMode').style.display='none'; };
+$('#tabList').onclick = () => { mode='list'; $('#tabList').classList.add('active'); $('#tabPage').classList.remove('active'); $('#listMode').style.display='block'; $('#pageMode').style.display='none'; };
+
+$('#toolbar').innerHTML = `<button class="gz-btn gz-btn-secondary" onclick="exportCsv()">${t('exportCsv')}</button><button class="gz-btn gz-btn-secondary" onclick="clearResults()">${t('clear')}</button>`;
+
+$('#scanPageBtn').onclick = scanPage;
+$('#scanListBtn').onclick = scanList;
+
+async function scanPage() {
+  let url = $('#pageUrl').value.trim();
+  if (!url) return;
+  if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+  $('#results').innerHTML = '<p style="opacity:.6">Fetching page...</p>';
+  try {
+    const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(url);
+    const resp = await fetch(proxyUrl);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const html = await resp.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const base = new URL(url);
+    const links = Array.from(doc.querySelectorAll('a[href]')).map(a => {
+      try { return new URL(a.getAttribute('href'), base).href; } catch { return null; }
+    }).filter((u,i,arr) => u && arr.indexOf(u)===i).filter(u => /^https?:/.test(u));
+    if (links.length === 0) { $('#results').innerHTML = `<p>${t('noLinks')}</p>`; return; }
+    checkLinks(links);
+  } catch(e) {
+    $('#results').innerHTML = `<div class="link-row broken"><span class="link-status broken">ERR</span><span class="link-url">${escapeHtml(url)}</span><span>${e.message}</span></div>`;
+  }
+}
+
+function scanList() {
+  const urls = $('#urlList').value.split('\n').map(s=>s.trim()).filter(Boolean).filter(u=>/^https?:\/\//.test(u));
+  if (urls.length === 0) { $('#results').innerHTML = `<p>${t('noLinks')}</p>`; return; }
+  checkLinks(urls);
+}
+
+async function checkLinks(urls) {
+  results = [];
+  $('#results').innerHTML = `
+    <div class="progress"><div class="progress-bar" id="progBar"></div></div>
+    <div class="summary-box" id="summary"></div>
+    <div id="linkResults"></div>
+  `;
+  let ok=0, broken=0, redirect=0, error=0;
+  const BATCH = 5;
+
+  for (let i = 0; i < urls.length; i += BATCH) {
+    const batch = urls.slice(i, i + BATCH);
+    await Promise.all(batch.map(async (linkUrl, j) => {
+      const idx = i + j;
+      const row = { url: linkUrl, status: 'pending', code: '', type: '' };
+      results[idx] = row;
+      renderRow(idx);
+      try {
+        const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(linkUrl);
+        const resp = await fetch(proxyUrl, { method: 'GET', redirect: 'follow' });
+        row.code = resp.status;
+        if (resp.status >= 200 && resp.status < 300) { row.status='ok'; row.type='2xx'; ok++; }
+        else if (resp.status >= 300 && resp.status < 400) { row.status='redirect'; row.type='3xx'; redirect++; }
+        else if (resp.status >= 400) { row.status='broken'; row.type='4xx/5xx'; broken++; }
+      } catch(e) {
+        row.status = 'error'; row.code = 'ERR'; row.type = e.message.substring(0,30); error++;
+      }
+      renderRow(idx);
+    }));
+    $('#progBar').style.width = Math.min(100, ((i + BATCH) / urls.length) * 100) + '%';
+    updateSummary(urls.length, ok, broken, redirect, error);
+  }
+  updateSummary(urls.length, ok, broken, redirect, error);
+}
+
+function renderRow(idx) {
+  const r = results[idx];
+  if (!r) return;
+  let container = $('#linkResults');
+  let row = document.getElementById('row-'+idx);
+  if (!row) {
+    row = document.createElement('div');
+    row.id = 'row-'+idx;
+    container.appendChild(row);
+  }
+  row.className = 'link-row ' + r.status;
+  const statusLabel = r.status==='ok'?'✓':r.status==='broken'?'✗':r.status==='redirect'?'↻':r.status==='pending'?'…':'!';
+  row.innerHTML = `<span class="link-status ${r.status}">${statusLabel} ${r.code}</span><span class="link-url">${escapeHtml(r.url)}</span><span class="link-type">${r.type||''}</span>`;
+}
+
+function updateSummary(total, ok, broken, redirect, error) {
+  $('#summary').innerHTML = `
+    <div class="summary-item" style="background:rgba(78,205,196,.1)"><div class="summary-num">${total}</div><div class="summary-label">${t('total')}</div></div>
+    <div class="summary-item" style="background:rgba(0,214,114,.1)"><div class="summary-num" style="color:#00d672">${ok}</div><div class="summary-label">${t('ok')}</div></div>
+    <div class="summary-item" style="background:rgba(233,69,96,.1)"><div class="summary-num" style="color:#e94560">${broken}</div><div class="summary-label">${t('broken')}</div></div>
+    <div class="summary-item" style="background:rgba(240,160,32,.1)"><div class="summary-num" style="color:#f0a020">${redirect}</div><div class="summary-label">${t('redirect')}</div></div>
+    <div class="summary-item" style="background:rgba(150,150,150,.1)"><div class="summary-num" style="color:#999">${error}</div><div class="summary-label">${t('error')}</div></div>
+  `;
+}
+
+function exportCsv() {
+  if (results.length === 0) return;
+  const csv = 'URL,Status,Code,Type\n' + results.map(r => `"${r.url}","${r.status}","${r.code}","${r.type||''}"`).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'broken-links-report.csv';
+  a.click();
+}
+
+function clearResults() { results=[]; $('#results').innerHTML=''; }
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+GZ.renderToolPage({
+  category: 'seo',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/seo/meta-tag-checker.html', name:'Meta Tag Checker'},
+    {icon:'🔗', href:'/seo/link-checker.html', name:'Link Checker'},
+    {icon:'📊', href:'/seo/keyword-density.html', name:'Keyword Density'},
+    {icon:'🤖', href:'/seo/robots-validator.html', name:'Robots Validator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
