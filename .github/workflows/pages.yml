@@ -1,8 +1,17 @@
 name: Deploy to GitHub Pages
 
+# ═══════════════════════════════════════════════════════════════════
+# PLAN-D: Schedule-only deployment (2026-07-06)
+# ═══════════════════════════════════════════════════════════════════
+# See gamezipper.com/.github/workflows/pages.yml for full rationale.
+#
+#   - gamezipper.com:   cron '7 */2 * * *'
+#   - gamezipper-tools: cron '37 */2 * * *'  ← this repo (30 min apart)
+# ═══════════════════════════════════════════════════════════════════
+
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '37 */2 * * *'  # every 2 hours at minute 37
   workflow_dispatch:
 
 permissions:
@@ -31,7 +40,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    continue-on-error: true  # CDN conflicts happen; don't send failure emails
+    continue-on-error: true
     steps:
       - name: Deploy
         id: deployment
@@ -41,7 +50,6 @@ jobs:
           reporting_interval: 5000
           timeout: 600000
       - name: Retry on failure
-        id: retry_deployment
         if: failure()
         uses: actions/deploy-pages@v4
         with:
