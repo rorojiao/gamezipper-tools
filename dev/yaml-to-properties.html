@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>YAML to Properties Converter - Free Online | GameZipper Tools</title>
+  <meta name="description" content="Convert YAML configuration files to Java .properties format instantly. Flattens nested keys with dot notation, handles arrays, comments and quoting. 100% browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/yaml-to-properties.html">
+  <meta property="og:title" content="YAML to Properties Converter - Free Online | GameZipper Tools">
+  <meta property="og:description" content="Convert YAML configuration files to Java .properties format instantly. Flattens nested keys with dot notation, handles arrays, comments and quoting. 100% browser-only, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/yaml-to-properties.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="YAML to Properties Converter - Free Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260705v517ar2"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:200px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"YAML to Properties Converter","description":"Convert YAML configuration files to Java .properties format instantly. Flattens nested keys with dot notation, handles arrays, comments and quoting. 100% browser-only, no upload.","url":"https://tools.gamezipper.com/dev/yaml-to-properties.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert YAML to .properties?","acceptedAnswer":{"@type":"Answer","text":"Paste your YAML into the input area. The output is generated instantly — nested keys are flattened with dot notation (server.port=8080) and arrays use [0], [1] indexing."}},{""@type":"Question","name":"How are nested keys handled?","acceptedAnswer":{"@type":"Answer","text":"Nested YAML objects become dot-separated property keys. For example 'server:\\n  port: 8080' becomes 'server.port=8080'. Arrays use indexed notation like 'servers[0]=alpha'."}},{""@type":"Question","name":"Are comments preserved?","acceptedAnswer":{"@type":"Answer","text":"YAML comments (lines starting with #) are carried over into the .properties output as comments, since .properties format also supports # comments."}},{""@type":"Question","name":"Is my YAML data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing and conversion happens entirely in your browser. Your configuration files are never sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/yaml-to-properties.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/yaml-to-properties.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/yaml-to-properties.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="server:&#10;  port: 8080&#10;  host: localhost&#10;database:&#10;  name: myapp&#10;  pool: 10&#10;features:&#10;  - auth&#10;  - logging"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'YAML to Properties Converter',
+    toolDesc: 'Convert YAML configuration files to Java .properties format instantly. Nested keys are flattened with dot notation, arrays use indexed notation, and comments are preserved.',
+    inputLabel: 'YAML Input',
+    outputLabel: '.properties Output',
+    convert: 'Convert',
+    escapeValues: 'Escape special chars',
+    copy: 'Copy',
+    clear: 'Clear',
+    example: 'Example',
+    valid: '✓ Converted successfully',
+    invalid: '✗ Invalid YAML',
+    step1: 'Paste your YAML content into the input area',
+    step2: 'The .properties output is generated automatically in real time',
+    step3: 'Toggle escaping for =, :, # and backslashes',
+    step4: 'Click Copy to copy the .properties result',
+  },
+  zh: {
+    toolTitle: 'YAML 转 Properties 转换器',
+    toolDesc: '即时将 YAML 配置文件转换为 Java .properties 格式。嵌套键用点号扁平化，数组使用索引表示，注释会保留。',
+    inputLabel: 'YAML 输入',
+    outputLabel: '.properties 输出',
+    convert: '转换',
+    escapeValues: '转义特殊字符',
+    copy: '复制',
+    clear: '清空',
+    example: '示例',
+    valid: '✓ 转换成功',
+    invalid: '✗ YAML 无效',
+    step1: '在输入区粘贴 YAML 内容',
+    step2: '.properties 输出会实时自动生成',
+    step3: '切换「转义特殊字符」处理 =、:、# 和反斜杠',
+    step4: '点击「复制」将 .properties 结果复制到剪贴板',
+  }
+});
+
+let escapeVals = true;
+const { $, copyText, t } = GZ;
+
+// Minimal YAML parser supporting nested maps, arrays, scalars, comments
+function parseYAML(text) {
+  const lines = text.split(/\r?\n/);
+  // stack of {indent, obj/isArray, key}
+  const root = {};
+  const stack = [{indent: -1, node: root, isArray: false}];
+  let comments = [];
+
+  function getIndent(line) {
+    const m = line.match(/^(\s*)/);
+    return m[1].replace(/\t/g, '  ').length;
+  }
+
+  for (let raw of lines) {
+    // detect comment-only line
+    const trimmedAll = raw.trim();
+    if (!trimmedAll) continue;
+    if (trimmedAll.startsWith('#')) {
+      comments.push(trimmedAll);
+      continue;
+    }
+    const indent = getIndent(raw);
+    const line = raw.replace(/^(\s*)/, '');
+
+    // pop stack to find parent
+    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) stack.pop();
+    const parent = stack[stack.length - 1].node;
+
+    // list item
+    if (line.startsWith('- ')) {
+      const value = parseScalar(line.substring(2).trim());
+      if (Array.isArray(parent)) parent.push(value);
+      continue;
+    }
+    if (line === '-') {
+      if (Array.isArray(parent)) parent.push(null);
+      continue;
+    }
+
+    // key: value or key:
+    const colonIdx = findColon(line);
+    if (colonIdx === -1) continue;
+    const key = line.substring(0, colonIdx).trim().replace(/^["']|["']$/g, '');
+    let valuePart = line.substring(colonIdx + 1).trim();
+
+    if (valuePart === '' || valuePart === '|' || valuePart === '>') {
+      // nested map or empty
+      if (!parent.hasOwnProperty(key)) parent[key] = {};
+      stack.push({indent: indent, node: parent[key], isArray: false});
+    } else {
+      parent[key] = parseScalar(valuePart);
+    }
+  }
+  return {root, comments};
+}
+
+function findColon(line) {
+  // find first ': ' or trailing ':'
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === ':') {
+      if (i === line.length - 1) return i;
+      if (line[i + 1] === ' ' || line[i + 1] === '\t') return i;
+    }
+  }
+  return -1;
+}
+
+function parseScalar(s) {
+  if (s === 'null' || s === '~' || s === '') return null;
+  if (s === 'true' || s === 'True' || s === 'TRUE') return true;
+  if (s === 'false' || s === 'False' || s === 'FALSE') return false;
+  if (/^-?\d+$/.test(s)) return parseInt(s, 10);
+  if (/^-?\d+\.\d+([eE][+-]?\d+)?$/.test(s)) return parseFloat(s);
+  // quoted string
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    return s.substring(1, s.length - 1);
+  }
+  return s;
+}
+
+function escapeProp(val) {
+  let s = String(val);
+  if (!escapeVals) return s;
+  // escape backslash first, then special chars
+  s = s.replace(/\\/g, '\\\\');
+  s = s.replace(/=/g, '\\=');
+  s = s.replace(/#/g, '\\#');
+  if (s.includes(':')) s = s.replace(/:/g, '\\:');
+  return s;
+}
+
+function flatten(obj, prefix, out) {
+  for (const key in obj) {
+    const val = obj[key];
+    const newKey = prefix ? prefix + '.' + key : key;
+    if (val === null) {
+      out[newKey] = '';
+    } else if (Array.isArray(val)) {
+      val.forEach((item, i) => {
+        if (item !== null && typeof item === 'object') {
+          flatten(item, newKey + '[' + i + ']', out);
+        } else {
+          out[newKey + '[' + i + ']'] = item;
+        }
+      });
+    } else if (typeof val === 'object') {
+      flatten(val, newKey, out);
+    } else {
+      out[newKey] = val;
+    }
+  }
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const {root, comments} = parseYAML(inp);
+    const flat = {};
+    flatten(root, '', flat);
+    let result = '';
+    if (comments.length) {
+      result += comments.join('\n') + '\n';
+    }
+    const keys = Object.keys(flat).sort();
+    for (const k of keys) {
+      result += k + '=' + escapeProp(flat[k]) + '\n';
+    }
+    $('#output').textContent = result.trimEnd();
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span> <span style="opacity:.7">(${keys.length} properties)</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}: ${e.message}</span>`;
+    $('#output').textContent = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = '# Application config\nserver:\n  port: 8080\n  host: localhost\n  timeout: 30\n\ndatabase:\n  url: jdbc:postgresql://localhost:5432/myapp\n  pool_size: 10\n  ssl: false\n\nfeatures:\n  - authentication\n  - logging\n  - caching\n\nlogging:\n  level: info\n  format: json';
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer">
+    <input type="checkbox" id="escapeChk" checked onchange="escapeVals=this.checked;doConvert()"> ${t('escapeValues')}
+  </label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-out').textContent = t('outputLabel');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/dev/yaml.html', name:'YAML Formatter'},
+    {icon:'⚙️', href:'/dev/ini-to-json.html', name:'INI to JSON'},
+    {icon:'🔄', href:'/convert/yaml-json.html', name:'YAML ↔ JSON'},
+    {icon:'📝', href:'/dev/yaml-to-toml.html', name:'YAML to TOML'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
