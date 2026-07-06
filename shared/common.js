@@ -97,7 +97,10 @@
   // v5.5.8 (2026-07-04): bump cache to v=20260704v516obs (P0 fix: window.GZ_TRACK_AD_EVENT
   //   undefined → window.gzAnalytics.sendAd so tryInjectAfterRelated funnel events
   //   actually reach BI server). Cloudflare CDN will serve the new code on next reload.
-  var s1=document.createElement('script');s1.src='/monetag-manager.v517.js?v=20260705v517ar2';s1.defer=true;document.head.appendChild(s1);
+  // v5.17 (2026-07-06): bump cache to v=20260706v517ver (VERSION label fix: code was already v5.17
+  //   but VERSION: string was stale "5.16-..."). This bump ensures CDN delivers the corrected
+  //   VERSION string to BI trackAdEvent calls.
+  var s1=document.createElement('script');s1.src='/monetag-manager.v517.js?v=20260706v517ver';s1.defer=true;document.head.appendChild(s1);
   // (adsterra-manager.js was removed in v5.5.2 since zone IDs were placeholders; v6.5 re-adds it)
   // v5.4.3 (2026-06-21): mid-content ad slots + enhanced load_error diagnostics
   var s4=document.createElement('script');s4.src='/adsense-auto.js?v=20260705v516aa';s4.defer=true;document.head.appendChild(s4);

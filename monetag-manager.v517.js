@@ -363,7 +363,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.16-tools-ad-below-position-hub-skip',  // 2026-07-05: P0 fix — move gz-tools-ad-below to BEFORE footer (was under footer → AdSense treats footer-area as low-quality → 0% fill) + skip showContainerAd on hub pages that already have gz-home-banner (same slot 1099212472 duplicates)
+    VERSION: '5.17-tools-exit-intent-cooldown-fix',  // 2026-07-05: P0 fix — initExitIntent Guard 3 swap canShowAd() → canShowAdExitIntent() (parity with gz.com v5.9) + trackAdEvent('exit_intent_detected') moved BEFORE cap check. Includes v5.16 (P0 fix — move gz-tools-ad-below to BEFORE footer + skip showContainerAd on hub pages that already have gz-home-banner).
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
