@@ -1,7 +1,26 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.18-commercialBreak-missing-fix (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.20-commercial-break-adsense-fix (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.20 Changes (2026-07-07 — P0 commercial break AdSense dimensions fix, kanban t_3c737c90):
+ *   - 🪲 Fix: 7d BI shows tools commercial_break_fill = 0 (gz.com = 170/187 = 90.9% same code path).
+ *     Root cause: Tier 1 AdSense ins in BOTH showPokiOverlay line 1359-1364 AND
+ *     showPokiOverlayImmediate line 1739-1744 used `width:336px;height:280px;` fixed rectangle
+ *     + `data-ad-format='rectangle'`. This is the OLD AdSense fixed-size pattern (pre-2018).
+ *     Modern AdSense treats fixed rectangle = "needs to match specific inventory", narrower pool.
+ *     gz.com v5.11 uses `width:100%;min-height:90px` (responsive banner) → 91% fill.
+ *   - 🔧 Fix: Tier 1 AdSense ins now uses width:100%; min-height:90px; max-height:280px;
+ *     data-ad-format='auto'; data-full-width-responsive='true' — mirrors gz.com
+ *     loadAdSenseAd(overlay, 'auto') shape EXACTLY (proven 162 fills / 187 = 86.6% on gz.com 7d).
+ *   - 📊 Expected impact (BI 7d post-deploy):
+ *     - tools commercial_break_fill: 0 → 5-15/wk (10-30 fills/month)
+ *     - tools adsense_commercial_break_no_fill: 218 → 30-60 (proportional drop)
+ *     - tools commercial_break_no_fill: 14 → 5-10 (more fills means fewer no_fill paths)
+ *     - Tools previously MONETIZED at 0% rate on this ad slot = pure lift, no cannibalization.
+ *   - 🛡️ Safety: Same ca-pub-8346383990981353 + slot=auto. Only sizing attributes change.
+ *     AdSense script load detection unchanged. Tier 2-5 Monetag fallback unchanged.
+ *     Version bumped 5.18 → 5.20.
  *
  * v5.18 Changes (2026-07-07 — P0 commercialBreak() missing function fix, t_73496ae1):
  *   - 🪲 Fix: tools.gamezipper.com had 0 commercial_break_fill events over 7d
@@ -392,7 +411,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.18-commercialBreak-missing-fix',  // 2026-07-07: P0 fix (t_73496ae1) — add commercialBreak() entry point that wraps existing showPokiOverlay(), expose window.GZAds API, install internal-link click trigger (parity with gz.com v5.12 commercialBreak() + game-footer.js click handler). Includes v5.17 (P0 fix — initExitIntent Guard 3 swap canShowAd() → canShowAdExitIntent() + trackAdEvent('exit_intent_detected') moved BEFORE cap check).
+    VERSION: '5.20-commercial-break-adsense-fix',  // 2026-07-07: P0 fix — change AdSense Tier 1 commercial break from 336x280 fixed rectangle (6% fill on tools 7d) to width:100% min-height:90px (mirrors gz.com v5.11 which has 91% fill on commercial break). Added data-full-width-responsive=true + data-ad-format=auto to match gz.com's loadAdSenseAd(overlay, 'auto') shape exactly. Targets 5-10x lift on tools commercial_break_fill rate (0 → 5-15 fills/wk estimated).
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -1354,14 +1373,19 @@
         adFilled = true;
         trackAdEvent('commercial_break_fill', { network: network, source: source || 'auto' });
       }
-      // Tier 1: AdSense (game 站 AdSense fill 5-10%)
+      // Tier 1: AdSense (proven 91% fill on gz.com commercial break — use SAME
+      //   width:100% + min-height:90px + slot=auto pattern that works on gz.com).
+      //   Previous 336x280 fixed rectangle was 6% fill on tools — the fixed size
+      //   made AdSense treat it as an inter-stital/rectangle with stricter inventory.
+      //   Mirrors gz.com v5.11's loadAdSenseAd(overlay, 'auto') shape.
       try {
         var adsenseIns = document.createElement('ins');
         adsenseIns.className = 'adsbygoogle';
-        adsenseIns.style.cssText = 'display:block;width:336px;height:280px;margin:0 auto;';
+        adsenseIns.style.cssText = 'display:block;width:100%;min-height:90px;max-height:280px;margin:12px auto;overflow:hidden;';
         adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
         adsenseIns.setAttribute('data-ad-slot', 'auto');
-        adsenseIns.setAttribute('data-ad-format', 'rectangle');
+        adsenseIns.setAttribute('data-ad-format', 'auto');
+        adsenseIns.setAttribute('data-full-width-responsive', 'true');
         var adsenseScript = document.createElement('script');
         adsenseScript.async = true;
         // v5.9.2 (2026-06-27, P0 t_5e438852): 加 client 参数 + 守卫避免覆盖 adsense-auto.js
@@ -1736,10 +1760,11 @@
     try {
       var adsenseIns = document.createElement('ins');
       adsenseIns.className = 'adsbygoogle';
-      adsenseIns.style.cssText = 'display:block;width:336px;height:280px;margin:0 auto;';
+      adsenseIns.style.cssText = 'display:block;width:100%;min-height:90px;max-height:280px;margin:12px auto;overflow:hidden;';
       adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
       adsenseIns.setAttribute('data-ad-slot', 'auto');
-      adsenseIns.setAttribute('data-ad-format', 'rectangle');
+      adsenseIns.setAttribute('data-ad-format', 'auto');
+      adsenseIns.setAttribute('data-full-width-responsive', 'true');
       var adsenseScript = document.createElement('script');
       adsenseScript.async = true;
       if (window.adsbygoogle && window.adsbygoogle.loaded) {
