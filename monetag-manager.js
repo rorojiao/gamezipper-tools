@@ -366,27 +366,29 @@
     AD_PROVIDER: 'https://a.magsrv.com/ad-provider.js',
     // 频率控制 — 对齐 gamezipper.com v5
     FREQUENCY: {
-      minBetweenAds: 35 * 1000,         // v5.7: 35s between any ads (was 45s, AdSense fill 5-10% means we recover cost in 5 imps)
-      firstAdDelay: 30 * 1000,          // v5.7: 30s before first ad (was 45s, aligns with gz.com v5.4)
+      minBetweenAds: 60 * 1000,         // v5.19: 60s (Poki-grade, was 35s)
+      firstAdDelay: 45 * 1000,          // v5.19: 45s (was 30s)
       popunderInterval: 25 * 60 * 1000,  // 25 min between popunders
-      sessionMaxAds: 20,                 // max 20 per 30-min session (对标 Poki)
-      sessionWindowMs: 30 * 60 * 1000,   // 30-min rolling window
-      dailyMaxAds: 60,                   // max 60 per day (对标 Poki)
-      homepageBannerCooldown: 10 * 60 * 1000, // v5.9: 10 min between homepage banners
+      sessionMaxAds: 12,                 // v5.19: max 12 per 30-min (was 20, Poki ~8-15)
+      sessionWindowMs: 30 * 60 * 1000,
+      dailyMaxAds: 50,                   // v5.19: max 50/day (was 60)
+      homepageBannerCooldown: 10 * 60 * 1000,
+      containerAdCooldown: 5 * 60 * 1000,   // v5.19: 5min container cooldown
+      bannerAdCooldown: 120 * 1000,         // v5.19: 2min banner refresh
     },
     TIMING: {
-      containerAdDelay: 3000,           // 3s
-      homepageBannerDelay: 2000,         // v5.9: 2s before homepage banner (matches gz.com)
-      vignetteHubDelay: 20 * 1000,      // 20s on hub pages
-      vignetteToolDelay: 35 * 1000,     // 35s on tool pages
-      vignetteSkipAfter: 5000,          // 5s skip countdown for Poki overlay
-      vignetteMaxDuration: 8000,        // 8s auto-dismiss
-      commercialBreakClickGraceMs: 1000, // v5.18: 1s after click before firing — let nav initiate
-      commercialBreakLinkCooldownMs: 60 * 1000, // v5.18: 60s between click-triggered commercialBreaks
-      popunderInteractionDelay: 5000,  // 5s after first interaction
-      adLoadTimeout: 5000,
-      exitIntentMinDwellMs: 15000,      // v5.8: 15s minimum on page (was 30s; tools task flow exits faster than games)
-      exitIntentCooldownMs: 45*1000,    // v5.14: 30s→45s (parity with gz.com v5.12); guard fix unlocks more events
+      containerAdDelay: 5000,           // v5.19: 5s (was 3s)
+      homepageBannerDelay: 2000,
+      vignetteHubDelay: 20 * 1000,
+      vignetteToolDelay: 35 * 1000,
+      vignetteSkipAfter: 5000,          // 5s skip countdown (Poki-standard)
+      vignetteMaxDuration: 12000,       // v5.19: 12s (was 8s, allow longer video)
+      commercialBreakClickGraceMs: 1000,
+      commercialBreakLinkCooldownMs: 60 * 1000,
+      popunderInteractionDelay: 5000,
+      adLoadTimeout: 6000,              // v5.19: 6s (was 5s, Adsterra CDN)
+      exitIntentMinDwellMs: 15000,
+      exitIntentCooldownMs: 60*1000,    // v5.19: 60s (was 45s)
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
