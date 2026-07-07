@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>INI 转 YAML 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时将 INI 配置文件转换为 YAML。支持段落、键值对、注释、引号和正确的缩进。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/ini-to-yaml.html">
+  <meta property="og:title" content="INI 转 YAML 转换器">
+  <meta property="og:description" content="即时将 INI 配置文件转换为 YAML。支持段落、键值对、注释、引号和正确的缩进。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/ini-to-yaml.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="INI 转 YAML 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:200px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"INI to YAML Converter","description":"Convert INI config files to YAML instantly. Free INI to YAML converter — handles sections, key-value pairs, comments, quotes and proper indentation. 100% browser-only, no upload.","url": "https://tools.gamezipper.com/zh/dev/ini-to-yaml.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert an INI file to YAML?","acceptedAnswer":{"@type":"Answer","text":"Paste your INI content into the input area. The YAML output is generated instantly with proper nesting and indentation."}},{"@type":"Question","name":"How are INI sections handled in YAML?","acceptedAnswer":{"@type":"Answer","text":"Each [section] in the INI file becomes a top-level YAML mapping. Keys within a section are nested under that mapping with proper indentation."}},{"@type":"Question","name":"What about values like numbers and booleans?","acceptedAnswer":{"@type":"Answer","text":"By default the converter preserves values as plain strings, matching how YAML would parse them. Toggle auto-type to explicitly infer numbers, booleans and null."}},{"@type":"Question","name":"Is my data sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser. Your configuration files are never uploaded anywhere."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ini-to-yaml.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ini-to-yaml.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ini-to-yaml.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="[database]&#10;host=localhost&#10;port=5432&#10;name=myapp"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'INI to YAML Converter',
+    toolDesc: 'Convert INI configuration files to YAML instantly. Handles sections, key-value pairs, comments, quotes and proper indentation.',
+    inputLabel: 'INI Input',
+    outputLabel: 'YAML Output',
+    convert: 'Convert',
+    autoType: 'Auto-type values',
+    copy: 'Copy YAML',
+    clear: 'Clear',
+    example: 'Example',
+    valid: '✓ Converted successfully',
+    step1: 'Paste your INI content into the input area',
+    step2: 'The YAML output is generated automatically in real time',
+    step3: 'Toggle Auto-type to control number/boolean detection',
+    step4: 'Click Copy YAML to copy the result to clipboard',
+  },
+  zh: {
+    toolTitle: 'INI 转 YAML 转换器',
+    toolDesc: '即时将 INI 配置文件转换为 YAML。支持段落、键值对、注释、引号和正确的缩进。',
+    inputLabel: 'INI 输入',
+    outputLabel: 'YAML 输出',
+    convert: '转换',
+    autoType: '自动类型推断',
+    copy: '复制 YAML',
+    clear: '清空',
+    example: '示例',
+    valid: '✓ 转换成功',
+    step1: '在输入区粘贴 INI 内容',
+    step2: 'YAML 输出会实时自动生成',
+    step3: '切换「自动类型推断」控制数字/布尔值检测',
+    step4: '点击「复制 YAML」将结果复制到剪贴板',
+  }
+});
+
+let autoType = true;
+const { $, copyText, t } = GZ;
+
+function needsYamlQuote(s) {
+  if (s === '') return true;
+  // Quote if contains special chars or starts with indicator chars
+  if (/[:#\[\]{}&*!|>'"%@`,"]/.test(s)) return true;
+  if (/^\s|\s$/.test(s)) return true;
+  if (/^[?&*!|>%@`"',#\-]/.test(s)) return true;
+  // looks like number/bool/null (to keep as string when autoType off)
+  if (/^(true|false|null|yes|no|~)$/i.test(s)) return true;
+  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(s)) return true;
+  return false;
+}
+
+function yamlScalar(value) {
+  if (autoType) {
+    if (/^-?\d+$/.test(value)) return value; // integer as-is
+    if (/^-?\d+\.\d+([eE][+-]?\d+)?$/.test(value)) return value;
+    if (value === 'true' || value === 'false') return value;
+    if (value === 'null') return value;
+  }
+  // Otherwise treat as string — quote if necessary
+  if (needsYamlQuote(value)) {
+    return '"' + value.replace(/\\/g,'\\\\').replace(/"/g,'\\"') + '"';
+  }
+  return value;
+}
+
+function parseINI(text) {
+  const sections = {};
+  let currentSection = null;
+  const rootKeys = [];
+  const lines = text.split(/\r?\n/);
+  for (let raw of lines) {
+    let line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith(';') || line.startsWith('#')) continue;
+    const secMatch = line.match(/^\[(.+)\]$/);
+    if (secMatch) {
+      currentSection = secMatch[1].trim();
+      if (!sections[currentSection]) sections[currentSection] = [];
+      continue;
+    }
+    const eqIdx = line.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = line.substring(0, eqIdx).trim();
+    let value = line.substring(eqIdx + 1).trim();
+    if (value.startsWith('"') && value.endsWith('"') && value.length >= 2) {
+      value = value.substring(1, value.length - 1);
+    } else {
+      const cmt = value.search(/\s+[;#]/);
+      if (cmt !== -1) value = value.substring(0, cmt).trim();
+    }
+    const pair = { key, value };
+    if (currentSection) sections[currentSection].push(pair);
+    else rootKeys.push(pair);
+  }
+  return { sections, rootKeys };
+}
+
+function toYAML(text) {
+  const { sections, rootKeys } = parseINI(text);
+  let out = '';
+  for (const { key, value } of rootKeys) {
+    out += `${key}: ${yamlScalar(value)}\n`;
+  }
+  if (rootKeys.length && Object.keys(sections).length) out += '\n';
+  const secNames = Object.keys(sections);
+  secNames.forEach((sec, idx) => {
+    out += `${sec}:\n`;
+    for (const { key, value } of sections[sec]) {
+      out += `  ${key}: ${yamlScalar(value)}\n`;
+    }
+    if (idx < secNames.length - 1) out += '\n';
+  });
+  return out.trimEnd();
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const yaml = toYAML(inp);
+    $('#output').textContent = yaml;
+    const lineCount = yaml.split('\n').length;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span> <span style="opacity:.7">(${lineCount} lines)</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+    $('#output').textContent = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = `; Server configuration
+[server]
+host = 0.0.0.0
+port = 8080
+workers = 4
+debug = false
+
+[database]
+url = postgres://user:pass@localhost:5432/db
+pool_size = 10
+timeout = 30
+
+[cache]
+driver = redis
+ttl = 3600
+enabled = true`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer">
+    <input type="checkbox" id="autoTypeChk" checked onchange="autoType=this.checked;doConvert()"> ${t('autoType')}
+  </label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-out').textContent = t('outputLabel');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⚙️', href:'/dev/ini-to-json.html', name:'INI to JSON'},
+    {icon:'📄', href:'/dev/yaml.html', name:'YAML Formatter'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🗂️', href:'/convert/yaml-json.html', name:'YAML ↔ JSON'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

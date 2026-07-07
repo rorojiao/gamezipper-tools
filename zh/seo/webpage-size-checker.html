@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>网页大小检测器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="测量任意 URL 的总页面大小、请求数和各类资源体积，找出拖慢网站的 CSS、JS、图片和字体。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/seo/webpage-size-checker.html">
+<meta property="og:title" content="网页大小检测器">
+<meta property="og:description" content="测量任意 URL 的总页面大小、请求数和各类资源体积，找出拖慢网站的 CSS、JS、图片和字体。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/seo/webpage-size-checker.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="网页大小检测器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:14px 0}
+.summary-item{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.summary-item .num{font-size:1.6rem;font-weight:800;color:var(--accent)}
+.summary-item .lbl{font-size:.78rem;opacity:.7;margin-top:4px}
+.breakdown-bar{display:flex;height:24px;border-radius:8px;overflow:hidden;margin:10px 0;border:1px solid var(--border)}
+.breakdown-bar > div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;padding:0 6px;min-width:0;white-space:nowrap;overflow:hidden}
+.res-list{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:14px}
+.res-list th,.res-list td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.res-list th{background:var(--glass2);font-weight:700}
+.res-list td.num{text-align:right;font-family:monospace}
+.res-list tr.cached td{opacity:.55}
+.bucket-html{background:#4ecdc4;color:#04141a}.bucket-css{background:#9b59b6}.bucket-js{background:#e67e22}.bucket-img{background:#e94560}.bucket-font{background:#ffd93d;color:#1a1a2a}.bucket-other{background:#5f6b7a}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Webpage Size Checker","description":"Check the size of any webpage. See total page weight, HTML/CSS/JS/image/font breakdown, number of requests and per-resource sizes.","url": "https://tools.gamezipper.com/zh/seo/webpage-size-checker.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type":"Question","name":"How is webpage size measured?","acceptedAnswer":{"@type":"Answer","text":"The tool fetches the page and every sub-resource (CSS, JS, images, fonts, video) using the browser's normal request path, sums up Content-Length / decoded byte length and groups them by type. Cached resources are still included so the total reflects first-load weight."}}, {"@type":"Question","name":"Does this send my data to a server?","acceptedAnswer":{"@type":"Answer","text":"The fetch goes directly from your browser to the target site using a CORS proxy. The page HTML and resource list are processed in your browser; nothing is stored on our servers."}}, {"@type":"Question","name":"What is a good webpage size?","acceptedAnswer":{"@type":"Answer","text":"Google recommends keeping total transferred bytes under 1.6 MB for fast 4G delivery. Aim for under 100 requests and compress images, defer non-critical JS and inline critical CSS."}}, {"@type":"Question","name":"Why are some resources missing?","acceptedAnswer":{"@type":"Answer","text":"Resources blocked by CORS, behind authentication, lazy-loaded after the analyzer finishes, or returned with zero Content-Length (chunked encoding) may not show a size. The total still reflects what was measurable."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/seo/webpage-size-checker.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/seo/webpage-size-checker.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/seo/webpage-size-checker.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <input type="url" id="url" class="gz-input" style="flex:1;min-width:240px" placeholder="https://example.com" value="https://tools.gamezipper.com/">
+      <button class="gz-btn" id="analyzeBtn" data-i18n="analyze">Analyze</button>
+    </div>
+    <div id="status" style="margin:6px 0 14px;font-size:.9em"></div>
+    <div id="summaryWrap" style="display:none">
+      <div class="summary-grid" id="summary"></div>
+      <h3 id="breakdownTitle" style="margin:14px 0 4px;font-size:1rem"></h3>
+      <div class="breakdown-bar" id="breakdownBar"></div>
+      <div class="breakdown-legend" id="breakdownLegend" style="display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;margin-top:6px"></div>
+      <h3 id="resTitle" style="margin:16px 0 4px;font-size:1rem"></h3>
+      <div style="max-height:420px;overflow:auto">
+        <table class="res-list" id="resTable">
+          <thead><tr><th data-i18n="type">Type</th><th data-i18n="url">URL</th><th data-i18n="size" style="text-align:right">Size</th><th data-i18n="status">Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: { toolTitle:'Webpage Size Checker', toolDesc:'Measure total page weight, request count, and per-resource sizes for any URL. Find heavy CSS, JS, images and fonts to speed up your site.',
+    analyze:'Analyze', url:'URL', type:'Type', size:'Size', status:'Status', loading:'Fetching page…', parsing:'Parsing resources…', done:'✓ Done', err:'Error',
+    breakdownTitle:'Breakdown by Type', resTitle:'All Resources', step1:'Paste the URL of any public webpage', step2:'Click Analyze to fetch the page and its sub-resources', step3:'Review total page weight, request count and the type breakdown', step4:'Identify the heaviest resources and optimize them' },
+  zh: { toolTitle:'网页大小检测器', toolDesc:'测量任意 URL 的总页面大小、请求数和各类资源体积，找出拖慢网站的 CSS、JS、图片和字体。',
+    analyze:'分析', url:'URL', type:'类型', size:'大小', status:'状态', loading:'正在获取页面…', parsing:'正在解析资源…', done:'✓ 完成', err:'错误',
+    breakdownTitle:'按类型分布', resTitle:'全部资源', step1:'粘贴任意公开网页的 URL', step2:'点击「分析」抓取页面及其子资源', step3:'查看总大小、请求数和类型分布', step4:'找出最大的资源并优化' }
+});
+const { $, t, copyText } = GZ;
+function fmtBytes(n){if(n==null)return '—';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';if(n<1073741824)return (n/1048576).toFixed(2)+' MB';return (n/1073741824).toFixed(2)+' GB';}
+function extBucket(url){
+  if(!url)return 'other';
+  url = url.toLowerCase();
+  if(/\.(png|jpe?g|gif|webp|avif|svg|ico|bmp|tiff?)(\?|$|#)/.test(url))return 'img';
+  if(/\.(css)(\?|$|#)/.test(url))return 'css';
+  if(/\.(js|mjs)(\?|$|#)/.test(url))return 'js';
+  if(/\.(woff2?|ttf|otf|eot)(\?|$|#)/.test(url))return 'font';
+  if(/\.(mp4|webm|ogv|mov|avi|m4v)(\?|$|#)/.test(url))return 'img';
+  return 'other';
+}
+function shortUrl(u){try{const x=new URL(u);return x.hostname+x.pathname.replace(/\/$/,'');}catch(e){return u.slice(0,80);}}
+
+// Try a CORS-friendly proxy chain (best effort — if all fail we surface a friendly error)
+const PROXIES = [
+  (u)=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  (u)=>'https://corsproxy.io/?'+encodeURIComponent(u),
+  (u)=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+];
+async function fetchWithProxies(url){
+  let lastErr=null;
+  for(const p of PROXIES){
+    try{
+      const r=await fetch(p(url),{cache:'no-store'});
+      if(r.ok){return await r.text();}
+      lastErr='Proxy returned '+r.status;
+    }catch(e){lastErr=String(e);}
+  }
+  throw new Error(lastErr||'All proxies failed');
+}
+
+async function analyze(){
+  const url = $('#url').value.trim();
+  if(!url){$('#status').textContent='✗ Please enter a URL';return;}
+  const btn = $('#analyzeBtn'); btn.disabled=true;
+  $('#status').textContent=t('loading');
+  $('#summaryWrap').style.display='none';
+  const tbody = $('#resTable tbody'); tbody.innerHTML='';
+  let html='';
+  try { html = await fetchWithProxies(url); } catch(e){
+    $('#status').innerHTML='<span style="color:var(--gz-accent)">'+t('err')+': '+e.message+'. '+'Some sites block cross-origin fetches; try the page\'s own CORS-enabled mirror or a smaller static page.'+'</span>';
+    btn.disabled=false; return;
+  }
+  $('#status').textContent=t('parsing');
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const baseOrigin=(()=>{try{return new URL(url).origin;}catch(e){return '';}})();
+  const seen=new Set();
+  const resources=[];
+  // Main HTML size
+  const htmlBlob=new Blob([html]); const htmlSize=htmlBlob.size;
+  resources.push({url, type:'html', size:htmlSize, status:200, cached:false});
+  seen.add(url);
+  // Collect links
+  const candidates=[];
+  doc.querySelectorAll('link[rel="stylesheet"], link[rel="preload"][as], link[rel="icon"]').forEach(l=>{
+    const href=l.getAttribute('href'); if(!href)return;
+    try{const abs=new URL(href,url).href; if(!seen.has(abs)){seen.add(abs);candidates.push({url:abs,el:l});}}catch(e){}
+  });
+  doc.querySelectorAll('script[src]').forEach(l=>{
+    const src=l.getAttribute('src'); if(!src)return;
+    try{const abs=new URL(src,url).href; if(!seen.has(abs)){seen.add(abs);candidates.push({url:abs,el:l});}}catch(e){}
+  });
+  doc.querySelectorAll('img[src]').forEach(l=>{
+    const src=l.getAttribute('src'); if(!src||src.startsWith('data:'))return;
+    try{const abs=new URL(src,url).href; if(!seen.has(abs)){seen.add(abs);candidates.push({url:abs,el:l});}}catch(e){}
+  });
+  doc.querySelectorAll('source[src], video[src], audio[src]').forEach(l=>{
+    const src=l.getAttribute('src'); if(!src||src.startsWith('data:'))return;
+    try{const abs=new URL(src,url).href; if(!seen.has(abs)){seen.add(abs);candidates.push({url:abs,el:l});}}catch(e){}
+  });
+
+  // Fetch sizes in parallel
+  const fetchPromises = candidates.map(async r=>{
+    try{
+      const resp = await fetch(r.url, {mode:'cors', cache:'no-store'});
+      if(!resp.ok){resources.push({url:r.url, type:extBucket(r.url), size:0, status:resp.status, cached:false});return;}
+      const buf = await resp.arrayBuffer();
+      const len = resp.headers.get('content-length'); const size = len? parseInt(len) : (buf? buf.byteLength : 0);
+      resources.push({url:r.url, type:extBucket(r.url), size, status:resp.status, cached:false});
+    }catch(e){
+      resources.push({url:r.url, type:extBucket(r.url), size:0, status:'CORS', cached:false});
+    }
+  });
+  await Promise.all(fetchPromises);
+
+  // Build summary
+  const total = resources.reduce((s,r)=>s+(r.size||0),0);
+  const byType = {html:0,css:0,js:0,img:0,font:0,other:0};
+  for(const r of resources){ byType[r.type] = (byType[r.type]||0)+(r.size||0); }
+  const ok=resources.filter(r=>r.status===200).length;
+  const failed=resources.length-ok;
+  $('#summary').innerHTML = `
+    <div class="summary-item"><div class="num">${fmtBytes(total)}</div><div class="lbl">${t('size')}</div></div>
+    <div class="summary-item"><div class="num">${resources.length}</div><div class="lbl">Requests</div></div>
+    <div class="summary-item"><div class="num" style="color:var(--gz-success)">${ok}</div><div class="lbl">${t('status')} 200</div></div>
+    <div class="summary-item"><div class="num" style="color:${failed?'var(--gz-accent)':'var(--text3)'}">${failed}</div><div class="lbl">Failed / CORS</div></div>
+    <div class="summary-item"><div class="num">${fmtBytes(byType.html)}</div><div class="lbl">HTML</div></div>
+    <div class="summary-item"><div class="num">${fmtBytes(byType.css)}</div><div class="lbl">CSS</div></div>
+    <div class="summary-item"><div class="num">${fmtBytes(byType.js)}</div><div class="lbl">JS</div></div>
+    <div class="summary-item"><div class="num">${fmtBytes(byType.img)}</div><div class="lbl">Images</div></div>
+    <div class="summary-item"><div class="num">${fmtBytes(byType.font)}</div><div class="lbl">Fonts</div></div>`;
+  $('#breakdownTitle').textContent=t('breakdownTitle');
+  $('#resTitle').textContent=t('resTitle');
+  // Bar
+  const buckets=[
+    {k:'html',n:'HTML',cls:'bucket-html'},{k:'css',n:'CSS',cls:'bucket-css'},{k:'js',n:'JS',cls:'bucket-js'},
+    {k:'img',n:'Images',cls:'bucket-img'},{k:'font',n:'Fonts',cls:'bucket-font'},{k:'other',n:'Other',cls:'bucket-other'}
+  ];
+  const bar = $('#breakdownBar'); bar.innerHTML='';
+  const legend = $('#breakdownLegend'); legend.innerHTML='';
+  for(const b of buckets){
+    const sz=byType[b.k]||0; const pct=total? (sz/total*100):0;
+    if(pct>0){
+      const d=document.createElement('div');
+      d.className=b.cls; d.style.width=pct+'%';
+      d.textContent=pct>=8? (b.n+' '+pct.toFixed(0)+'%') : '';
+      bar.appendChild(d);
+      legend.insertAdjacentHTML('beforeend',`<span><span class="${b.cls}" style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px"></span>${b.n} ${fmtBytes(sz)} (${pct.toFixed(1)}%)</span>`);
+    }
+  }
+  // Resource table (largest first)
+  resources.sort((a,b)=>(b.size||0)-(a.size||0));
+  for(const r of resources){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="bucket-${r.type}" style="display:inline-block;padding:2px 8px;border-radius:6px;color:#fff;font-size:.75rem;font-weight:600">${r.type.toUpperCase()}</span></td><td style="word-break:break-all">${shortUrl(r.url)}</td><td class="num">${fmtBytes(r.size)}</td><td>${r.status}</td>`;
+    tbody.appendChild(tr);
+  }
+  $('#status').innerHTML='<span style="color:var(--gz-success)">'+t('done')+'</span> · '+fmtBytes(total)+' in '+resources.length+' resources';
+  $('#summaryWrap').style.display='block';
+  btn.disabled=false;
+}
+$('#analyzeBtn').addEventListener('click', analyze);
+$('#url').addEventListener('keydown', e=>{ if(e.key==='Enter') analyze(); });
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" id="t-analyze" onclick="analyze()">${t('analyze')}</button>
+  <button class="gz-btn gz-btn-secondary" id="t-copy" onclick="copyText($('#url').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#url').value='https://tools.gamezipper.com/';analyze()">${t('example')}</button>`;
+GZ.renderToolPage({
+  category:'seo',
+  titleKey:'toolTitle', descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🔍',href:'/seo/meta-tag-extractor.html',name:'Meta Tag Extractor'},
+    {icon:'🤖',href:'/seo/robots-txt-validator.html',name:'Robots.txt Validator'},
+    {icon:'🗺️',href:'/seo/sitemap-generator.html',name:'Sitemap Generator'},
+    {icon:'📡',href:'/dev/http-headers-checker.html',name:'HTTP Headers'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

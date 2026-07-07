@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>代码与文本比例检测器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="测量任意页面或粘贴源码的文本-HTML 比例。比例越高意味着每字节中可见内容越多 — 利于 SEO 和爬虫预算。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/seo/code-to-text-ratio.html">
+<meta property="og:title" content="代码与文本比例检测器">
+<meta property="og:description" content="测量任意页面或粘贴源码的文本-HTML 比例。比例越高意味着每字节中可见内容越多 — 利于 SEO 和爬虫预算。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/seo/code-to-text-ratio.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="代码与文本比例检测器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+.metric{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px}
+.metric .v{font-size:1.6rem;font-weight:800;color:var(--accent)}
+.metric .l{font-size:.78rem;opacity:.7;margin-top:4px}
+.ratio-big{font-size:3rem;font-weight:900;letter-spacing:-1px}
+.ratio-good{color:var(--gz-success)}
+.ratio-warn{color:#f0ad4e}
+.ratio-bad{color:var(--gz-accent)}
+.gauge{height:14px;background:var(--glass2);border-radius:7px;overflow:hidden;border:1px solid var(--border);position:relative}
+.gauge > div{height:100%;background:linear-gradient(90deg,var(--gz-accent),#f0ad4e 35%,#00d672 60%);transition:width .4s}
+.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.tab{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--glass2);cursor:pointer;font-size:.85em}
+.tab.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--glass2);border:1px solid var(--border);font-size:.75rem;margin:2px 4px 2px 0}
+.tag.warn{background:rgba(240,173,78,.15);color:#f0ad4e}
+.tag.ok{background:rgba(0,214,114,.15);color:#00d672}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Code-to-Text Ratio Checker","description":"Calculate the HTML code-to-text ratio of any URL or pasted source.","url": "https://tools.gamezipper.com/zh/seo/code-to-text-ratio.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type":"Question","name":"What is a good code-to-text ratio?","acceptedAnswer":{"@type":"Answer","text":"A ratio above 25-30% is generally considered healthy for SEO. Below 10% the page is likely bloated with HTML, comments or hidden markup. Above 60% the page may lack semantic content."}}, {"@type":"Question","name":"Does the ratio affect Google rankings?","acceptedAnswer":{"@type":"Answer","text":"Google has officially said text-to-code ratio is not a direct ranking factor. However, a low ratio often correlates with heavy bloat, slow loads and thin content — all of which do affect rankings."}}, {"@type":"Question","name":"How do you calculate the ratio?","acceptedAnswer":{"@type":"Answer","text":"We parse the HTML, strip scripts, styles, comments and HTML tags, then measure the remaining visible text in characters. The ratio is text_size / html_size × 100."}}, {"@type":"Question","name":"Are my pages sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. If you paste source code it is processed entirely in your browser. The URL fetch option uses a CORS proxy to grab public pages — nothing is stored."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/seo/code-to-text-ratio.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/seo/code-to-text-ratio.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/seo/code-to-text-ratio.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-mode="url">URL</div>
+      <div class="tab" data-mode="paste">Paste HTML</div>
+    </div>
+    <div id="urlBox" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <input type="url" id="urlInput" class="gz-input" style="flex:1;min-width:240px" placeholder="https://example.com" value="https://tools.gamezipper.com/">
+    </div>
+    <div id="pasteBox" style="display:none">
+      <textarea id="htmlInput" class="gz-input" rows="10" style="width:100%;font-family:monospace;font-size:.85em" placeholder="Paste full HTML source here…"></textarea>
+    </div>
+    <div id="status" style="margin:8px 0;font-size:.9em"></div>
+    <div id="result" style="display:none">
+      <div class="metric-grid">
+        <div class="metric"><div class="v ratio-big" id="ratioNum">—</div><div class="l" data-i18n="ratio">Text-to-Code Ratio</div></div>
+        <div class="metric"><div class="v" id="htmlSize">—</div><div class="l" data-i18n="html">HTML size</div></div>
+        <div class="metric"><div class="v" id="textSize">—</div><div class="l" data-i18n="text">Visible text</div></div>
+        <div class="metric"><div class="v" id="words">—</div><div class="l" data-i18n="words">Word count</div></div>
+        <div class="metric"><div class="v" id="tags">—</div><div class="l" data-i18n="tags">HTML tags</div></div>
+        <div class="metric"><div class="v" id="scripts">—</div><div class="l" data-i18n="scripts">Scripts & Styles</div></div>
+      </div>
+      <div class="gauge" style="margin:8px 0 16px"><div id="gaugeFill" style="width:0%"></div></div>
+      <div id="recommendation" class="metric" style="margin-bottom:14px;line-height:1.6"></div>
+      <h3 id="tagsTitle" style="margin:0 0 6px;font-size:1rem"></h3>
+      <div id="tagList"></div>
+      <h3 id="sampleTitle" style="margin:14px 0 6px;font-size:1rem"></h3>
+      <pre id="sampleText" style="background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.85em"></pre>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en:{toolTitle:'Code-to-Text Ratio Checker', toolDesc:'Measure the text-to-HTML ratio of any page or pasted source. A higher ratio means more visible content per byte — great for SEO and crawl budget.',
+    ratio:'Text-to-Code Ratio', html:'HTML size', text:'Visible text', words:'Word count', tags:'HTML tags', scripts:'Scripts & Styles',
+    tagsTitle:'Top tags by count', sampleTitle:'Sample of visible text', verify:'Check Ratio', copy:'Copy', example:'Load Example',
+    loading:'Fetching page…', done:'✓ Done', err:'Error',
+    rGood:'✓ Good ratio', rWarn:'⚠ Could be better', rBad:'✗ Low ratio — page is heavy on code, light on text',
+    rGoodTip:'Aim for 25-70%. You are in the healthy range. Keep meaningful paragraphs and avoid stuffing the page with widgets.',
+    rWarnTip:'Consider trimming comments, minifying HTML, removing inline styles, moving JS to external files, and adding more text content.',
+    rBadTip:'The page is mostly HTML/JS/CSS. Move scripts to external files, remove comments, minify output, and expand the actual text content.',
+    step1:'Pick URL or paste full HTML source', step2:'Click Check Ratio to measure the text and HTML bytes', step3:'Review the ratio, HTML size, text size and word count', step4:'Apply the recommendations to improve the ratio' },
+  zh:{toolTitle:'代码与文本比例检测器', toolDesc:'测量任意页面或粘贴源码的文本-HTML 比例。比例越高意味着每字节中可见内容越多 — 利于 SEO 和爬虫预算。',
+    ratio:'文本占比', html:'HTML 大小', text:'可见文本', words:'词数', tags:'HTML 标签', scripts:'脚本和样式',
+    tagsTitle:'出现最多的标签', sampleTitle:'可见文本样例', verify:'检测比例', copy:'复制', example:'加载示例',
+    loading:'正在获取页面…', done:'✓ 完成', err:'错误',
+    rGood:'✓ 比例良好', rWarn:'⚠ 还有改进空间', rBad:'✗ 比例过低 — 代码占比高，文本偏少',
+    rGoodTip:'建议保持在 25-70% 之间，你处于健康范围。请保留有意义的段落，避免堆砌无关组件。',
+    rWarnTip:'建议删除冗余注释、压缩 HTML、移除内联样式、把 JS 移到外部文件，并增加文本内容。',
+    rBadTip:'页面主要为 HTML/JS/CSS。建议将脚本移到外部文件、移除注释、压缩输出，并扩充实际文本内容。',
+    step1:'选择 URL 或粘贴完整 HTML 源码', step2:'点击「检测比例」测量文本和 HTML 字节数', step3:'查看比例、HTML 大小、文本大小和词数', step4:'按建议优化比例' }
+});
+const { $, t } = GZ;
+function fmtBytes(n){if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(2)+' MB';}
+
+document.querySelectorAll('#tabs .tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const m=tab.dataset.mode;
+    $('#urlBox').style.display = m==='url'?'flex':'none';
+    $('#pasteBox').style.display = m==='paste'?'block':'none';
+  });
+});
+
+const PROXIES = [
+  (u)=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+  (u)=>'https://corsproxy.io/?'+encodeURIComponent(u),
+  (u)=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+];
+async function fetchWithProxies(url){
+  let lastErr=null;
+  for(const p of PROXIES){
+    try{const r=await fetch(p(url),{cache:'no-store'});if(r.ok){return await r.text();}lastErr='Proxy '+r.status;}catch(e){lastErr=String(e);}
+  }
+  throw new Error(lastErr||'All proxies failed');
+}
+
+function analyzeHtml(html){
+  const htmlSize = new Blob([html]).size;
+  const doc = new DOMParser().parseFromString(html,'text/html');
+  // strip script/style/noscript/template/comments
+  const remove=doc.querySelectorAll('script, style, noscript, template, link[rel="import"]');
+  remove.forEach(n=>n.remove());
+  const walker=doc.createTreeWalker(doc.body||doc,NodeFilter.SHOW_COMMENT,null);
+  const comments=[]; let n; while((n=walker.nextNode())) comments.push(n);
+  comments.forEach(c=>c.remove());
+  // text
+  const text = (doc.body||doc).textContent.replace(/\s+/g,' ').trim();
+  const textSize = new Blob([text]).size;
+  const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+  // tag counts
+  const tagCounts = {};
+  doc.querySelectorAll('*').forEach(el=>{
+    const t=el.tagName.toLowerCase(); tagCounts[t]=(tagCounts[t]||0)+1;
+  });
+  const topTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const scriptsSize = new Blob([html]).size - htmlSize; // placeholder
+  // scripts/styles originally in raw HTML
+  const scriptMatches = [...html.matchAll(/<script\b[\s\S]*?<\/script>/gi)];
+  const styleMatches = [...html.matchAll(/<style\b[\s\S]*?<\/style>/gi)];
+  const commentMatches = [...html.matchAll(/<!--[\s\S]*?-->/g)];
+  const ss = scriptMatches.reduce((s,m)=>s+m[0].length,0) + styleMatches.reduce((s,m)=>s+m[0].length,0);
+  const cs = commentMatches.reduce((s,m)=>s+m[0].length,0);
+  return {htmlSize, textSize, words, tagCounts, topTags, ss, cs, sample: text.slice(0, 800), text};
+}
+
+async function analyze(){
+  const mode = document.querySelector('#tabs .tab.active').dataset.mode;
+  let html=''; const status = $('#status');
+  if(mode==='url'){
+    const url = $('#urlInput').value.trim();
+    if(!url){status.textContent='✗ Please enter a URL';return;}
+    status.textContent = t('loading');
+    try{html=await fetchWithProxies(url);}catch(e){status.innerHTML='<span style="color:var(--gz-accent)">'+t('err')+': '+e.message+'</span>';return;}
+  } else {
+    html = $('#htmlInput').value;
+    if(!html.trim()){status.textContent='✗ Paste some HTML first';return;}
+  }
+  const r = analyzeHtml(html);
+  const ratio = r.htmlSize? (r.textSize/r.htmlSize*100) : 0;
+  $('#ratioNum').textContent = ratio.toFixed(1)+'%';
+  $('#ratioNum').className = 'v ratio-big ' + (ratio>=25?'ratio-good':ratio>=10?'ratio-warn':'ratio-bad');
+  $('#htmlSize').textContent = fmtBytes(r.htmlSize);
+  $('#textSize').textContent = fmtBytes(r.textSize) + ' ('+r.textSize.toLocaleString()+' ch)';
+  $('#words').textContent = r.words.toLocaleString();
+  $('#tags').textContent = Object.values(r.tagCounts).reduce((a,b)=>a+b,0).toLocaleString();
+  $('#scripts').textContent = fmtBytes(r.ss) + ' (+' + fmtBytes(r.cs) + ' comments)';
+  $('#gaugeFill').style.width = Math.min(ratio, 100).toFixed(1)+'%';
+  const tip = ratio>=25? t('rGood')+': '+t('rGoodTip') : ratio>=10? t('rWarn')+': '+t('rWarnTip') : t('rBad')+': '+t('rBadTip');
+  $('#recommendation').innerHTML = tip;
+  $('#tagList').innerHTML = r.topTags.map(([t,c])=>`<span class="tag">&lt;${t}&gt; × ${c}</span>`).join('');
+  $('#sampleText').textContent = r.sample + (r.text && r.text.length>800?'…':'');
+  $('#tagsTitle').textContent = t('tagsTitle');
+  $('#sampleTitle').textContent = t('sampleTitle');
+  $('#result').style.display='block';
+  status.innerHTML = '<span style="color:var(--gz-success)">'+t('done')+'</span>';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="analyze()">${t('verify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#htmlInput').value=document.documentElement.outerHTML;document.querySelector('#tabs .tab[data-mode=\\'paste\\']').click();analyze()">${t('example')}</button>`;
+
+GZ.renderToolPage({
+  category:'seo',
+  titleKey:'toolTitle', descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'🔍',href:'/seo/meta-tag-extractor.html',name:'Meta Tag Extractor'},
+    {icon:'🤖',href:'/seo/robots-txt-validator.html',name:'Robots.txt Validator'},
+    {icon:'📊',href:'/seo/webpage-size-checker.html',name:'Webpage Size'},
+    {icon:'📏',href:'/seo/title-meta-length-checker.html',name:'Title & Meta Checker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>

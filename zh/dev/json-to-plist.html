@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JSON 转 Plist 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 JSON 转换为 Apple XML plist 格式。从 JSON 生成 Info.plist 文件 — 支持 dict、array、string、integer、real 和 boolean。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-to-plist.html">
+  <meta property="og:title" content="JSON 转 Plist 转换器">
+  <meta property="og:description" content="将 JSON 转换为 Apple XML plist 格式。从 JSON 生成 Info.plist 文件 — 支持 dict、array、string、integer、real 和 boolean。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-to-plist.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 转 Plist 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:200px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to Plist Converter","description":"Convert JSON to Apple XML Plist format online for free. Generate Info.plist files from JSON — supports dict, array, string, integer, real and boolean. 100% browser-only, no upload.","url": "https://tools.gamezipper.com/zh/dev/json-to-plist.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert JSON to an Apple Plist?","acceptedAnswer":{"@type":"Answer","text":"Paste valid JSON into the input area. The XML plist output is generated instantly with the correct DOCTYPE and root plist element."}},{"@type":"Question","name":"How are JSON types mapped to plist types?","acceptedAnswer":{"@type":"Answer","text":"Objects become <dict>, arrays become <array>, strings become <string>, integers become <integer>, decimals become <real>, true/false become <true/>/<false/>, and null becomes an empty string."}},{"@type":"Question","name":"Can I use this output as an Info.plist?","acceptedAnswer":{"@type":"Answer","text":"Yes. The output is a valid XML plist with the standard DOCTYPE. You can paste it directly into an Info.plist file for iOS or macOS apps."}},{"@type":"Question","name":"Is my JSON data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser. Your data is never sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-plist.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-plist.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-plist.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder='{"CFBundleName":"MyApp","CFBundleVersion":"1.0.0"}'></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to Plist Converter',
+    toolDesc: 'Convert JSON to Apple XML plist format. Generate Info.plist files from JSON — supports dict, array, string, integer, real and boolean.',
+    inputLabel: 'JSON Input',
+    outputLabel: 'Plist XML Output',
+    convert: 'Convert',
+    copy: 'Copy Plist',
+    clear: 'Clear',
+    example: 'Example',
+    valid: '✓ Converted successfully',
+    step1: 'Paste valid JSON into the input area',
+    step2: 'The XML plist output is generated automatically in real time',
+    step3: 'Objects become <dict>, arrays become <array>, primitives mapped correctly',
+    step4: 'Click Copy Plist to copy the XML to clipboard',
+  },
+  zh: {
+    toolTitle: 'JSON 转 Plist 转换器',
+    toolDesc: '将 JSON 转换为 Apple XML plist 格式。从 JSON 生成 Info.plist 文件 — 支持 dict、array、string、integer、real 和 boolean。',
+    inputLabel: 'JSON 输入',
+    outputLabel: 'Plist XML 输出',
+    convert: '转换',
+    copy: '复制 Plist',
+    clear: '清空',
+    example: '示例',
+    valid: '✓ 转换成功',
+    step1: '在输入区粘贴有效的 JSON',
+    step2: 'XML plist 输出会实时自动生成',
+    step3: '对象变为 <dict>，数组变为 <array>，原始类型正确映射',
+    step4: '点击「复制 Plist」将 XML 复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function escapeXml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toPlistNode(value, indent) {
+  const pad = '  '.repeat(indent);
+  const padInner = '  '.repeat(indent + 1);
+  if (value === null || value === undefined) {
+    return `${pad}<string></string>`;
+  }
+  if (typeof value === 'boolean') {
+    return `${pad}<${value ? 'true' : 'false'}/>`;
+  }
+  if (typeof value === 'number') {
+    if (Number.isInteger(value)) {
+      return `${pad}<integer>${value}</integer>`;
+    }
+    return `${pad}<real>${value}</real>`;
+  }
+  if (typeof value === 'string') {
+    return `${pad}<string>${escapeXml(value)}</string>`;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return `${pad}<array/>`;
+    const items = value.map(v => toPlistNode(v, indent + 1)).join('\n');
+    return `${pad}<array>\n${items}\n${pad}</array>`;
+  }
+  if (typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length === 0) return `${pad}<dict/>`;
+    const items = keys.map(k => `${padInner}<key>${escapeXml(k)}</key>\n${toPlistNode(value[k], indent + 1)}`).join('\n');
+    return `${pad}<dict>\n${items}\n${pad}</dict>`;
+  }
+  return `${pad}<string>${escapeXml(String(value))}</string>`;
+}
+
+function jsonToPlist(jsonStr) {
+  const obj = JSON.parse(jsonStr);
+  let root;
+  if (obj === null || typeof obj !== 'object') {
+    // Wrap scalar in a dict
+    root = toPlistNode({ value: obj }, 0);
+  } else {
+    root = toPlistNode(obj, 0);
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n${root}\n</plist>`;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const plist = jsonToPlist(inp);
+    $('#output').textContent = plist;
+    const lineCount = plist.split('\n').length;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span> <span style="opacity:.7">(${lineCount} lines)</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+    $('#output').textContent = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    CFBundleName: 'MyApp',
+    CFBundleVersion: '1.0.0',
+    CFBundleShortVersionString: '1.0',
+    LSMinimumSystemVersion: '10.13',
+    SupportedPlatforms: ['MacOSX', 'iPhoneSimulator', 'iPhoneOS'],
+    NSAppTransportSecurity: {
+      NSAllowsArbitraryLoads: false,
+      NSExceptionDomains: {
+        'example.com': { NSExceptionAllowsInsecureHTTPLoads: true }
+      }
+    },
+    CacheSize: 1048576
+  }, null, 2);
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doConvert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-in').textContent = t('inputLabel');
+$('#lbl-out').textContent = t('outputLabel');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🗂️', href:'/dev/plist-to-json.html', name:'Plist to JSON'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📄', href:'/convert/json-to-xml.html', name:'JSON to XML'},
+    {icon:'⚙️', href:'/dev/env-to-json.html', name:'ENV to JSON'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js" defer></script>
+</body>
+</html>
