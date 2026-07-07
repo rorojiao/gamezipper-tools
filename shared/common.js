@@ -100,7 +100,7 @@
   // v5.17 (2026-07-06): bump cache to v=20260706v517ver (VERSION label fix: code was already v5.17
   //   but VERSION: string was stale "5.16-..."). This bump ensures CDN delivers the corrected
   //   VERSION string to BI trackAdEvent calls.
-  var s1=document.createElement('script');s1.src='/monetag-manager.v517.js?v=20260707p0cb518';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.v519.js?v=v519poki';s1.defer=true;document.head.appendChild(s1);
   // v5.18 (2026-07-07, t_bad16c5c): load game-footer.js for cross-site game links
   // + commercialBreak click trigger. Mirrors gz.com game-footer.js pattern.
   // Graceful: if monetag-manager.js hasn't exported GZAds yet, footer links still
