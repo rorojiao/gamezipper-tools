@@ -108,7 +108,10 @@
   // v5.20 (2026-07-07, t_3c737c90): bump cache to v=v520cb (commercial break AdSense dimensions
   //   fix — Tier 1 changed from 336x280 fixed rectangle to width:100% min-height:90px to mirror
   //   gz.com v5.11's proven 91% fill rate pattern). New file monetag-manager.v520.js.
-  var s1=document.createElement('script');s1.src='/monetag-manager.v520.js?v=v520cb';s1.defer=true;document.head.appendChild(s1);
+  // v5.21 (2026-07-08): bump cache + load v521p0fix monetag-manager (Adsterra skip P0)
+  // Same as v5.20-commercial-break-adsense-fix base. Override: ADSTERRA.enabled = false
+  // unless window.GZ_ADSTERRA_ENABLED === true (CDN-dead zones were wasting +6s/page).
+  var s1=document.createElement('script');s1.src='/monetag-manager.v521p0fix.js?v=v521p0fix';s1.defer=true;document.head.appendChild(s1);
   // v5.18 (2026-07-07, t_bad16c5c): load game-footer.js for cross-site game links
   // + commercialBreak click trigger. Mirrors gz.com game-footer.js pattern.
   // Graceful: if monetag-manager.js hasn't exported GZAds yet, footer links still
