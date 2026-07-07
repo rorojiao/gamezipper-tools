@@ -81,7 +81,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://rid-define-growth-forge.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://bumper-states-found-museums.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   // v6.6.1 (2026-07-07, t_3c737c90): bump cache to v=20260707v661obs (add BI observability
   //   for Adsterra via trackAdEvent + checkFill pattern. Adsterra fills were previously
