@@ -83,7 +83,10 @@
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
   window.GZ_COLLECT_ENDPOINT = 'https://rid-define-growth-forge.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
-  var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
+  // v6.6.1 (2026-07-07, t_3c737c90): bump cache to v=20260707v661obs (add BI observability
+  //   for Adsterra via trackAdEvent + checkFill pattern. Adsterra fills were previously
+  //   invisible in BI dashboard — 0 adsterra_* events over 30d despite fills rendering.)
+  var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260707v661obs';sAd.defer=true;document.head.appendChild(sAd);
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
   // v5.10.1 (2026-06-27): Container AdSense Tier 0 + showContainerAd event completeness.
 //   v5.10 had banner AdSense Tier 0; v5.10.1 mirrors to container_ad (tool sub-pages).

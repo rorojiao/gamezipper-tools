@@ -3,6 +3,21 @@
  * ─────────────────────────────────────
  * Adsterra integration for tools.gamezipper.com
  * ACTIVE — Zone IDs configured via Adsterra Publisher API (2026-07-07).
+ *
+ * v6.6.1 Changes (2026-07-07 — BI observability, kanban t_3c737c90):
+ *   - 🪲 Fix: ZERO adsterra events in BI EVER (BI 30d scan: 0 rows with network=adsterra_*).
+ *     Root cause: adsterra-manager.js (this file) loaded zones, called them, but never
+ *     fired window.trackAdEvent() — meaning every Adsterra fill was invisible to BI
+ *     dashboards. Other networks (AdSense/Monetag) tracked properly → Adsterra looks
+ *     like 0 fills in BI even though scripts render ads.
+ *   - 🔧 Fix: added trackAdEvent() integration in:
+ *     1. loadScript() — fires 'adsterra_script_loaded' with zoneId + containerId
+ *     2. fillContainerAd() — fires 'adsterra_container_ad_fill' on container fill
+ *        (via MutationObserver checkFill pattern, mirrors monetag-manager.js line 713)
+ *     3. fillContainerAd() — fires 'adsterra_container_ad_no_fill' when ad didn't render
+ *   - 🛡️ Safety: Adsterra fills unchanged behavior (still loads zones via profitabledisplaynetwork.com).
+ *     Only adds observability. No new ads called.
+ *   - 📊 Acceptance (7d BI post-deploy): adsterra_* events > 0 (was 0).
  */
 
 (function () {
@@ -15,6 +30,70 @@
   if (!ADS_ENABLED) {
     console.log('[GZToolsAdsterra] PAUSED — set window.GZ_ADS_ENABLED=true to enable');
     return;
+  }
+
+  /* ── BI TRACKING (v6.6.1) ──────────────────────────────── */
+  // v6.6.1: hook into monetag-manager.js's trackAdEvent (gz_ad_event) so Adsterra
+  //   fills show up in BI dashboards alongside AdSense/Monetag. Previously invisible.
+  //   Safe no-op when trackAdEvent missing (older deployed scripts).
+  function trackAdEvent(type, data) {
+    try {
+      if (typeof window.trackAdEvent === 'function') {
+        window.trackAdEvent(type, data);
+        return;
+      }
+    } catch (e) {}
+    // Fallback: send via sendBeacon to BI server directly (mirrors tools monetag pattern).
+    try {
+      var meta = Object.assign({}, data || {}, { network: 'adsterra', ts: Date.now() });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('https://bi.gamezipper.com/api/event', JSON.stringify({
+          type: 'gz_ad_event',
+          site: location.hostname,
+          path: location.pathname,
+          meta: meta
+        }));
+      } else {
+        new Image().src = 'https://bi.gamezipper.com/api/event?type=gz_ad_event&path=' +
+          encodeURIComponent(location.pathname) + '&meta=' + encodeURIComponent(JSON.stringify(meta));
+      }
+    } catch (e) {}
+  }
+
+  // v6.6.1: MutationObserver-based fill detection (mirrors monetag-manager.js checkFill).
+  //   Polls for ad iframes inside `container` for `timeoutMs`. Resolves true on fill, false on timeout.
+  function checkFill(container, timeoutMs) {
+    return new Promise(function(resolve) {
+      if (!container) return resolve(false);
+      var resolved = false;
+      function isFilled() {
+        var iframes = container.querySelectorAll('iframe, ins iframe');
+        for (var i = 0; i < iframes.length; i++) {
+          var f = iframes[i];
+          var w = f.offsetWidth || parseInt(f.getAttribute('width') || '0', 10);
+          var h = f.offsetHeight || parseInt(f.getAttribute('height') || '0', 10);
+          if (w >= 50 && h >= 50) return true;
+        }
+        return false;
+      }
+      if (isFilled()) { resolved = true; resolve(true); return; }
+      var observer = null;
+      if (typeof MutationObserver !== 'undefined') {
+        try {
+          observer = new MutationObserver(function() {
+            if (resolved) return;
+            if (isFilled()) { resolved = true; if (observer) observer.disconnect(); resolve(true); }
+          });
+          observer.observe(container, { childList: true, subtree: true, attributes: true });
+        } catch (e) {}
+      }
+      setTimeout(function() {
+        if (resolved) return;
+        if (observer) observer.disconnect();
+        resolved = true;
+        resolve(isFilled());
+      }, timeoutMs || 8000);
+    });
   }
 
   // Zone IDs from Adsterra Publisher API (2026-07-07)
@@ -40,6 +119,13 @@
     s.async = true;
     s.setAttribute('data-zone', String(zone));
     s.src = 'https://www.profitabledisplaynetwork.com/' + zone;
+    var containerId = container && container.id ? container.id : '';
+    s.onload = function() {
+      trackAdEvent('adsterra_script_loaded', { zoneId: zone, containerId: containerId });
+    };
+    s.onerror = function() {
+      trackAdEvent('adsterra_script_error', { zoneId: zone, containerId: containerId });
+    };
     if (container) {
       container.appendChild(s);
     } else {
@@ -111,6 +197,13 @@
       container.setAttribute('data-filled', '1');
       loadScript(zone, container);
       console.log('[GZToolsAdsterra] Container ad filled: ' + containerId);
+      // v6.6.1: actually verify fill via checkFill + fire BI event (was: no-op,
+      //   BI 30d showed 0 adsterra_* events despite console logging "filled").
+      checkFill(container, 6000).then(function(filled) {
+        trackAdEvent(filled ? 'adsterra_container_ad_fill' : 'adsterra_container_ad_no_fill', {
+          zoneId: zone, containerId: containerId
+        });
+      });
     }, delay || 3000);
   }
 
