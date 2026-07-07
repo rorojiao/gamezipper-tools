@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSS Prefixer - Add Vendor Prefixes Online | GameZipper Tools</title>
+  <meta name="description" content="Add vendor prefixes (-webkit, -moz, -ms, -o) to your CSS automatically. Paste raw CSS and get cross-browser compatible output instantly. Free, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/css-prefixer.html">
+  <meta property="og:title" content="CSS Prefixer - Add Vendor Prefixes Online | GameZipper Tools">
+  <meta property="og:description" content="Add vendor prefixes (-webkit, -moz, -ms, -o) to your CSS automatically. Paste raw CSS and get cross-browser compatible output instantly. Free, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/css-prefixer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS Prefixer - Add Vendor Prefixes Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+.prefix-stat{display:inline-block;background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:4px 10px;margin:2px;font-size:.8em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS Prefixer","description":"Add vendor prefixes (-webkit, -moz, -ms, -o) to your CSS automatically. Paste raw CSS and get cross-browser compatible output instantly. Free, browser-only.","url":"https://tools.gamezipper.com/dev/css-prefixer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are CSS vendor prefixes?", "acceptedAnswer": {"@type": "Answer", "text": "Vendor prefixes are browser-specific prefixes added to experimental or non-standard CSS properties: -webkit- (Chrome, Safari, Edge), -moz- (Firefox), -ms- (Internet Explorer), -o- (old Opera). They allow browsers to ship features before they are fully standardized."}}, {"@type": "Question", "name": "Which CSS properties need prefixes?", "acceptedAnswer": {"@type": "Answer", "text": "Common properties that still benefit from prefixes include user-select, appearance, backdrop-filter, clip-path, scrollbar styles, hyphens, tab-size and certain flexbox/grid properties in older browsers. The prefixer detects these and adds the correct prefixes automatically."}}, {"@type": "Question", "name": "Is autoprefixer better?", "acceptedAnswer": {"@type": "Answer", "text": "Build-tool autoprefixers (PostCSS, Autoprefixer npm package) are more accurate because they use the caniuse database to add only the prefixes needed for your target browsers. This online tool is great for quick one-off CSS without a build step."}}, {"@type": "Question", "name": "Does this tool upload my CSS?", "acceptedAnswer": {"@type": "Answer", "text": "No. All CSS processing happens entirely in your browser. Your code never leaves your device — nothing is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/css-prefixer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/css-prefixer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/css-prefixer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder=".box {&#10;  display: flex;&#10;  user-select: none;&#10;  backdrop-filter: blur(10px);&#10;}"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSS Prefixer (Vendor Prefix Adder)',
+    toolDesc: 'Automatically add -webkit, -moz, -ms and -o vendor prefixes to your CSS. Paste raw CSS — get cross-browser output instantly.',
+    processed: 'CSS processed — {n} prefixes added',
+    noChange: 'No prefixes needed',
+    step1: 'Paste your CSS into the input area',
+    step2: 'Click Process to add vendor prefixes',
+    step3: 'Review the prefixed output on the right',
+    step4: 'Click Copy to copy the result',
+  },
+  zh: {
+    toolTitle: 'CSS 前缀添加器',
+    toolDesc: '自动为你的 CSS 添加 -webkit、-moz、-ms 和 -o 浏览器前缀。粘贴原始 CSS — 即时获得跨浏览器兼容的输出。',
+    processed: 'CSS 已处理 — 添加了 {n} 个前缀',
+    noChange: '无需添加前缀',
+    step1: '将 CSS 粘贴到输入区',
+    step2: '点击「处理」添加浏览器前缀',
+    step3: '在右侧查看添加前缀后的输出',
+    step4: '点击「复制」复制结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Properties that need vendor prefixes
+const PREFIX_MAP = {
+  'user-select': ['-webkit-', '-moz-', '-ms-'],
+  'appearance': ['-webkit-', '-moz-'],
+  'backdrop-filter': ['-webkit-'],
+  'clip-path': ['-webkit-'],
+  'hyphens': ['-webkit-', '-ms-', '-moz-'],
+  'tab-size': ['-moz-', '-o-'],
+  'text-size-adjust': ['-webkit-', '-moz-', '-ms-'],
+  'position': [],
+  'box-decoration-break': ['-webkit-'],
+  'text-emphasis': ['-webkit-'],
+  'text-orientation': ['-webkit-'],
+  'writing-mode': ['-webkit-', '-ms-'],
+  'overflow-wrap': [],
+  'font-feature-settings': ['-webkit-', '-moz-'],
+  'font-variant-ligatures': ['-webkit-', '-moz-'],
+  'perspective': ['-webkit-'],
+  'transform': ['-webkit-'],
+  'transform-style': ['-webkit-'],
+  'transform-origin': ['-webkit-'],
+  'animation': ['-webkit-'],
+  'animation-name': ['-webkit-'],
+  'animation-duration': ['-webkit-'],
+  'animation-timing-function': ['-webkit-'],
+  'animation-delay': ['-webkit-'],
+  'animation-iteration-count': ['-webkit-'],
+  'animation-direction': ['-webkit-'],
+  'animation-fill-mode': ['-webkit-'],
+  'animation-play-state': ['-webkit-'],
+  'transition': ['-webkit-'],
+  'transition-property': ['-webkit-'],
+  'transition-duration': ['-webkit-'],
+  'transition-timing-function': ['-webkit-'],
+  'transition-delay': ['-webkit-'],
+  'flex': ['-webkit-'],
+  'flex-grow': ['-webkit-'],
+  'flex-shrink': ['-webkit-'],
+  'flex-basis': ['-webkit-'],
+  'flex-direction': ['-webkit-'],
+  'flex-wrap': ['-webkit-'],
+  'flex-flow': ['-webkit-'],
+  'justify-content': ['-webkit-'],
+  'align-items': ['-webkit-'],
+  'align-content': ['-webkit-'],
+  'align-self': ['-webkit-'],
+  'order': ['-webkit-'],
+  'box-shadow': [],
+  'border-radius': [],
+  'columns': ['-webkit-', '-moz-'],
+  'column-count': ['-webkit-', '-moz-'],
+  'column-fill': ['-webkit-', '-moz-'],
+  'column-gap': ['-webkit-', '-moz-'],
+  'column-rule': ['-webkit-', '-moz-'],
+  'column-span': ['-webkit-', '-moz-'],
+  'column-width': ['-webkit-', '-moz-'],
+  'resize': [],
+  'overflow-scrolling': ['-webkit-'],
+};
+
+function doPrefix() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+
+  let prefixCount = 0;
+  // Process line by line, detect property:value patterns
+  const result = inp.replace(/^(\s*)([\w-]+)\s*:\s*([^;]+);(\s*)$/gm, (match, indent, prop, value, trail) => {
+    const prefixes = PREFIX_MAP[prop];
+    if (!prefixes || prefixes.length === 0) return match;
+    let out = '';
+    prefixes.forEach(p => {
+      out += `${indent}${p}${prop}: ${value};\n`;
+      prefixCount++;
+    });
+    out += `${indent}${prop}: ${value};`;
+    return out;
+  });
+
+  $('#output').textContent = result;
+  if (prefixCount > 0) {
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('processed').replace('{n}', prefixCount)}</span>`;
+  } else {
+    $('#status').innerHTML = `<span style="color:var(--text2)">${t('noChange')}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `.card {
+  display: flex;
+  align-items: center;
+  user-select: none;
+  appearance: none;
+  backdrop-filter: blur(10px);
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+  hyphens: auto;
+  column-count: 3;
+}`;
+  doPrefix();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doPrefix);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doPrefix()">${t('process')||'Process'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✨', href:'/dev/js-beautifier.html', name:'JS Beautifier'},
+    {icon:'🎨', href:'/css-tools/css-formatter.html', name:'CSS Formatter'},
+    {icon:'🖼️', href:'/css-tools/box-shadow.html', name:'Box Shadow'},
+    {icon:'🌈', href:'/css-tools/gradient.html', name:'Gradient'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

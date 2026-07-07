@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>美国社会安全号（SSN）验证器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="验证美国社会安全号码（SSN）格式，生成用于测试的有效 SSN。检查区域号、组号和序列号规则。免费、私密、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/ssn-validator.html">
+  <meta property="og:title" content="美国社会安全号（SSN）验证器">
+  <meta property="og:description" content="验证美国社会安全号码（SSN）格式，生成用于测试的有效 SSN。检查区域号、组号和序列号规则。免费、私密、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/ssn-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="美国社会安全号（SSN）验证器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SSN Validator & Generator","description":"Validate US Social Security Numbers (SSN) and generate valid test SSNs. Check format, area number, group number and serial number rules. Free, private, browser-only.","url":"https://tools.gamezipper.com/dev/ssn-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the SSN validator work?", "acceptedAnswer": {"@type": "Answer", "text": "The validator checks that the SSN matches the format XXX-XX-XXXX, then verifies each component: the area number (first 3 digits), group number (middle 2 digits) and serial number (last 4 digits) follow SSA assignment rules. It flags invalid, randomized or reserved SSNs."}}, {"@type": "Question", "name": "Can this tool verify if an SSN is real?", "acceptedAnswer": {"@type": "Answer", "text": "No. This tool only checks structural validity against SSA formatting rules. It cannot query any government database or confirm that an SSN belongs to a specific person. All processing is local and private."}}, {"@type": "Question", "name": "Is my SSN safe to enter?", "acceptedAnswer": {"@type": "Answer", "text": "Never enter a real SSN into any online tool. This validator is for format-checking test data only. Everything runs in your browser — no data is sent to any server — but you should still only use fictional SSNs."}}, {"@type": "Question", "name": "What SSN numbers are invalid?", "acceptedAnswer": {"@type": "Answer", "text": "Invalid SSNs include those with area 000, 666 or 900-999, group 00, or serial 0000. The famous 078-05-1122 is also invalid — it was used on sample wallet cards and was mistakenly used by thousands of people."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/zh/dev/ssn-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ssn-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/zh/dev/ssn-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="input" spellcheck="false" placeholder="123-45-6789"></textarea>
+      </div>
+      <div>
+        <label id="lbl-out"></label>
+        <div class="gz-output" id="output"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SSN Validator & Generator',
+    toolDesc: 'Validate US Social Security Numbers and generate valid test SSNs. Checks area, group and serial number rules.',
+    valid: '✓ Valid SSN format',
+    invalid: '✗ Invalid SSN',
+    area: 'Area Number',
+    group: 'Group Number',
+    serial: 'Serial Number',
+    generated: 'Generated valid test SSN',
+    step1: 'Enter an SSN in XXX-XX-XXXX format (or click Generate)',
+    step2: 'The validator checks area, group and serial rules',
+    step3: 'View the detailed breakdown of each component',
+    step4: 'Use Generate to create a random valid-format test SSN',
+  },
+  zh: {
+    toolTitle: '美国社会安全号（SSN）验证器',
+    toolDesc: '验证美国社会安全号码格式，生成用于测试的有效 SSN。检查区域号、组号和序列号规则。',
+    valid: '✓ SSN 格式有效',
+    invalid: '✗ 无效的 SSN',
+    area: '区域号',
+    group: '组号',
+    serial: '序列号',
+    generated: '已生成有效测试 SSN',
+    step1: '输入 XXX-XX-XXXX 格式的 SSN（或点击生成）',
+    step2: '验证器检查区域号、组号和序列号规则',
+    step3: '查看各组成部分的详细分析',
+    step4: '点击「生成」创建随机有效格式的测试 SSN',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// SSN validation rules (SSA):
+// Area (first 3 digits): cannot be 000, 666, or 900-999
+// Group (middle 2 digits): cannot be 00
+// Serial (last 4 digits): cannot be 0000
+// Famous invalid: 078-05-1122 (wallet sample), 219-09-9999 (ad sample)
+function validateSSN(input) {
+  const clean = input.replace(/[^\d]/g, '');
+  if (clean.length !== 9) return { valid: false, reason: 'SSN must be 9 digits', clean };
+  const area = parseInt(clean.substring(0, 3));
+  const group = parseInt(clean.substring(3, 5));
+  const serial = parseInt(clean.substring(5, 9));
+
+  if (area === 0) return { valid: false, reason: 'Area number cannot be 000', clean, area, group, serial };
+  if (area === 666) return { valid: false, reason: 'Area number 666 is excluded', clean, area, group, serial };
+  if (area >= 900) return { valid: false, reason: 'Area numbers 900-999 are invalid', clean, area, group, serial };
+  if (group === 0) return { valid: false, reason: 'Group number cannot be 00', clean, area, group, serial };
+  if (serial === 0) return { valid: false, reason: 'Serial number cannot be 0000', clean, area, group, serial };
+  // Known promotional/sample SSNs
+  if (clean === '078051122') return { valid: false, reason: '078-05-1122 is a known sample SSN (wallet promo)', clean, area, group, serial };
+  if (clean === '219099999') return { valid: false, reason: '219-09-9999 is a known sample SSN (ad promo)', clean, area, group, serial };
+
+  const issued = area < 900 && area !== 666 && area !== 0;
+  return { valid: true, clean, area, group, serial, issued };
+}
+
+function formatSSN(d) {
+  return `${String(d.area).padStart(3,'0')}-${String(d.group).padStart(2,'0')}-${String(d.serial).padStart(4,'0')}`;
+}
+
+function generateSSN() {
+  let area, group, serial;
+  do {
+    area = Math.floor(Math.random() * 899) + 1; // 1-899, skip 000 and 900+
+    if (area === 666) area = 100;
+  } while (area === 0 || area === 666 || area >= 900);
+  do { group = Math.floor(Math.random() * 99) + 1; } while (group === 0);
+  do { serial = Math.floor(Math.random() * 9999) + 1; } while (serial === 0);
+  return { area, group, serial };
+}
+
+function doValidate() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  const result = validateSSN(inp);
+  const formatted = formatSSN(result);
+  let html = `<div style="font-size:1.4em;font-weight:700;margin-bottom:12px">${formatted}</div>`;
+
+  if (result.valid) {
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span>`;
+    html += `<div style="display:grid;gap:8px;font-size:.9em">`;
+    html += `<div><strong>${t('area')}:</strong> ${String(result.area).padStart(3,'0')} — valid range (001-899, not 666)</div>`;
+    html += `<div><strong>${t('group')}:</strong> ${String(result.group).padStart(2,'0')} — valid (01-99)</div>`;
+    html += `<div><strong>${t('serial')}:</strong> ${String(result.serial).padStart(4,'0')} — valid (0001-9999)</div>`;
+    html += `</div>`;
+    html += `<div style="margin-top:12px;padding:8px;background:var(--glass);border-radius:8px;font-size:.8em;color:var(--text2)">⚠ ${t('privateNote')||'Format-valid only. Cannot verify against any database.'}</div>`;
+  } else {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalid')}: ${result.reason}</span>`;
+    html += `<div style="color:var(--gz-accent);padding:8px">${result.reason}</div>`;
+  }
+  $('#output').innerHTML = html;
+}
+
+function doGenerate() {
+  const ssn = generateSSN();
+  const formatted = formatSSN(ssn);
+  $('#input').value = formatted;
+  doValidate();
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('generated')}: ${formatted}</span>`;
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#input').addEventListener('input', doValidate);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doValidate()">${t('validate')||'Validate'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doGenerate()">${t('generate')||'Generate'}</button>
+  <button class="gz-btn" onclick="copyText($('#input').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🏦', href:'/dev/ein-validator.html', name:'EIN Validator'},
+    {icon:'🔐', href:'/dev/password-generator.html', name:'Password Gen'},
+    {icon:'🆔', href:'/dev/uuid.html', name:'UUID Gen'},
+    {icon:'🔑', href:'/dev/api-key-generator.html', name:'API Key'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
