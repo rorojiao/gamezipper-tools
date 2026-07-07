@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>ISBN Lookup & Book Info - Free Online | GameZipper Tools</title>
+  <meta name="description" content="Look up any book by ISBN-10 or ISBN-13 and get title, author, publisher, cover, page count and more. Free ISBN lookup tool — no signup, runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/isbn-lookup.html">
+  <meta property="og:title" content="ISBN Lookup & Book Info - Free Online | GameZipper Tools">
+  <meta property="og:description" content="Look up any book by ISBN-10 or ISBN-13 and get title, author, publisher, cover, page count and more. Free ISBN lookup tool — no signup, runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/isbn-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ISBN Lookup & Book Info - Free Online | GameZipper Tools">
+<meta name="twitter:description" content="Look up any book by ISBN-10 or ISBN-13 and get title, author, publisher, cover, page count and more. Free ISBN lookup tool — no signup, runs in your browser.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.isbn-input{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.isbn-input input{flex:1;min-width:200px;padding:10px 12px;background:var(--bg2,#222);border:1px solid var(--border,#333);border-radius:6px;color:var(--text,#eee);font-size:1em;font-family:inherit}
+.isbn-input input:focus{outline:none;border-color:var(--accent,#e94560)}
+.isbn-input input.invalid{border-color:var(--gz-accent,#e94560)}
+#book-result{margin-top:14px}
+.book-card{display:grid;grid-template-columns:140px 1fr;gap:18px;padding:16px;background:var(--bg2,#1a1a1a);border:1px solid var(--border,#333);border-radius:8px}
+.book-card img{width:140px;height:auto;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.4);background:#222}
+.book-meta dt{font-size:.75em;color:var(--text2,#888);text-transform:uppercase;letter-spacing:.5px;margin-top:8px}
+.book-meta dd{margin:2px 0 0 0;color:var(--text,#eee);font-size:.92em}
+.book-meta dd a{color:var(--accent,#e94560);text-decoration:none}
+.book-meta dd a:hover{text-decoration:underline}
+.loading{padding:24px;text-align:center;color:var(--text2,#aaa);font-style:italic}
+.error{padding:14px 16px;background:rgba(233,69,96,.1);border:1px solid var(--gz-accent,#e94560);border-radius:6px;color:var(--gz-accent,#e94560)}
+.validity{font-size:.82em;margin-top:6px}
+.validity.ok{color:var(--gz-success,#00d672)}
+.validity.bad{color:var(--gz-accent,#e94560)}
+@media(max-width:540px){.book-card{grid-template-columns:1fr}.book-card img{width:120px;margin:0 auto}}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"ISBN Lookup & Book Info","description":"Look up any book by ISBN-10 or ISBN-13 and get title, author, publisher, cover, page count and more. Free ISBN lookup tool — no signup, runs in your browser.","url":"https://tools.gamezipper.com/dev/isbn-lookup.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Which ISBN formats are supported?","acceptedAnswer":{"@type":"Answer","text":"Both ISBN-10 (10 digits, used before 2007) and ISBN-13 (13 digits, the current standard). You can paste with or without hyphens — the tool strips formatting automatically."}},{"@type":"Question","name":"Where does the book information come from?","acceptedAnswer":{"@type":"Answer","text":"The lookup queries the free Google Books API and the Open Library API. No API key is required and the request goes directly from your browser."}},{"@type":"Question","name":"Is my ISBN uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"The ISBN you enter is sent only to the public book-lookup API endpoints (Google Books, Open Library) so they can return book metadata. It is not stored on any GameZipper server."}},{"@type":"Question","name":"What if no book is found?","acceptedAnswer":{"@type":"Answer","text":"Some ISBNs are not in the public databases — especially very old books, region-locked editions or self-published titles. The tool still validates the check digit and converts between ISBN-10 and ISBN-13 for you."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/isbn-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/isbn-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/isbn-lookup.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="isbn-input">
+      <input id="isbn" type="text" placeholder="9780307474278" autocomplete="off">
+      <button class="gz-btn" id="lookup-btn"></button>
+    </div>
+    <div id="status"></div>
+    <div id="book-result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'ISBN Lookup & Book Info',
+    toolDesc: 'Look up any book by ISBN-10 or ISBN-13. Get title, author, publisher, cover, page count and description — plus check-digit validation and ISBN-10 ↔ ISBN-13 conversion.',
+    lookup: 'Look up',
+    example: 'Example',
+    clear: 'Clear',
+    searching: 'Searching for book…',
+    notFound: 'No book found for this ISBN in public databases.',
+    fetchError: 'Lookup failed — check your network connection and try again.',
+    placeholder: 'Enter ISBN-10 or ISBN-13…',
+    validIsbn10: '✓ Valid ISBN-10',
+    validIsbn13: '✓ Valid ISBN-13',
+    invalidIsbn: '✗ Invalid ISBN — check digit does not match',
+    convert10to13: 'ISBN-13 equivalent:',
+    convert13to10: 'ISBN-10 equivalent:',
+    step1: 'Type or paste an ISBN-10 or ISBN-13 (hyphens optional)',
+    step2: 'The tool validates the check digit live and shows the converted format',
+    step3: 'Click Look up to fetch book metadata from public book APIs',
+    step4: 'See cover, authors, publisher, pages and description — all without signup',
+    // book fields
+    by: 'Author(s)',
+    pub: 'Publisher',
+    pubDate: 'Published',
+    pages: 'Pages',
+    lang: 'Language',
+    categories: 'Categories',
+    desc: 'Description',
+    preview: 'Preview',
+    infoLink: 'More info',
+  },
+  zh: {
+    toolTitle: 'ISBN 查询 & 图书信息',
+    toolDesc: '通过 ISBN-10 或 ISBN-13 查询任意图书。获取书名、作者、出版社、封面、页数和简介 — 同时支持校验位验证和 ISBN-10 ↔ ISBN-13 互转。',
+    lookup: '查询',
+    example: '示例',
+    clear: '清空',
+    searching: '正在搜索图书……',
+    notFound: '公共数据库中未找到该 ISBN 对应的图书。',
+    fetchError: '查询失败 — 请检查网络连接后重试。',
+    placeholder: '输入 ISBN-10 或 ISBN-13……',
+    validIsbn10: '✓ 有效的 ISBN-10',
+    validIsbn13: '✓ 有效的 ISBN-13',
+    invalidIsbn: '✗ 无效的 ISBN — 校验位不匹配',
+    convert10to13: '对应的 ISBN-13：',
+    convert13to10: '对应的 ISBN-10：',
+    step1: '输入或粘贴 ISBN-10 或 ISBN-13（连字符可选）',
+    step2: '工具将实时校验校验位并显示转换后的格式',
+    step3: '点击「查询」从公共图书 API 获取图书元数据',
+    step4: '查看封面、作者、出版社、页数和简介 — 无需注册',
+    by: '作者',
+    pub: '出版社',
+    pubDate: '出版日期',
+    pages: '页数',
+    lang: '语言',
+    categories: '分类',
+    desc: '简介',
+    preview: '预览',
+    infoLink: '更多信息',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const isbnInput = $('#isbn');
+isbnInput.placeholder = t('placeholder');
+$('#lookup-btn').textContent = t('lookup');
+
+// ----- ISBN validation & conversion -----
+function normalize(s) { return (s || '').replace(/[^0-9Xx]/g, ''); }
+
+function isbn10Check(isbn) {
+  if (!/^\d{9}[\dXx]$/.test(isbn)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += (10 - i) * parseInt(isbn[i]);
+  const last = isbn[9].toUpperCase();
+  sum += last === 'X' ? 10 : parseInt(last);
+  return sum % 11 === 0;
+}
+
+function isbn13Check(isbn) {
+  if (!/^\d{13}$/.test(isbn)) return false;
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += parseInt(isbn[i]) * (i % 2 ? 3 : 1);
+  const check = (10 - (sum % 10)) % 10;
+  return check === parseInt(isbn[12]);
+}
+
+function isbn10to13(isbn10) {
+  const core = '978' + isbn10.slice(0, 9);
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += parseInt(core[i]) * (i % 2 ? 3 : 1);
+  return core + ((10 - (sum % 10)) % 10);
+}
+
+function isbn13to10(isbn13) {
+  if (!isbn13.startsWith('978')) return null;
+  const core = isbn13.slice(3, 12);
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += (10 - i) * parseInt(core[i]);
+  const rem = sum % 11;
+  const check = rem === 0 ? '0' : rem === 1 ? 'X' : (11 - rem).toString();
+  return core + check;
+}
+
+function validateLive() {
+  const raw = isbnInput.value.trim();
+  const n = normalize(raw);
+  const s = $('#status');
+  isbnInput.classList.remove('invalid');
+  if (!n) { s.innerHTML = ''; return null; }
+  if (n.length === 10) {
+    if (isbn10Check(n)) {
+      s.innerHTML = `<div class="validity ok">${t('validIsbn10')}</div><div class="validity">${t('convert10to13')} <code>${isbn10to13(n)}</code></div>`;
+      return { type: '10', value: n, canonical: isbn10to13(n) };
+    }
+  } else if (n.length === 13) {
+    if (isbn13Check(n)) {
+      const conv = isbn13to10(n);
+      s.innerHTML = `<div class="validity ok">${t('validIsbn13')}</div>` + (conv ? `<div class="validity">${t('convert13to10')} <code>${conv}</code></div>` : '');
+      return { type: '13', value: n, canonical: n };
+    }
+  } else if (n.length > 13) {
+    isbnInput.classList.add('invalid');
+    s.innerHTML = `<div class="validity bad">${t('invalidIsbn')}</div>`;
+    return null;
+  } else {
+    // still typing
+    s.innerHTML = '';
+    return null;
+  }
+  isbnInput.classList.add('invalid');
+  s.innerHTML = `<div class="validity bad">${t('invalidIsbn')}</div>`;
+  return null;
+}
+
+async function doLookup() {
+  const info = validateLive();
+  const out = $('#book-result');
+  if (!info) { out.innerHTML = ''; return; }
+  out.innerHTML = `<div class="loading">${t('searching')}</div>`;
+
+  const isbn13 = info.canonical;
+  const isbn10 = info.type === '10' ? info.value : isbn13to10(isbn13);
+
+  // Try Google Books first
+  try {
+    const q = info.type === '10' ? `isbn:${info.value}` : `isbn:${isbn13}`;
+    const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q));
+    if (r.ok) {
+      const data = await r.json();
+      if (data.totalItems > 0 && data.items) {
+        renderBook(data.items[0].volumeInfo || {});
+        return;
+      }
+    }
+  } catch (e) { /* fall through */ }
+
+  // Fallback: Open Library
+  try {
+    const r2 = await fetch('https://openlibrary.org/api/books?bibkeys=ISBN:' + isbn13 + '&format=json&jscmd=data');
+    if (r2.ok) {
+      const d2 = await r2.json();
+      const key = 'ISBN:' + isbn13;
+      if (d2[key]) { renderOpenLib(d2[key]); return; }
+    }
+  } catch (e) { /* fall through */ }
+
+  out.innerHTML = `<div class="error">${t('notFound')}</div>`;
+}
+
+function escapeHtml(s) { return (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderBook(v) {
+  const cover = v.imageLinks ? (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail || v.imageLinks.small || v.imageLinks.medium) : null;
+  const coverUrl = cover ? cover.replace(/^http:/, 'https:') : null;
+  const authors = (v.authors || []).join(', ');
+  const cats = (v.categories || []).join(', ');
+  const desc = v.description ? (v.description.length > 600 ? v.description.slice(0, 600) + '…' : v.description) : '';
+  const html = `
+    <div class="book-card">
+      ${coverUrl ? `<img src="${coverUrl}" alt="${escapeHtml(v.title)}" loading="lazy">` : '<div style="width:140px;height:200px;display:flex;align-items:center;justify-content:center;background:#222;border-radius:6px;color:#666;font-size:.8em;text-align:center;padding:8px">No cover</div>'}
+      <dl class="book-meta">
+        <dt>${t('by')}</dt><dd>${escapeHtml(authors) || '—'}</dd>
+        ${v.title ? `<dt>Title</dt><dd><strong>${escapeHtml(v.title)}</strong>${v.subtitle ? ' — ' + escapeHtml(v.subtitle) : ''}</dd>` : ''}
+        ${v.publisher ? `<dt>${t('pub')}</dt><dd>${escapeHtml(v.publisher)}</dd>` : ''}
+        ${v.publishedDate ? `<dt>${t('pubDate')}</dt><dd>${escapeHtml(v.publishedDate)}</dd>` : ''}
+        ${v.pageCount ? `<dt>${t('pages')}</dt><dd>${v.pageCount}</dd>` : ''}
+        ${v.language ? `<dt>${t('lang')}</dt><dd>${escapeHtml(v.language)}</dd>` : ''}
+        ${cats ? `<dt>${t('categories')}</dt><dd>${escapeHtml(cats)}</dd>` : ''}
+        ${desc ? `<dt>${t('desc')}</dt><dd>${escapeHtml(desc)}</dd>` : ''}
+        ${v.previewLink || v.infoLink ? `<dt></dt><dd>${v.previewLink ? `<a href="${escapeHtml(v.previewLink)}" target="_blank" rel="noopener">${t('preview')} →</a>` : ''}${v.infoLink ? ` · <a href="${escapeHtml(v.infoLink)}" target="_blank" rel="noopener">${t('infoLink')} →</a>` : ''}</dd>` : ''}
+      </dl>
+    </div>`;
+  $('#book-result').innerHTML = html;
+}
+
+function renderOpenLib(b) {
+  const cover = b.cover ? (b.cover.large || b.cover.medium || b.cover.small) : null;
+  const authors = (b.authors || []).map(a => a.name).join(', ');
+  const html = `
+    <div class="book-card">
+      ${cover ? `<img src="${cover}" alt="${escapeHtml(b.title)}" loading="lazy">` : ''}
+      <dl class="book-meta">
+        <dt>${t('by')}</dt><dd>${escapeHtml(authors) || '—'}</dd>
+        ${b.title ? `<dt>Title</dt><dd><strong>${escapeHtml(b.title)}</strong>${b.subtitle ? ' — ' + escapeHtml(b.subtitle) : ''}</dd>` : ''}
+        ${b.publishers && b.publishers.length ? `<dt>${t('pub')}</dt><dd>${escapeHtml(b.publishers.map(p=>p.name).join(', '))}</dd>` : ''}
+        ${b.publish_date ? `<dt>${t('pubDate')}</dt><dd>${escapeHtml(b.publish_date)}</dd>` : ''}
+        ${b.number_of_pages ? `<dt>${t('pages')}</dt><dd>${b.number_of_pages}</dd>` : ''}
+        ${(b.subjects||[]).length ? `<dt>${t('categories')}</dt><dd>${escapeHtml(b.subjects.slice(0,5).map(s=>s.name).join(', '))}</dd>` : ''}
+        ${b.url ? `<dt></dt><dd><a href="${escapeHtml(b.url)}" target="_blank" rel="noopener">${t('infoLink')} →</a></dd>` : ''}
+      </dl>
+    </div>`;
+  $('#book-result').innerHTML = html;
+}
+
+function loadExample() {
+  isbnInput.value = '9780307474278';
+  doLookup();
+}
+
+function doClear() { isbnInput.value = ''; $('#status').innerHTML = ''; $('#book-result').innerHTML = ''; isbnInput.classList.remove('invalid'); }
+
+isbnInput.addEventListener('input', validateLive);
+isbnInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLookup(); });
+$('#lookup-btn').addEventListener('click', doLookup);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📚', href:'/dev/isbn-validator.html', name:'ISBN Validator'},
+    {icon:'📑', href:'/text/apa-citation-generator.html', name:'APA Citation'},
+    {icon:'📑', href:'/text/citation-generator.html', name:'Citation Generator'},
+    {icon:'📊', href:'/convert/barcode.html', name:'Barcode Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
