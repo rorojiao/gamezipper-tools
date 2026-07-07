@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>IP Range to CIDR Converter - Free Online | GameZipper Tools</title>
+  <meta name="description" content="Convert an IP address range (start IP - end IP) to CIDR notation and back. Calculate how many CIDR blocks cover a range, host counts and more. Free networking tool — 100% browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/ip-range-to-cidr.html">
+  <meta property="og:title" content="IP Range to CIDR Converter - Free Online | GameZipper Tools">
+  <meta property="og:description" content="Convert an IP address range (start IP - end IP) to CIDR notation and back. Calculate how many CIDR blocks cover a range, host counts and more. Free networking tool — 100% browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/ip-range-to-cidr.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="IP Range to CIDR Converter - Free Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.range-input{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;margin-bottom:12px}
+.range-input label{font-size:.8rem;color:var(--text2);display:block;margin-bottom:4px}
+.range-input input{width:100%;padding:8px;background:var(--glass2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;font-size:.9rem}
+.range-input .arrow{font-size:1.5rem;color:var(--accent);padding-bottom:6px}
+#output{background:var(--glass2);padding:16px;border-radius:8px;border:1px solid var(--border);min-height:60px}
+.cidr-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-family:monospace;font-size:.9rem}
+.cidr-row:last-child{border:none}
+.cidr-row .cidr{color:var(--accent);font-weight:600}
+.cidr-row .info{color:var(--text2);font-size:.8rem}
+.err{color:var(--gz-accent,#e94560);font-size:.85rem;padding:8px 0}
+.mode-toggle{display:flex;gap:6px;margin-bottom:12px}
+.mode-toggle button{flex:1;padding:8px;border:1px solid var(--border);background:var(--glass2);color:var(--text2);border-radius:6px;cursor:pointer;font-size:.85rem}
+.mode-toggle button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"IP Range to CIDR Converter","description":"Convert an IP address range (start IP - end IP) to CIDR notation and back. Calculate how many CIDR blocks cover a range, host counts and more. Free networking tool — 100% browser-based.","url":"https://tools.gamezipper.com/dev/ip-range-to-cidr.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert an IP range to CIDR?", "acceptedAnswer": {"@type": "Answer", "text": "Enter the start and end IP addresses of your range. The tool calculates the minimal set of CIDR blocks that exactly cover the range, using the standard range-to-CIDR algorithm."}}, {"@type": "Question", "name": "Why does one range produce multiple CIDRs?", "acceptedAnswer": {"@type": "Answer", "text": "CIDR blocks must align to power-of-2 boundaries. A range that doesn't start and end on these boundaries needs to be split into multiple CIDR blocks of varying sizes to cover it exactly."}}, {"@type": "Question", "name": "What is CIDR notation?", "acceptedAnswer": {"@type": "Answer", "text": "CIDR (Classless Inter-Domain Routing) notation writes an IP range as a base address followed by a slash and prefix length, e.g. 192.168.1.0/24 represents 256 addresses."}}, {"@type": "Question", "name": "Can I convert CIDR back to a range?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Switch to CIDR-to-Range mode, enter a CIDR like 10.0.0.0/24, and the tool shows the first IP, last IP, total hosts and usable hosts."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/ip-range-to-cidr.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/ip-range-to-cidr.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/ip-range-to-cidr.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-toggle">
+      <button id="mode-range" class="active" onclick="setMode('range')"></button>
+      <button id="mode-cidr" onclick="setMode('cidr')"></button>
+    </div>
+    <div id="input-area"></div>
+    <div id="error"></div>
+    <label id="lbl-out" style="display:block;margin:12px 0 6px;font-weight:600"></label>
+    <div id="output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'IP Range to CIDR Converter',
+    toolDesc: 'Convert IP address ranges to CIDR notation and vice versa. Find the minimal CIDR blocks for any range, or expand a CIDR to its first/last IP and host count.',
+    convert: 'Convert',
+    clear: 'Clear',
+    example: 'Example',
+    modeRangeToCidr: 'Range → CIDR',
+    modeCidrToRange: 'CIDR → Range',
+    startIp: 'Start IP',
+    endIp: 'End IP',
+    cidrInput: 'CIDR (e.g. 192.168.1.0/24)',
+    outputLabel: 'Result',
+    step1: 'Choose conversion mode (Range→CIDR or CIDR→Range)',
+    step2: 'Enter the start and end IPs, or a CIDR block',
+    step3: 'Click Convert to calculate',
+    step4: 'Copy the CIDR blocks or range details',
+    errStartIp: 'Invalid start IP address',
+    errEndIp: 'Invalid end IP address',
+    errRange: 'End IP must be greater than or equal to start IP',
+    errCidr: 'Invalid CIDR. Use format like 192.168.1.0/24',
+    errPrefix: 'Prefix must be between 0 and 32',
+    lblCidrBlocks: 'CIDR Blocks',
+    lblFirstIp: 'First IP (Network)',
+    lblLastIp: 'Last IP (Broadcast)',
+    lblTotalHosts: 'Total Addresses',
+    lblUsableHosts: 'Usable Hosts',
+    lblSubnetMask: 'Subnet Mask',
+    lblWildcard: 'Wildcard Mask',
+    hostsUnit: 'addresses',
+  },
+  zh: {
+    toolTitle: 'IP 范围转 CIDR 转换器',
+    toolDesc: '将 IP 地址范围转换为 CIDR 表示法，或反向转换。查找任意范围的最小 CIDR 块，或将 CIDR 展开为首/末 IP 和主机数。',
+    convert: '转换',
+    clear: '清除',
+    example: '示例',
+    modeRangeToCidr: '范围 → CIDR',
+    modeCidrToRange: 'CIDR → 范围',
+    startIp: '起始 IP',
+    endIp: '结束 IP',
+    cidrInput: 'CIDR（如 192.168.1.0/24）',
+    outputLabel: '结果',
+    step1: '选择转换模式（范围→CIDR 或 CIDR→范围）',
+    step2: '输入起始和结束 IP，或 CIDR 块',
+    step3: '点击「转换」计算',
+    step4: '复制 CIDR 块或范围详情',
+    errStartIp: '无效的起始 IP 地址',
+    errEndIp: '无效的结束 IP 地址',
+    errRange: '结束 IP 必须大于或等于起始 IP',
+    errCidr: '无效的 CIDR。请使用如 192.168.1.0/24 的格式',
+    errPrefix: '前缀长度必须在 0 到 32 之间',
+    lblCidrBlocks: 'CIDR 块',
+    lblFirstIp: '起始 IP（网络地址）',
+    lblLastIp: '结束 IP（广播地址）',
+    lblTotalHosts: '总地址数',
+    lblUsableHosts: '可用主机数',
+    lblSubnetMask: '子网掩码',
+    lblWildcard: '通配符掩码',
+    hostsUnit: '个地址',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'range';
+
+document.querySelector('#lbl-out').textContent = t('outputLabel');
+
+function setMode(m) {
+  mode = m;
+  $('#mode-range').classList.toggle('active', m === 'range');
+  $('#mode-cidr').classList.toggle('active', m === 'cidr');
+  renderInput();
+  convert();
+}
+
+function renderInput() {
+  if (mode === 'range') {
+    $('#input-area').innerHTML = `
+      <div class="range-input">
+        <div><label>${t('startIp')}</label><input type="text" id="start-ip" placeholder="192.168.1.0" oninput="convert()"></div>
+        <div class="arrow">→</div>
+        <div><label>${t('endIp')}</label><input type="text" id="end-ip" placeholder="192.168.1.255" oninput="convert()"></div>
+      </div>`;
+  } else {
+    $('#input-area').innerHTML = `
+      <div style="margin-bottom:12px">
+        <label style="font-size:.8rem;color:var(--text2);display:block;margin-bottom:4px">${t('cidrInput')}</label>
+        <input type="text" id="cidr-input" placeholder="192.168.1.0/24" oninput="convert()" style="width:100%;padding:8px;background:var(--glass2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;font-size:.9rem">
+      </div>`;
+  }
+}
+
+function isValidIp(ip) {
+  const m = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return false;
+  return m.slice(1).every(o => { const n = parseInt(o); return n >= 0 && n <= 255; });
+}
+
+function ipToInt(ip) {
+  return ip.split('.').reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
+}
+
+function intToIp(num) {
+  return [24, 16, 8, 0].map(s => (num >>> s) & 0xFF).join('.');
+}
+
+function countTrailingZeros(n) {
+  if (n === 0) return 32;
+  let c = 0;
+  while ((n & 1) === 0) { c++; n >>>= 1; }
+  return c;
+}
+
+function rangeToCidr(startInt, endInt) {
+  const result = [];
+  while (startInt <= endInt) {
+    const maxZeros = countTrailingZeros(startInt);
+    let maxDiff = 0;
+    let diff = endInt - startInt + 1;
+    while (diff > 1) { diff >>= 1; maxDiff++; }
+    const bits = Math.min(maxZeros, maxDiff);
+    const prefix = 32 - bits;
+    const count = 1 << bits;
+    result.push({ cidr: `${intToIp(startInt)}/${prefix}`, count });
+    startInt += count;
+  }
+  return result;
+}
+
+function cidrToRange(ipInt, prefix) {
+  const bits = 32 - prefix;
+  const mask = prefix === 0 ? 0 : (0xFFFFFFFF << bits) >>> 0;
+  const wildcard = (~mask) >>> 0;
+  const network = (ipInt & mask) >>> 0;
+  const broadcast = (network | wildcard) >>> 0;
+  const total = 1 << bits;
+  const usable = prefix >= 31 ? total : (total - 2);
+  return { network, broadcast, total, usable, mask, wildcard };
+}
+
+function intToMask(prefix) {
+  return prefix === 0 ? '0.0.0.0' : intToIp((0xFFFFFFFF << (32 - prefix)) >>> 0);
+}
+
+function convert() {
+  $('#error').innerHTML = '';
+  const raw = mode === 'range' ? ($('#start-ip')?.value || '') + ($('#end-ip')?.value || '') : ($('#cidr-input')?.value || '');
+  if (!raw.trim()) { $('#output').innerHTML = ''; return; }
+
+  if (mode === 'range') {
+    const startIp = $('#start-ip').value.trim();
+    const endIp = $('#end-ip').value.trim();
+    if (!startIp || !isValidIp(startIp)) { $('#error').innerHTML = `<div class="err">${t('errStartIp')}</div>`; $('#output').innerHTML = ''; return; }
+    if (!endIp || !isValidIp(endIp)) { $('#error').innerHTML = `<div class="err">${t('errEndIp')}</div>`; $('#output').innerHTML = ''; return; }
+    const startInt = ipToInt(startIp);
+    const endInt = ipToInt(endIp);
+    if (endInt < startInt) { $('#error').innerHTML = `<div class="err">${t('errRange')}</div>`; $('#output').innerHTML = ''; return; }
+
+    const blocks = rangeToCidr(startInt, endInt);
+    const totalHosts = endInt - startInt + 1;
+    $('#output').innerHTML = `
+      <div class="cidr-row"><span class="info">${t('lblCidrBlocks')} (${blocks.length})</span><span class="info">${totalHosts.toLocaleString()} ${t('hostsUnit')}</span></div>
+      ${blocks.map(b => `<div class="cidr-row"><span class="cidr">${b.cidr}</span><span class="info">${b.count.toLocaleString()} ${t('hostsUnit')}</span></div>`).join('')}`;
+  } else {
+    const cidr = $('#cidr-input').value.trim();
+    const m = cidr.match(/^(\d+\.\d+\.\d+\.\d+)\/(\d+)$/);
+    if (!m) { $('#error').innerHTML = `<div class="err">${t('errCidr')}</div>`; $('#output').innerHTML = ''; return; }
+    const ip = m[1];
+    const prefix = parseInt(m[2]);
+    if (!isValidIp(ip)) { $('#error').innerHTML = `<div class="err">${t('errCidr')}</div>`; $('#output').innerHTML = ''; return; }
+    if (prefix < 0 || prefix > 32) { $('#error').innerHTML = `<div class="err">${t('errPrefix')}</div>`; $('#output').innerHTML = ''; return; }
+
+    const r = cidrToRange(ipToInt(ip), prefix);
+    $('#output').innerHTML = `
+      <div class="cidr-row"><span class="info">${t('lblFirstIp')}</span><span class="cidr">${intToIp(r.network)}</span></div>
+      <div class="cidr-row"><span class="info">${t('lblLastIp')}</span><span class="cidr">${intToIp(r.broadcast)}</span></div>
+      <div class="cidr-row"><span class="info">${t('lblTotalHosts')}</span><span class="cidr">${r.total.toLocaleString()}</span></div>
+      <div class="cidr-row"><span class="info">${t('lblUsableHosts')}</span><span class="cidr">${r.usable.toLocaleString()}</span></div>
+      <div class="cidr-row"><span class="info">${t('lblSubnetMask')}</span><span class="cidr">${intToMask(prefix)}</span></div>
+      <div class="cidr-row"><span class="info">${t('lblWildcard')}</span><span class="cidr">${intToIp(r.wildcard)}</span></div>`;
+  }
+}
+
+function loadExample() {
+  if (mode === 'range') {
+    $('#start-ip').value = '192.168.1.0';
+    $('#end-ip').value = '192.168.1.255';
+  } else {
+    $('#cidr-input').value = '10.0.0.0/22';
+  }
+  convert();
+}
+
+function doClear() {
+  document.querySelectorAll('#input-area input').forEach(el => el.value = '');
+  $('#output').innerHTML = '';
+  $('#error').innerHTML = '';
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+document.querySelector('#mode-range').textContent = t('modeRangeToCidr');
+document.querySelector('#mode-cidr').textContent = t('modeCidrToRange');
+renderInput();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/ipv4-subnet-calculator.html', name:'Subnet Calc'},
+    {icon:'🔗', href:'/dev/cidr-to-ip-range.html', name:'CIDR to IP'},
+    {icon:'🔢', href:'/dev/ip-to-integer.html', name:'IP to Integer'},
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
