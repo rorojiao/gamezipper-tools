@@ -124,6 +124,18 @@
     wrap.querySelectorAll('.gz-rec-item').forEach(function(link){
       link.addEventListener('click', function(){});
     });
+
+    // v6.6 (2026-07-07): fire commercialBreak when result-rec shows (user just
+    //   finished a tool, ready to leave — perfect ad moment). Mirrors gz.com
+    //   game-footer.js click-trigger pattern. Graceful: if GZAds.commercialBreak
+    //   missing, no-op. fire-and-forget (don't await Promise — overlay should
+    //   appear on top of rec).
+    try {
+      if (window.GZAds && window.GZAds.commercialBreak) {
+        // Slight delay so user sees the rec first, then ad overlay (Poki-style).
+        setTimeout(function(){ try { window.GZAds.commercialBreak('result_ready'); } catch(e){} }, 1200);
+      }
+    } catch(e){}
   }
 
   function show(){

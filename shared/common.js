@@ -81,7 +81,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://impose-timely-amd-revelation.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://suggestion-floral-alumni-reuters.trycloudflare.com/api/collect';
   // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
   var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260618P0fix';sAd.defer=true;document.head.appendChild(sAd);
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
@@ -100,7 +100,10 @@
   // v5.17 (2026-07-06): bump cache to v=20260706v517ver (VERSION label fix: code was already v5.17
   //   but VERSION: string was stale "5.16-..."). This bump ensures CDN delivers the corrected
   //   VERSION string to BI trackAdEvent calls.
-  var s1=document.createElement('script');s1.src='/monetag-manager.v519.js?v=v519poki';s1.defer=true;document.head.appendChild(s1);
+  // v5.20 (2026-07-07, t_3c737c90): bump cache to v=v520cb (commercial break AdSense dimensions
+  //   fix — Tier 1 changed from 336x280 fixed rectangle to width:100% min-height:90px to mirror
+  //   gz.com v5.11's proven 91% fill rate pattern). New file monetag-manager.v520.js.
+  var s1=document.createElement('script');s1.src='/monetag-manager.v520.js?v=v520cb';s1.defer=true;document.head.appendChild(s1);
   // v5.18 (2026-07-07, t_bad16c5c): load game-footer.js for cross-site game links
   // + commercialBreak click trigger. Mirrors gz.com game-footer.js pattern.
   // Graceful: if monetag-manager.js hasn't exported GZAds yet, footer links still
