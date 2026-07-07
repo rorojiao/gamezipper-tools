@@ -81,12 +81,14 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://brings-tunnel-abilities-licence.trycloudflare.com/api/collect';
-  // v6.5: load adsterra-manager.js (no-op when zone IDs placeholder, zero resource cost)
-  // v6.6.1 (2026-07-07, t_3c737c90): bump cache to v=20260707v661obs (add BI observability
-  //   for Adsterra via trackAdEvent + checkFill pattern. Adsterra fills were previously
-  //   invisible in BI dashboard — 0 adsterra_* events over 30d despite fills rendering.)
-  var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260707v661obs';sAd.defer=true;document.head.appendChild(sAd);
+  window.GZ_COLLECT_ENDPOINT = 'https://assist-links-alarm-essence.trycloudflare.com/api/collect';
+  // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
+  //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
+  //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
+  //   zero revenue. Default OFF — opt-in via window.GZ_LOAD_ADSTERRA=true.
+  if(window.GZ_LOAD_ADSTERRA===true){
+    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=v521p0fix';sAd.defer=true;document.head.appendChild(sAd);
+  } else { try { console.log('[gz-tools] adsterra skipped: CDN dead (set GZ_LOAD_ADSTERRA=true to re-enable)'); } catch(e){} }
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
   // v5.10.1 (2026-06-27): Container AdSense Tier 0 + showContainerAd event completeness.
 //   v5.10 had banner AdSense Tier 0; v5.10.1 mirrors to container_ad (tool sub-pages).
