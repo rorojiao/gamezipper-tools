@@ -1459,8 +1459,13 @@
       //   loadZone() with targetEl=null silently routed every attempt to .catch().
       //   Now: 2.5s grace for AdSense, then loadZone with monetagSlot target so
       //   checkFill() sees the iframe. Mirrors gz.com v5.11 fix.
-      // Tier 2: Monetag waterfall — leads with cross-deployed inpagePushGz (11012002)
-      // since tools primary zones have 0% fill (verified BI 7d 2026-06-23~06-30).
+      // v5.23: Cut to single-Tier (ZONES.inpagePushGz = 11012002 working) — BI 7d
+      // 2026-07-01~07-08 shows zero fills from any of the commercial break Tier 2-4
+      // fallbacks (vignette 11012011 dead-zone + vignetteLegacy 10689346 disabled +
+      // adsterraVignette/adsterraInpagePush CDN-dead). The original 4-tier waterfall
+      // consumed up to 6s timeout × 3 dead-end calls per commercial break.
+      // AdSense Tier 0 fills 78% of commercial breaks in 7d, so this code rarely
+      // fires; when it does, single-Tier is the correct architecture.
       setTimeout(function() {
         if (adFilled) return;
         loadZone(ZONES.inpagePushGz, monetagSlot).then(function() {
@@ -1469,38 +1474,7 @@
           onAdFilled('monetag_inpageGz');
         }).catch(function() {
           if (adFilled) return;
-          loadZone(ZONES.vignette, monetagSlot).then(function() {
-            monetagSlot.style.opacity = '1';
-            monetagSlot.textContent = '';
-            onAdFilled('monetag_vignette');
-          }).catch(function() {
-            if (adFilled) return;
-            loadZone(ZONES.vignetteLegacy, monetagSlot).then(function() {
-              monetagSlot.style.opacity = '1';
-              monetagSlot.textContent = '';
-              onAdFilled('monetag_vignette_legacy');
-            }).catch(function() {
-              // v6.5 Tier 4: Adsterra vignette — bypass Monetag 14-day 0% fill.
-              // Only fires when CONFIG.ADSTERRA.enabled + zoneId configured.
-              // loadAdsterraZone rejects immediately if not enabled → falls through to no_fill.
-              if (adFilled) return;
-              loadAdsterraZone(ZONES.adsterraVignette, monetagSlot, 'vignette').then(function() {
-                monetagSlot.style.opacity = '1';
-                monetagSlot.textContent = '';
-                onAdFilled('adsterra_vignette');
-              }).catch(function() {
-                // v6.5 Tier 4b: Adsterra in-page push (last resort before user sees blank break)
-                if (adFilled) return;
-                loadAdsterraZone(ZONES.adsterraInpagePush, monetagSlot, 'inpage').then(function() {
-                  monetagSlot.style.opacity = '1';
-                  monetagSlot.textContent = '';
-                  onAdFilled('adsterra_inpage');
-                }).catch(function() {
-                  trackAdEvent('commercial_break_no_fill', { source: source || 'auto' });
-                });
-              });
-            });
-          });
+          trackAdEvent('commercial_break_no_fill', { source: source || 'auto', reason: 'v5.23_tier1_failed_only_tier', zoneId: ZONES.inpagePushGz });
         });
       }, 2500);  // v5.13: extended 1.5s → 2.5s grace period for AdSense to fill
 
@@ -1832,6 +1806,10 @@
       trackAdEvent('adsense_load_error', { error: String(e) });
     }
     // Monetag fallback after 2.5s (mirrors showPokiOverlay line 1366-1407)
+    // v5.23: Cut to single-Tier (ZONES.inpagePushGz = 11012002 working) — same
+    // pattern as showPokiOverlay commercial break fix. Tier 2 (vignette 11012011
+    // dead-zone) + Tier 3 (vignetteLegacy 10689346 disabled) + Tier 4 (adsterra)
+    // + Tier 5 (adsterra) all 100% dead ends per BI 7d evidence.
     setTimeout(function() {
       if (adFilled) return;
       loadZone(ZONES.inpagePushGz, monetagSlot).then(function() {
@@ -1840,34 +1818,7 @@
         onAdFilled('monetag_inpageGz');
       }).catch(function() {
         if (adFilled) return;
-        loadZone(ZONES.vignette, monetagSlot).then(function() {
-          monetagSlot.style.opacity = '1';
-          monetagSlot.textContent = '';
-          onAdFilled('monetag_vignette');
-        }).catch(function() {
-          if (adFilled) return;
-          loadZone(ZONES.vignetteLegacy, monetagSlot).then(function() {
-            monetagSlot.style.opacity = '1';
-            monetagSlot.textContent = '';
-            onAdFilled('monetag_vignette_legacy');
-          }).catch(function() {
-            if (adFilled) return;
-            loadAdsterraZone(ZONES.adsterraVignette, monetagSlot, 'vignette').then(function() {
-              monetagSlot.style.opacity = '1';
-              monetagSlot.textContent = '';
-              onAdFilled('adsterra_vignette');
-            }).catch(function() {
-              if (adFilled) return;
-              loadAdsterraZone(ZONES.adsterraInpagePush, monetagSlot, 'inpage').then(function() {
-                monetagSlot.style.opacity = '1';
-                monetagSlot.textContent = '';
-                onAdFilled('adsterra_inpage');
-              }).catch(function() {
-                trackAdEvent('commercial_break_no_fill', { source: source || 'manual_click' });
-              });
-            });
-          });
-        });
+        trackAdEvent('commercial_break_no_fill', { source: source || 'manual_click', reason: 'v5.23_tier1_failed_only_tier', zoneId: ZONES.inpagePushGz });
       });
     }, 2500);
 

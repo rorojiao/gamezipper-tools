@@ -114,10 +114,16 @@
   //   legacy disabled + adsterra CDN-dead). Single-Tier (11012002 working) on every
   //   tool sub-page. Expected: dead_zone_skip 11012010 121/wk → 0, zone_legacy_disabled
   //   _skip 10689345 74/wk → 0.
+  // v5.23 round 2 (2026-07-09, t_d65a1fdd ad-hoc verify): v523.js file updated to
+  //   ALSO cut commercialBreak() Tier 2-5 dead-ends (vignette 11012011 + vignetteLegacy
+  //   10689346 + adsterraVignette + adsterraInpagePush). Expected additional:
+  //   zone_legacy_disabled_skip 10689346 ~10/wk → 0, commercial break dead-end
+  //   calls ~25/wk → 0. Cache version bumped v523showippushcull → v523showippushcull2
+  //   to force CF cache MISS.
   // was previously committed (b8f757074) but NEVER reached prod because common.js still
   // loaded v521p0fix.js (CF edge cache). New file v522.js created + cache version bumped
   // to a NEVER-cached value to force cache MISS across CDN.
-  var s1=document.createElement('script');s1.src='/monetag-manager.v523.js?v=v523showippushcull';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.v523.js?v=v523showippushcull2';s1.defer=true;document.head.appendChild(s1);
   // v5.18 (2026-07-07, t_bad16c5c): load game-footer.js for cross-site game links
   // + commercialBreak click trigger. Mirrors gz.com game-footer.js pattern.
   // Graceful: if monetag-manager.js hasn't exported GZAds yet, footer links still
