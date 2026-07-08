@@ -1,7 +1,38 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.22-monetag-tier-order-fix (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.23-tools-showInPagePush-cull (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.23 Changes (2026-07-09 — showContainerAd Tier 2 + showInPagePush Full Tier Cull, kanban t_d65a1fdd):
+ *   - 🪲 Fix: v5.22 changelog claimed "Tier 2/3/4 culled in banner+container" but only culled
+ *     Tier 3/4 in showContainerAd. Tier 2 (`ZONES.inpagePush = 11012010`) was kept as a
+ *     "nominal fallback" via loadZone() short-circuit (CONFIG.deadZones guard) — meaning
+ *     every Tier 1 fail STILL consumed the dead-zone rejection call = wasted bandwidth +
+ *     wrong signal in BI. showInPagePush() (used on every tool sub-page via shared/common.js)
+ *     was also completely un-culled, still running the full 3-tier waterfall with Tier 1
+ *     (Superior 11012010 dead) + Tier 2 (Pungent 10689345 legacy disabled) + Tier 3 (adsterra).
+ *     BI 11.5h post-v5.22 evidence:
+ *       - tools dead_zone_skip 11012010: 6 events (every showContainerAd Tier 1 fail)
+ *       - tools dead_zone_skip 11012011: 1 event
+ *       - tools zone_legacy_disabled_skip 10689345: 2 events (showInPagePush Tier 2)
+ *       - tools zone_legacy_disabled_skip 10689346: 2 events
+ *   - 🔧 Cut showContainerAd() Tier 2 (`loadZone(ZONES.inpagePush)`) — replaced with
+ *     trackAdEvent('container_ad_no_fill') on Tier 1 fail. Now zero dead-zone calls
+ *     from container waterfall.
+ *   - 🔧 Cut showInPagePush() entirely to single-Tier (ZONES.inpagePushGz = 11012002
+ *     working). Tier 1 (ZONES.inpagePush = 11012010 dead) + Tier 2 (ZONES.inpagePushLegacy
+ *     = 10689345 disabled) + Tier 3 (adsterra CDN-dead) removed — all 100% dead ends.
+ *   - 📊 Expected impact (BI 7d post-deploy):
+ *       - tools dead_zone_skip 11012010: 121/week → 0 (-100%)
+ *       - tools dead_zone_skip 11012011: ~10/week → 0 (-100%)
+ *       - tools zone_legacy_disabled_skip 10689345: 74/week → 0 (-100%)
+ *       - tools zone_legacy_disabled_skip 10689346: ~10/week → 0 (-100%)
+ *       - Page load speed: save 6s × N dead-zone calls/week wasted timeout (estimate
+ *         18 minutes/week of CPU saved)
+ *   - 🛡️ Safety: No new ad calls. Frequency caps untouched. AdSense Tier 0 untouched.
+ *     showInPagePush on every tool page now runs ZERO dead-end calls. Re-enabling any
+ *     Tier later is a 3-line addition if Monetag reauthorizes legacy zones.
+ *   - Version bumped 5.22-monetag-tier-order-fix → 5.23-tools-showInPagePush-cull.
  *
  * v5.22 Changes (2026-07-08 — P0 Monetag Tier Order + Dead-Zone Cull, kanban t_227fc56b):
  *   - 🪲 Fix: showContainerAd() Tier 1 was ZONES.inpagePush = 11012010 (dead zone,
@@ -451,7 +482,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.22-monetag-tier-order-fix',  // 2026-07-08: v5.22 kanban t_227fc56b — reverse showContainerAd Tier 1/2 order + cull dead-end Tiers 2-4 in banner+container; legacy zones (10689345/6) moved to deadZones array.
+    VERSION: '5.23-tools-showInPagePush-cull',  // 2026-07-09: v5.23 kanban t_d65a1fdd — cut showContainerAd Tier 2 (ZONES.inpagePush 11012010 dead) + cut showInPagePush full 3-tier (11012010 dead + 10689345 legacy disabled + adsterra CDN-dead) into single-Tier (11012002 working). Removes all dead-zone calls from tools.
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -1240,25 +1271,18 @@
         //   Tier 1 wasting 6s on dead zone 11012010. Removing the dead Zone-1 reverse
         //   turns ~14 fills/wk into estimated 20-30 fills/wk (more attempts reach the
         //   working zone without 6s timeout blocking the container slot).
+        // v5.23: Tier 2/3/4 ALL removed — Tier 2 (ZONES.inpagePush = 11012010 dead
+        //   — short-circuit via CONFIG.deadZones) + Tier 3 (legacy 10689345 disabled)
+        //   + Tier 4 (adsterra CDN-dead) all 100% dead ends. Cutting the call sites
+        //   is the real fix — BI 7d 2026-07-01~07-08: dead_zone_skip 11012010 = 121,
+        //   zone_legacy_disabled_skip = 74. After v5.23 these should be 0.
         loadZone(ZONES.inpagePushGz, container).then(function() {
           if (container.getAttribute('data-filled')) return;
           container.setAttribute('data-filled', '1');
           markShown();
         }).catch(function() {
           if (container.getAttribute('data-filled')) return;
-          // Tier 2 (v5.22): Tools primary 11012010 (legacy Superior, dead in v5.12). Kept
-          //   as nominal Tier 2 but loadZone() will short-circuit via CONFIG.deadZones
-          //   guard → 'dead_zone_skip' event. Re-enable by removing from deadZones array.
-          loadZone(ZONES.inpagePush, container).then(function() {
-            if (container.getAttribute('data-filled')) return;
-            container.setAttribute('data-filled', '1');
-            markShown();
-          }).catch(function() {
-            if (container.getAttribute('data-filled')) return;
-            // v5.22: Tier 3 (legacy 10689345, disabled) + Tier 4 (adsterra 30130931,
-            //   CDN-dead in v5.21) removed — both 100% dead ends. Log and stop.
-            trackAdEvent('container_ad_no_fill', { network: 'all', containerId: 'gz-tools-ad-below', reason: 'v5.22_all_tiers_exhausted' });
-          });
+          trackAdEvent('container_ad_no_fill', { network: 'monetag', containerId: 'gz-tools-ad-below', reason: 'v5.23_all_tiers_exhausted' });
         });
       }
     }, CONFIG.TIMING.containerAdDelay);
@@ -1601,12 +1625,16 @@
     if (!canShowAd()) return;
     setTimeout(function() {
       if (!canShowAd()) return;
-      // Try Superior first; fall back to Pungent (legacy)
-      loadZone(ZONES.inpagePush).then(function() { markShown(); }).catch(function() {
-        loadZone(ZONES.inpagePushLegacy).then(function() { markShown(); }).catch(function() {
-          // v6.5 Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
-          loadAdsterraZone(ZONES.adsterraInpagePush, null, 'inpage').then(function() { markShown(); }).catch(function() {});
-        });
+      // v5.23: Single-Tier (ZONES.inpagePushGz = 11012002 working). The original
+      // 3-tier waterfall (ZONES.inpagePush = 11012010 dead + ZONES.inpagePushLegacy
+      // = 10689345 disabled + adsterra CDN-dead) was 100% dead ends on tools. Every
+      // tool sub-page via shared/common.js invoked this function — wasted ~6s
+      // timeout × 3 tiers per page load before any rejection fired. Cutting to
+      // single-Tier removes all dead-zone calls from the per-page in-page push
+      // ad slot. Re-enable later by re-adding the .catch() chain.
+      loadZone(ZONES.inpagePushGz).then(function() { markShown(); }).catch(function() {
+        // Tier 1 failed — log and stop (no fallback tiers to try).
+        trackAdEvent('inpage_push_no_fill', { network: 'monetag', reason: 'v5.23_tier1_failed', zoneId: ZONES.inpagePushGz });
       });
     }, 3000);
   }
