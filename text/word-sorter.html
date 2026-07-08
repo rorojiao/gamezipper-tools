@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Word Sorter - Sort Words Alphabetically Online | GameZipper Tools</title>
+  <meta name="description" content="Sort words in any text alphabetically, by length or frequency. Remove duplicates, reverse order, handle case sensitivity. Free online word sorter — runs in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/word-sorter.html">
+  <meta property="og:title" content="Word Sorter - Sort Words Alphabetically Online | GameZipper Tools">
+  <meta property="og:description" content="Sort words in any text alphabetically, by length or frequency. Remove duplicates, reverse order, handle case sensitivity. Free online word sorter — runs in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/word-sorter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Word Sorter - Sort Words Alphabetically Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Word Sorter","description":"Sort words in any text alphabetically, by length or frequency. Remove duplicates, reverse order, handle case sensitivity. Free online word sorter — runs in your browser.","url":"https://tools.gamezipper.com/text/word-sorter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I sort words alphabetically?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your text, choose the Alphabetical sort mode, and click Sort. Every word will be listed in A-Z order on its own line."}}, {"@type": "Question", "name": "Can I sort words by length?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Pick the By Length mode to order words from shortest to longest, or longest to shortest with the Reverse option."}}, {"@type": "Question", "name": "Does it remove duplicate words?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Tick the Remove duplicates checkbox before sorting to drop repeated words and keep only unique entries."}}, {"@type": "Question", "name": "Is the sorting case-sensitive?", "acceptedAnswer": {"@type": "Answer", "text": "By default sorting is case-insensitive so Apple and apple group together. Toggle Case-sensitive if you need uppercase-first ordering."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/word-sorter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/word-sorter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/word-sorter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Word Sorter',
+    toolDesc: 'Sort words in any text alphabetically, by length, by frequency or in reverse. Remove duplicates and control case sensitivity — free, browser-only.',
+    alphabetical: 'A → Z',
+    byLength: 'By length',
+    byFrequency: 'By frequency',
+    caseSensitive: 'Case-sensitive',
+    removeDup: 'Remove duplicates',
+    reverse: 'Reverse order',
+    separator: 'Output separator',
+    sepNewline: 'New line',
+    sepComma: 'Comma',
+    sepSpace: 'Space',
+    wordCount: 'words',
+    step1: 'Paste or type your text into the input area',
+    step2: 'Pick a sort mode — alphabetical, length or frequency',
+    step3: 'Optionally remove duplicates or reverse the order',
+    step4: 'Copy the sorted word list with one click',
+  },
+  zh: {
+    toolTitle: '单词排序器',
+    toolDesc: '按字母顺序、长度、频率或倒序对文本中的单词排序。可去除重复并控制大小写敏感 — 免费浏览器本地运行。',
+    alphabetical: 'A → Z',
+    byLength: '按长度',
+    byFrequency: '按频率',
+    caseSensitive: '区分大小写',
+    removeDup: '去除重复',
+    reverse: '倒序',
+    separator: '输出分隔符',
+    sepNewline: '换行',
+    sepComma: '逗号',
+    sepSpace: '空格',
+    wordCount: '个单词',
+    step1: '在输入区粘贴或输入文本',
+    step2: '选择排序模式 — 字母顺序、长度或频率',
+    step3: '可选去除重复或倒序排列',
+    step4: '一键复制排序后的单词列表',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'alpha', caseSens = false, rmDup = false, rev = false, sep = '\n';
+
+function getWords(text) {
+  // Split on whitespace, keep Unicode letters/numbers/apostrophes/hyphens within words
+  return text.split(/[\s,;|]+/).map(w => w.trim()).filter(w => w.length > 0);
+}
+
+function process() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').textContent = ''; $('#status').textContent = ''; return; }
+  let words = getWords(inp);
+  if (rmDup) {
+    const seen = new Set();
+    words = words.filter(w => {
+      const key = caseSens ? w : w.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+  if (mode === 'alpha') {
+    words.sort((a, b) => {
+      const x = caseSens ? a : a.toLowerCase();
+      const y = caseSens ? b : b.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+  } else if (mode === 'length') {
+    words.sort((a, b) => a.length - b.length || a.localeCompare(b));
+  } else if (mode === 'freq') {
+    const freq = {};
+    const keys = words.map(w => caseSens ? w : w.toLowerCase());
+    keys.forEach(k => freq[k] = (freq[k] || 0) + 1);
+    words.sort((a, b) => {
+      const fa = freq[caseSens ? a : a.toLowerCase()];
+      const fb = freq[caseSens ? b : b.toLowerCase()];
+      return fb - fa || a.localeCompare(b);
+    });
+  }
+  if (rev) words.reverse();
+  $('#output').textContent = words.join(sep);
+  $('#status').innerHTML = `<span style="opacity:.7">${words.length} ${t('wordCount')}</span>`;
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <select class="gz-select" id="mode-sel">
+    <option value="alpha" selected>${t('alphabetical')}</option>
+    <option value="length">${t('byLength')}</option>
+    <option value="freq">${t('byFrequency')}</option>
+  </select>
+  <label class="gz-check"><input type="checkbox" id="cb-rmdup"> ${t('removeDup')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-rev"> ${t('reverse')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-case"> ${t('caseSensitive')}</label>
+  <select class="gz-select" id="sep-sel">
+    <option value="nl" selected>${t('sepNewline')}</option>
+    <option value="comma">${t('sepComma')}</option>
+    <option value="space">${t('sepSpace')}</option>
+  </select>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';process()">${t('clear')}</button>`;
+
+$('#mode-sel').addEventListener('change', e => { mode = e.target.value; process(); });
+$('#cb-rmdup').addEventListener('change', e => { rmDup = e.target.checked; process(); });
+$('#cb-rev').addEventListener('change', e => { rev = e.target.checked; process(); });
+$('#cb-case').addEventListener('change', e => { caseSens = e.target.checked; process(); });
+$('#sep-sel').addEventListener('change', e => {
+  sep = e.target.value === 'nl' ? '\n' : e.target.value === 'comma' ? ', ' : ' ';
+  process();
+});
+
+$('#input').value = 'banana apple cherry apple date banana elderberry fig';
+process();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'↕️', href:'/text/sort-lines.html', name:'Sort Lines'},
+    {icon:'🧹', href:'/text/remove-duplicates.html', name:'Remove Duplicates'},
+    {icon:'🔢', href:'/text/number-sorter.html', name:'Number Sorter'},
+    {icon:'🔀', href:'/text/text-shuffler.html', name:'Text Shuffler'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

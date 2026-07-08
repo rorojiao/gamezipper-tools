@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>模拟时钟 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="实时模拟时钟，带平滑秒针、数字读数、日期和时区。支持全屏模式，适合教室和演示。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/analog-clock.html">
+  <meta property="og:title" content="模拟时钟">
+  <meta property="og:description" content="实时模拟时钟，带平滑秒针、数字读数、日期和时区。支持全屏模式，适合教室和演示。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/analog-clock.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="模拟时钟">
+<meta name="twitter:description" content="实时模拟时钟，带平滑秒针、数字读数、日期和时区。支持全屏模式，适合教室和演示。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.clock-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0}
+.clock-canvas{display:block;max-width:100%;height:auto}
+.digital-time{font-size:2.5rem;font-weight:800;color:var(--accent);font-family:'Courier New',monospace;letter-spacing:2px}
+.digital-date{font-size:1.1rem;color:var(--text2);margin-top:4px}
+.digital-tz{font-size:.85em;color:var(--text2);margin-top:4px;opacity:.8}
+.clock-controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.clock-controls button{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:.9em;transition:.15s}
+.clock-controls button:hover{border-color:var(--accent)}
+.clock-controls button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Analog Clock","description":"Free live analog clock in your browser. Full-screen real-time wall clock with hour, minute and second hands. Shows digital time, date and timezone — no signup, works offline.","url": "https://tools.gamezipper.com/zh/fun/analog-clock.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this analog clock accurate?","acceptedAnswer":{"@type":"Answer","text":"Yes. The clock uses your device's system time, which is synced to a time server. It updates every animation frame (about 60 times per second) for smooth second-hand movement."}},{"@type":"Question","name":"Can I use this as a full-screen wall clock?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click the Full Screen button to display the clock on your entire screen. It is perfect for classrooms, meetings, kitchens or as a desk clock. Press Esc to exit full screen."}},{"@type":"Question","name":"Does the clock work offline?","acceptedAnswer":{"@type":"Answer","text":"Yes. Once the page loads, the clock runs entirely in your browser using JavaScript and your device clock. No internet connection is needed to keep it running."}},{"@type":"Question","name":"What timezone does the clock show?","acceptedAnswer":{"@type":"Answer","text":"The clock displays your local device timezone. The timezone name and UTC offset are shown below the digital time so you always know which zone you are viewing."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/analog-clock.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/analog-clock.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/analog-clock.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="clock-wrap">
+      <canvas id="clock" class="clock-canvas" width="400" height="400"></canvas>
+      <div style="text-align:center">
+        <div class="digital-time" id="dtime">--:--:--</div>
+        <div class="digital-date" id="ddate"></div>
+        <div class="digital-tz" id="dtz"></div>
+      </div>
+      <div class="clock-controls">
+        <button id="btn-smooth" onclick="toggleSmooth()">Smooth Seconds</button>
+        <button id="btn-theme" onclick="toggleTheme()">Dark Face</button>
+        <button onclick="toggleFullscreen()">Full Screen</button>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Analog Clock',
+    toolDesc: 'A live, real-time analog clock with smooth-sweeping second hand, digital readout, date and timezone. Full-screen mode for classrooms and presentations.',
+    step1: 'The clock starts automatically using your device time',
+    step2: 'Toggle Smooth Seconds for a sweeping second hand',
+    step3: 'Switch between light and dark clock face',
+    step4: 'Click Full Screen for a large wall-clock display',
+  },
+  zh: {
+    toolTitle: '模拟时钟',
+    toolDesc: '实时模拟时钟，带平滑秒针、数字读数、日期和时区。支持全屏模式，适合教室和演示。',
+    step1: '时钟自动使用你的设备时间启动',
+    step2: '切换「平滑秒针」获得扫秒效果',
+    step3: '在浅色和深色表盘之间切换',
+    step4: '点击「全屏」获得大尺寸挂钟显示',
+  }
+});
+
+const { t } = GZ;
+const canvas = document.getElementById('clock');
+const ctx = canvas.getContext('2d');
+let smooth = false;
+let darkFace = false;
+
+function toggleSmooth() {
+  smooth = !smooth;
+  document.getElementById('btn-smooth').classList.toggle('active', smooth);
+  document.getElementById('btn-smooth').textContent = smooth ? 'Smooth Seconds ✓' : 'Smooth Seconds';
+}
+
+function toggleTheme() {
+  darkFace = !darkFace;
+  document.getElementById('btn-theme').classList.toggle('active', darkFace);
+  document.getElementById('btn-theme').textContent = darkFace ? 'Light Face' : 'Dark Face';
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    canvas.parentElement.requestFullscreen?.();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+function drawClock() {
+  const size = canvas.width;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size / 2 - 20;
+
+  ctx.clearRect(0, 0, size, size);
+
+  // Face
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+  ctx.fillStyle = darkFace ? '#1a1a2e' : '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = darkFace ? '#444' : '#ccc';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Inner ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius - 8, 0, 2 * Math.PI);
+  ctx.strokeStyle = darkFace ? '#333' : '#eee';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Hour marks
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30 - 90) * Math.PI / 180;
+    const x1 = cx + Math.cos(angle) * (radius - 18);
+    const y1 = cy + Math.sin(angle) * (radius - 18);
+    const x2 = cx + Math.cos(angle) * (radius - 32);
+    const y2 = cy + Math.sin(angle) * (radius - 32);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = darkFace ? '#aaa' : '#333';
+    ctx.lineWidth = i % 3 === 0 ? 4 : 2;
+    ctx.stroke();
+
+    // Hour numbers
+    const nx = cx + Math.cos(angle) * (radius - 50);
+    const ny = cy + Math.sin(angle) * (radius - 50);
+    ctx.fillStyle = darkFace ? '#ddd' : '#333';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(i === 0 ? 12 : i, nx, ny);
+  }
+
+  // Minute marks
+  for (let i = 0; i < 60; i++) {
+    if (i % 5 === 0) continue;
+    const angle = (i * 6 - 90) * Math.PI / 180;
+    const x1 = cx + Math.cos(angle) * (radius - 18);
+    const y1 = cy + Math.sin(angle) * (radius - 18);
+    const x2 = cx + Math.cos(angle) * (radius - 24);
+    const y2 = cy + Math.sin(angle) * (radius - 24);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = darkFace ? '#555' : '#999';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  const now = new Date();
+  const h = now.getHours() % 12;
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+  const ms = now.getMilliseconds();
+
+  // Hour hand
+  const hAngle = ((h + m / 60) * 30 - 90) * Math.PI / 180;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(hAngle) * (radius * 0.5), cy + Math.sin(hAngle) * (radius * 0.5));
+  ctx.strokeStyle = darkFace ? '#fff' : '#222';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Minute hand
+  const mAngle = ((m + s / 60) * 6 - 90) * Math.PI / 180;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(mAngle) * (radius * 0.72), cy + Math.sin(mAngle) * (radius * 0.72));
+  ctx.strokeStyle = darkFace ? '#eee' : '#444';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Second hand
+  const sVal = smooth ? s + ms / 1000 : s;
+  const sAngle = (sVal * 6 - 90) * Math.PI / 180;
+  ctx.beginPath();
+  ctx.moveTo(cx - Math.cos(sAngle) * 20, cy - Math.sin(sAngle) * 20);
+  ctx.lineTo(cx + Math.cos(sAngle) * (radius * 0.82), cy + Math.sin(sAngle) * (radius * 0.82));
+  ctx.strokeStyle = '#e94560';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
+  ctx.fillStyle = '#e94560';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+  ctx.fillStyle = darkFace ? '#1a1a2e' : '#fff';
+  ctx.fill();
+
+  // Digital display
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  document.getElementById('dtime').textContent = `${hh}:${mm}:${ss}`;
+
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('ddate').textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const offset = -now.getTimezoneOffset() / 60;
+  const offsetStr = (offset >= 0 ? '+' : '') + offset;
+  document.getElementById('dtz').textContent = `${tz} (UTC${offsetStr})`;
+}
+
+function tick() {
+  drawClock();
+  requestAnimationFrame(tick);
+}
+
+tick();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏰', href:'/calc/alarm-clock.html', name:'Alarm Clock'},
+    {icon:'⏱️', href:'/fun/stopwatch.html', name:'Stopwatch'},
+    {icon:'🌍', href:'/convert/world-clock.html', name:'World Clock'},
+    {icon:'⏳', href:'/calc/countdown-timer.html', name:'Countdown Timer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
