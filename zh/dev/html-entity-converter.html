@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>HTML 实体转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将文本编码为 HTML 实体，或将实体解码回可读文本。支持命名、十进制和十六进制格式 — 免费，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/html-entity-converter.html">
+  <meta property="og:title" content="HTML 实体转换器">
+  <meta property="og:description" content="将文本编码为 HTML 实体，或将实体解码回可读文本。支持命名、十进制和十六进制格式 — 免费，浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/html-entity-converter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HTML 实体转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HTML Entity Converter","description":"Convert text to HTML entities and back. Encode to named, decimal or hex entities. Decode any entity to readable text. Free, browser-only, no signup.","url": "https://tools.gamezipper.com/zh/dev/html-entity-converter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are HTML entities?", "acceptedAnswer": {"@type": "Answer", "text": "HTML entities are special codes used to represent characters that are reserved in HTML (like < > & \") or characters that cannot be typed easily. They come in named (&amp;), decimal (&#38;) and hex (&#x26;) forms."}}, {"@type": "Question", "name": "What is the difference between encode and decode?", "acceptedAnswer": {"@type": "Answer", "text": "Encoding converts plain text characters into their entity equivalents (e.g. & becomes &amp;). Decoding reverses this, converting entities back into readable characters (&amp; becomes &)."}}, {"@type": "Question", "name": "Which entity format should I use?", "acceptedAnswer": {"@type": "Answer", "text": "Named entities (&amp; &lt; &gt;) are most readable. Decimal (&#38;) and hex (&#x26;) entities work for any Unicode character including emoji. Hex is common in modern web; decimal is more legacy-friendly."}}, {"@type": "Question", "name": "Is this tool safe for user-generated content?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Encoding special characters is a key XSS prevention step. Always HTML-encode untrusted user input before displaying it on a web page to stop script injection."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/html-entity-converter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/html-entity-converter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/html-entity-converter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HTML Entity Converter',
+    toolDesc: 'Encode text to HTML entities or decode entities back to readable text. Supports named, decimal and hex formats — free, browser-only.',
+    encode: 'Encode',
+    decode: 'Decode',
+    named: 'Named (&amp;)',
+    decimal: 'Decimal (&#38;)',
+    hex: 'Hex (&#x26;)',
+    allChars: 'Encode all non-ASCII',
+    onlySpecial: 'Only special chars',
+    mode: 'Mode',
+    step1: 'Paste your text or HTML into the input area',
+    step2: 'Choose Encode or Decode',
+    step3: 'Pick named, decimal or hex entity format',
+    step4: 'Copy the converted result with one click',
+  },
+  zh: {
+    toolTitle: 'HTML 实体转换器',
+    toolDesc: '将文本编码为 HTML 实体，或将实体解码回可读文本。支持命名、十进制和十六进制格式 — 免费，浏览器本地运行。',
+    encode: '编码',
+    decode: '解码',
+    named: '命名（&amp;）',
+    decimal: '十进制（&#38;）',
+    hex: '十六进制（&#x26;）',
+    allChars: '编码所有非 ASCII',
+    onlySpecial: '仅特殊字符',
+    mode: '模式',
+    step1: '在输入区粘贴文本或 HTML',
+    step2: '选择编码或解码',
+    step3: '选择命名、十进制或十六进制实体格式',
+    step4: '一键复制转换结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'encode', fmt = 'named', allChars = false;
+
+const NAMED = {
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+  '©': '&copy;', '®': '&reg;', '™': '&trade;', '€': '&euro;', '£': '&pound;',
+  '¥': '&yen;', '¢': '&cent;', '§': '&sect;', '¶': '&para;', '°': '&deg;',
+  '±': '&plusmn;', '×': '&times;', '÷': '&divide;', '«': '&laquo;', '»': '&raquo;',
+  '–': '&ndash;', '—': '&mdash;', '‘': '&lsquo;', '’': '&rsquo;',
+  '“': '&ldquo;', '”': '&rdquo;', '…': '&hellip;', '•': '&bull;',
+  '♪': '&sung;', '♠': '&spades;', '♣': '&clubs;', '♥': '&hearts;', '♦': '&diams;',
+  'α': '&alpha;', 'β': '&beta;', 'γ': '&gamma;', 'δ': '&delta;', 'π': '&pi;',
+  'Σ': '&Sigma;', 'Ω': '&Omega;', 'λ': '&lambda;', 'μ': '&mu;', '∞': '&infin;',
+  '√': '&radic;', '∑': '&sum;', '∫': '&int;', '≠': '&ne;', '≤': '&le;', '≥': '&ge;',
+  '→': '&rarr;', '←': '&larr;', '↑': '&uarr;', '↓': '&darr;', '↔': '&harr;',
+  '⇒': '&rArr;', '⇐': '&lArr;', 'nbsp': '&nbsp;', ' ': '&nbsp;',
+};
+
+function encodeChar(ch) {
+  if (NAMED[ch] && fmt === 'named') return NAMED[ch];
+  const code = ch.codePointAt(0);
+  if (fmt === 'decimal') return '&#' + code + ';';
+  if (fmt === 'hex') return '&#x' + code.toString(16).toUpperCase() + ';';
+  // named fallback for non-named chars
+  if (NAMED[ch]) return NAMED[ch];
+  // For named format with no named entity, use decimal
+  return '&#' + code + ';';
+}
+
+function doEncode(text) {
+  let out = '';
+  for (const ch of text) {
+    const code = ch.codePointAt(0);
+    const isAscii = code < 128;
+    const isSpecial = ch === '&' || ch === '<' || ch === '>' || ch === '"' || ch === "'" || ch === ' ';
+    if (allChars) {
+      // Encode all non-ASCII plus special chars
+      if (!isAscii || isSpecial) out += encodeChar(ch);
+      else out += ch;
+    } else {
+      // Only special HTML chars (or named-mappable)
+      if (isSpecial) out += encodeChar(ch);
+      else if (fmt !== 'named' && !isAscii) out += encodeChar(ch);
+      else if (fmt === 'named' && NAMED[ch]) out += NAMED[ch];
+      else out += ch;
+    }
+  }
+  return out;
+}
+
+function doDecode(text) {
+  // Use textarea trick for safe decoding
+  const ta = document.createElement('textarea');
+  ta.innerHTML = text;
+  return ta.value;
+}
+
+function process() {
+  const inp = $('#input').value;
+  if (!inp) { $('#output').textContent = ''; $('#status').textContent = ''; return; }
+  const result = mode === 'encode' ? doEncode(inp) : doDecode(inp);
+  $('#output').textContent = result;
+  $('#status').innerHTML = `<span style="opacity:.7">${result.length} chars</span>`;
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <select class="gz-select" id="mode-sel">
+    <option value="encode" selected>${t('encode')}</option>
+    <option value="decode">${t('decode')}</option>
+  </select>
+  <select class="gz-select" id="fmt-sel">
+    <option value="named" selected>${t('named')}</option>
+    <option value="decimal">${t('decimal')}</option>
+    <option value="hex">${t('hex')}</option>
+  </select>
+  <label class="gz-check"><input type="checkbox" id="cb-all"> ${t('allChars')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';process()">${t('clear')}</button>`;
+
+$('#mode-sel').addEventListener('change', e => { mode = e.target.value; process(); });
+$('#fmt-sel').addEventListener('change', e => { fmt = e.target.value; process(); });
+$('#cb-all').addEventListener('change', e => { allChars = e.target.checked; process(); });
+
+$('#input').value = '<a href="?a=1&b=2">Tom & "Jerry" © 2024</a>';
+process();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/html-escape.html', name:'HTML Escape'},
+    {icon:'🔓', href:'/text/html-unescape.html', name:'HTML Unescape'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌐', href:'/dev/url-encode.html', name:'URL Encode'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

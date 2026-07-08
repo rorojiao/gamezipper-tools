@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>单词反转器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="反转每个单词中的字母、单词顺序，或两者都反转。可保留标点位置或同时反转。免费，浏览器本地运行，无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/word-reverser.html">
+  <meta property="og:title" content="单词反转器">
+  <meta property="og:description" content="反转每个单词中的字母、单词顺序，或两者都反转。可保留标点位置或同时反转。免费，浏览器本地运行，无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/word-reverser.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="单词反转器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Word Reverser","description":"Reverse the letters in each word of your text. Flip every word backwards while keeping word order, or scramble letters. Free online word reverser — browser-only, no signup.","url": "https://tools.gamezipper.com/zh/text/word-reverser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does the Word Reverser do?", "acceptedAnswer": {"@type": "Answer", "text": "It reverses the letters inside each word so that Hello World becomes olleH dlroW. The order of words on each line is preserved — only the letters within each word are flipped."}}, {"@type": "Question", "name": "Can I reverse word order too?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the Word order mode to reverse the sequence of words on each line without changing the letters, or combine both modes for a full mirror effect."}}, {"@type": "Question", "name": "Does it handle punctuation?", "acceptedAnswer": {"@type": "Answer", "text": "By default punctuation stays attached to the word and gets reversed with it. Toggle Keep punctuation in place to anchor periods, commas and quotes at their original positions."}}, {"@type": "Question", "name": "Is my text private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing runs entirely in your browser. Nothing is uploaded to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/word-reverser.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/word-reverser.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/word-reverser.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Word Reverser',
+    toolDesc: 'Reverse the letters inside each word, flip word order, or both. Keep punctuation in place or reverse it too. Free, browser-only, no signup.',
+    lettersInWord: 'Reverse letters in each word',
+    wordOrder: 'Reverse word order',
+    both: 'Reverse both',
+    keepPunct: 'Keep punctuation in place',
+    preserveCase: 'Preserve case position',
+    step1: 'Paste or type your text into the input area',
+    step2: 'Pick a mode — reverse letters, word order or both',
+    step3: 'Optionally anchor punctuation or preserve capitalization',
+    step4: 'Copy the reversed text with one click',
+  },
+  zh: {
+    toolTitle: '单词反转器',
+    toolDesc: '反转每个单词中的字母、单词顺序，或两者都反转。可保留标点位置或同时反转。免费，浏览器本地运行，无需注册。',
+    lettersInWord: '反转每个单词的字母',
+    wordOrder: '反转单词顺序',
+    both: '两者都反转',
+    keepPunct: '标点保留原位',
+    preserveCase: '保留大小写位置',
+    step1: '在输入区粘贴或输入文本',
+    step2: '选择模式 — 反转字母、单词顺序或两者',
+    step3: '可选锚定标点或保留大小写',
+    step4: '一键复制反转后的文本',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'letters', keepPunct = false, preserveCase = false;
+
+function reverseWord(word) {
+  if (keepPunct) {
+    // Separate leading/trailing punctuation
+    const m = word.match(/^([^\p{L}\p{N}]*)([\s\S]*?)([^\p{L}\p{N}]*)$/u);
+    if (m) {
+      const lead = m[1], core = m[2], trail = m[3];
+      return lead + reverseCore(core) + trail;
+    }
+  }
+  return reverseCore(word);
+}
+
+function reverseCore(s) {
+  let reversed = [...s].reverse().join('');
+  if (preserveCase) {
+    // Apply original case positions
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      const origChar = s[i];
+      const newChar = reversed[i];
+      if (origChar === origChar.toUpperCase() && origChar !== origChar.toLowerCase()) {
+        out += newChar.toUpperCase();
+      } else if (origChar === origChar.toLowerCase() && origChar !== origChar.toUpperCase()) {
+        out += newChar.toLowerCase();
+      } else {
+        out += newChar;
+      }
+    }
+    return out;
+  }
+  return reversed;
+}
+
+function process() {
+  const inp = $('#input').value;
+  if (!inp) { $('#output').textContent = ''; $('#status').textContent = ''; return; }
+  const lines = inp.split('\n');
+  const outLines = lines.map(line => {
+    const words = line.split(/(\s+)/); // keep whitespace tokens
+    let arr = words.filter(w => w.trim().length > 0);
+    if (mode === 'wordOrder' || mode === 'both') {
+      arr.reverse();
+    }
+    if (mode === 'letters' || mode === 'both') {
+      arr = arr.map(reverseWord);
+    }
+    // Rebuild line preserving original whitespace structure
+    if (mode === 'wordOrder' || mode === 'both') {
+      // Rebuild with single spaces between reversed words
+      return arr.join(' ');
+    }
+    // Letters-only: map back into original whitespace structure
+    let wordIdx = 0;
+    return words.map(tok => tok.trim().length > 0 ? (arr[wordIdx++] || '') : tok).join('');
+  });
+  const result = outLines.join('\n');
+  $('#output').textContent = result;
+  $('#status').innerHTML = `<span style="opacity:.7">${result.length} chars</span>`;
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <select class="gz-select" id="mode-sel">
+    <option value="letters" selected>${t('lettersInWord')}</option>
+    <option value="wordOrder">${t('wordOrder')}</option>
+    <option value="both">${t('both')}</option>
+  </select>
+  <label class="gz-check"><input type="checkbox" id="cb-punct"> ${t('keepPunct')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-case"> ${t('preserveCase')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';process()">${t('clear')}</button>`;
+
+$('#mode-sel').addEventListener('change', e => { mode = e.target.value; process(); });
+$('#cb-punct').addEventListener('change', e => { keepPunct = e.target.checked; process(); });
+$('#cb-case').addEventListener('change', e => { preserveCase = e.target.checked; process(); });
+
+$('#input').value = 'Hello World!\nThis is a test sentence.';
+process();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔁', href:'/text/text-reverser.html', name:'Text Reverser'},
+    {icon:'🙃', href:'/text/upside-down-text.html', name:'Upside Down Text'},
+    {icon:'🔃', href:'/text/reverse-words.html', name:'Reverse Words'},
+    {icon:'🔄', href:'/text/backwards-text-generator.html', name:'Backwards Text'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

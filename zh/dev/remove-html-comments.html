@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>移除 HTML 注释 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时从代码中移除 HTML、CSS 和 JavaScript 注释。上下文感知 — 保留字符串和功能代码。免费，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/remove-html-comments.html">
+  <meta property="og:title" content="移除 HTML 注释">
+  <meta property="og:description" content="即时从代码中移除 HTML、CSS 和 JavaScript 注释。上下文感知 — 保留字符串和功能代码。免费，浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/remove-html-comments.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="移除 HTML 注释">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Remove HTML Comments","description":"Remove HTML comments, CSS comments and JavaScript comments from your code instantly. Free, browser-only, no signup.","url": "https://tools.gamezipper.com/zh/dev/remove-html-comments.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What types of comments can I remove?", "acceptedAnswer": {"@type": "Answer", "text": "The tool removes HTML comments (<!-- ... -->), CSS block comments (/* ... */), JavaScript single-line comments (// ...) and JavaScript block comments (/* ... */). Pick which types to strip using the checkboxes."}}, {"@type": "Question", "name": "Will removing comments break my code?", "acceptedAnswer": {"@type": "Answer", "text": "No. The tool only strips comments while preserving all functional code, strings and template literals. JavaScript comment removal is context-aware so // inside a string is not treated as a comment."}}, {"@type": "Question", "name": "Can I also remove empty lines?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Tick the Collapse empty lines checkbox to compress multiple blank lines into one — useful after stripping comments that occupied their own lines."}}, {"@type": "Question", "name": "Is my code uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All processing happens entirely in your browser. Your code never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/remove-html-comments.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/remove-html-comments.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/remove-html-comments.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Remove HTML Comments',
+    toolDesc: 'Strip HTML, CSS and JavaScript comments from your code instantly. Context-aware — preserves strings and functional code. Free, browser-only.',
+    htmlComments: 'HTML <!-- -->',
+    cssComments: 'CSS /* */',
+    jsLineComments: 'JS //',
+    jsBlockComments: 'JS /* */',
+    collapseEmpty: 'Collapse empty lines',
+    trimLines: 'Trim each line',
+    bytesSaved: 'chars removed',
+    step1: 'Paste your HTML, CSS or JavaScript code',
+    step2: 'Tick the comment types you want removed',
+    step3: 'Optionally collapse empty lines or trim whitespace',
+    step4: 'Copy the cleaned code with one click',
+  },
+  zh: {
+    toolTitle: '移除 HTML 注释',
+    toolDesc: '即时从代码中移除 HTML、CSS 和 JavaScript 注释。上下文感知 — 保留字符串和功能代码。免费，浏览器本地运行。',
+    htmlComments: 'HTML <!-- -->',
+    cssComments: 'CSS /* */',
+    jsLineComments: 'JS //',
+    jsBlockComments: 'JS /* */',
+    collapseEmpty: '折叠空行',
+    trimLines: '修剪每行',
+    bytesSaved: '个字符被移除',
+    step1: '粘贴你的 HTML、CSS 或 JavaScript 代码',
+    step2: '勾选要移除的注释类型',
+    step3: '可选折叠空行或修剪空白',
+    step4: '一键复制清理后的代码',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let rmHtml = true, rmCss = false, rmJsLine = false, rmJsBlock = false, collapse = false, trimL = false;
+
+function removeHtmlComments(code) {
+  return code.replace(/<!--[\s\S]*?-->/g, '');
+}
+
+function removeCssComments(code) {
+  return code.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+function removeJsBlockComments(code) {
+  // Remove /* */ but not inside strings
+  let out = '', inStr = null, strCh = '';
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i], n = code[i+1];
+    if (inStr) {
+      out += c;
+      if (c === '\\') { out += n || ''; i++; continue; }
+      if (c === inStr) inStr = null;
+    } else {
+      if (c === '/' && n === '*') {
+        const end = code.indexOf('*/', i+2);
+        if (end === -1) { out += code.slice(i); break; }
+        i = end + 1;
+        continue;
+      }
+      if (c === '"' || c === "'" || c === '`') { inStr = true; strCh = c; }
+      out += c;
+    }
+  }
+  return out;
+}
+
+function removeJsLineComments(code) {
+  // Remove // comments but not inside strings or regex (basic)
+  let out = '', inStr = null;
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i], n = code[i+1];
+    if (inStr) {
+      out += c;
+      if (c === '\\') { out += n || ''; i++; continue; }
+      if (c === inStr) inStr = null;
+    } else {
+      if (c === '/' && n === '/') {
+        const end = code.indexOf('\n', i);
+        if (end === -1) break;
+        i = end - 1;
+        continue;
+      }
+      if (c === '"' || c === "'" || c === '`') inStr = c;
+      out += c;
+    }
+  }
+  return out;
+}
+
+function process() {
+  const inp = $('#input').value;
+  if (!inp) { $('#output').textContent = ''; $('#status').textContent = ''; return; }
+  const before = inp.length;
+  let result = inp;
+  if (rmHtml) result = removeHtmlComments(result);
+  if (rmCss) result = removeCssComments(result);
+  if (rmJsBlock) result = removeJsBlockComments(result);
+  if (rmJsLine) result = removeJsLineComments(result);
+  if (collapse) result = result.replace(/\n\s*\n\s*\n/g, '\n\n').replace(/\n{3,}/g, '\n\n');
+  if (trimL) result = result.split('\n').map(l => l.trimEnd()).join('\n');
+  $('#output').textContent = result;
+  const saved = before - result.length;
+  $('#status').innerHTML = `<span style="opacity:.7">${saved} ${t('bytesSaved')}</span>`;
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <label class="gz-check"><input type="checkbox" id="cb-html" checked> ${t('htmlComments')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-css"> ${t('cssComments')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-jsline"> ${t('jsLineComments')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-jsblock"> ${t('jsBlockComments')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-collapse"> ${t('collapseEmpty')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-trim"> ${t('trimLines')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';process()">${t('clear')}</button>`;
+
+['cb-html','cb-css','cb-jsline','cb-jsblock','cb-collapse','cb-trim'].forEach((id, idx) => {
+  $('#'+id).addEventListener('change', () => {
+    rmHtml = $('#cb-html').checked;
+    rmCss = $('#cb-css').checked;
+    rmJsLine = $('#cb-jsline').checked;
+    rmJsBlock = $('#cb-jsblock').checked;
+    collapse = $('#cb-collapse').checked;
+    trimL = $('#cb-trim').checked;
+    process();
+  });
+});
+
+$('#input').value = '<!-- Page header -->\n<div class="hero">\n  <!-- Main title -->\n  <h1>Welcome</h1>\n</div>\n\n' + '<scr' + 'ipt>\n  // init app\n  const x = "hello /* not a comment */";\n  console.log(x); // debug\n<' + '/script>';
+process();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📄', href:'/dev/html-minifier.html', name:'HTML Minifier'},
+    {icon:'📦', href:'/css-tools/minify.html', name:'CSS Minifier'},
+    {icon:'📜', href:'/dev/js-minifier.html', name:'JS Minifier'},
+    {icon:'🧹', href:'/text/remove-html-tags.html', name:'Remove HTML Tags'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
