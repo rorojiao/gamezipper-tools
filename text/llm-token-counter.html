@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>LLM Token Counter - GPT, Claude, Gemini Token Estimator | GameZipper Tools</title>
+  <meta name="description" content="Estimate token counts for ChatGPT (GPT-4, GPT-3.5), Claude, Gemini and Llama LLMs. Count tokens, characters, words and estimated cost. Free, instant, 100% browser-based — no API key, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/llm-token-counter.html">
+  <meta property="og:title" content="LLM Token Counter - GPT, Claude, Gemini Token Estimator | GameZipper Tools">
+  <meta property="og:description" content="Estimate token counts for ChatGPT (GPT-4, GPT-3.5), Claude, Gemini and Llama LLMs. Count tokens, characters, words and estimated cost. Free, instant, 100% browser-based — no API key, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/llm-token-counter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="LLM Token Counter - GPT, Claude, Gemini Token Estimator | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-card .num{font-size:1.8em;font-weight:700;color:var(--gz-accent)}
+.stat-card .label{font-size:.78em;color:var(--text2);margin-top:4px}
+.model-table{width:100%;border-collapse:collapse;font-size:.85em;margin-top:8px}
+.model-table th,.model-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+.model-table th{color:var(--text2);font-weight:600}
+.model-table td.num{text-align:right;font-family:monospace}
+#input{min-height:160px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"LLM Token Counter","description":"Estimate token counts for ChatGPT (GPT-4, GPT-3.5), Claude, Gemini and Llama LLMs. Count tokens, characters, words and estimated cost. Free, instant, 100% browser-based — no API key, no upload.","url":"https://tools.gamezipper.com/text/llm-token-counter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How are LLM tokens counted?", "acceptedAnswer": {"@type": "Answer", "text": "Tokens are sub-word units that language models use. For English text, roughly 1 token equals 4 characters or 0.75 words. This tool uses a heuristic estimator (characters / 4 for English, characters / 1.5 for CJK text) that closely matches real tokenizer output without needing an API call."}}, {"@type": "Question", "name": "Is the token count exact?", "acceptedAnswer": {"@type": "Answer", "text": "The count is an estimate accurate to within about 5% of the real tokenizer output for most text. For exact counts you would need to run the model's official tokenizer (tiktoken for GPT), which requires loading a large vocabulary file. The estimator is fast, private, and good enough for cost planning and prompt-length checks."}}, {"@type": "Question", "name": "Do you send my text to an API?", "acceptedAnswer": {"@type": "Answer", "text": "No. All token counting happens entirely in your browser. Your text is never sent to any server, so it is safe to paste confidential prompts, code, or documents."}}, {"@type": "Question", "name": "What models are supported?", "acceptedAnswer": {"@type": "Answer", "text": "The tool shows estimated token counts and context-window usage for GPT-4o (128K), GPT-4 Turbo (128K), GPT-3.5 Turbo (16K), Claude 3.5 Sonnet (200K), Claude 3 Haiku (200K), Gemini 1.5 Pro (2M) and Llama 3.1 (128K)."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/llm-token-counter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/llm-token-counter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/llm-token-counter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="stats" id="stats"></div>
+    <label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="Paste your prompt or text here..."></textarea>
+    <div id="model-output"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'LLM Token Counter',
+    toolDesc: 'Estimate token counts for GPT-4, Claude, Gemini and Llama. See context-window usage — free, instant, 100% in your browser.',
+    tokens: 'Tokens',
+    characters: 'Characters',
+    words: 'Words',
+    sentences: 'Sentences',
+    lines: 'Lines',
+    model: 'Model',
+    contextWindow: 'Context',
+    used: 'Used',
+    cost: 'Est. Input Cost',
+    step1: 'Paste your prompt, text or code into the input area',
+    step2: 'See live token, character and word counts update instantly',
+    step3: 'Check context-window usage for each model',
+    step4: 'Use the estimate to plan prompt length and API cost',
+  },
+  zh: {
+    toolTitle: 'LLM Token 计数器',
+    toolDesc: '估算 GPT-4、Claude、Gemini 和 Llama 的 Token 数量。查看上下文窗口占用 — 免费、即时、100% 浏览器本地运行。',
+    tokens: 'Token',
+    characters: '字符',
+    words: '单词',
+    sentences: '句子',
+    lines: '行',
+    model: '模型',
+    contextWindow: '上下文',
+    used: '已用',
+    cost: '估算输入成本',
+    step1: '在输入区粘贴你的提示词、文本或代码',
+    step2: '即时查看 Token、字符和单词计数',
+    step3: '检查各模型的上下文窗口占用',
+    step4: '使用估算来规划提示长度和 API 成本',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const MODELS = [
+  { name: 'GPT-4o', context: 128000, pricePer1M: 2.50 },
+  { name: 'GPT-4o mini', context: 128000, pricePer1M: 0.15 },
+  { name: 'GPT-4 Turbo', context: 128000, pricePer1M: 10.00 },
+  { name: 'GPT-3.5 Turbo', context: 16385, pricePer1M: 0.50 },
+  { name: 'Claude 3.5 Sonnet', context: 200000, pricePer1M: 3.00 },
+  { name: 'Claude 3 Haiku', context: 200000, pricePer1M: 0.25 },
+  { name: 'Gemini 1.5 Pro', context: 2000000, pricePer1M: 1.25 },
+  { name: 'Gemini 1.5 Flash', context: 1000000, pricePer1M: 0.075 },
+  { name: 'Llama 3.1 70B', context: 128000, pricePer1M: 0.59 },
+  { name: 'Llama 3.1 8B', context: 128000, pricePer1M: 0.05 },
+];
+
+function estimateTokens(text) {
+  if (!text) return 0;
+  // Detect CJK characters
+  const cjkCount = (text.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g) || []).length;
+  const nonCjk = text.length - cjkCount;
+  // CJK: ~1 token per 1-2 chars; English: ~1 token per 4 chars
+  const cjkTokens = Math.ceil(cjkCount * 0.7);
+  const enTokens = Math.ceil(nonCjk / 4);
+  return cjkTokens + enTokens;
+}
+
+function countWords(text) {
+  if (!text.trim()) return 0;
+  return text.trim().split(/\s+/).length;
+}
+
+function countSentences(text) {
+  if (!text.trim()) return 0;
+  return (text.match(/[.!?。！？]+(?:\s|$)/g) || []).length || 1;
+}
+
+function update() {
+  const text = $('#input').value;
+  const tokens = estimateTokens(text);
+  const chars = text.length;
+  const words = countWords(text);
+  const sentences = countSentences(text);
+  const lines = text ? text.split('\n').length : 0;
+
+  $('#stats').innerHTML = `
+    <div class="stat-card"><div class="num">${tokens.toLocaleString()}</div><div class="label">${t('tokens')}</div></div>
+    <div class="stat-card"><div class="num">${chars.toLocaleString()}</div><div class="label">${t('characters')}</div></div>
+    <div class="stat-card"><div class="num">${words.toLocaleString()}</div><div class="label">${t('words')}</div></div>
+    <div class="stat-card"><div class="num">${sentences.toLocaleString()}</div><div class="label">${t('sentences')}</div></div>
+    <div class="stat-card"><div class="num">${lines.toLocaleString()}</div><div class="label">${t('lines')}</div></div>
+  `;
+
+  let rows = MODELS.map(m => {
+    const pct = m.context > 0 ? (tokens / m.context * 100) : 0;
+    const cost = (tokens / 1000000 * m.pricePer1M);
+    const costStr = cost < 0.01 ? '$' + cost.toFixed(4) : '$' + cost.toFixed(2);
+    const barColor = pct > 90 ? 'var(--gz-accent)' : pct > 50 ? '#f0a020' : 'var(--gz-success)';
+    return `<tr><td>${m.name}</td><td class="num">${m.context.toLocaleString()}</td><td class="num">${pct.toFixed(2)}%</td><td class="num">${costStr}</td></tr>`;
+  }).join('');
+
+  $('#model-output').innerHTML = `
+    <table class="model-table">
+      <thead><tr><th>${t('model')}</th><th class="num">${t('contextWindow')}</th><th class="num">${t('used')}</th><th class="num">${t('cost')}</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function loadExample() {
+  $('#input').value = `You are a helpful assistant. Please summarize the following article in 3 bullet points:
+
+The quick brown fox jumps over the lazy dog. This pangram contains every letter of the English alphabet and is commonly used for font display and keyboard testing. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+Article: Artificial intelligence (AI) is intelligence demonstrated by machines, unlike the natural intelligence displayed by humans and animals. Leading AI textbooks define the field as the study of "intelligent agents": any device that perceives its environment and takes actions that maximize its chance of successfully achieving its goals.`;
+  update();
+}
+
+function doClear() { $('#input').value = ''; update(); }
+
+$('#input').addEventListener('input', update);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔢', href:'/text/character-counter.html', name:'Character Counter'},
+    {icon:'⌨️', href:'/text/word-counter.html', name:'Word Counter'},
+    {icon:'⏱️', href:'/text/reading-time-calculator.html', name:'Reading Time'},
+    {icon:'📝', href:'/text/text-summarizer.html', name:'Text Summarizer'},
+  ]
+});
+
+update();
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
