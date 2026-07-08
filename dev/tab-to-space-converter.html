@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Tab to Space Converter - Convert Tabs to Spaces Online | GameZipper Tools</title>
+  <meta name="description" content="Convert tabs to spaces or spaces to tabs in your code instantly. Custom tab width, smart detection, trim trailing whitespace and normalize line endings. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/tab-to-space-converter.html">
+  <meta property="og:title" content="Tab to Space Converter - Convert Tabs to Spaces Online | GameZipper Tools">
+  <meta property="og:description" content="Convert tabs to spaces or spaces to tabs in your code instantly. Custom tab width, smart detection, trim trailing whitespace and normalize line endings. Free, browser-only, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/tab-to-space-converter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Tab to Space Converter - Convert Tabs to Spaces Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.tts-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.82em;color:var(--text2)}
+.tts-stats span{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:4px 10px}
+.gz-check{display:inline-flex;align-items:center;gap:6px;font-size:.85em;cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Tab to Space Converter","description":"Convert tabs to spaces or spaces to tabs in your code instantly. Custom tab width, smart detection, trim trailing whitespace and normalize line endings. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/dev/tab-to-space-converter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert tabs to spaces?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your code into the input area, set the tab width (default 4), and the tool instantly replaces every tab character with the equivalent number of spaces. Leading tabs are expanded using column-aware logic so alignment is preserved."}}, {"@type": "Question", "name": "Can I convert spaces back to tabs?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Switch the mode to Spaces to Tabs and the tool collapses runs of space characters at the start of each line into tab characters. This is useful for editors that prefer tab indentation."}}, {"@type": "Question", "name": "What tab width should I use?", "acceptedAnswer": {"@type": "Answer", "text": "Common choices are 2 spaces (Ruby, HTML, CSS), 4 spaces (Python, Java, C++) or 8 spaces (Linux kernel). Pick the width that matches your project style guide. The default is 4."}}, {"@type": "Question", "name": "Does the tool only convert leading indentation?", "acceptedAnswer": {"@type": "Answer", "text": "By default leading indentation is converted with column awareness. Toggle Full document mode to also convert tabs that appear in the middle of lines, which is useful for aligned tables and ASCII art."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/tab-to-space-converter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/tab-to-space-converter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/tab-to-space-converter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Tab to Space Converter',
+    toolDesc: 'Convert tabs to spaces or spaces to tabs in your code. Column-aware leading indentation, custom tab width, trailing-whitespace trim and line-ending normalization. Free, browser-only.',
+    modeTabs: 'Tabs → Spaces',
+    modeSpaces: 'Spaces → Tabs',
+    width: 'Tab width',
+    fullDoc: 'Convert entire line (not just indentation)',
+    trimTrail: 'Trim trailing whitespace',
+    normalizeLF: 'Normalize line endings to LF',
+    step1: 'Paste your code or text into the input area',
+    step2: 'Pick the conversion mode and set the tab width',
+    step3: 'Optionally trim trailing whitespace or normalize line endings',
+    step4: 'Copy the converted result with one click',
+  },
+  zh: {
+    toolTitle: 'Tab 转空格转换器',
+    toolDesc: '在代码中将 Tab 转为空格或将空格转为 Tab。列感知的前导缩进、自定义 Tab 宽度、修剪行尾空白和统一换行符。免费，浏览器本地运行。',
+    modeTabs: 'Tab → 空格',
+    modeSpaces: '空格 → Tab',
+    width: 'Tab 宽度',
+    fullDoc: '转换整行（不仅是缩进）',
+    trimTrail: '修剪行尾空白',
+    normalizeLF: '统一换行符为 LF',
+    step1: '将代码或文本粘贴到输入区',
+    step2: '选择转换模式并设置 Tab 宽度',
+    step3: '可选修剪行尾空白或统一换行符',
+    step4: '一键复制转换后的结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'tabs2spaces';
+let tabWidth = 4;
+let fullDoc = false;
+let trimTrail = false;
+let normLF = false;
+
+// Expand leading tabs to spaces using column-aware logic (respects tab stops)
+function expandLeadingTabs(line, width) {
+  let out = '', col = 0, i = 0;
+  // Leading whitespace region
+  while (i < line.length) {
+    const c = line[i];
+    if (c === '\t') {
+      const spaces = width - (col % width);
+      out += ' '.repeat(spaces);
+      col += spaces;
+      i++;
+    } else if (c === ' ') {
+      out += ' ';
+      col++;
+      i++;
+    } else {
+      break;
+    }
+  }
+  // Remainder
+  if (fullDoc) {
+    // Also expand any tabs in the rest with column awareness
+    let rest = line.slice(i);
+    let rOut = '', rCol = col;
+    for (let j = 0; j < rest.length; j++) {
+      const c = rest[j];
+      if (c === '\t') {
+        const spaces = width - (rCol % width);
+        rOut += ' '.repeat(spaces);
+        rCol += spaces;
+      } else {
+        rOut += c;
+        rCol++;
+      }
+    }
+    out += rOut;
+  } else {
+    out += line.slice(i);
+  }
+  return out;
+}
+
+// Collapse leading spaces into tabs (groups of tabWidth)
+function collapseLeadingSpaces(line, width) {
+  const m = line.match(/^([ \t]*)/);
+  if (!m) return line;
+  const lead = m[1];
+  // Count leading spaces (tabs count as their own group boundary)
+  let spaces = 0, tabs = '';
+  for (const c of lead) {
+    if (c === ' ') spaces++;
+    else if (c === '\t') { tabs += '\t'; } // keep existing tabs
+  }
+  const newTabs = '\t'.repeat(Math.floor(spaces / width));
+  const remSpaces = ' '.repeat(spaces % width);
+  const rest = line.slice(lead.length);
+  let result = tabs + newTabs + remSpaces + rest;
+  if (fullDoc) {
+    // Collapse mid-line space runs too (only exact multiples)
+    result = result.replace(new RegExp('(?<=\\S) {' + width + '}', 'g'), '\t');
+  }
+  return result;
+}
+
+function process() {
+  let inp = $('#input').value;
+  if (!inp) { $('#output').textContent = ''; $('#status').textContent = ''; return; }
+  if (normLF) inp = inp.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = inp.split('\n');
+  const out = lines.map(line => {
+    let res = mode === 'tabs2spaces' ? expandLeadingTabs(line, tabWidth) : collapseLeadingSpaces(line, tabWidth);
+    if (trimTrail) res = res.replace(/[ \t]+$/,'');
+    return res;
+  });
+  const result = out.join('\n');
+  $('#output').textContent = result;
+  const tabCount = (inp.match(/\t/g) || []).length;
+  const spaceCount = (result.match(/ /g) || []).length;
+  $('#status').innerHTML = `<div class="tts-stats"><span>📊 ${lines.length} lines</span><span>⇥ ${tabCount} tabs in</span><span>␣ ${spaceCount} spaces out</span><span>📏 width ${tabWidth}</span></div>`;
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <select class="gz-select" id="sel-mode">
+    <option value="tabs2spaces">${t('modeTabs')}</option>
+    <option value="spaces2tabs">${t('modeSpaces')}</option>
+  </select>
+  <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85em">${t('width')}: <input type="number" id="num-width" value="4" min="1" max="16" style="width:54px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--text)"></label>
+  <label class="gz-check"><input type="checkbox" id="cb-full"> ${t('fullDoc')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-trim"> ${t('trimTrail')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-lf"> ${t('normalizeLF')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';process()">${t('clear')}</button>`;
+
+$('#sel-mode').addEventListener('change', e => { mode = e.target.value; process(); });
+$('#num-width').addEventListener('input', e => { tabWidth = Math.max(1, Math.min(16, +e.target.value || 4)); process(); });
+$('#cb-full').addEventListener('change', e => { fullDoc = e.target.checked; process(); });
+$('#cb-trim').addEventListener('change', e => { trimTrail = e.target.checked; process(); });
+$('#cb-lf').addEventListener('change', e => { normLF = e.target.checked; process(); });
+
+$('#input').value = 'function hello(name) {\n\tconst greeting = "Hello, " + name;\n\tconsole.log(greeting);\n\treturn greeting;\n}\n\nconst arr = [\n\t"apple",\n\t"banana",\n\t"cherry"\n];';
+process();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'💬', href:'/dev/remove-html-comments.html', name:'Remove HTML Comments'},
+    {icon:'📄', href:'/dev/html-formatter.html', name:'HTML Formatter'},
+    {icon:'🗜️', href:'/css/css-minifier.html', name:'CSS Minifier'},
+    {icon:'🧹', href:'/text/remove-spaces.html', name:'Remove Spaces'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

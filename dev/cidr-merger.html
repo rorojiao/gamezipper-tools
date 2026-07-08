@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CIDR Block Merger & Summarizer - Combine IP Ranges Online | GameZipper Tools</title>
+  <meta name="description" content="Merge and summarize CIDR blocks into the smallest set of supernets. Combine overlapping IPv4 ranges, aggregate routes, and detect duplicates. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/cidr-merger.html">
+  <meta property="og:title" content="CIDR Block Merger & Summarizer - Combine IP Ranges Online | GameZipper Tools">
+  <meta property="og:description" content="Merge and summarize CIDR blocks into the smallest set of supernets. Combine overlapping IPv4 ranges, aggregate routes, and detect duplicates. Free, browser-only, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/cidr-merger.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CIDR Block Merger & Summarizer - Combine IP Ranges Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+.cm-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.82em;color:var(--text2)}
+.cm-stats span{background:var(--glass2);border:1px solid var(--border);border-radius:8px;padding:4px 10px}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.6}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"CIDR Block Merger & Summarizer","description":"Merge and summarize CIDR blocks into the smallest set of supernets. Combine overlapping IPv4 ranges, aggregate routes, and detect duplicates. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/dev/cidr-merger.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is CIDR route aggregation?", "acceptedAnswer": {"@type": "Answer", "text": "CIDR aggregation (also called supernetting or route summarization) combines multiple smaller CIDR blocks into fewer, larger blocks that cover the exact same IP address space. This reduces routing table size and simplifies firewall and ACL rules."}}, {"@type": "Question", "name": "How does the merger handle overlapping ranges?", "acceptedAnswer": {"@type": "Answer", "text": "The tool converts every input block to its start and end IP integers, merges all overlapping and adjacent ranges into contiguous spans, then re-divides those spans into the minimum number of aligned CIDR blocks. The result is always the smallest exact cover."}}, {"@type": "Question", "name": "Can I input both CIDR notation and IP ranges?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each line can be a CIDR block like 192.168.1.0/24, a hyphen range like 192.168.1.0-192.168.1.255, or a single IP address. The tool parses all three formats and treats them uniformly."}}, {"@type": "Question", "name": "Does this work with IPv6?", "acceptedAnswer": {"@type": "Answer", "text": "This version focuses on IPv4 aggregation, which covers the most common firewall, cloud-security-group and routing use cases. IPv6 addresses are detected and reported as unsupported so they are not silently mishandled."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/cidr-merger.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/cidr-merger.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/cidr-merger.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CIDR Block Merger & Summarizer',
+    toolDesc: 'Merge overlapping and adjacent CIDR blocks into the smallest set of supernets. Accepts CIDR, IP ranges and single IPs. Free, browser-only, no signup.',
+    sortByIp: 'Sort output by IP',
+    removeDuplicates: 'Remove duplicate blocks',
+    step1: 'Paste CIDR blocks, IP ranges or single IPs (one per line)',
+    step2: 'Choose sort and dedupe options',
+    step3: 'View the merged and summarized supernets',
+    step4: 'Copy the result to your firewall, router or ACL config',
+  },
+  zh: {
+    toolTitle: 'CIDR 块合并与汇总器',
+    toolDesc: '将重叠和相邻的 CIDR 块合并为最少的超网集合。支持 CIDR、IP 范围和单个 IP。免费，浏览器本地运行，无需注册。',
+    sortByIp: '按 IP 排序输出',
+    removeDuplicates: '移除重复块',
+    step1: '粘贴 CIDR 块、IP 范围或单个 IP（每行一个）',
+    step2: '选择排序和去重选项',
+    step3: '查看合并汇总后的超网',
+    step4: '将结果复制到防火墙、路由器或 ACL 配置',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let sortByIp = true;
+let removeDups = true;
+
+function ipToInt(ip) {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255 || !Number.isInteger(p))) return null;
+  return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+}
+
+function intToIp(n) {
+  return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+}
+
+function isIPv6(s) {
+  return s.includes(':');
+}
+
+// Parse one line into {start, end} integer range. Returns null on failure.
+function parseLine(line) {
+  line = line.trim();
+  if (!line || line.startsWith('#')) return null;
+  if (isIPv6(line)) return { error: 'ipv6' };
+  // CIDR
+  const cidrMatch = line.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})$/);
+  if (cidrMatch) {
+    const base = ipToInt(cidrMatch[1]);
+    const prefix = +cidrMatch[2];
+    if (base === null || prefix > 32) return { error: 'invalid' };
+    const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+    const network = (base & mask) >>> 0;
+    const broadcast = (network | (~mask >>> 0)) >>> 0;
+    return { start: network, end: broadcast };
+  }
+  // Range start-end
+  const rangeMatch = line.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*-\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (rangeMatch) {
+    const s = ipToInt(rangeMatch[1]);
+    const e = ipToInt(rangeMatch[2]);
+    if (s === null || e === null) return { error: 'invalid' };
+    return { start: Math.min(s, e), end: Math.max(s, e) };
+  }
+  // Single IP
+  const single = ipToInt(line);
+  if (single !== null) return { start: single, end: single };
+  return { error: 'invalid' };
+}
+
+// Convert an integer range to the minimum list of CIDR blocks
+function rangeToCIDRs(start, end) {
+  start = start >>> 0; end = end >>> 0;
+  const result = [];
+  while (start <= end) {
+    // max prefix = alignment of start, capped by remaining count
+    let maxMask = 32;
+    while (maxMask > 0) {
+      const testMask = (0xFFFFFFFF << (32 - (maxMask - 1))) >>> 0;
+      if (((start & testMask) >>> 0) === start) {
+        const blockSize = Math.pow(2, 32 - (maxMask - 1));
+        if (start + blockSize - 1 <= end) { maxMask--; } else break;
+      } else break;
+    }
+    const blockSize = Math.pow(2, 32 - maxMask);
+    const blockEnd = start + blockSize - 1;
+    result.push(intToIp(start) + '/' + maxMask);
+    start = blockEnd + 1;
+    if (start > 0xFFFFFFFF) break;
+  }
+  return result;
+}
+
+function process() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').textContent = ''; $('#status').textContent = ''; return; }
+  const lines = inp.split('\n');
+  const ranges = [];
+  const errors = [];
+  let ipv6Count = 0;
+  lines.forEach((line, idx) => {
+    const r = parseLine(line);
+    if (!r) return;
+    if (r.error === 'ipv6') { ipv6Count++; return; }
+    if (r.error) { errors.push(`Line ${idx + 1}: "${line.trim()}"`); return; }
+    ranges.push(r);
+  });
+  if (ranges.length === 0) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">No valid IPv4 entries found.${errors.length ? ' ' + errors.length + ' line(s) could not be parsed.' : ''}${ipv6Count ? ' ' + ipv6Count + ' IPv6 line(s) skipped.' : ''}</span>`;
+    $('#status').textContent = '';
+    return;
+  }
+  // Merge overlapping/adjacent ranges
+  ranges.sort((a, b) => a.start - b.start);
+  const merged = [];
+  for (const r of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && r.start <= last.end + 1) {
+      last.end = Math.max(last.end, r.end);
+    } else {
+      merged.push({ start: r.start, end: r.end });
+    }
+  }
+  // Convert each merged range to minimal CIDR list
+  let cidrs = [];
+  merged.forEach(m => { cidrs = cidrs.concat(rangeToCIDRs(m.start, m.end)); });
+  if (sortByIp) {
+    cidrs.sort((a, b) => {
+      const ai = ipToInt(a.split('/')[0]);
+      const bi = ipToInt(b.split('/')[0]);
+      return ai - bi;
+    });
+  }
+  if (removeDups) cidrs = [...new Set(cidrs)];
+  const inCount = lines.filter(l => l.trim() && !l.trim().startsWith('#')).length;
+  const totalIps = merged.reduce((sum, m) => sum + (m.end - m.start + 1), 0);
+  $('#output').textContent = cidrs.join('\n');
+  $('#status').innerHTML = `<div class="cm-stats"><span>📥 ${inCount} input lines</span><span>📤 ${cidrs.length} merged blocks</span><span>🌐 ${totalIps.toLocaleString()} IPs covered</span>${errors.length ? `<span style="color:var(--gz-accent)">⚠️ ${errors.length} invalid</span>` : ''}${ipv6Count ? `<span style="color:var(--gz-accent)">ℹ️ ${ipv6Count} IPv6 skipped</span>` : ''}</div>`;
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <label class="gz-check"><input type="checkbox" id="cb-sort" checked> ${t('sortByIp')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-dedup" checked> ${t('removeDuplicates')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';process()">${t('clear')}</button>`;
+
+$('#cb-sort').addEventListener('change', e => { sortByIp = e.target.checked; process(); });
+$('#cb-dedup').addEventListener('change', e => { removeDups = e.target.checked; process(); });
+
+$('#input').value = '# Paste CIDR blocks, ranges or single IPs (one per line)\n192.168.1.0/24\n192.168.2.0/24\n192.168.3.0/24\n192.168.4.0/24\n10.0.0.1-10.0.0.30\n10.0.0.20-10.0.0.50\n172.16.5.100';
+process();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/ip-range-to-cidr.html', name:'IP Range to CIDR'},
+    {icon:'🔢', href:'/dev/cidr-to-ip-range.html', name:'CIDR to IP Range'},
+    {icon:'🔀', href:'/dev/ipv4-subnet-calculator.html', name:'Subnet Calculator'},
+    {icon:'🔍', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
