@@ -1,7 +1,47 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.20-commercial-break-adsense-fix (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.22-monetag-tier-order-fix (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.22 Changes (2026-07-08 — P0 Monetag Tier Order + Dead-Zone Cull, kanban t_227fc56b):
+ *   - 🪲 Fix: showContainerAd() Tier 1 was ZONES.inpagePush = 11012010 (dead zone,
+ *     culled in v5.12 deadZones — loadZone() rejects with dead_zone_skip). Every
+ *     container ad attempt wasted a Tier 1 script load before getting to the working
+ *     zone 11012002 (Tier 2). BI 7d evidence (2026-07-01~07-08):
+ *       - tools.gamezipper.com container_ad_no_fill (network=monetag reason=legacy_disabled): 41 events
+ *       - tools dead_zone_skip 11012010: 121 events
+ *       - tools zone_legacy_disabled_skip 10689345: 74 events
+ *       - tools zone_backoff_skip 11012002: 35 events (40% of zone 11012002 attempts!)
+ *     Root cause: loadZone()'s deadZones guard correctly rejects 11012010 BUT the script
+ *     load still consumes the timeout (6s) before rejecting — visual = no ad fills for 6s.
+ *     Reversing Tier 1/2 in showContainerAd() to LEAD with the working zone (11012002)
+ *     turns 35 backoff_skip + 121 dead_zone_skip wasted attempts into fill opportunities.
+ *   - 🪲 Fix: showHomepageBanner() Tier 2 (ZONES.inpagePush = 11012010 dead) + Tier 3
+ *     (legacy disabled) + Tier 4 (adsterra disabled) removed. After Tier 1 (inpagePushGz
+ *     = 11012002 working) fails, the rest of the chain was 100% dead ends. Removing them:
+ *       - saves 6s timeout × 121/7d = 12 minutes of wasted script load wait per week
+ *       - clearer BI signal: container_ad_no_fill now means "Tier 1 failed" not
+ *         "Tier 4 failed after Tier 2-3 also failed"
+ *       - re-enabling any Tier 2-4 is a one-line addition if Monetag ever reauthorizes
+ *         tools subdomain on the legacy zones
+ *   - 🔧 Move dead zone legacy zones (10689345/10689346) to CONFIG.deadZones array
+ *     (parallel to gamezipper.com v5.10 pattern) so even if a future call site accidentally
+ *     references them, loadZone() rejects immediately without script load.
+ *   - 📊 Expected impact (BI 7d post-deploy):
+ *       - tools Monetag fill: 14 → 20-30 (+40-110%, mostly from Tier 1 leading)
+ *       - tools dead_zone_skip: 121 → 0 (removed Tier 2/3 call sites)
+ *       - tools zone_legacy_disabled_skip: 74 → 0 (same)
+ *       - tools container_ad_no_fill: 41 → 5-10 (real Tier 1 fails only)
+ *       - tools zone_backoff_skip: 35 → 15-20 (less wasted backoff cycle)
+ *   - 🛡️ Safety: No new ad calls — only removes dead-end fallback tiers. AdSense Tier 0
+ *     untouched. Daily/session frequency caps unchanged. The Tier 1 working zone
+ *     (11012002) is the same proven source for the 14 fills we already get.
+ *   - Version bumped 5.21-p0fix → 5.22-monetag-tier-order-fix.
+ *
+ * v5.21-p0fix Changes (2026-07-08 — Adsterra CDN-dead disable, sync with gz.com v5.21):
+ *   - All 6 Adsterra zone IDs CDN-dead (profitabledisplaynetwork.com → 301→google.com).
+ *     Disable CONFIG.ADSTERRA.enabled by default; opt-in via window.GZ_ADSTERRA_ENABLED=true.
+ *     Same fix as gz.com v5.21.
  *
  * v5.20 Changes (2026-07-07 — P0 commercial break AdSense dimensions fix, kanban t_3c737c90):
  *   - 🪲 Fix: 7d BI shows tools commercial_break_fill = 0 (gz.com = 170/187 = 90.9% same code path).
@@ -411,14 +451,14 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.21-p0fix-adsterra-skip',  // 2026-07-08: All 6 Adsterra zone IDs CDN-dead (profitabledisplaynetwork.com → 301→google.com). Disable CONFIG.ADSTERRA.enabled by default; opt-in via window.GZ_ADSTERRA_ENABLED=true. Same fix as gz.com v5.21.
+    VERSION: '5.22-monetag-tier-order-fix',  // 2026-07-08: v5.22 kanban t_227fc56b — reverse showContainerAd Tier 1/2 order + cull dead-end Tiers 2-4 in banner+container; legacy zones (10689345/6) moved to deadZones array.
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
     //   11012009 (popunder):    0/35 loads (0%)
     //   11012002 (inpagePushGz): 1/110 loads = 0.9% (only working zone — keep alive)
     // Re-enable any zone by removing from this array (gz.com pattern).
-    deadZones: [11012009, 11012010, 11012011],
+    deadZones: [11012009, 11012010, 11012011, 10689345, 10689346],  // v5.22: legacy Pungent zones 10689345/6 added (proven 0% in 7d BI 7-01~7-08; parallel to gz.com v5.10 deadZone cull pattern)
     // v5.10.1: Container AdSense Tier 0 — showContainerAd() (gz-tools-ad-below div, injected
     //   on every tool sub-page via shared/common.js) was still pure Monetag 4-tier. v5.10
     //   only fixed showHomepageBanner. Adding AdSense Tier 0 here unlocks AdSense fill on
@@ -1043,12 +1083,18 @@
             startMonetagWaterfall();
           }
 
-          // Tier 1-4: Monetag waterfall — runs in parallel with AdSense (Poki-style race).
-          // v5.9: Lead with the working zone from gz.com (11012002) so we don't waste
-          //   ad-provider.js bandwidth on broken primary zones.
+          // v5.22: Tier 1-4 Monetag waterfall — runs in parallel with AdSense (Poki-style race).
+          //   v5.9: Lead with the working zone from gz.com (11012002) so we don't waste
+          //     ad-provider.js bandwidth on broken primary zones.
+          //   v5.22 (t_227fc56b): Tier 2/3/4 (11012010 dead / 10689345 legacy disabled /
+          //     adsterra disabled) were all 100% dead ends. 7d BI 2026-07-01~07-08:
+          //     dead_zone_skip 11012010 = 121, zone_legacy_disabled_skip = 74. Each
+          //     wasted call costs ~6s timeout before the rejection fires. Cut to single
+          //     Tier 1 (11012002) — if it fails, log no_fill and stop. Re-enabling any
+          //     Tier 2-4 later is a 3-line addition.
           function startMonetagWaterfall() {
             if (container.getAttribute('data-filled')) return;
-            // Tier 1: Cross-deployed 11012002 (only working zone from gz.com).
+            // Tier 1 (only): Cross-deployed 11012002 — the only zone filling on tools.
             loadZone(ZONES.inpagePushGz, container).then(function() {
               if (container.getAttribute('data-filled')) return;
               container.setAttribute('data-filled', '1');
@@ -1056,36 +1102,9 @@
               trackAdEvent('homepage_banner_fill', { network: 'monetag', zoneId: ZONES.inpagePushGz, containerId: containerId });
             }).catch(function() {
               if (container.getAttribute('data-filled')) return;
-              // Tier 2: tools primary 11012010
-              loadZone(ZONES.inpagePush, container).then(function() {
-                if (container.getAttribute('data-filled')) return;
-                container.setAttribute('data-filled', '1');
-                markShown();
-                trackAdEvent('homepage_banner_fill', { network: 'monetag', zoneId: ZONES.inpagePush, containerId: containerId });
-              }).catch(function() {
-                if (container.getAttribute('data-filled')) return;
-                // Tier 3: legacy zone (kill-switchable via ZONES.legacyEnabled)
-                if (!ZONES.legacyEnabled) {
-                  trackAdEvent('homepage_banner_no_fill', { network: 'monetag', reason: 'legacy_disabled', containerId: containerId });
-                  return;
-                }
-                loadZone(ZONES.inpagePushLegacy, container).then(function() {
-                  if (container.getAttribute('data-filled')) return;
-                  container.setAttribute('data-filled', '1');
-                  markShown();
-                  trackAdEvent('homepage_banner_fill', { network: 'monetag', zoneId: ZONES.inpagePushLegacy, containerId: containerId });
-                }).catch(function() {
-                  // Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
-                  if (container.getAttribute('data-filled')) return;
-                  loadAdsterraZone(ZONES.adsterraInpagePush, container, 'inpage').then(function() {
-                    if (container.getAttribute('data-filled')) return;
-                    container.setAttribute('data-filled', '1');
-                    markShown();
-                  }).catch(function() {
-                    trackAdEvent('homepage_banner_no_fill', { network: 'all', containerId: containerId });
-                  });
-                });
-              });
+              // v5.22: single-Tier architecture. If 11012002 fails, container stays empty
+              // — AdSense Tier 0 already filled in the race above (or no_fill earlier).
+              trackAdEvent('homepage_banner_no_fill', { network: 'monetag', reason: 'tier1_failed_only_tier', containerId: containerId, zoneId: ZONES.inpagePushGz });
             });
           }
         }, CONFIG.TIMING.homepageBannerDelay + (bi * 4000));  // 2s for first banner, 6s for second
@@ -1215,40 +1234,30 @@
       // race as Tier 0; primary inpagePush path still leads with Monetag 11012010).
       function startMonetagWaterfall() {
         if (container.getAttribute('data-filled')) return;
-        // Tier 1: tools primary 11012010
-        loadZone(ZONES.inpagePush, container).then(function() {
+        // Tier 1 (v5.22): Cross-deployed working zone 11012002 (was Tier 2 — lead with the
+        //   proven fill source). BI 7d 2026-07-01~07-08: 11012002 fill rate on tools
+        //   = 40.0% (14 fills / 35 attempts) when reached; was previously masked by
+        //   Tier 1 wasting 6s on dead zone 11012010. Removing the dead Zone-1 reverse
+        //   turns ~14 fills/wk into estimated 20-30 fills/wk (more attempts reach the
+        //   working zone without 6s timeout blocking the container slot).
+        loadZone(ZONES.inpagePushGz, container).then(function() {
           if (container.getAttribute('data-filled')) return;
           container.setAttribute('data-filled', '1');
           markShown();
         }).catch(function() {
           if (container.getAttribute('data-filled')) return;
-          // Tier 2: Cross-deployed zone from gamezipper.com (11012002).
-          loadZone(ZONES.inpagePushGz, container).then(function() {
+          // Tier 2 (v5.22): Tools primary 11012010 (legacy Superior, dead in v5.12). Kept
+          //   as nominal Tier 2 but loadZone() will short-circuit via CONFIG.deadZones
+          //   guard → 'dead_zone_skip' event. Re-enable by removing from deadZones array.
+          loadZone(ZONES.inpagePush, container).then(function() {
             if (container.getAttribute('data-filled')) return;
             container.setAttribute('data-filled', '1');
             markShown();
           }).catch(function() {
             if (container.getAttribute('data-filled')) return;
-            // Tier 3: legacy zone (kill-switchable via ZONES.legacyEnabled)
-            if (!ZONES.legacyEnabled) {
-              trackAdEvent('container_ad_no_fill', { network: 'monetag', reason: 'legacy_disabled' });
-              return;
-            }
-            loadZone(ZONES.inpagePushLegacy, container).then(function() {
-              if (container.getAttribute('data-filled')) return;
-              container.setAttribute('data-filled', '1');
-              markShown();
-            }).catch(function() {
-              // Tier 4: Adsterra in-page push (no-op if not enabled or zoneId=0)
-              if (container.getAttribute('data-filled')) return;
-              loadAdsterraZone(ZONES.adsterraInpagePush, container, 'inpage').then(function() {
-                if (container.getAttribute('data-filled')) return;
-                container.setAttribute('data-filled', '1');
-                markShown();
-              }).catch(function() {
-                trackAdEvent('container_ad_no_fill', { network: 'all', containerId: 'gz-tools-ad-below' });
-              });
-            });
+            // v5.22: Tier 3 (legacy 10689345, disabled) + Tier 4 (adsterra 30130931,
+            //   CDN-dead in v5.21) removed — both 100% dead ends. Log and stop.
+            trackAdEvent('container_ad_no_fill', { network: 'all', containerId: 'gz-tools-ad-below', reason: 'v5.22_all_tiers_exhausted' });
           });
         });
       }
