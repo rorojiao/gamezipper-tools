@@ -241,7 +241,7 @@ const GZ = (function(){
     const gameLinks = picked.map(function(g){return '<a href="https://gamezipper.com'+g.u+'" style="'+linkStyle+'">'+g.e+' '+g.n+'</a>'}).join('');
     const games = document.createElement('section');
     games.style.cssText = 'max-width:1100px;margin:30px auto 0;padding:20px 24px;background:var(--glass);border:1px solid var(--border);border-radius:20px;text-align:center';
-    games.innerHTML = '<h3 style="margin:0 0 12px;font-size:1rem"><a href="https://gamezipper.com" style="color:var(--accent);text-decoration:none">🎮 Take a Break — Play Free Games</a></h3><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'+gameLinks+'<a href="https://gamezipper.com" style="background:var(--accent);color:#000;padding:6px 14px;border-radius:10px;text-decoration:none;font-size:.8em;font-weight:700">All Games →</a></div>';
+    games.innerHTML = '<h3 style="margin:0 0 12px;font-size:1rem"><a href="https://gamezipper.com" style="color:var(--accent);text-decoration:none">'+t('takeABreak')+'</a></h3><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">'+gameLinks+'<a href="https://gamezipper.com" style="background:var(--accent);color:#000;padding:6px 14px;border-radius:10px;text-decoration:none;font-size:.8em;font-weight:700">'+t('allGamesLink')+'</a></div>';
     document.body.appendChild(games);
     const footer = document.createElement('footer');
     footer.className = 'gz-footer';
