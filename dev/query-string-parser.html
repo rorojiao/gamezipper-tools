@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Query String Parser & URL Parameter Decoder - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Parse URL query strings and parameters instantly. Decode key=value pairs, handle arrays and nested objects, URL-decode values, and copy results as JSON, table or text. Free, private, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/query-string-parser.html">
+  <meta property="og:title" content="Query String Parser & URL Parameter Decoder - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Parse URL query strings and parameters instantly. Decode key=value pairs, handle arrays and nested objects, URL-decode values, and copy results as JSON, table or text. Free, private, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/query-string-parser.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Query String Parser & URL Parameter Decoder - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Parse URL query strings and parameters instantly. Decode key=value pairs, handle arrays and nested objects. Free, private, browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+.qsp-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.qsp-key{font-weight:600;color:var(--gz-accent);min-width:140px;word-break:break-all}
+.qsp-val{flex:1;word-break:break-all;font-family:monospace;font-size:.88em}
+.qsp-copy{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.8em;white-space:nowrap}
+.qsp-copy:hover{background:var(--glass)}
+#result-area{margin-top:14px}
+.result-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.result-tab{padding:6px 14px;border:1px solid var(--border);background:none;border-radius:8px;cursor:pointer;font-size:.85em}
+.result-tab.active{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#json-out{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Query String Parser & URL Parameter Decoder","description":"Parse URL query strings and parameters instantly. Decode key=value pairs, handle arrays and nested objects, URL-decode values, and copy results as JSON, table or text. Free, private, browser-only.","url":"https://tools.gamezipper.com/dev/query-string-parser.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I parse a URL query string?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your full URL or just the query string (the part after the ?) into the input box. The parser instantly decodes every key=value pair separated by & into a clean list, JSON object or table."}}, {"@type": "Question", "name": "Does it handle repeated parameters and arrays?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Repeated keys like ?tag=a&tag=b are grouped into an array. Bracket notation like ?filter[0]=x&filter[1]=y and dot notation like user.name are also supported."}}, {"@type": "Question", "name": "Is my URL data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing happens 100% in your browser using the native URL and URLSearchParams APIs. Nothing is uploaded or stored."}}, {"@type": "Question", "name": "Can I copy the parsed result as JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Switch to the JSON tab and click Copy to get a properly formatted JSON object of all your query parameters, ready to paste into code or documentation."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/query-string-parser.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/query-string-parser.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/query-string-parser.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" style="min-height:80px" placeholder="https://example.com/search?q=hello+world&page=2&sort=desc&tags[]=js&tags[]=html"></textarea>
+    <div id="status"></div>
+    <div id="result-area" style="display:none">
+      <div class="result-tabs" id="tabs"></div>
+      <div class="gz-output" id="output"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Query String Parser & URL Parameter Decoder',
+    toolDesc: 'Parse any URL or query string into clean key=value pairs. Supports arrays, nested keys, URL-decoding and JSON export — 100% in your browser.',
+    inputPh: 'Paste a full URL or query string (e.g. ?a=1&b=2)',
+    pairs: 'Pairs',
+    json: 'JSON',
+    table: 'Table',
+    copy: 'Copy',
+    copyKey: 'Copy key',
+    copyVal: 'Copy value',
+    noParams: 'No query parameters found in the input.',
+    paramCount: (n) => `${n} parameter${n===1?'':'s'} parsed`,
+    step1: 'Paste a full URL or just the query string (after the ?)',
+    step2: 'Switch between Pairs, JSON and Table views',
+    step3: 'Click a row\u2019s Copy button to copy just that key or value',
+    step4: 'Use the JSON tab to get a copy-ready object for your code',
+  },
+  zh: {
+    toolTitle: '查询字符串解析器 / URL 参数解码',
+    toolDesc: '将任意 URL 或查询字符串解析为干净的键值对。支持数组、嵌套键名、URL 解码和 JSON 导出 — 100% 浏览器本地运行。',
+    inputPh: '粘贴完整 URL 或查询字符串（如 ?a=1&b=2）',
+    pairs: '键值对',
+    json: 'JSON',
+    table: '表格',
+    copy: '复制',
+    copyKey: '复制键',
+    copyVal: '复制值',
+    noParams: '输入中未找到查询参数。',
+    paramCount: (n) => `已解析 ${n} 个参数`,
+    step1: '粘贴完整 URL 或仅查询字符串（? 之后的部分）',
+    step2: '在「键值对」「JSON」「表格」视图之间切换',
+    step3: '点击每行的复制按钮可单独复制键或值',
+    step4: '使用 JSON 标签页获取可直接粘贴到代码的对象',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let lastParsed = null;
+let currentTab = 'pairs';
+
+function extractQuery(input) {
+  input = input.trim();
+  if (!input) return '';
+  // If full URL, extract after ?
+  const qIdx = input.indexOf('?');
+  if (qIdx !== -1) return input.slice(qIdx + 1).split('#')[0];
+  // If starts with ? strip it
+  if (input.startsWith('?')) return input.slice(1);
+  // Assume it's already a query string if it contains = or &
+  if (input.includes('=') || input.includes('&')) return input;
+  return input;
+}
+
+function parseQuery(qs) {
+  // Use URLSearchParams for robust decoding, then build structure
+  const params = new URLSearchParams(qs);
+  const result = {};
+  for (const [rawKey, rawVal] of params) {
+    // Handle bracket array notation: key[] or key[0]
+    const arrMatch = rawKey.match(/^(.+?)\[(\d*)\]$/);
+    if (arrMatch) {
+      const base = arrMatch[1];
+      if (!result[base]) result[base] = [];
+      result[base].push(rawVal);
+      continue;
+    }
+    // Handle nested dot/bracket: user.name or user[name]
+    const nestedMatch = rawKey.match(/^([^.[\]]+)\.(.+)$/);
+    if (nestedMatch) {
+      const top = nestedMatch[1];
+      if (!result[top] || typeof result[top] !== 'object') result[top] = {};
+      result[top][nestedMatch[2]] = rawVal;
+      continue;
+    }
+    const bracketNested = rawKey.match(/^([^.[\]]+)\[([^.\]]+)\]$/);
+    if (bracketNested && bracketNested[2] !== '') {
+      const top = bracketNested[1];
+      if (!result[top] || typeof result[top] !== 'object' || Array.isArray(result[top])) result[top] = {};
+      result[top][bracketNested[2]] = rawVal;
+      continue;
+    }
+    // Repeated plain key -> array
+    if (result[rawKey] !== undefined) {
+      if (!Array.isArray(result[rawKey])) result[rawKey] = [result[rawKey]];
+      result[rawKey].push(rawVal);
+    } else {
+      result[rawKey] = rawVal;
+    }
+  }
+  return result;
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function renderPairs(obj) {
+  const rows = Object.entries(obj).map(([k, v]) => {
+    const valStr = Array.isArray(v) ? JSON.stringify(v) : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+    const display = Array.isArray(v) ? v.join(', ') : valStr;
+    return `<div class="qsp-row">
+      <span class="qsp-key">${escapeHtml(k)}</span>
+      <span class="qsp-val">${escapeHtml(display)}</span>
+      <button class="qsp-copy" onclick="copyText('${escapeAttr(k)}')">${t('copyKey')}</button>
+      <button class="qsp-copy" onclick="copyText('${escapeAttr(valStr)}')">${t('copyVal')}</button>
+    </div>`;
+  }).join('');
+  return rows;
+}
+
+function renderTable(obj) {
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:.88em"><thead><tr><th style="text-align:left;padding:8px;border-bottom:2px solid var(--border)">Key</th><th style="text-align:left;padding:8px;border-bottom:2px solid var(--border)">Value</th></tr></thead><tbody>';
+  for (const [k, v] of Object.entries(obj)) {
+    const valStr = Array.isArray(v) ? v.join(', ') : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+    html += `<tr><td style="padding:6px 8px;border-bottom:1px solid var(--border);font-weight:600;color:var(--gz-accent)">${escapeHtml(k)}</td><td style="padding:6px 8px;border-bottom:1px solid var(--border);font-family:monospace;word-break:break-all">${escapeHtml(valStr)}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeAttr(s) { return String(s).replace(/'/g,"\\'").replace(/&/g,'&amp;'); }
+
+function doParse() {
+  const inp = $('#input').value;
+  const qs = extractQuery(inp);
+  if (!qs.trim()) {
+    $('#result-area').style.display = 'none';
+    $('#status').innerHTML = '';
+    lastParsed = null;
+    return;
+  }
+  lastParsed = parseQuery(qs);
+  const count = Object.keys(lastParsed).length;
+  if (count === 0) {
+    $('#result-area').style.display = 'none';
+    $('#status').innerHTML = `<span style="opacity:.7">${t('noParams')}</span>`;
+    return;
+  }
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('paramCount')(count)}</span>`;
+  $('#result-area').style.display = 'block';
+  renderResult();
+}
+
+function renderResult() {
+  if (!lastParsed) return;
+  $('#tabs').innerHTML = `
+    <button class="result-tab ${currentTab==='pairs'?'active':''}" onclick="setTab('pairs')">${t('pairs')}</button>
+    <button class="result-tab ${currentTab==='json'?'active':''}" onclick="setTab('json')">${t('json')}</button>
+    <button class="result-tab ${currentTab==='table'?'active':''}" onclick="setTab('table')">${t('table')}</button>`;
+  let html = '';
+  if (currentTab === 'pairs') {
+    html = renderPairs(lastParsed);
+  } else if (currentTab === 'json') {
+    const jsonStr = JSON.stringify(lastParsed, null, 2);
+    html = `<div id="json-out">${syntaxHighlight(jsonStr)}</div>
+      <div style="margin-top:8px"><button class="gz-btn" onclick="copyText(${JSON.stringify(jsonStr)})">${t('copy')}</button></div>`;
+  } else {
+    html = renderTable(lastParsed);
+  }
+  $('#output').innerHTML = html;
+}
+
+window.setTab = function(tab) { currentTab = tab; renderResult(); };
+
+function loadExample() {
+  $('#input').value = 'https://example.com/search?q=hello+world&page=3&sort=desc&lang=en&tags[]=javascript&tags[]=html&tags[]=css&user.name=Alice&user.role=admin';
+  doParse();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#result-area').style.display = 'none';
+  $('#status').innerHTML = '';
+  lastParsed = null;
+}
+
+$('#input').addEventListener('input', doParse);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/dev/url-encode.html', name:'URL Encode'},
+    {icon:'🔗', href:'/dev/url-parser.html', name:'URL Parser'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

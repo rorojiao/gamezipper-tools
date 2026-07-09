@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSV to TOML Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert CSV data to clean TOML format instantly. RFC 4180 CSV parser, type inference for booleans, integers, floats and arrays of tables. Free, private, browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/csv-to-toml.html">
+  <meta property="og:title" content="CSV to TOML Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert CSV data to clean TOML format instantly. RFC 4180 CSV parser, type inference for booleans, integers, floats and arrays of tables. Free, private, browser-only, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/csv-to-toml.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV to TOML Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert CSV data to clean TOML format instantly with type inference. Free, private, browser-only, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.5}
+.opt-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.opt-row label{display:flex;align-items:center;gap:6px;font-size:.88em;cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV to TOML Converter","description":"Convert CSV data to clean TOML format instantly. RFC 4180 CSV parser, type inference for booleans, integers, floats and arrays of tables. Free, private, browser-only, no upload.","url":"https://tools.gamezipper.com/convert/csv-to-toml.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert CSV to TOML?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSV data into the input box. Each row becomes a TOML array-of-tables entry, with the header row defining the keys. The output updates instantly — click Copy to grab the result."}}, {"@type": "Question", "name": "Does it handle quoted fields and commas inside values?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The tool uses an RFC 4180 compliant CSV parser that correctly handles quoted fields, embedded commas, newlines inside quotes, and escaped double-quotes."}}, {"@type": "Question", "name": "Are value types auto-detected?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Integers, floats, booleans (true/false), and null/empty values are automatically converted to the correct TOML type. You can toggle type inference off to keep everything as strings."}}, {"@type": "Question", "name": "Is my CSV data uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing and conversion happens entirely in your browser. Nothing is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-to-toml.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-to-toml.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-to-toml.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV to TOML Converter',
+    toolDesc: 'Convert CSV data to clean TOML with an RFC 4180 compliant parser. Auto-detects booleans, integers, floats and renders array-of-tables — free and private.',
+    delimiter: 'Delimiter',
+    typeInfer: 'Type inference (numbers, bools)',
+    arrayTables: 'Array of tables [[rows]]',
+    rowsConverted: (n) => `Converted ${n} data row${n===1?'':'s'}`,
+    step1: 'Paste CSV data (with a header row) into the input',
+    step2: 'Choose delimiter and toggle type inference',
+    step3: 'Each data row becomes a TOML array-of-tables entry',
+    step4: 'Click Copy to get the TOML result',
+  },
+  zh: {
+    toolTitle: 'CSV 转 TOML 转换器',
+    toolDesc: '使用 RFC 4180 解析器将 CSV 转换为干净的 TOML。自动识别布尔值、整数、浮点数，并生成表数组 — 免费且私密。',
+    delimiter: '分隔符',
+    typeInfer: '类型推断（数字、布尔）',
+    arrayTables: '表数组 [[rows]]',
+    rowsConverted: (n) => `已转换 ${n} 行数据`,
+    step1: '在输入框粘贴 CSV 数据（含表头行）',
+    step2: '选择分隔符并切换类型推断',
+    step3: '每行数据会变为一个 TOML 表数组条目',
+    step4: '点击复制获取 TOML 结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let delimiter = ',';
+let typeInfer = true;
+let arrayTables = true;
+
+// RFC 4180 CSV parser
+function parseCSV(text, delim) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  const d = delim;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === d) { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* skip, handle \n */ }
+      else field += c;
+    }
+  }
+  // last field
+  if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+  // remove trailing empty rows
+  while (rows.length && rows[rows.length - 1].length === 1 && rows[rows.length - 1][0] === '') rows.pop();
+  return rows;
+}
+
+function inferType(val) {
+  if (val === '') return null;
+  if (!typeInfer) return val;
+  const lower = val.toLowerCase();
+  if (lower === 'true') return true;
+  if (lower === 'false') return false;
+  if (lower === 'null' || lower === 'none' || lower === 'nil') return null;
+  // integer
+  if (/^-?\d+$/.test(val)) {
+    try { return String(BigInt(val)); } catch(e) { return val; }
+  }
+  // float
+  if (/^-?\d+\.\d+([eE][+-]?\d+)?$/.test(val) || /^-?\d+[eE][+-]?\d+$/.test(val)) return parseFloat(val);
+  // date-like (ISO) -> keep as string but quoted in TOML
+  return val;
+}
+
+function formatTomlValue(val) {
+  if (val === null || val === undefined) return '""';
+  if (val === true) return 'true';
+  if (val === false) return 'false';
+  if (typeof val === 'number') return String(val);
+  // string: escape backslash and quotes
+  const escaped = String(val).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  // bare key allowed for simple identifiers, otherwise quote
+  return `"${escaped}"`;
+}
+
+function toTomlKey(name) {
+  if (/^[A-Za-z0-9_-]+$/.test(name)) return name;
+  const escaped = String(name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `"${escaped}"`;
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML=''; return; }
+  try {
+    const rows = parseCSV(inp, delimiter);
+    if (rows.length < 1) { $('#output').textContent = ''; $('#status').innerHTML=''; return; }
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+    let out = '';
+    if (arrayTables) {
+      for (const r of dataRows) {
+        out += '[[rows]]\n';
+        for (let c = 0; c < headers.length; c++) {
+          const key = headers[c] || `col${c}`;
+          const raw = r[c] !== undefined ? r[c] : '';
+          const val = inferType(raw);
+          out += `${toTomlKey(key)} = ${formatTomlValue(val)}\n`;
+        }
+        out += '\n';
+      }
+    } else {
+      // single table
+      out += '[data]\n';
+      for (const r of dataRows) {
+        for (let c = 0; c < headers.length; c++) {
+          const key = headers[c] || `col${c}`;
+          const raw = r[c] !== undefined ? r[c] : '';
+          const val = inferType(raw);
+          out += `${toTomlKey(key)} = ${formatTomlValue(val)}\n`;
+        }
+        out += '\n';
+      }
+    }
+    $('#output').textContent = out.trimEnd() + '\n';
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('rowsConverted')(dataRows.length)}</span>`;
+  } catch(e) {
+    $('#output').textContent = '';
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = 'name,version,stable,rating,downloads\nGameZipper Tools,2.5,true,4.8,1200000\nTiny Calculator,1.0,false,4.2,35000\nPDF Merger,3.2,true,4.9,890000';
+  convert();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; $('#status').innerHTML=''; }
+
+$('#input').addEventListener('input', convert);
+
+$('#opts').innerHTML = `
+  <label>${t('delimiter')}
+    <select class="gz-select" onchange="setDelim(this.value)">
+      <option value=",">Comma (,)</option>
+      <option value="\t">Tab</option>
+      <option value=";">Semicolon (;)</option>
+      <option value="|">Pipe (|)</option>
+    </select>
+  </label>
+  <label><input type="checkbox" checked onchange="typeInfer=this.checked;convert()"> ${t('typeInfer')}</label>
+  <label><input type="checkbox" checked onchange="arrayTables=this.checked;convert()"> ${t('arrayTables')}</label>`;
+
+window.setDelim = function(v) { delimiter = v; convert(); };
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'🗃️', href:'/convert/csv-to-sql.html', name:'CSV to SQL'},
+    {icon:'📑', href:'/convert/json-to-toml.html', name:'JSON to TOML'},
+    {icon:'✅', href:'/convert/csv-validator.html', name:'CSV Validator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
