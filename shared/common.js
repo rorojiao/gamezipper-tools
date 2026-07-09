@@ -81,7 +81,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://insurance-look-fed-saskatchewan.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://tenant-fisheries-converter-coral.trycloudflare.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
@@ -120,10 +120,16 @@
   //   zone_legacy_disabled_skip 10689346 ~10/wk → 0, commercial break dead-end
   //   calls ~25/wk → 0. Cache version bumped v523showippushcull → v523showippushcull2
   //   to force CF cache MISS.
+  // v5.24 (2026-07-09, t_0576328a): load monetag-manager.v524.js — guard
+  //   showInPagePush() with isHubPage (11012002 only fills on hub pages;
+  //   sub-page was 100% wasted call). Add inpage_push_fill event. Align
+  //   ZONE_BACKOFF curve [10,30,120]→[10,30,60] to gz.com v5.4. BI 7d evidence
+  //   post-v5.23 (3.7h 2026-07-09 05:30~09:14): 1 load_error, 1 inpage_push_no_fill,
+  //   0 fills on sub-pages — confirming 11012002 not authorized for tools subdomain.
   // was previously committed (b8f757074) but NEVER reached prod because common.js still
   // loaded v521p0fix.js (CF edge cache). New file v522.js created + cache version bumped
   // to a NEVER-cached value to force cache MISS across CDN.
-  var s1=document.createElement('script');s1.src='/monetag-manager.v523.js?v=v523showippushcull2';s1.defer=true;document.head.appendChild(s1);
+  var s1=document.createElement('script');s1.src='/monetag-manager.v524.js?v=v524inpagehub';s1.defer=true;document.head.appendChild(s1);
   // v5.18 (2026-07-07, t_bad16c5c): load game-footer.js for cross-site game links
   // + commercialBreak click trigger. Mirrors gz.com game-footer.js pattern.
   // Graceful: if monetag-manager.js hasn't exported GZAds yet, footer links still
