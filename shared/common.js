@@ -81,7 +81,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://necessarily-pdas-size-penn.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://guardian-toys-legs-season.trycloudflare.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
