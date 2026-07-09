@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Phone Number Validator - Check International Numbers | GameZipper Tools</title>
+  <meta name="description" content="Validate phone numbers from any country. Check format, carrier type (mobile/landline), country code, and get formatted E.164, national, and international variants. Free, browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/phone-number-validator.html">
+  <meta property="og:title" content="Phone Number Validator - Check International Numbers | GameZipper Tools">
+  <meta property="og:description" content="Validate phone numbers from any country. Check format, carrier type, country code, and get E.164, national, and international formats. Free.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/phone-number-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Phone Number Validator - Check International Numbers | GameZipper Tools">
+  <meta name="twitter:description" content="Validate phone numbers from any country. Free, browser-based.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+.opt-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:12px}
+.opt-group{display:flex;flex-direction:column;gap:4px}
+.opt-group label{font-size:.8em;color:var(--text2);font-weight:600}
+.opt-group input,.opt-group select{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.9em}
+#result-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:12px;display:none}
+#result-card .field-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+#result-card .field-row:last-child{border-bottom:none}
+#result-card .label{color:var(--text2);font-weight:600;font-size:.85em}
+#result-card .value{color:var(--text);font-family:monospace}
+.valid{color:var(--gz-success,#00d672)!important}
+.invalid{color:var(--gz-accent,#e94560)!important}
+.copy-row{display:flex;align-items:center;gap:8px}
+.copy-row button{font-size:.75em;padding:2px 8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Phone Number Validator","description":"Validate phone numbers from any country. Check format, carrier type, country code, and get E.164, national, and international formats. Free, browser-based.","url":"https://tools.gamezipper.com/dev/phone-number-validator.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does phone number validation work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool uses Google's libphonenumber library to parse and validate phone numbers according to each country's numbering rules. It checks length, prefix, digit composition, and carrier type."}}, {"@type": "Question", "name": "What is E.164 format?", "acceptedAnswer": {"@type": "Answer", "text": "E.164 is the international standard for phone numbers, formatted as +[country code][number], e.g. +14155551234. It is used by telecom systems worldwide and required by APIs like Twilio."}}, {"@type": "Question", "name": "Can I validate multiple phone numbers at once?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enter one number per line in the input area. Each number will be validated against the selected default country code."}}, {"@type": "Question", "name": "Does this tool send the phone number anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. All validation happens in your browser. Phone numbers are never sent to any server or stored anywhere."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/phone-number-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/phone-number-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/phone-number-validator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row">
+      <div class="opt-group">
+        <label id="lbl-country"></label>
+        <select id="country"></select>
+      </div>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="6" placeholder="+1 415-555-1234&#10;07911 123456&#10;13800138000" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/libphonenumber-js/1.10.44/libphonenumber-min.js"></script>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Phone Number Validator',
+    toolDesc: 'Validate phone numbers from 200+ countries. Check format, carrier type, and get E.164, national, and international formats — free and browser-based.',
+    validate: '✅ Validate',
+    clear: '🗑️ Clear',
+    example: '📝 Example',
+    copy: '📋 Copy',
+    lblCountry: 'Default Country (for local numbers)',
+    valid: '✓ Valid',
+    invalid: '✗ Invalid',
+    step1: 'Select the default country for local-format numbers',
+    step2: 'Enter one or more phone numbers (one per line)',
+    step3: 'Click Validate to parse and check each number',
+    step4: 'Review the formatted variants and copy as needed',
+    inputLabel: 'Phone Number(s)',
+    outputLabel: 'Validation Results',
+    type: 'Type',
+    country2: 'Country',
+    nationalFmt: 'National Format',
+    intlFmt: 'International Format',
+    e164: 'E.164 Format',
+    uri: 'Tel URI',
+    possible: 'Possible',
+    lineType: 'Line Type',
+    yes: 'Yes',
+    no: 'No',
+  },
+  zh: {
+    toolTitle: '手机号码验证器',
+    toolDesc: '验证 200+ 个国家/地区的电话号码。检查格式、运营商类型，并提供 E.164、国内和国际格式 — 免费浏览器本地运行。',
+    validate: '✅ 验证',
+    clear: '🗑️ 清空',
+    example: '📝 示例',
+    copy: '📋 复制',
+    lblCountry: '默认国家（用于本地号码）',
+    valid: '✓ 有效',
+    invalid: '✗ 无效',
+    step1: '选择本地号码的默认国家/地区',
+    step2: '输入一个或多个电话号码（每行一个）',
+    step3: '点击「验证」解析并检查每个号码',
+    step4: '查看格式化结果并按需复制',
+    inputLabel: '电话号码',
+    outputLabel: '验证结果',
+    type: '类型',
+    country2: '国家/地区',
+    nationalFmt: '国内格式',
+    intlFmt: '国际格式',
+    e164: 'E.164 格式',
+    uri: 'Tel URI',
+    possible: '可能有效',
+    lineType: '线路类型',
+    yes: '是',
+    no: '否',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// Country list (ISO 3166-1 alpha-2 → name)
+const COUNTRIES = [
+  ['US','United States (+1)'],['GB','United Kingdom (+44)'],['CN','China (+86)'],['JP','Japan (+81)'],
+  ['DE','Germany (+49)'],['FR','France (+33)'],['IN','India (+91)'],['BR','Brazil (+55)'],
+  ['CA','Canada (+1)'],['AU','Australia (+61)'],['RU','Russia (+7)'],['KR','South Korea (+82)'],
+  ['IT','Italy (+39)'],['ES','Spain (+34)'],['MX','Mexico (+52)'],['NL','Netherlands (+31)'],
+  ['SE','Sweden (+46)'],['CH','Switzerland (+41)'],['SG','Singapore (+65)'],['HK','Hong Kong (+852)'],
+  ['TW','Taiwan (+886)'],['TH','Thailand (+66)'],['VN','Vietnam (+84)'],['ID','Indonesia (+62)'],
+  ['MY','Malaysia (+60)'],['PH','Philippines (+63)'],['AE','UAE (+971)'],['SA','Saudi Arabia (+966)'],
+  ['TR','Turkey (+90)'],['PL','Poland (+48)'],['BE','Belgium (+32)'],['AT','Austria (+43)'],
+  ['IE','Ireland (+353)'],['PT','Portugal (+351)'],['DK','Denmark (+45)'],['FI','Finland (+358)'],
+  ['NO','Norway (+47)'],['CZ','Czech Republic (+420)'],['GR','Greece (+30)'],['HU','Hungary (+36)'],
+  ['RO','Romania (+40)'],['UA','Ukraine (+380)'],['IL','Israel (+972)'],['EG','Egypt (+20)'],
+  ['ZA','South Africa (+27)'],['NG','Nigeria (+234)'],['AR','Argentina (+54)'],['CL','Chile (+56)'],
+  ['CO','Colombia (+57)'],['PE','Peru (+51)'],['VE','Venezuela (+58)'],['NZ','New Zealand (+64)'],
+];
+
+$('#country').innerHTML = COUNTRIES.map(([code,name]) => `<option value="${code}">${name}</option>`).join('');
+$('#country').value = 'US';
+$('#lbl-country').textContent = t('lblCountry');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doValidate()">${t('validate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+const inpEl = $('#input');
+inpEl.placeholder = '+1 415-555-1234\n07911 123456\n020 7946 0958';
+
+function doValidate() {
+  const lines = $('#input').value.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) { $('#output').textContent = ''; $('#status').textContent=''; return; }
+  const cc = $('#country').value;
+
+  let html = '';
+  lines.forEach((line, i) => {
+    if (i > 0) html += '<hr style="border-color:var(--border);margin:12px 0">';
+    try {
+      const phone = libphonenumber.parsePhoneNumber(line, cc);
+      const isValid = phone.isValid();
+      const isPossible = phone.isPossible();
+      const type = (() => {
+        try { return libphonenumber.getPhoneNumberType(phone) || 'unknown'; } catch { return 'unknown'; }
+      })();
+      const typeDisplay = {MOBILE:'📱 Mobile',FIXED_LINE:'☎️ Landline',FIXED_LINE_OR_MOBILE:'📱☎️ Mobile/Landline',VOIP:'🌐 VoIP',TOLL_FREE:'🆓 Toll Free',PREMIUM_RATE:'💰 Premium Rate',unknown:'❓ Unknown'}[type] || type;
+
+      html += `<div style="margin-bottom:8px"><strong class="${isValid?'valid':'invalid'}">${isValid?t('valid'):t('invalid')}</strong> — ${line}</div>`;
+      html += resultRow(t('e164'), phone.format('E.164'));
+      html += resultRow(t('intlFmt'), phone.formatInternational());
+      html += resultRow(t('nationalFmt'), phone.formatNational());
+      html += resultRow(t('uri'), phone.getURI());
+      html += resultRow(t('country2'), phone.country || '—');
+      html += resultRow(t('lineType'), typeDisplay);
+      html += resultRow(t('possible'), isPossible ? t('yes') : t('no'));
+    } catch(e) {
+      html += `<div style="margin-bottom:8px"><strong class="invalid">${t('invalid')}</strong> — ${line}</div>`;
+      html += `<div style="color:var(--text2);font-size:.85em;padding:4px 0">${e.message}</div>`;
+    }
+  });
+
+  $('#output').innerHTML = html;
+  const validCount = (html.match(/class="valid"/g) || []).length;
+  $('#status').innerHTML = `<span style="color:var(--text2)">${validCount}/${lines.length} valid</span>`;
+  wireCopyButtons();
+}
+
+function resultRow(label, value) {
+  const safe = String(value).replace(/</g,'&lt;');
+  return `<div class="copy-row" style="padding:6px 0;border-bottom:1px solid var(--border)">
+    <span class="label" style="min-width:140px">${label}</span>
+    <span class="value" style="flex:1;text-align:right">${safe}</span>
+    <button class="gz-btn gz-btn-secondary" data-copy="${encodeURIComponent(value)}">${t('copy')}</button>
+  </div>`;
+}
+
+function wireCopyButtons() {
+  $('#output').querySelectorAll('[data-copy]').forEach(btn => {
+    btn.onclick = () => copyText(decodeURIComponent(btn.dataset.copy));
+  });
+}
+
+function loadExample() {
+  $('#input').value = '+1 415-555-1234\n+44 20 7946 0958\n+86 138 0013 8000\n+81 90 1234 5678\n07911 123456';
+  doValidate();
+}
+
+function doClear() { $('#input').value=''; $('#output').textContent=''; $('#status').textContent=''; }
+
+$('#input').addEventListener('input', () => { if ($('#input').value.trim()) doValidate(); else doClear(); });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✉️', href:'/dev/email-validator.html', name:'Email Validator'},
+    {icon:'💳', href:'/dev/credit-card-validator.html', name:'Credit Card Validator'},
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Generator'},
+    {icon:'🌐', href:'/dev/whois-lookup.html', name:'Whois Lookup'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
