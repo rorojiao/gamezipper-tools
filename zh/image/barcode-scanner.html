@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>在线条码扫描器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="用摄像头实时扫描条码和二维码，或上传图片解码。100% 私密 — 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/image/barcode-scanner.html">
+  <meta property="og:title" content="在线条码扫描器">
+  <meta property="og:description" content="用摄像头实时扫描条码和二维码，或上传图片解码。100% 私密 — 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/image/barcode-scanner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="在线条码扫描器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+#videoBox{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3;max-width:480px;margin:0 auto;border:1px solid var(--border2)}
+#video{width:100%;height:100%;object-fit:cover;display:block}
+#overlay{position:absolute;inset:0;pointer-events:none}
+.scan-frame{position:absolute;left:10%;top:15%;width:80%;height:70%;border:2px solid #4ecdc4;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
+.scan-line{position:absolute;left:10%;top:15%;width:80%;height:2px;background:linear-gradient(90deg,transparent,#4ecdc4,transparent);animation:scan 2s linear infinite}
+@keyframes scan{0%{top:15%}50%{top:82%}100%{top:15%}}
+#fileInput{display:none}
+.result-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:8px;display:flex;align-items:center;gap:10px;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.result-card .val{font-family:monospace;font-size:1em;word-break:break-all;flex:1}
+.result-card .fmt{font-size:.7em;color:var(--text3);background:var(--glass);padding:2px 8px;border-radius:10px;white-space:nowrap}
+.result-card .ts{font-size:.7em;color:var(--text3);white-space:nowrap}
+.empty-hint{text-align:center;color:var(--text3);padding:20px;font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Barcode Scanner","description":"Scan barcodes and QR codes online for free using your camera. Supports UPC, EAN, Code 128, Code 39, QR, Data Matrix and more. 100% browser-based — no upload, no signup.","url": "https://tools.gamezipper.com/zh/image/barcode-scanner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What barcode formats are supported?","acceptedAnswer":{"@type":"Answer","text":"This tool uses your browser's native BarcodeDetector API and supports QR codes, UPC-A, UPC-E, EAN-8, EAN-13, Code 39, Code 128, Codabar, ITF, Data Matrix and PDF417 when supported by the browser."}},{"@type":"Question","name":"Do I need to install an app?","acceptedAnswer":{"@type":"Answer","text":"No. The scanner runs entirely in your browser using the camera via getUserMedia and the native BarcodeDetector API. No download or signup required."}},{"@type":"Question","name":"Is my camera feed sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All camera frames are processed locally in your browser. No video or image data is ever uploaded."}},{"@type":"Question","name":"Can I scan a barcode from an image file?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click Upload Image to pick a photo containing a barcode or QR code. The tool will detect and decode it from the still image."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/image/barcode-scanner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/image/barcode-scanner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/image/barcode-scanner.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="videoBox">
+      <video id="video" autoplay playsinline muted></video>
+      <div id="overlay"><div class="scan-frame"></div><div class="scan-line"></div></div>
+    </div>
+    <div id="status" style="text-align:center;margin-top:10px;font-size:.9em"></div>
+    <input type="file" id="fileInput" accept="image/*">
+    <h3 style="font-size:.95em;color:var(--text2);margin:16px 0 6px" id="lblHistory"></h3>
+    <div id="history"><div class="empty-hint" id="emptyHint"></div></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Barcode Scanner Online',
+    toolDesc: 'Scan barcodes and QR codes live with your camera, or upload an image to decode. 100% private — runs in your browser.',
+    startCam: '📷 Start Camera',
+    stopCam: '⏹ Stop',
+    uploadImg: '🖼 Upload Image',
+    clearHist: '🗑 Clear',
+    lblHistory: 'Scan History',
+    emptyHint: 'Scanned codes will appear here.',
+    step1: 'Click Start Camera and allow camera access',
+    step2: 'Point your camera at a barcode or QR code',
+    step3: 'Or click Upload Image to scan from a photo',
+    step4: 'Click any result to copy it to clipboard',
+    starting: 'Starting camera…',
+    camError: 'Camera error. Please allow camera permission or try Upload Image instead.',
+    noSupport: 'Your browser does not support the BarcodeDetector API. Try Chrome or Edge on desktop/Android, or use Upload Image.',
+    noDetect: 'No barcode detected in this image. Try a clearer, higher-contrast photo.',
+    detected: 'Detected',
+    copyHint: 'Click to copy',
+  },
+  zh: {
+    toolTitle: '在线条码扫描器',
+    toolDesc: '用摄像头实时扫描条码和二维码，或上传图片解码。100% 私密 — 浏览器本地运行。',
+    startCam: '📷 开启摄像头',
+    stopCam: '⏹ 停止',
+    uploadImg: '🖼 上传图片',
+    clearHist: '🗑 清空',
+    lblHistory: '扫描历史',
+    emptyHint: '扫描到的码将显示在这里。',
+    step1: '点击「开启摄像头」并允许访问',
+    step2: '将摄像头对准条码或二维码',
+    step3: '或点击「上传图片」从照片中扫描',
+    step4: '点击任意结果即可复制到剪贴板',
+    starting: '正在启动摄像头…',
+    camError: '摄像头错误。请允许摄像头权限，或改用「上传图片」。',
+    noSupport: '你的浏览器不支持 BarcodeDetector API。请使用桌面/安卓上的 Chrome 或 Edge，或使用「上传图片」。',
+    noDetect: '此图片中未检测到条码。请尝试更清晰、对比度更高的照片。',
+    detected: '已识别',
+    copyHint: '点击复制',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let stream = null, scanning = false, rafId = null, detector = null;
+const history = [];
+
+async function initDetector() {
+  if (!('BarcodeDetector' in window)) return null;
+  try {
+    const fmts = await window.BarcodeDetector.getSupportedFormats();
+    return new window.BarcodeDetector({ formats: fmts });
+  } catch { return null; }
+}
+
+async function startCamera() {
+  $('#status').textContent = t('starting');
+  if (!detector) detector = await initDetector();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    $('#video').srcObject = stream;
+    await $('#video').play();
+    scanning = true;
+    $('#status').textContent = '';
+    if (detector) scanLoop();
+    else $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noSupport')}</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('camError')}</span>`;
+  }
+}
+
+function stopCamera() {
+  scanning = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (stream) { stream.getTracks().forEach(tr => tr.stop()); stream = null; }
+  $('#video').srcObject = null;
+  $('#status').textContent = '';
+}
+
+async function scanLoop() {
+  if (!scanning || !detector) return;
+  try {
+    const codes = await detector.detect($('#video'));
+    if (codes && codes.length) {
+      for (const c of codes) addResult(c.rawValue, c.format || 'BARCODE');
+    }
+  } catch {}
+  rafId = requestAnimationFrame(scanLoop);
+}
+
+async function scanImage(file) {
+  if (!detector) detector = await initDetector();
+  if (!detector) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noSupport')}</span>`; return; }
+  const img = new Image();
+  img.onload = async () => {
+    try {
+      const codes = await detector.detect(img);
+      if (codes && codes.length) {
+        for (const c of codes) addResult(c.rawValue, c.format || 'BARCODE');
+      } else {
+        $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noDetect')}</span>`;
+      }
+    } catch { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noDetect')}</span>`; }
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function addResult(value, format) {
+  if (history.length && history[0].value === value) return;
+  history.unshift({ value, format, ts: new Date() });
+  if (history.length > 20) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!history.length) { $('#history').innerHTML = `<div class="empty-hint">${t('emptyHint')}</div>`; return; }
+  $('#history').innerHTML = history.map(h => {
+    const time = h.ts.toLocaleTimeString();
+    const isUrl = /^https?:\/\//i.test(h.value);
+    const display = isUrl
+      ? `<a href="${escapeHtml(h.value)}" target="_blank" rel="noopener" style="color:var(--accent)">${escapeHtml(h.value)}</a>`
+      : escapeHtml(h.value);
+    return `<div class="result-card" onclick="copyText('${escapeAttr(h.value)}')" title="${t('copyHint')}">
+      <span class="fmt">${escapeHtml(h.format)}</span>
+      <span class="val">${display}</span>
+      <span class="ts">${time}</span>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function escapeAttr(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+
+$('#fileInput').addEventListener('change', e => { if (e.target.files[0]) scanImage(e.target.files[0]); e.target.value=''; });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="startCamera()">${t('startCam')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="stopCamera()">${t('stopCam')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#fileInput').click()">${t('uploadImg')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="history.length=0;renderHistory()">${t('clearHist')}</button>`;
+
+window.addEventListener('beforeunload', stopCamera);
+
+GZ.renderToolPage({
+  category: 'image',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📷', href:'/image/qrcode-generator.html', name:'QR Generator'},
+    {icon:'📷', href:'/fun/qr-code-scanner.html', name:'QR Scanner'},
+    {icon:'📷', href:'/dev/barcode-generator.html', name:'Barcode Gen'},
+    {icon:'📷', href:'/image/ocr.html', name:'OCR'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
