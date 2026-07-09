@@ -15,7 +15,7 @@
  *     2. fillContainerAd() — fires 'adsterra_container_ad_fill' on container fill
  *        (via MutationObserver checkFill pattern, mirrors monetag-manager.js line 713)
  *     3. fillContainerAd() — fires 'adsterra_container_ad_no_fill' when ad didn't render
- *   - 🛡️ Safety: Adsterra fills unchanged behavior (still loads zones via profitabledisplaynetwork.com).
+ *   - 🛡️ Safety: Adsterra fills unchanged behavior (still loads zones via effectivecpmnetwork.com).
  *     Only adds observability. No new ads called.
  *   - 📊 Acceptance (7d BI post-deploy): adsterra_* events > 0 (was 0).
  */
@@ -118,7 +118,7 @@
     var s = document.createElement('script');
     s.async = true;
     s.setAttribute('data-zone', String(zone));
-    s.src = 'https://www.profitabledisplaynetwork.com/' + zone;
+    s.src = 'https://www.effectivecpmnetwork.com/' + zone;
     var containerId = container && container.id ? container.id : '';
     s.onload = function() {
       trackAdEvent('adsterra_script_loaded', { zoneId: zone, containerId: containerId });

@@ -465,10 +465,10 @@
       enabled: (typeof window.GZ_ADSTERRA_ENABLED === 'boolean' ? window.GZ_ADSTERRA_ENABLED : true),
       publisherKey: (window.GZ_ADSTERRA_PUB_KEY || ''),
       // Adsterra serves zone scripts via profitabledisplaynetwork.com/{zoneId}.js
-      providerUrl: 'https://www.profitabledisplaynetwork.com/',
-      fallbackUrl: 'https://adsterra.com/ads.php',
+      providerUrl: 'https://www.effectivecpmnetwork.com/',
+      fallbackUrl: 'https://www.effectivecpmnetwork.com/',
       // Preconnect for adsterra CDN subdomains
-      PRECONNECT: ['https://www.profitabledisplaynetwork.com', 'https://www.adsterra.com', 'https://pl.pub-pc.com'],
+      PRECONNECT: ['https://www.effectivecpmnetwork.com', 'https://www.adsterra.com'],
     },
   };
 
@@ -792,7 +792,7 @@
 
       // Adsterra modern loader: profitabledisplaynetwork.com/{zoneId}.js
       var s = document.createElement('script');
-      s.src = CONFIG.ADSTERRA.providerUrl + String(zoneId) + '.js';
+      s.src = CONFIG.ADSTERRA.providerUrl + String(zoneId)  // v5.14: no .js;
       s.async = true;
       s.setAttribute('data-zone', String(zoneId));
       s.setAttribute('data-network', 'adsterra');
