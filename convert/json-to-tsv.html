@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON to TSV Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert JSON arrays to TSV (tab-separated values) instantly. Flatten nested objects with dot notation, auto-detect columns and handle special characters. Free, browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/json-to-tsv.html">
+  <meta property="og:title" content="JSON to TSV Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert JSON arrays to TSV (tab-separated values) instantly. Flatten nested objects with dot notation, auto-detect columns and handle special characters. Free, browser-only, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/json-to-tsv.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON to TSV Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260707v518gf"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to TSV Converter","description":"Convert JSON arrays to TSV (tab-separated values) instantly. Flatten nested objects with dot notation, auto-detect columns and handle special characters. Free, browser-only, no upload.","url":"https://tools.gamezipper.com/convert/json-to-tsv.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert JSON to TSV?","acceptedAnswer":{"@type":"Answer","text":"Paste your JSON array of objects into the input area and click Convert. The tool flattens nested fields using dot notation, collects all keys as columns, and outputs tab-separated rows you can paste into Excel or Google Sheets."}},{"@type":"Question","name":"What is TSV format?","acceptedAnswer":{"@type":"Answer","text":"TSV (Tab-Separated Values) is a plain-text format like CSV but uses the tab character as the column delimiter. It is widely used for spreadsheet imports because tabs rarely appear inside data values."}},{"@type":"Question","name":"How are nested JSON objects handled?","acceptedAnswer":{"@type":"Answer","text":"Nested objects are flattened using dot notation. For example, {\"user\":{\"name\":\"Alice\"}} becomes a column named user.name with value Alice. Arrays of primitives are joined with semicolons."}},{"@type":"Question","name":"Is my JSON uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion runs locally in your browser with JavaScript. Your JSON data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/json-to-tsv.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/json-to-tsv.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/json-to-tsv.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header"><h1 id="title"></h1><p class="desc" id="desc"></p></div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to TSV Converter',
+    toolDesc: 'Convert JSON arrays of objects to tab-separated values (TSV) instantly. Nested objects are flattened with dot notation — perfect for Excel and Google Sheets. Free and private.',
+    includeHeader: 'Header row',
+    flatten: 'Flatten nested',
+    rowsConverted: '✓ Converted {n} rows, {c} columns',
+    invalidJson: '✗ Invalid JSON',
+    step1: 'Paste a JSON array of objects into the input area',
+    step2: 'Toggle header row and nested-flattening as needed',
+    step3: 'Click Convert to generate TSV output',
+    step4: 'Copy the result and paste into Excel or Google Sheets',
+  },
+  zh: {
+    toolTitle: 'JSON 转 TSV 转换器',
+    toolDesc: '将 JSON 对象数组即时转换为制表符分隔值（TSV）。嵌套对象用点号展开 — 非常适合 Excel 和 Google Sheets。免费且私密。',
+    includeHeader: '包含表头行',
+    flatten: '展开嵌套',
+    rowsConverted: '✓ 已转换 {n} 行，{c} 列',
+    invalidJson: '✗ JSON 无效',
+    step1: '将 JSON 对象数组粘贴到输入区',
+    step2: '按需切换表头行和嵌套展开选项',
+    step3: '点击「转换」生成 TSV 输出',
+    step4: '复制结果并粘贴到 Excel 或 Google Sheets',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let includeHeader = true, flatten = true;
+
+function escapeTSV(v) {
+  if (v == null) return '';
+  if (typeof v === 'object') v = JSON.stringify(v);
+  return String(v).replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
+}
+
+function flattenObj(obj, prefix, out) {
+  for (const k in obj) {
+    const key = prefix ? prefix + '.' + k : k;
+    const val = obj[k];
+    if (val && typeof val === 'object' && !Array.isArray(val) && flatten) {
+      flattenObj(val, key, out);
+    } else if (Array.isArray(val) && flatten) {
+      out[key] = val.map(x => typeof x === 'object' ? JSON.stringify(x) : x).join('; ');
+    } else {
+      out[key] = val;
+    }
+  }
+  return out;
+}
+
+function convert() {
+  const inp = $('#input').value.trim();
+  if (!inp) return;
+  let arr;
+  try {
+    const parsed = JSON.parse(inp);
+    arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.data) ? parsed.data : [parsed]);
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidJson')}: ${e.message}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    return;
+  }
+  const flatRows = arr.map(item => flattenObj(item, '', {}));
+  const colSet = [];
+  flatRows.forEach(r => { for (const k in r) if (colSet.indexOf(k) === -1) colSet.push(k); });
+  const lines = [];
+  if (includeHeader) lines.push(colSet.map(escapeTSV).join('\t'));
+  flatRows.forEach(r => lines.push(colSet.map(c => escapeTSV(r[c])).join('\t')));
+  $('#output').textContent = lines.join('\n');
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('rowsConverted').replace('{n}', flatRows.length).replace('{c}', colSet.length)}</span>`;
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify([
+    {id:1, name:'Alice', email:'alice@example.com', role:'Engineer', meta:{country:'USA', team:'Core'}},
+    {id:2, name:'Bob', email:'bob@example.com', role:'Designer', meta:{country:'UK', team:'UX'}},
+    {id:3, name:'Carol', email:'carol@example.com', role:'Manager', meta:{country:'Japan', team:'Ops'}}
+  ], null, 2);
+  convert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+function downloadTSV() {
+  const text = $('#output').textContent;
+  if (!text) return;
+  const blob = new Blob([text], {type: 'text/tab-separated-values'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.tsv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <label style="font-size:.85em;display:inline-flex;align-items:center;gap:4px"><input type="checkbox" ${includeHeader?'checked':''} onchange="includeHeader=this.checked;convert()"> ${t('includeHeader')}</label>
+  <label style="font-size:.85em;display:inline-flex;align-items:center;gap:4px"><input type="checkbox" ${flatten?'checked':''} onchange="flatten=this.checked;convert()"> ${t('flatten')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadTSV()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/convert/csv-to-tsv.html', name:'CSV to TSV'},
+    {icon:'📊', href:'/dev/json-to-csv.html', name:'JSON to CSV'},
+    {icon:'📊', href:'/convert/tsv-to-json.html', name:'TSV to JSON'},
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
