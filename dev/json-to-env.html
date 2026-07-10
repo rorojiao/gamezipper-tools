@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON to ENV Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert JSON to .env / dotenv format instantly. Flattens nested objects, quotes values, handles special characters and types. Free, private, 100% browser-based.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-to-env.html">
+  <meta property="og:title" content="JSON to ENV Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert JSON to .env / dotenv format instantly. Flattens nested objects, quotes values, handles special characters and types. Free, private, 100% browser-based.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-to-env.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON to ENV Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:60px}
+#status{margin-top:8px;font-size:.85em}
+.gz-check{display:flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer}
+.gz-check input{margin:0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to ENV Converter","description":"Convert JSON to .env / dotenv format instantly. Flattens nested objects, quotes values, handles special characters and types. Free, private, 100% browser-based.","url":"https://tools.gamezipper.com/dev/json-to-env.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the JSON to ENV converter handle nested objects?", "acceptedAnswer": {"@type": "Answer", "text": "Nested objects and arrays are flattened using uppercase and underscores. For example, {database:{host:localhost}} becomes DATABASE_HOST=localhost in the .env output."}}, {"@type": "Question", "name": "Is my data safe with this tool?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All conversion happens entirely in your browser. No JSON data is ever sent to any server."}}, {"@type": "Question", "name": "Does it handle special characters in values?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Values containing spaces, special characters, #, =, or newlines are automatically wrapped in double quotes with proper escaping."}}, {"@type": "Question", "name": "Can I export the result as a .env file?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Click the Download button to save the generated .env file directly to your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-env.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-env.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-env.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" rows="14"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to ENV Converter',
+    toolDesc: 'Convert JSON to .env / dotenv format. Flattens nested objects, quotes values with special chars, and handles all types — 100% browser-based.',
+    convert: 'Convert',
+    quoteAll: 'Quote all values',
+    upperKeys: 'Uppercase keys',
+    exportPrefix: 'export prefix',
+    step1: 'Paste your JSON into the input area',
+    step2: 'Toggle options: quote all values, uppercase keys, or export prefix',
+    step3: 'Click Convert to generate the .env format',
+    step4: 'Click Download to save as .env file',
+  },
+  zh: {
+    toolTitle: 'JSON 转 ENV 转换器',
+    toolDesc: '将 JSON 转换为 .env / dotenv 格式。自动展平嵌套对象、引用特殊字符的值，处理所有类型 — 100% 浏览器本地运行。',
+    convert: '转换',
+    quoteAll: '所有值加引号',
+    upperKeys: '键名大写',
+    exportPrefix: 'export 前缀',
+    step1: '在输入区粘贴您的 JSON',
+    step2: '勾选选项：所有值加引号、键名大写、或添加 export 前缀',
+    step3: '点击「转换」生成 .env 格式',
+    step4: '点击「下载」保存为 .env 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let quoteAll = false, upperKeys = true, useExport = false;
+
+function flatten(obj, prefix, out) {
+  for (const key in obj) {
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+    const val = obj[key];
+    const newKey = prefix ? prefix + '_' + key : key;
+    if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+      flatten(val, newKey, out);
+    } else if (Array.isArray(val)) {
+      out[newKey] = JSON.stringify(val);
+    } else {
+      out[newKey] = val;
+    }
+  }
+  return out;
+}
+
+function formatEnvLine(key, val) {
+  let k = String(key).replace(/[^A-Za-z0-9_]/g, '_');
+  if (upperKeys) k = k.toUpperCase();
+  const prefix = useExport ? 'export ' : '';
+  const needsQuote = quoteAll || /[\s#"'=]|^$/.test(String(val));
+  let v;
+  if (val === null || val === undefined) {
+    v = '';
+    return prefix + k + '=' + (quoteAll ? '""' : '');
+  } else if (typeof val === 'boolean') {
+    v = val ? 'true' : 'false';
+  } else if (typeof val === 'number') {
+    v = String(val);
+  } else {
+    v = String(val);
+  }
+  if (needsQuote) {
+    v = '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n') + '"';
+  }
+  return prefix + k + '=' + v;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj = JSON.parse(inp);
+    const flat = flatten(obj, '', {});
+    const lines = Object.keys(flat).sort().map(k => formatEnvLine(k, flat[k]));
+    $('#output').textContent = lines.join('\n');
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${lines.length} env variables generated</span>`;
+  } catch(e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Invalid JSON</span>`;
+  }
+}
+
+function doDownload() {
+  const text = $('#output').textContent;
+  if (!text) return;
+  const blob = new Blob([text], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '.env';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "app": { "name": "MyApp", "port": 3000, "debug": true },
+    "database": { "host": "localhost", "port": 5432, "name": "mydb", "user": "admin", "ssl": false },
+    "redis": { "url": "redis://localhost:6379", "ttl": "3600" },
+    "features": ["auth", "logging"],
+    "secret": "p@ss#word with spaces"
+  }, null, 2);
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <label class="gz-check"><input type="checkbox" id="opt-upper" ${upperKeys?'checked':''} onchange="upperKeys=this.checked;doConvert()"> ${t('upperKeys')}</label>
+  <label class="gz-check"><input type="checkbox" id="opt-quote" ${quoteAll?'checked':''} onchange="quoteAll=this.checked;doConvert()"> ${t('quoteAll')}</label>
+  <label class="gz-check"><input type="checkbox" id="opt-export" ${useExport?'checked':''} onchange="useExport=this.checked;doConvert()"> ${t('exportPrefix')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ .env</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⚙️', href:'/dev/env-to-json.html', name:'ENV to JSON'},
+    {icon:'📄', href:'/dev/json-to-yaml.html', name:'JSON to YAML'},
+    {icon:'📊', href:'/dev/json-to-csv.html', name:'JSON to CSV'},
+    {icon:'🔐', href:'/dev/dotenv-generator.html', name:'.env Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSV to JSONL Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert CSV to JSONL (JSON Lines) / NDJSON instantly. First row as keys, handles quotes and commas. Free, private, 100% browser-based, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/csv-to-jsonl.html">
+  <meta property="og:title" content="CSV to JSONL Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert CSV to JSONL (JSON Lines) / NDJSON instantly. First row as keys, handles quotes and commas. Free, private, 100% browser-based, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/csv-to-jsonl.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV to JSONL Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:60px}
+#status{margin-top:8px;font-size:.85em}
+.gz-check{display:flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer}
+.gz-check input{margin:0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV to JSONL Converter","description":"Convert CSV to JSONL (JSON Lines) / NDJSON instantly. First row as keys, handles quotes and commas. Free, private, 100% browser-based, no upload.","url":"https://tools.gamezipper.com/convert/csv-to-jsonl.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does CSV to JSONL conversion work?", "acceptedAnswer": {"@type": "Answer", "text": "The first row of your CSV is used as JSON keys (field names). Each subsequent data row becomes one JSON object on its own line in JSONL format."}}, {"@type": "Question", "name": "Does it handle commas and quotes inside fields?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The converter uses a proper CSV parser that handles quoted fields, embedded commas, escaped quotes, and newlines within quoted values."}}, {"@type": "Question", "name": "Is my CSV data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All conversion happens entirely in your browser. No CSV data is ever sent to any server."}}, {"@type": "Question", "name": "Can I auto-detect value types like numbers and booleans?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enable the Auto-type option to automatically convert numeric strings to numbers, true/false to booleans, and null to null."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/csv-to-jsonl.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-to-jsonl.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/csv-to-jsonl.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" rows="14"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV to JSONL Converter',
+    toolDesc: 'Convert CSV data to JSON Lines (JSONL / NDJSON). First row as keys, handles quoted fields — perfect for data pipelines and big data workflows.',
+    convert: 'Convert',
+    autoType: 'Auto-detect types',
+    delimiter: 'Delimiter',
+    step1: 'Paste your CSV data (with a header row) into the input area',
+    step2: 'Choose delimiter and toggle auto-type detection',
+    step3: 'Click Convert to generate JSONL output',
+    step4: 'Click Download to save as .jsonl file',
+  },
+  zh: {
+    toolTitle: 'CSV 转 JSONL 转换器',
+    toolDesc: '将 CSV 数据转换为 JSON Lines（JSONL / NDJSON）。首行作为键名，正确处理引号字段 — 非常适合数据管道和大数据工作流。',
+    convert: '转换',
+    autoType: '自动类型推断',
+    delimiter: '分隔符',
+    step1: '在输入区粘贴您的 CSV 数据（需包含表头行）',
+    step2: '选择分隔符并勾选自动类型推断',
+    step3: '点击「转换」生成 JSONL 输出',
+    step4: '点击「下载」保存为 .jsonl 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let autoType = false, delim = ',';
+
+function parseCSV(text, delimiter) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  const d = delimiter;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i+1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else { field += c; }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === d) { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else { field += c; }
+    }
+  }
+  if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 0 && !(r.length === 1 && r[0] === ''));
+}
+
+function autoConvert(val) {
+  if (val === 'null') return null;
+  if (val === 'true') return true;
+  if (val === 'false') return false;
+  if (val === '') return '';
+  if (/^-?\d+$/.test(val)) return parseInt(val, 10);
+  if (/^-?\d+\.\d+$/.test(val)) return parseFloat(val);
+  return val;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const rows = parseCSV(inp, delim);
+    if (rows.length < 1) throw new Error('No data found');
+    const headers = rows[0].map(h => h.trim());
+    const dataRows = rows.slice(1);
+    const records = dataRows.map(row => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        const val = row[i] !== undefined ? row[i] : '';
+        obj[h] = autoType ? autoConvert(val) : val;
+      });
+      return obj;
+    });
+    const lines = records.map(r => JSON.stringify(r));
+    $('#output').textContent = lines.join('\n');
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${records.length} JSONL record${records.length!==1?'s':''} from ${headers.length} column${headers.length!==1?'s':''}</span>`;
+  } catch(e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Error</span>`;
+  }
+}
+
+function doDownload() {
+  const text = $('#output').textContent;
+  if (!text) return;
+  const blob = new Blob([text], {type: 'application/x-ndjson'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.jsonl';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadExample() {
+  $('#input').value = 'name,age,city,active\nAlice,30,"New York",true\nBob,25,"Los Angeles",false\n"Charlie, Jr.",35,"Chicago, IL",true';
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <label class="gz-check"><input type="checkbox" id="opt-type" ${autoType?'checked':''} onchange="autoType=this.checked;doConvert()"> ${t('autoType')}</label>
+  <select class="gz-select" onchange="delim=this.value;doConvert()">
+    <option value=",">Comma (,)</option>
+    <option value=";">Semicolon (;)</option>
+    <option value="\t">Tab</option>
+    <option value="|">Pipe (|)</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ .jsonl</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/convert/csv-to-json.html', name:'CSV to JSON'},
+    {icon:'📄', href:'/dev/json-to-jsonl.html', name:'JSON to JSONL'},
+    {icon:'📊', href:'/convert/csv-to-yaml.html', name:'CSV to YAML'},
+    {icon:'🔧', href:'/convert/csv-to-tsv.html', name:'CSV to TSV'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

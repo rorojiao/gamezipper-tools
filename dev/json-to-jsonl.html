@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>JSON to JSONL Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert JSON to JSONL (JSON Lines) / NDJSON format instantly. Each array element becomes one line. Free, private, 100% browser-based, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-to-jsonl.html">
+  <meta property="og:title" content="JSON to JSONL Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert JSON to JSONL (JSON Lines) / NDJSON format instantly. Each array element becomes one line. Free, private, 100% browser-based, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-to-jsonl.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON to JSONL Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:60px}
+#status{margin-top:8px;font-size:.85em}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to JSONL Converter","description":"Convert JSON to JSONL (JSON Lines) / NDJSON format instantly. Each array element becomes one line. Free, private, 100% browser-based, no upload.","url":"https://tools.gamezipper.com/dev/json-to-jsonl.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is JSONL (JSON Lines) format?", "acceptedAnswer": {"@type": "Answer", "text": "JSONL (also called NDJSON) stores one JSON object per line. It is widely used for streaming, log files, and big data pipelines because each line can be parsed independently."}}, {"@type": "Question", "name": "How does this converter handle a JSON array?", "acceptedAnswer": {"@type": "Answer", "text": "If your JSON is an array, each element is placed on its own line. If it is a single object, it becomes one JSONL line. Nested objects are preserved as valid JSON on each line."}}, {"@type": "Question", "name": "Is my data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing happens entirely in your browser. No data is sent to any server."}}, {"@type": "Question", "name": "Can I minify or pretty-print the output?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Toggle the Minify option to output compact single-line JSON per record, or turn it off for readable formatted JSON per line."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-jsonl.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-jsonl.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-jsonl.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" rows="14"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to JSONL Converter',
+    toolDesc: 'Convert JSON arrays or objects to JSON Lines (JSONL / NDJSON) format. Each record on its own line — perfect for data pipelines, streaming and logs.',
+    convert: 'Convert',
+    minify: 'Minify output',
+    step1: 'Paste your JSON (an array works best) into the input area',
+    step2: 'Toggle Minify for compact output or readable per-line formatting',
+    step3: 'Click Convert to generate JSONL',
+    step4: 'Click Download to save as .jsonl file',
+  },
+  zh: {
+    toolTitle: 'JSON 转 JSONL 转换器',
+    toolDesc: '将 JSON 数组或对象转换为 JSON Lines（JSONL / NDJSON）格式。每条记录独占一行 — 非常适合数据管道、流处理和日志。',
+    convert: '转换',
+    minify: '压缩输出',
+    step1: '在输入区粘贴您的 JSON（数组效果最佳）',
+    step2: '勾选「压缩输出」生成紧凑格式，或关闭以获得可读的逐行格式',
+    step3: '点击「转换」生成 JSONL',
+    step4: '点击「下载」保存为 .jsonl 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let minify = true;
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj = JSON.parse(inp);
+    let lines = [];
+    if (Array.isArray(obj)) {
+      lines = obj.map(item => JSON.stringify(item));
+    } else {
+      lines = [JSON.stringify(obj)];
+    }
+    if (!minify) {
+      lines = Array.isArray(obj)
+        ? obj.map(item => JSON.stringify(item, null, 2))
+        : [JSON.stringify(obj, null, 2)];
+    }
+    $('#output').textContent = lines.join('\n');
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${lines.length} JSONL record${lines.length!==1?'s':''}</span>`;
+  } catch(e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Invalid JSON</span>`;
+  }
+}
+
+function doDownload() {
+  const text = $('#output').textContent;
+  if (!text) return;
+  const blob = new Blob([text], {type: 'application/x-ndjson'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.jsonl';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify([
+    {"id":1,"name":"Alice","email":"alice@example.com","active":true},
+    {"id":2,"name":"Bob","email":"bob@example.com","active":false},
+    {"id":3,"name":"Charlie","email":"charlie@example.com","active":true,"tags":["vip","beta"]}
+  ], null, 2);
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <label class="gz-check"><input type="checkbox" id="opt-min" ${minify?'checked':''} onchange="minify=this.checked;doConvert()"> ${t('minify')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ .jsonl</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/jsonl-to-json.html', name:'JSONL to JSON'},
+    {icon:'📊', href:'/convert/csv-to-jsonl.html', name:'CSV to JSONL'},
+    {icon:'📄', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔧', href:'/dev/json-to-env.html', name:'JSON to ENV'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
