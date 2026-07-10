@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Protobuf to JSON Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert Protocol Buffers (.proto) definitions to JSON Schema or sample JSON. Parse message, enum and field definitions — generate representative JSON output. Free, browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/protobuf-to-json.html">
+  <meta property="og:title" content="Protobuf to JSON Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert Protocol Buffers (.proto) definitions to JSON Schema or sample JSON. Parse message, enum and field definitions — free, browser-only, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/protobuf-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Protobuf to JSON Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert Protocol Buffers (.proto) definitions to JSON Schema or sample JSON. Parse messages and enums — free, browser-only, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+#output{white-space:pre-wrap;font-family:monospace;font-size:.85em;line-height:1.5}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Protobuf to JSON Converter","description":"Convert Protocol Buffers (.proto) definitions to JSON Schema or sample JSON. Parse message, enum and field definitions.","url":"https://tools.gamezipper.com/dev/protobuf-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does the Protobuf to JSON converter do?","acceptedAnswer":{"@type":"Answer","text":"It parses your .proto file, extracts message and enum definitions, and generates either a sample JSON object or a JSON Schema. This helps you visualize what your protobuf messages look like in JSON format."}},{"@type":"Question","name":"Does it support proto2 and proto3?","acceptedAnswer":{"@type":"Answer","text":"Yes. The parser handles both proto2 and proto3 syntax, including required/optional/repeated labels, custom options, oneof fields and enums."}},{"@type":"Question","name":"How are protobuf types mapped to JSON?","acceptedAnswer":{"@type":"Answer","text":"string→string, int32/64→number, bool→boolean, bytes→base64 string, repeated→array, enum→string or number, message→nested object. Map fields become JSON objects."}},{"@type":"Question","name":"Is my proto file uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All parsing happens in your browser. Your .proto definitions never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/protobuf-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/protobuf-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/protobuf-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder='syntax = "proto3";
+
+message User {
+  string name = 1;
+  int32 age = 2;
+  bool active = 3;
+  repeated string tags = 4;
+}'></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Protobuf to JSON Converter',
+    toolDesc: 'Convert Protocol Buffers (.proto) message definitions to sample JSON or JSON Schema. Parse messages, enums and fields — free, browser-only.',
+    convert: 'Convert',
+    sampleJson: 'Sample JSON',
+    jsonSchema: 'JSON Schema',
+    step1: 'Paste your .proto definition in the input area',
+    step2: 'Choose Sample JSON or JSON Schema output',
+    step3: 'Click Convert to generate the output',
+    step4: 'Copy the result for testing or documentation',
+  },
+  zh: {
+    toolTitle: 'Protobuf 转 JSON 转换器',
+    toolDesc: '将 Protocol Buffers（.proto）消息定义转换为示例 JSON 或 JSON Schema。解析消息、枚举和字段 — 免费，浏览器本地运行。',
+    convert: '转换',
+    sampleJson: '示例 JSON',
+    jsonSchema: 'JSON Schema',
+    step1: '在输入区粘贴 .proto 定义',
+    step2: '选择输出为「示例 JSON」或「JSON Schema」',
+    step3: '点击「转换」生成输出',
+    step4: '复制结果用于测试或文档',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let outputMode = 'sample';
+
+// Protobuf type to JSON type mapping
+const TYPE_MAP = {
+  'double': 'number', 'float': 'number',
+  'int32': 'number', 'int64': 'number', 'uint32': 'number', 'uint64': 'number',
+  'sint32': 'number', 'sint64': 'number', 'fixed32': 'number', 'fixed64': 'number',
+  'sfixed32': 'number', 'sfixed64': 'number',
+  'bool': 'boolean',
+  'string': 'string',
+  'bytes': 'string',
+};
+
+const SAMPLE_VALUES = {
+  'number': 0,
+  'boolean': false,
+  'string': '',
+};
+
+function parseProto(text) {
+  // Remove comments
+  const cleaned = text.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Extract enums
+  const enums = {};
+  const enumRegex = /enum\s+(\w+)\s*\{([^}]*)\}/g;
+  let m;
+  while ((m = enumRegex.exec(cleaned)) !== null) {
+    const enumName = m[1];
+    const body = m[2];
+    const values = [];
+    const valRegex = /(\w+)\s*=\s*(-?\d+)/g;
+    let vm;
+    while ((vm = valRegex.exec(body)) !== null) {
+      values.push(vm[1]);
+    }
+    enums[enumName] = values;
+  }
+
+  // Extract messages
+  const messages = {};
+  const messageStack = [];
+
+  function parseMessages(str, prefix) {
+    const msgRegex = /message\s+(\w+)\s*\{/g;
+    let mm;
+    while ((mm = msgRegex.exec(str)) !== null) {
+      const msgName = mm[1];
+      const startIdx = mm.index + mm[0].length;
+      // Find matching closing brace
+      let depth = 1, endIdx = startIdx;
+      for (let i = startIdx; i < str.length && depth > 0; i++) {
+        if (str[i] === '{') depth++;
+        if (str[i] === '}') depth--;
+        endIdx = i;
+      }
+      const body = str.substring(startIdx, endIdx);
+
+      const fields = [];
+      // Parse field lines: [repeated|optional|required] type name = number [options];
+      const fieldRegex = /(repeated\s+|optional\s+|required\s+)?(map\s*<[^>]+>|[\w.]+)\s+(\w+)\s*=\s*(\d+)/g;
+      let fm;
+      while ((fm = fieldRegex.exec(body)) !== null) {
+        const label = (fm[1] || '').trim();
+        const type = fm[2].trim();
+        const name = fm[3];
+        fields.push({ label, type, name });
+      }
+
+      // Parse oneof
+      const oneofRegex = /oneof\s+(\w+)\s*\{([^}]*)\}/g;
+      let om;
+      while ((om = oneofRegex.exec(body)) !== null) {
+        const ofName = om[1];
+        const ofBody = om[2];
+        const ofFieldRegex = /([\w.]+)\s+(\w+)\s*=\s*\d+/g;
+        let ofm;
+        while ((ofm = ofFieldRegex.exec(ofBody)) !== null) {
+          fields.push({ label: 'oneof', type: ofm[1], name: ofm[2], oneof: ofName });
+        }
+      }
+
+      messages[prefix + msgName] = fields;
+
+      // Recurse into nested messages
+      parseMessages(body, prefix + msgName + '.');
+    }
+  }
+
+  parseMessages(cleaned, '');
+  return { messages, enums };
+}
+
+function fieldToSample(field, messages, enums, depth) {
+  if (depth > 5) return null;
+
+  const type = field.type;
+  const isRepeated = field.label === 'repeated';
+  const isMap = type.startsWith('map<');
+
+  let value;
+
+  if (isMap) {
+    value = {};
+  } else if (TYPE_MAP[type]) {
+    value = SAMPLE_VALUES[TYPE_MAP[type]];
+  } else if (enums[type]) {
+    value = enums[type][0] || '';
+  } else {
+    // Custom message type — look up (strip prefix)
+    const baseType = type.split('.').pop();
+    const msgFields = messages[baseType] || messages[Object.keys(messages).find(k => k.endsWith('.' + baseType))];
+    if (msgFields) {
+      value = {};
+      msgFields.forEach(f => {
+        value[f.name] = fieldToSample(f, messages, enums, depth + 1);
+      });
+    } else {
+      value = null;
+    }
+  }
+
+  return isRepeated ? [value] : value;
+}
+
+function fieldToSchema(field, messages, enums, depth) {
+  if (depth > 5) return {};
+
+  const type = field.type;
+  const isRepeated = field.label === 'repeated';
+  const isMap = type.startsWith('map<');
+
+  let schema;
+
+  if (isMap) {
+    schema = { type: 'object', additionalProperties: {} };
+  } else if (TYPE_MAP[type]) {
+    schema = { type: TYPE_MAP[type] };
+  } else if (enums[type]) {
+    schema = { type: 'string', enum: enums[type] };
+  } else {
+    const baseType = type.split('.').pop();
+    const msgFields = messages[baseType] || messages[Object.keys(messages).find(k => k.endsWith('.' + baseType))];
+    if (msgFields) {
+      schema = { type: 'object', properties: {} };
+      msgFields.forEach(f => {
+        schema.properties[f.name] = fieldToSchema(f, messages, enums, depth + 1);
+      });
+    } else {
+      schema = {};
+    }
+  }
+
+  if (isRepeated) {
+    return { type: 'array', items: schema };
+  }
+  return schema;
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').innerHTML = ''; $('#status').innerHTML = ''; return; }
+
+  try {
+    const { messages, enums } = parseProto(inp);
+    const msgNames = Object.keys(messages);
+
+    if (msgNames.length === 0) {
+      $('#status').innerHTML = '<span style="color:var(--gz-accent)">⚠ No message definitions found</span>';
+      $('#output').innerHTML = '';
+      return;
+    }
+
+    let result = {};
+
+    if (outputMode === 'sample') {
+      msgNames.forEach(name => {
+        const fields = messages[name];
+        const sample = {};
+        fields.forEach(f => {
+          sample[f.name] = fieldToSample(f, messages, enums, 0);
+        });
+        // For top-level, just use the first message
+        if (!result.__used) {
+          result = sample;
+          result.__used = true;
+        }
+      });
+      delete result.__used;
+    } else {
+      // JSON Schema
+      const firstMsg = msgNames[0];
+      const fields = messages[firstMsg];
+      result = {
+        ['$schema']: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
+        properties: {}
+      };
+      fields.forEach(f => {
+        result.properties[f.name] = fieldToSchema(f, messages, enums, 0);
+      });
+    }
+
+    const formatted = JSON.stringify(result, null, 2);
+    $('#output').innerHTML = syntaxHighlight(formatted);
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Converted ${msgNames.length} message(s)</span>`;
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Error: ${e.message}</span>`;
+    $('#output').innerHTML = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = `syntax = "proto3";
+
+message User {
+  string name = 1;
+  int32 age = 2;
+  bool active = 3;
+  repeated string tags = 4;
+  Address address = 5;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string zip = 3;
+}
+
+enum Status {
+  UNKNOWN = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+}`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; $('#status').innerHTML = ''; }
+
+function setMode(mode) {
+  outputMode = mode;
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('gz-btn-secondary', b.dataset.mode !== mode));
+  doConvert();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" data-mode="sample" onclick="setMode('sample')">${t('sampleJson')}</button>
+  <button class="gz-btn gz-btn-secondary" data-mode="schema" onclick="setMode('schema')">${t('jsonSchema')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📦', href:'/dev/protobuf-formatter.html', name:'Protobuf Formatter'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔄', href:'/dev/json-to-proto.html', name:'JSON to Proto'},
+    {icon:'📊', href:'/dev/json-to-schema.html', name:'JSON to Schema'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

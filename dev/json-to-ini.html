@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>JSON to INI Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert JSON to INI format instantly. Nested objects become [sections], arrays use indexed keys. Clean, RFC-compliant INI output — free, browser-only, no upload.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-to-ini.html">
+  <meta property="og:title" content="JSON to INI Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert JSON to INI format instantly. Nested objects become [sections], arrays use indexed keys. Clean, RFC-compliant INI output — free, browser-only, no upload.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-to-ini.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON to INI Converter - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Convert JSON to INI format instantly. Nested objects become [sections], arrays use indexed keys. Free, browser-only, no upload.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<style>
+#output{white-space:pre-wrap;font-family:monospace;font-size:.85em;line-height:1.5}
+.section-header{color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON to INI Converter","description":"Convert JSON to INI format instantly. Nested objects become [sections], arrays use indexed keys. Clean, RFC-compliant INI output.","url":"https://tools.gamezipper.com/dev/json-to-ini.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does JSON to INI conversion work?","acceptedAnswer":{"@type":"Answer","text":"Top-level key-value pairs go under a [DEFAULT] section. Nested JSON objects become [section] blocks. Arrays are expanded with indexed keys (e.g. key[0], key[1]). Booleans and numbers are preserved."}},{"@type":"Question","name":"Can INI represent nested objects?","acceptedAnswer":{"@type":"Answer","text":"INI natively supports only one level of nesting via [sections]. This converter handles deeper nesting by joining section names with dots (e.g. [database.connection])."}},{"@type":"Question","name":"Is my JSON data uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All conversion happens entirely in your browser. Your JSON never leaves your device."}},{"@type":"Question","name":"What JSON types are supported?","acceptedAnswer":{"@type":"Answer","text":"All JSON types: strings, numbers, booleans, null, arrays and nested objects. Null values are written as empty strings."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-to-ini.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-to-ini.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-to-ini.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder='{"server":{"host":"localhost","port":8080},"database":{"name":"mydb","pool":10}}'></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON to INI Converter',
+    toolDesc: 'Convert JSON to INI format instantly. Nested objects become [sections], arrays use indexed keys — free and browser-only.',
+    convert: 'Convert',
+    step1: 'Paste or type your JSON in the input area',
+    step2: 'Click Convert to generate INI format',
+    step3: 'Top-level keys go in [DEFAULT], nested objects become sections',
+    step4: 'Click Copy to copy the INI output',
+  },
+  zh: {
+    toolTitle: 'JSON 转 INI 转换器',
+    toolDesc: '即时将 JSON 转换为 INI 格式。嵌套对象变为 [section]，数组使用索引键 — 免费，浏览器本地运行。',
+    convert: '转换',
+    step1: '在输入区粘贴或输入 JSON',
+    step2: '点击「转换」生成 INI 格式',
+    step3: '顶层键放入 [DEFAULT]，嵌套对象变为分区',
+    step4: '点击「复制」复制 INI 输出',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function formatValue(val) {
+  if (val === null) return '';
+  if (typeof val === 'boolean') return val ? 'true' : 'false';
+  if (typeof val === 'number') return String(val);
+  if (typeof val === 'string') {
+    // Escape backslashes and newlines for INI
+    return val.replace(/\\/g,'\\\\').replace(/\n/g,'\\n');
+  }
+  if (Array.isArray(val)) return val.map(formatValue).join(',');
+  return String(val);
+}
+
+function jsonToIni(obj, prefix) {
+  let result = '';
+  let rootPairs = [];
+  let sections = [];
+
+  for (const key in obj) {
+    const val = obj[key];
+    if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+      sections.push({ key, val });
+    } else {
+      rootPairs.push({ key, val });
+    }
+  }
+
+  // Write root-level pairs under [DEFAULT] if any
+  if (rootPairs.length > 0) {
+    if (sections.length > 0 || prefix) {
+      result += '[DEFAULT]\n';
+    }
+    rootPairs.forEach(({key, val}) => {
+      if (Array.isArray(val)) {
+        val.forEach((item, i) => {
+          if (item !== null && typeof item === 'object') {
+            result += `\n[${key}[${i}]]\n`;
+            for (const k in item) {
+              result += `${k} = ${formatValue(item[k])}\n`;
+            }
+          } else {
+            result += `${key}[${i}] = ${formatValue(item)}\n`;
+          }
+        });
+      } else {
+        result += `${key} = ${formatValue(val)}\n`;
+      }
+    });
+  }
+
+  // Write sections
+  sections.forEach(({key, val}) => {
+    const sectionName = prefix ? `${prefix}.${key}` : key;
+    // Recursively handle nested objects
+    let hasNestedObj = false;
+    let flatPairs = [];
+    for (const k in val) {
+      if (val[k] !== null && typeof val[k] === 'object' && !Array.isArray(val[k])) {
+        hasNestedObj = true;
+      } else {
+        flatPairs.push({key: k, val: val[k]});
+      }
+    }
+    if (flatPairs.length > 0) {
+      result += `\n[${sectionName}]\n`;
+      flatPairs.forEach(({key: k, val: v}) => {
+        if (Array.isArray(v)) {
+          v.forEach((item, i) => {
+            if (item !== null && typeof item === 'object') {
+              result += `\n[${sectionName}.${k}[${i}]]\n`;
+              for (const ik in item) result += `${ik} = ${formatValue(item[ik])}\n`;
+            } else {
+              result += `${k}[${i}] = ${formatValue(v)}\n`;
+            }
+          });
+        } else {
+          result += `${k} = ${formatValue(v)}\n`;
+        }
+      });
+    }
+    // Handle deeper nesting
+    for (const k in val) {
+      if (val[k] !== null && typeof val[k] === 'object' && !Array.isArray(val[k])) {
+        result += jsonToIni({[k]: val[k]}, sectionName);
+      }
+    }
+  });
+
+  return result;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').value = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj = JSON.parse(inp);
+    const ini = jsonToIni(obj, '').trim() + '\n';
+    $('#output').value = ini;
+    $('#status').innerHTML = '<span style="color:var(--gz-success)">✓ Converted successfully</span>';
+  } catch(e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Invalid JSON: ${e.message}</span>`;
+    $('#output').value = '';
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    app: { name: "MyApp", version: "2.1.0", debug: false },
+    server: { host: "localhost", port: 8080, timeout: 30 },
+    database: { name: "production", pool: 10, ssl: true },
+    features: ["auth", "cache", "logging"]
+  }, null, 2);
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').value = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').value)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📝', href:'/dev/ini-formatter.html', name:'INI Formatter'},
+    {icon:'🔄', href:'/dev/yaml-formatter.html', name:'YAML Formatter'},
+    {icon:'📄', href:'/dev/toml-formatter.html', name:'TOML Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
