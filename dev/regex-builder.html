@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Regex Builder - Construct Regular Expressions Visually | GameZipper Tools</title>
+  <meta name="description" content="Build regular expressions visually with a guided form. Combine anchors, character classes, quantifiers, groups and flags — copy the finished regex instantly. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/regex-builder.html">
+  <meta property="og:title" content="Regex Builder - Construct Regular Expressions Visually | GameZipper Tools">
+  <meta property="og:description" content="Build regular expressions visually with a guided form. Combine anchors, character classes, quantifiers, groups and flags — copy the finished regex instantly. Free, browser-only, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/regex-builder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Regex Builder - Construct Regular Expressions Visually | GameZipper Tools">
+<meta name="twitter:description" content="Build regular expressions visually with a guided form. Combine anchors, classes, quantifiers and flags. Free, browser-only, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0}
+@media(max-width:720px){.builder-grid{grid-template-columns:1fr}}
+.section{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.section h3{margin:0 0 8px;font-size:.9em;text-transform:uppercase;letter-spacing:.05em;opacity:.8}
+.section label{display:flex;align-items:center;gap:8px;font-size:.85em;margin:5px 0;cursor:pointer}
+.section input[type=text],.section select{width:100%;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:inherit;font-size:.85em;margin-top:3px}
+.regex-out{font-family:monospace;font-size:1.15em;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;word-break:break-all;min-height:48px}
+.regex-out .tok{color:#61afef}.regex-out .lit{color:#00d672}.regex-out .anc{color:#e94560}
+#testStr{width:100%;min-height:80px;font-family:monospace}
+#matchOut{margin-top:8px;font-size:.85em;white-space:pre-wrap;word-break:break-word}
+.match{background:rgba(0,214,114,.18);border-radius:3px;padding:0 2px}
+.nomatch{color:var(--gz-accent,#e94560)}
+.flags{display:flex;flex-wrap:wrap;gap:10px}
+.flags label{font-size:.85em;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Regex Builder","description":"Build regular expressions visually with a guided form. Combine anchors, character classes, quantifiers, groups and flags — copy the finished regex instantly. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/dev/regex-builder.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a regex builder?", "acceptedAnswer": {"@type": "Answer", "text": "A regex builder is a tool that helps you assemble a regular expression from smaller building blocks (anchors, character classes, quantifiers, groups) using checkboxes and inputs instead of memorizing syntax. The final pattern is shown live so you can copy it."}}, {"@type": "Question", "name": "Which regex flavour does this tool use?", "acceptedAnswer": {"@type": "Answer", "text": "The builder uses the JavaScript regular expression engine that ships with your browser. The resulting patterns are compatible with JavaScript, TypeScript and most modern environments. For PCRE or POSIX-specific features, test the pattern in your target runtime."}}, {"@type": "Question", "name": "Can I test my regex against sample text?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Type or paste sample text into the test box and every match is highlighted instantly. If nothing matches you will see a no-match notice so you can adjust the pattern or flags."}}, {"@type": "Question", "name": "What do the g, i, m and s flags mean?", "acceptedAnswer": {"@type": "Answer", "text": "g = global (find all matches), i = case-insensitive, m = multiline (^ and $ match line boundaries), s = dotAll (. matches newlines), u = unicode, y = sticky. Toggle them in the Flags section."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/regex-builder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/regex-builder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/regex-builder.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="builder-grid" id="builder"></div>
+    <label id="lbl-out" style="font-size:.85em;display:block;margin-top:8px"></label>
+    <div class="regex-out" id="regexOut"></div>
+    <div style="margin-top:14px">
+      <label id="lbl-test" style="font-size:.85em;display:block;margin-bottom:4px"></label>
+      <textarea id="testStr" spellcheck="false"></textarea>
+      <div id="matchOut"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Regex Builder',
+    toolDesc: 'Construct a regular expression piece by piece using a visual form. Pick anchors, character classes, quantifiers and groups, set flags, then test against sample text. Copy the finished pattern — free and browser-only.',
+    secAnchors: 'Anchors',
+    secChars: 'Character Classes',
+    secQuant: 'Quantifiers',
+    secCustom: 'Custom Pattern',
+    secFlags: 'Flags',
+    secGroups: 'Groups & Alternation',
+    lblOut: 'Your regex',
+    lblTest: 'Test string (matches highlighted)',
+    startStr: '^ start of string',
+    endStr: '$ end of string',
+    wordB: '\\b word boundary',
+    digit: '\\d digit',
+    notDigit: '\\D not digit',
+    word: '\\w word char',
+    notWord: '\\W not word',
+    space: '\\s whitespace',
+    notSpace: '\\S not whitespace',
+    any: '. any char',
+    literal: 'Literal text',
+    literalPh: 'e.g. hello',
+    charClass: 'Character set',
+    charClassPh: 'e.g. a-zA-Z0-9',
+    zeroMore: '* 0 or more',
+    oneMore: '+ 1 or more',
+    optional: '? optional',
+    nTimes: '{n,m} range',
+    groupCap: '(…) capture group',
+    groupNon: '(?:…) non-capture',
+    alt: '| alternation',
+    nMin: 'min',
+    nMax: 'max',
+    flagG: 'g global',
+    flagI: 'i ignore case',
+    flagM: 'm multiline',
+    flagS: 's dotAll',
+    flagU: 'u unicode',
+    flagY: 'y sticky',
+    copy: 'Copy',
+    clear: 'Reset',
+    matches: 'matches',
+    noMatch: 'No matches — try adjusting the pattern or flags.',
+    invalidPattern: 'Invalid regex pattern.',
+    empty: '—',
+    step1: 'Tick the building blocks you need in each section',
+    step2: 'Type any literal text or character sets in the input boxes',
+    step3: 'Watch the live regex update and test it against the sample text',
+    step4: 'Click Copy to grab the finished pattern',
+  },
+  zh: {
+    toolTitle: '正则表达式构建器',
+    toolDesc: '使用可视化表单逐步构建正则表达式。选择锚点、字符类、量词和分组，设置标志位，再用样例文本测试。复制完成的模式 — 免费且浏览器本地运行。',
+    secAnchors: '锚点',
+    secChars: '字符类',
+    secQuant: '量词',
+    secCustom: '自定义模式',
+    secFlags: '标志位',
+    secGroups: '分组与或',
+    lblOut: '你的正则',
+    lblTest: '测试字符串（匹配高亮）',
+    startStr: '^ 字符串开头',
+    endStr: '$ 字符串结尾',
+    wordB: '\\b 单词边界',
+    digit: '\\d 数字',
+    notDigit: '\\D 非数字',
+    word: '\\w 单词字符',
+    notWord: '\\W 非单词字符',
+    space: '\\s 空白符',
+    notSpace: '\\S 非空白符',
+    any: '. 任意字符',
+    literal: '字面文本',
+    literalPh: '如 hello',
+    charClass: '字符集合',
+    charClassPh: '如 a-zA-Z0-9',
+    zeroMore: '* 0 次或多次',
+    oneMore: '+ 1 次或多次',
+    optional: '? 可选',
+    nTimes: '{n,m} 范围',
+    groupCap: '(…) 捕获组',
+    groupNon: '(?:…) 非捕获',
+    alt: '| 或',
+    nMin: '最小',
+    nMax: '最大',
+    flagG: 'g 全局',
+    flagI: 'i 忽略大小写',
+    flagM: 'm 多行',
+    flagS: 's dotAll',
+    flagU: 'u unicode',
+    flagY: 'y sticky',
+    copy: '复制',
+    clear: '重置',
+    matches: '个匹配',
+    noMatch: '无匹配 — 请调整模式或标志位。',
+    invalidPattern: '正则表达式无效。',
+    empty: '—',
+    step1: '在每个区域勾选所需的构建块',
+    step2: '在输入框中输入字面文本或字符集',
+    step3: '查看实时更新的正则并用样例文本测试',
+    step4: '点击「复制」获取完成的模式',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const state = {};
+
+$('#builder').innerHTML = `
+  <div class="section">
+    <h3>${t('secAnchors')}</h3>
+    <label><input type="checkbox" data-k="anc-start"> ${t('startStr')}</label>
+    <label><input type="checkbox" data-k="anc-end"> ${t('endStr')}</label>
+    <label><input type="checkbox" data-k="anc-word"> ${t('wordB')}</label>
+  </div>
+  <div class="section">
+    <h3>${t('secChars')}</h3>
+    <label><input type="checkbox" data-k="ch-digit"> ${t('digit')}</label>
+    <label><input type="checkbox" data-k="ch-notdigit"> ${t('notDigit')}</label>
+    <label><input type="checkbox" data-k="ch-word"> ${t('word')}</label>
+    <label><input type="checkbox" data-k="ch-notword"> ${t('notWord')}</label>
+    <label><input type="checkbox" data-k="ch-space"> ${t('space')}</label>
+    <label><input type="checkbox" data-k="ch-notspace"> ${t('notSpace')}</label>
+    <label><input type="checkbox" data-k="ch-any"> ${t('any')}</label>
+  </div>
+  <div class="section">
+    <h3>${t('secCustom')}</h3>
+    <label>${t('literal')}<input type="text" data-k="custom-lit" placeholder="${t('literalPh')}"></label>
+    <label>${t('charClass')}<input type="text" data-k="custom-class" placeholder="${t('charClassPh')}"></label>
+  </div>
+  <div class="section">
+    <h3>${t('secQuant')}</h3>
+    <label><input type="checkbox" data-k="q-star"> ${t('zeroMore')}</label>
+    <label><input type="checkbox" data-k="q-plus"> ${t('oneMore')}</label>
+    <label><input type="checkbox" data-k="q-opt"> ${t('optional')}</label>
+    <label style="display:block">${t('nTimes')}
+      <span style="display:flex;gap:6px;margin-top:4px">
+        <input type="number" data-k="q-min" placeholder="${t('nMin')}" style="width:80px" min="0">
+        <input type="number" data-k="q-max" placeholder="${t('nMax')}" style="width:80px" min="0">
+      </span>
+    </label>
+  </div>
+  <div class="section">
+    <h3>${t('secGroups')}</h3>
+    <label><input type="checkbox" data-k="g-cap"> ${t('groupCap')}</label>
+    <label><input type="checkbox" data-k="g-non"> ${t('groupNon')}</label>
+    <label><input type="checkbox" data-k="g-alt"> ${t('alt')}</label>
+  </div>
+  <div class="section">
+    <h3>${t('secFlags')}</h3>
+    <div class="flags">
+      <label><input type="checkbox" data-k="f-g" checked> ${t('flagG')}</label>
+      <label><input type="checkbox" data-k="f-i"> ${t('flagI')}</label>
+      <label><input type="checkbox" data-k="f-m"> ${t('flagM')}</label>
+      <label><input type="checkbox" data-k="f-s"> ${t('flagS')}</label>
+      <label><input type="checkbox" data-k="f-u"> ${t('flagU')}</label>
+      <label><input type="checkbox" data-k="f-y"> ${t('flagY')}</label>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="gz-btn" onclick="copyRegex()">${t('copy')}</button>
+      <button class="gz-btn gz-btn-secondary" onclick="resetAll()">${t('clear')}</button>
+    </div>
+  </div>`;
+
+document.querySelectorAll('#builder [data-k]').forEach(el => {
+  state[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
+  el.addEventListener('input', () => {
+    state[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
+    build();
+  });
+});
+
+function buildPattern() {
+  let p = '';
+  if (state['anc-start']) p += '^';
+  if (state['anc-word']) p += '\\b';
+  const chars = [
+    state['ch-digit'] && '\\d', state['ch-notdigit'] && '\\D',
+    state['ch-word'] && '\\w', state['ch-notword'] && '\\W',
+    state['ch-space'] && '\\s', state['ch-notspace'] && '\\S',
+    state['ch-any'] && '.'
+  ].filter(Boolean);
+  let core = chars.join('');
+  if (state['custom-class']) core += `[${state['custom-class']}]`;
+  if (state['custom-lit']) core += state['custom-lit'].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (state['g-cap']) core = `(${core})`;
+  else if (state['g-non']) core = `(?:${core})`;
+  if (state['g-alt']) core += '|';
+  if (state['q-star']) core += '*';
+  else if (state['q-plus']) core += '+';
+  else if (state['q-opt']) core += '?';
+  const nMin = state['q-min'], nMax = state['q-max'];
+  if (nMin !== '' && nMin != null) {
+    core += nMax !== '' && nMax != null ? `{${nMin},${nMax}}` : `{${nMin},}`;
+  } else if (nMax !== '' && nMax != null) {
+    core += `{0,${nMax}}`;
+  }
+  p += core;
+  if (state['anc-end']) p += '$';
+  return p;
+}
+
+function buildFlags() {
+  let f = '';
+  if (state['f-g']) f += 'g';
+  if (state['f-i']) f += 'i';
+  if (state['f-m']) f += 'm';
+  if (state['f-s']) f += 's';
+  if (state['f-u']) f += 'u';
+  if (state['f-y']) f += 'y';
+  return f;
+}
+
+function build() {
+  const pattern = buildPattern();
+  const flags = buildFlags();
+  const out = $('#regexOut');
+  out.innerHTML = pattern
+    ? `<span class="tok">/${escapeHtml(pattern)}/${flags}</span>`
+    : `<span style="opacity:.5">${t('empty')}</span>`;
+  // test
+  const testStr = $('#testStr').value;
+  const mOut = $('#matchOut');
+  if (!pattern || !testStr) { mOut.innerHTML = ''; return; }
+  let re;
+  try { re = new RegExp(pattern, flags); }
+  catch (e) { mOut.innerHTML = `<span class="nomatch">${t('invalidPattern')}</span>`; return; }
+  if (flags.includes('g')) {
+    const matches = [...testStr.matchAll(re)];
+    if (!matches.length) { mOut.innerHTML = `<span class="nomatch">${t('noMatch')}</span>`; return; }
+    let html = '', last = 0;
+    matches.forEach(m => {
+      html += escapeHtml(testStr.slice(last, m.index));
+      html += `<span class="match">${escapeHtml(m[0])}</span>`;
+      last = m.index + m[0].length;
+    });
+    html += escapeHtml(testStr.slice(last));
+    mOut.innerHTML = `<strong>${matches.length} ${t('matches')}</strong><br>${html}`;
+  } else {
+    const m = testStr.match(re);
+    if (!m) { mOut.innerHTML = `<span class="nomatch">${t('noMatch')}</span>`; return; }
+    const idx = m.index;
+    mOut.innerHTML = `<strong>1 ${t('matches')}</strong><br>${escapeHtml(testStr.slice(0,idx))}<span class="match">${escapeHtml(m[0])}</span>${escapeHtml(testStr.slice(idx+m[0].length))}`;
+  }
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function copyRegex() {
+  const pattern = buildPattern();
+  const flags = buildFlags();
+  if (pattern) copyText(`${pattern}` + (flags ? '' : ''));
+}
+
+function resetAll() {
+  document.querySelectorAll('#builder [data-k]').forEach(el => {
+    if (el.type === 'checkbox') { el.checked = el.dataset.k === 'f-g'; state[el.dataset.k] = el.checked; }
+    else { el.value = ''; state[el.dataset.k] = ''; }
+  });
+  $('#testStr').value = '';
+  build();
+}
+
+$('#testStr').addEventListener('input', build);
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🧪', href:'/dev/regex-tester.html', name:'Regex Tester'},
+    {icon:'💡', href:'/dev/regex-explainer.html', name:'Regex Explainer'},
+    {icon:'⚙️', href:'/dev/regex-generator.html', name:'Regex Generator'},
+    {icon:'📋', href:'/dev/regex-cheatsheet.html', name:'Regex Cheatsheet'},
+  ]
+});
+build();
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
