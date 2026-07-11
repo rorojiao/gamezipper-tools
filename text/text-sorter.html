@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Text Sorter - Sort Lines Alphabetically Online | GameZipper Tools</title>
+  <meta name="description" content="Sort text lines alphabetically, by length, numerically or in reverse. Remove duplicates, trim whitespace and choose case sensitivity. Free online text and line sorter — runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/text-sorter.html">
+  <meta property="og:title" content="Text Sorter - Sort Lines Alphabetically Online | GameZipper Tools">
+  <meta property="og:description" content="Sort text lines alphabetically, by length, numerically or in reverse. Remove duplicates, trim whitespace and choose case sensitivity. Free online text and line sorter — runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/text-sorter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Text Sorter - Sort Lines Alphabetically Online | GameZipper Tools">
+<meta name="twitter:description" content="Sort text lines alphabetically, by length, numerically or in reverse. Remove duplicates, trim whitespace and choose case sensitivity. Free online text and line sorter.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260709v524inpagehub2"></script>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Text Sorter","description":"Sort text lines alphabetically, by length, numerically or in reverse. Remove duplicates, trim whitespace and choose case sensitivity. Free online text and line sorter — runs entirely in your browser.","url":"https://tools.gamezipper.com/text/text-sorter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I sort text lines alphabetically?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your text into the input area, select the Alphabetical mode, and click Sort. Every line will be reordered in A-Z order instantly."}}, {"@type": "Question", "name": "Can I sort lines by length?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Pick the By Length mode to order lines from shortest to longest, or use the Reverse option for longest to shortest."}}, {"@type": "Question", "name": "Does the text sorter remove duplicate lines?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Tick the Remove duplicates checkbox before sorting to drop repeated lines and keep only unique entries."}}, {"@type": "Question", "name": "Is my text data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All sorting happens entirely in your browser using JavaScript. No text is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/text-sorter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/text-sorter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/text-sorter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Text Sorter',
+    toolDesc: 'Sort text lines alphabetically, by length, numerically or in reverse. Remove duplicates and control case sensitivity — free, browser-only.',
+    alphabetical: 'A → Z',
+    byLength: 'By length',
+    numeric: 'Numeric',
+    caseSensitive: 'Case-sensitive',
+    removeDup: 'Remove duplicates',
+    reverse: 'Reverse order',
+    trimLines: 'Trim whitespace',
+    lineCount: 'lines',
+    step1: 'Paste or type your text into the input area',
+    step2: 'Pick a sort mode — alphabetical, length or numeric',
+    step3: 'Optionally remove duplicates, trim lines or reverse',
+    step4: 'Copy the sorted text with one click',
+  },
+  zh: {
+    toolTitle: '文本行排序器',
+    toolDesc: '按字母顺序、长度、数字或倒序对文本行排序。可去除重复、去除空白并控制大小写敏感 — 免费浏览器本地运行。',
+    alphabetical: 'A → Z',
+    byLength: '按长度',
+    numeric: '数字排序',
+    caseSensitive: '区分大小写',
+    removeDup: '去除重复',
+    reverse: '倒序',
+    trimLines: '去除首尾空白',
+    lineCount: '行',
+    step1: '在输入区粘贴或输入文本',
+    step2: '选择排序模式 — 字母顺序、长度或数字',
+    step3: '可选去除重复、去除空白或倒序',
+    step4: '一键复制排序后的文本',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'alpha', caseSens = false, rmDup = false, rev = false, trim = true;
+
+function process() {
+  const inp = $('#input').value;
+  if (!inp.trim()) { $('#output').textContent = ''; $('#status').textContent = ''; return; }
+  let lines = inp.split('\n');
+  if (trim) lines = lines.map(l => l.trim());
+  if (rmDup) {
+    const seen = new Set();
+    lines = lines.filter(l => {
+      const key = caseSens ? l : l.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+  if (mode === 'alpha') {
+    lines.sort((a, b) => {
+      const x = caseSens ? a : a.toLowerCase();
+      const y = caseSens ? b : b.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+  } else if (mode === 'length') {
+    lines.sort((a, b) => a.length - b.length || a.localeCompare(b));
+  } else if (mode === 'numeric') {
+    lines.sort((a, b) => {
+      const na = parseFloat(a), nb = parseFloat(b);
+      if (isNaN(na) && isNaN(nb)) return a.localeCompare(b);
+      if (isNaN(na)) return 1;
+      if (isNaN(nb)) return -1;
+      return na - nb;
+    });
+  }
+  if (rev) lines.reverse();
+  $('#output').textContent = lines.join('\n');
+  $('#status').innerHTML = `<span style="opacity:.7">${lines.length} ${t('lineCount')}</span>`;
+}
+
+$('#input').addEventListener('input', process);
+
+$('#toolbar').innerHTML = `
+  <select class="gz-select" id="mode-sel">
+    <option value="alpha" selected>${t('alphabetical')}</option>
+    <option value="length">${t('byLength')}</option>
+    <option value="numeric">${t('numeric')}</option>
+  </select>
+  <label class="gz-check"><input type="checkbox" id="cb-rmdup"> ${t('removeDup')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-rev"> ${t('reverse')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-case"> ${t('caseSensitive')}</label>
+  <label class="gz-check"><input type="checkbox" id="cb-trim" checked> ${t('trimLines')}</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';process()">${t('clear')}</button>`;
+
+$('#mode-sel').addEventListener('change', e => { mode = e.target.value; process(); });
+$('#cb-rmdup').addEventListener('change', e => { rmDup = e.target.checked; process(); });
+$('#cb-rev').addEventListener('change', e => { rev = e.target.checked; process(); });
+$('#cb-case').addEventListener('change', e => { caseSens = e.target.checked; process(); });
+$('#cb-trim').addEventListener('change', e => { trim = e.target.checked; process(); });
+
+$('#input').value = 'banana\nApple\ncherry\napple\nDate\nBanana\nelderberry\nfig';
+process();
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔢', href:'/text/word-sorter.html', name:'Word Sorter'},
+    {icon:'🧹', href:'/text/remove-duplicates.html', name:'Remove Duplicates'},
+    {icon:'↕️', href:'/text/sort-lines.html', name:'Sort Lines'},
+    {icon:'🔢', href:'/text/number-sorter.html', name:'Number Sorter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
