@@ -516,7 +516,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.24-tools-inpage-hub-only',  // 2026-07-09: v5.24 kanban t_0576328a — guard showInPagePush() with isHubPage (11012002 only fills on hub pages; sub-page was 100% wasted call) + add inpage_push_fill event + align ZONE_BACKOFF curve [10,30,120]→[10,30,60] to gz.com v5.4.
+    VERSION: '5.25-tools-adsense-slot-fix',  // 2026-07-11: v5.25 kanban t_fb5ec98b — swap showPokiOverlay/Immediate AdSense 'auto' → '1099212472' (tools 0/68 fill vs gz.com 90.9%, proven slot in showHomepageBanner) + bump common.js cache key to invalidate pre-v5.22 browser JS holding legacy zone calls.
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -1448,12 +1448,16 @@
       //   Previous 336x280 fixed rectangle was 6% fill on tools — the fixed size
       //   made AdSense treat it as an inter-stital/rectangle with stricter inventory.
       //   Mirrors gz.com v5.11's loadAdSenseAd(overlay, 'auto') shape.
+      // v5.25 (t_fb5ec98b): slot 'auto' → '1099212472' on tools — same fix as Immediate.
+      //   7d BI tools adsense_commercial_break_no_fill = 68 / 0 fills via 'auto';
+      //   1099212472 banner fills 11/11 same window. Tools AdSense inventory only has
+      //   the explicit-slot IDs registered; 'auto' makes no inventory match → silent fail.
       try {
         var adsenseIns = document.createElement('ins');
         adsenseIns.className = 'adsbygoogle';
         adsenseIns.style.cssText = 'display:block;width:100%;min-height:90px;max-height:280px;margin:12px auto;overflow:hidden;';
         adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-        adsenseIns.setAttribute('data-ad-slot', 'auto');
+        adsenseIns.setAttribute('data-ad-slot', '1099212472');
         adsenseIns.setAttribute('data-ad-format', 'auto');
         adsenseIns.setAttribute('data-full-width-responsive', 'true');
         var adsenseScript = document.createElement('script');
@@ -1817,18 +1821,23 @@
       adsenseIns.className = 'adsbygoogle';
       adsenseIns.style.cssText = 'display:block;width:100%;min-height:90px;max-height:280px;margin:12px auto;overflow:hidden;';
       adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-      adsenseIns.setAttribute('data-ad-slot', 'auto');
-      adsenseIns.setAttribute('data-ad-format', 'auto');
-      adsenseIns.setAttribute('data-full-width-responsive', 'true');
-      var adsenseScript = document.createElement('script');
-      adsenseScript.async = true;
-      if (window.adsbygoogle && window.adsbygoogle.loaded) {
-        // already loaded
-      } else {
-        adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
-        document.head.appendChild(adsenseScript);
-      }
-      if (centerDiv.parentNode) {
+      // v5.25 (t_fb5ec98b): slot ID 'auto' → '1099212472' on tools subdomain.
+      //   7d BI 2026-07-04~07-10: tools adsense_commercial_break_no_fill = 68 (0 fills).
+      //   Same slot 1099212472 fills 11/11 in showHomepageBanner (100%). 'auto' matches
+      //   no inventory in tools AdSense config (only 1099212472 / 7373732357 / container-active).
+      //   Mirrors gz.com commercialBreak inventory pattern (gz.com 90.9% commercial_break_fill).
+        adsenseIns.setAttribute('data-ad-slot', '1099212472');
+        adsenseIns.setAttribute('data-ad-format', 'auto');
+        adsenseIns.setAttribute('data-full-width-responsive', 'true');
+        var adsenseScript = document.createElement('script');
+        adsenseScript.async = true;
+        if (window.adsbygoogle && window.adsbygoogle.loaded) {
+          // already loaded
+        } else {
+          adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
+          document.head.appendChild(adsenseScript);
+        }
+        if (centerDiv.parentNode) {
         centerDiv.appendChild(adsenseIns);
         try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
         var adStart = Date.now();

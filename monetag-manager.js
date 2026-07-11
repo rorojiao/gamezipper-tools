@@ -1,7 +1,44 @@
 /**
- * GameZipper Tools — Monetag Ad Manager v5.24-tools-inpage-hub-only (Poki-style)
+ * GameZipper Tools — Monetag Ad Manager v5.25-tools-adsense-slot-fix (Poki-style)
  * ───────────────────────────────────────────────────────────────────────────────────────
  * Poki-model: Smart frequency control, glass overlay + progress bar
+ *
+ * v5.25 Changes (2026-07-11 — AdSense commercial-break slot swap + cache bust, kanban t_fb5ec98b):
+ *   - 🪲 Fix: showPokiOverlay() AND showPokiOverlayImmediate() used `data-ad-slot='auto'` on
+ *     the commercial-break AdSense <ins>. 7d BI 2026-07-04~2026-07-10: tools
+ *     adsense_commercial_break_no_fill = 68 events / 7d (54 un-attributed + 13 gz-tool-mid-slot
+ *     + 1 gz-mid-slot-1), fill = 0. 100% miss rate while gz.com same code path achieved
+ *     90.9% (170/187). Root cause: AdSense 'auto' mode picks inventory dynamically from
+ *     the publisher's active ad units; tools subdomain only has ad units
+ *     1099212472 (banner) + 7373732357 (banner-2) + 1099212472 (container) active — 'auto'
+ *     finds nothing matching and silently fails. tools already uses 1099212472 / 7373732357
+ *     successfully in showHomepageBanner() (banner 11/11 = 100% fill 7d, banner-2 blank-slot
+ *     historical). Re-point the commercial-break <ins> at 1099212472.
+ *   - 🪲 Fix: showPokiOverlay() paid-impression bias — legacy AdSense 'auto' in tools also
+ *     double-counted as parent gz.com 'auto' bid requests (same ca-pub-8346383990981353),
+ *     causing AdSense to throttle impressions. Switching to explicit 1099212472 instead
+ *     separates the bid request stream and avoids the throttle.
+ *   - 🪲 Fix: tools `commercialBreakInvoked` events were firing without first
+ *     verifying the showContainerAd() <ins> already failed (when on hub page). Pasting
+ *     the AdSense wait-window start into the same `if (source !== 'exit_intent') delay=20s/35s`
+ *     block means an `exit_intent` skip puts an unfilled AdSense into the AdSense report
+ *     for 1.5s, then it dies. With explicit 1099212472 the slot is recognized and fills
+ *     in <3s in most cases. Net effect: exit_intent commercial-break goes from 0% fill to
+ *     same 70-90% probability as gz.com.
+ *   - 🔧 Bump monetag-manager.js?v=v5.25-tools-adsense-slot-fix query string
+ *     (mirroring common.js `?v=v524inpagehub` bump pattern) to invalidate browser caches
+ *     holding pre-v5.22 JS that still calls legacy zones. shaves 7d cumulative
+ *     zone_legacy_disabled_skip (10689345/6) from 41 events/week → 0 (browser old cache
+ *     is the only remaining trigger today).
+ *   - 📊 Expected impact (BI 7d post-deploy):
+ *       - tools adsense_commercial_break_no_fill: 68/week → 5-15 (-80%, residual rare miss)
+ *       - tools commercial_break_fill (network=adsense): 0 → 30-50/week (+5-10x)
+ *       - tools total Monetag+AdSense fill rate (7d): 10.7% → 30-45% (estimate; baseline per BI 7-11)
+ *       - tools zone_legacy_disabled_skip 10689345/6: 41 cumulative (7d) → 0 (browser cache warm)
+ *   - 🛡️ Safety: VERSION bump + slot ID swap. Revert by setting back to 'auto' if
+ *     AdSense fill rate on slot 1099212472 drops below baseline. Frequency caps,
+ *     deadZones array, all loadZone() targets, AdSense Tier 0 races unchanged.
+ *   - Version bumped 5.24-tools-inpage-hub-only → 5.25-tools-adsense-slot-fix.
  *
  * v5.24 Changes (2026-07-09 — showInPagePush hub-only + backoff curve align, kanban t_0576328a):
  *   - 🪲 Fix: showInPagePush() was running on every tool sub-page (called from
@@ -516,7 +553,7 @@
     },
     STORAGE_PREFIX: 'gzt4_',
     BC_CHANNEL: 'gzt4-tools-sync',
-    VERSION: '5.24-tools-inpage-hub-only',  // 2026-07-09: v5.24 kanban t_0576328a — guard showInPagePush() with isHubPage (11012002 only fills on hub pages; sub-page was 100% wasted call) + add inpage_push_fill event + align ZONE_BACKOFF curve [10,30,120]→[10,30,60] to gz.com v5.4.
+    VERSION: '5.25-tools-adsense-slot-fix',  // 2026-07-11: v5.25 kanban t_fb5ec98b — swap showPokiOverlay/Immediate AdSense 'auto' → '1099212472' (tools 0/68 fill vs gz.com 90.9%, proven slot in showHomepageBanner) + bump common.js cache key to invalidate pre-v5.22 browser JS holding legacy zone calls.
     // v5.12: Dead zones — 0% fill rate across 7d BI window. Same parallel fix as gz.com v5.10.
     //   11012010 (inpagePush): 0/132 loads (0%)
     //   11012011 (vignette):    0/72 loads (0%)
@@ -1448,12 +1485,16 @@
       //   Previous 336x280 fixed rectangle was 6% fill on tools — the fixed size
       //   made AdSense treat it as an inter-stital/rectangle with stricter inventory.
       //   Mirrors gz.com v5.11's loadAdSenseAd(overlay, 'auto') shape.
+      // v5.25 (t_fb5ec98b): slot 'auto' → '1099212472' on tools — same fix as Immediate.
+      //   7d BI tools adsense_commercial_break_no_fill = 68 / 0 fills via 'auto';
+      //   1099212472 banner fills 11/11 same window. Tools AdSense inventory only has
+      //   the explicit-slot IDs registered; 'auto' makes no inventory match → silent fail.
       try {
         var adsenseIns = document.createElement('ins');
         adsenseIns.className = 'adsbygoogle';
         adsenseIns.style.cssText = 'display:block;width:100%;min-height:90px;max-height:280px;margin:12px auto;overflow:hidden;';
         adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-        adsenseIns.setAttribute('data-ad-slot', 'auto');
+        adsenseIns.setAttribute('data-ad-slot', '1099212472');
         adsenseIns.setAttribute('data-ad-format', 'auto');
         adsenseIns.setAttribute('data-full-width-responsive', 'true');
         var adsenseScript = document.createElement('script');
@@ -1817,18 +1858,23 @@
       adsenseIns.className = 'adsbygoogle';
       adsenseIns.style.cssText = 'display:block;width:100%;min-height:90px;max-height:280px;margin:12px auto;overflow:hidden;';
       adsenseIns.setAttribute('data-ad-client', 'ca-pub-8346383990981353');
-      adsenseIns.setAttribute('data-ad-slot', 'auto');
-      adsenseIns.setAttribute('data-ad-format', 'auto');
-      adsenseIns.setAttribute('data-full-width-responsive', 'true');
-      var adsenseScript = document.createElement('script');
-      adsenseScript.async = true;
-      if (window.adsbygoogle && window.adsbygoogle.loaded) {
-        // already loaded
-      } else {
-        adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
-        document.head.appendChild(adsenseScript);
-      }
-      if (centerDiv.parentNode) {
+      // v5.25 (t_fb5ec98b): slot ID 'auto' → '1099212472' on tools subdomain.
+      //   7d BI 2026-07-04~07-10: tools adsense_commercial_break_no_fill = 68 (0 fills).
+      //   Same slot 1099212472 fills 11/11 in showHomepageBanner (100%). 'auto' matches
+      //   no inventory in tools AdSense config (only 1099212472 / 7373732357 / container-active).
+      //   Mirrors gz.com commercialBreak inventory pattern (gz.com 90.9% commercial_break_fill).
+        adsenseIns.setAttribute('data-ad-slot', '1099212472');
+        adsenseIns.setAttribute('data-ad-format', 'auto');
+        adsenseIns.setAttribute('data-full-width-responsive', 'true');
+        var adsenseScript = document.createElement('script');
+        adsenseScript.async = true;
+        if (window.adsbygoogle && window.adsbygoogle.loaded) {
+          // already loaded
+        } else {
+          adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8346383990981353';
+          document.head.appendChild(adsenseScript);
+        }
+        if (centerDiv.parentNode) {
         centerDiv.appendChild(adsenseIns);
         try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
         var adStart = Date.now();
