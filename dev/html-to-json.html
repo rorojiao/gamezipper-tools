@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>HTML to JSON Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert HTML to structured JSON instantly. Paste any HTML and get a clean nested JSON tree of tags, attributes, text and children. Free, private, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/html-to-json.html">
+  <meta property="og:title" content="HTML to JSON Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert HTML to structured JSON instantly. Paste any HTML and get a clean nested JSON tree of tags, attributes, text and children. Free, private, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/html-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HTML to JSON Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;max-height:500px;overflow:auto}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HTML to JSON Converter","description":"Convert HTML to structured JSON instantly. Paste any HTML and get a clean nested JSON tree of tags, attributes, text and children. Free, private, browser-only.","url":"https://tools.gamezipper.com/dev/html-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert HTML to JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your HTML into the input area and click Convert. The tool parses the HTML using the browser DOM parser and builds a structured JSON tree with tag, attributes, text content and child elements."}}, {"@type": "Question", "name": "What does the JSON output look like?", "acceptedAnswer": {"@type": "Answer", "text": "Each HTML element becomes a JSON object with fields: tag (element name), attrs (attributes object), text (direct text content) and children (array of child element objects). You can switch between nested and flat modes."}}, {"@type": "Question", "name": "Is my HTML data uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing happens entirely in your browser using the built-in DOMParser. Nothing is ever sent to any server."}}, {"@type": "Question", "name": "Can I convert a full HTML page?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You can paste a full HTML document including doctype, html, head and body tags, or just a fragment. The tool handles both gracefully."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/html-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/html-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/html-to-json.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="<div class=&quot;card&quot;><h2>Title</h2><p>Hello</p></div>"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HTML to JSON Converter',
+    toolDesc: 'Parse any HTML into a clean nested JSON tree — tags, attributes, text and children. Free, private, browser-only.',
+    step1: 'Paste or type your HTML in the input area',
+    step2: 'Choose output mode: Nested tree or Flat list',
+    step3: 'Click Convert to generate the JSON structure',
+    step4: 'Copy the JSON result to your clipboard',
+  },
+  zh: {
+    toolTitle: 'HTML 转 JSON 转换器',
+    toolDesc: '将任意 HTML 解析为整洁的嵌套 JSON 树 — 包含标签、属性、文本和子元素。免费、私密、浏览器本地运行。',
+    step1: '在输入区粘贴或输入 HTML',
+    step2: '选择输出模式：嵌套树或扁平列表',
+    step3: '点击「转换」生成 JSON 结构',
+    step4: '将 JSON 结果复制到剪贴板',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let mode = 'nested';
+let includeEmptyText = false;
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+function nodeToJSON(node) {
+  // Text node
+  if (node.nodeType === 3) {
+    const txt = node.textContent.trim();
+    return txt ? { tag: '#text', text: txt } : null;
+  }
+  // Comment node
+  if (node.nodeType === 8) {
+    const txt = node.textContent.trim();
+    return txt ? { tag: '#comment', text: txt } : null;
+  }
+  if (node.nodeType !== 1) return null;
+
+  const obj = { tag: node.tagName.toLowerCase() };
+  const attrs = {};
+  for (let i = 0; i < node.attributes.length; i++) {
+    attrs[node.attributes[i].name] = node.attributes[i].value;
+  }
+  if (Object.keys(attrs).length) obj.attrs = attrs;
+
+  // Direct text
+  let directText = '';
+  const children = [];
+  node.childNodes.forEach(child => {
+    if (child.nodeType === 3) {
+      directText += child.textContent;
+    } else {
+      const cj = nodeToJSON(child);
+      if (cj) children.push(cj);
+    }
+  });
+  directText = directText.replace(/\s+/g, ' ').trim();
+  if (directText && (includeEmptyText || directText)) obj.text = directText;
+  if (children.length) obj.children = children;
+  return obj;
+}
+
+function flattenNode(node, result, parentPath) {
+  if (!node || typeof node !== 'object') return;
+  const path = parentPath ? `${parentPath} > ${node.tag}` : node.tag;
+  const entry = { path, tag: node.tag };
+  if (node.attrs) entry.attrs = node.attrs;
+  if (node.text) entry.text = node.text;
+  result.push(entry);
+  if (node.children) node.children.forEach(c => flattenNode(c, result, path));
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; return; }
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(inp, 'text/html');
+    const root = doc.body;
+
+    if (mode === 'nested') {
+      const result = [];
+      root.childNodes.forEach(child => {
+        const j = nodeToJSON(child);
+        if (j) result.push(j);
+      });
+      const json = result.length === 1 ? result[0] : result;
+      $('#output').innerHTML = syntaxHighlight(JSON.stringify(json, null, 2));
+    } else {
+      const flat = [];
+      root.childNodes.forEach(child => {
+        const j = nodeToJSON(child);
+        if (j) flattenNode(j, flat, '');
+      });
+      $('#output').innerHTML = syntaxHighlight(JSON.stringify(flat, null, 2));
+    }
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('converted')||'Converted'}</span>`;
+  } catch(e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">Error: ${e.message}</span>`;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `<div class="card" id="main">
+  <h2>Welcome</h2>
+  <p class="desc">Hello <strong>World</strong>!</p>
+  <ul>
+    <li>Item 1</li>
+    <li>Item 2</li>
+  </ul>
+  <a href="https://example.com" target="_blank">Link</a>
+</div>`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')||'Convert'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="mode=this.value;doConvert()">
+    <option value="nested">Nested Tree</option>
+    <option value="flat">Flat List</option>
+  </select>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔗', href:'/dev/json-formatter.html', name:'JSON Formatter'},
+    {icon:'📊', href:'/dev/json-to-csv.html', name:'JSON to CSV'},
+    {icon:'📑', href:'/text/html-to-markdown.html', name:'HTML to MD'},
+    {icon:'🔧', href:'/dev/js-beautifier.html', name:'JS Beautifier'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

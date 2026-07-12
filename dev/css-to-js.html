@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSS to JS Object Converter - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Convert CSS rules to JavaScript style objects, React inline styles or CSS-in-JS template literals. CamelCase props, numeric values — free, private, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/css-to-js.html">
+  <meta property="og:title" content="CSS to JS Object Converter - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Convert CSS rules to JavaScript style objects, React inline styles or CSS-in-JS template literals. CamelCase props, numeric values — free, private, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/css-to-js.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSS to JS Object Converter - Free Online Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.5;max-height:500px;overflow:auto}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSS to JS Object Converter","description":"Convert CSS rules to JavaScript style objects, React inline styles or CSS-in-JS template literals. CamelCase props, numeric values — free, private, browser-only.","url":"https://tools.gamezipper.com/dev/css-to-js.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert CSS to a JavaScript style object?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSS rules into the input and click Convert. The tool converts kebab-case properties like font-size to camelCase like fontSize, and wraps the output as a JavaScript object suitable for React or vanilla JS."}}, {"@type": "Question", "name": "What output formats are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Three modes: React inline style object, CSS-in-JS (styled-components style), and plain JS object. All convert property names to camelCase and quote string values appropriately."}}, {"@type": "Question", "name": "Does it handle multiple CSS selectors?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each CSS rule block is converted into a separate key in the output object, using the selector as the key name. Pseudo-classes and media queries are preserved."}}, {"@type": "Question", "name": "Are numeric values converted to numbers?", "acceptedAnswer": {"@type": "Answer", "text": "You can toggle number conversion on or off. When enabled, values like 10px become 10 and 0.5rem stays as a string since rem/em units are meaningful in CSS."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/css-to-js.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/css-to-js.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/css-to-js.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder=".card {\n  font-size: 16px;\n  background-color: #fff;\n  margin: 0 auto;\n}"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSS to JS Object Converter',
+    toolDesc: 'Convert CSS rules to JavaScript style objects, React inline styles or CSS-in-JS. CamelCase properties, smart value handling — free and private.',
+    step1: 'Paste your CSS in the input area',
+    step2: 'Select an output format (React / JS / CSS-in-JS)',
+    step3: 'Toggle number conversion and single/double quotes',
+    step4: 'Copy the generated JavaScript object',
+  },
+  zh: {
+    toolTitle: 'CSS 转 JS 对象转换器',
+    toolDesc: '将 CSS 规则转换为 JavaScript 样式对象、React 内联样式或 CSS-in-JS。驼峰属性名、智能值处理 — 免费且私密。',
+    step1: '在输入区粘贴 CSS',
+    step2: '选择输出格式（React / JS / CSS-in-JS）',
+    step3: '切换数字转换和引号风格',
+    step4: '复制生成的 JavaScript 对象',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let format = 'react';
+let convertNums = true;
+let useSingleQuotes = false;
+
+function camelCase(prop) {
+  return prop.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function parseValue(val) {
+  val = val.trim();
+  if (convertNums && /^\d+$/.test(val)) return parseInt(val);
+  return val;
+}
+
+function formatValue(val) {
+  if (typeof val === 'number') return String(val);
+  const q = useSingleQuotes ? "'" : '"';
+  return `${q}${val}${q}`;
+}
+
+function parseCSSRules(css) {
+  const rules = [];
+  // Remove comments
+  css = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  // Match selector { props }
+  const regex = /([^{}]+)\{([^}]*)\}/g;
+  let match;
+  while ((match = regex.exec(css)) !== null) {
+    const selector = match[1].trim();
+    const body = match[2].trim();
+    if (!selector || !body) continue;
+    const props = {};
+    body.split(';').forEach(decl => {
+      const idx = decl.indexOf(':');
+      if (idx === -1) return;
+      const prop = decl.substring(0, idx).trim();
+      const val = decl.substring(idx + 1).trim();
+      if (prop && val) props[camelCase(prop)] = parseValue(val);
+    });
+    rules.push({ selector, props });
+  }
+  return rules;
+}
+
+function toReactStyle(props) {
+  const entries = Object.entries(props);
+  return entries.map(([k, v]) => `    ${k}: ${formatValue(v)}`).join(',\n');
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; return; }
+  try {
+    const rules = parseCSSRules(inp);
+    if (!rules.length) { $('#output').textContent = '// No CSS rules found'; return; }
+
+    const q = useSingleQuotes ? "'" : '"';
+    let output = '';
+
+    if (format === 'react' && rules.length === 1) {
+      // Single rule → inline style
+      output = `const style = {\n${toReactStyle(rules[0].props)}\n};`;
+    } else {
+      // Multiple rules → object with selector keys
+      const sections = rules.map(r => {
+        const key = r.selector.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/^_+|_+$/g, '') || 'rule';
+        return `  ${key}: {\n${toReactStyle(r.props).replace(/ {4}/g, '    ')}\n  }`;
+      });
+      output = `const styles = {\n${sections.join(',\n')}\n};`;
+    }
+    $('#output').textContent = output;
+  } catch(e) {
+    $('#output').textContent = 'Error: ' + e.message;
+  }
+}
+
+function loadExample() {
+  $('#input').value = `.card {
+  font-size: 16px;
+  background-color: #ffffff;
+  color: #333;
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')||'Convert'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <select class="gz-select" onchange="format=this.value;doConvert()">
+    <option value="react">React Style Object</option>
+    <option value="js">JS Object</option>
+  </select>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" ${convertNums?'checked':''} onchange="convertNums=this.checked;doConvert()"> Numbers</label>
+  <label style="display:inline-flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer"><input type="checkbox" ${useSingleQuotes?'checked':''} onchange="useSingleQuotes=this.checked;doConvert()"> Single quotes</label>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎨', href:'/css/gradient.html', name:'CSS Gradient'},
+    {icon:'🌑', href:'/css/shadow.html', name:'CSS Shadow'},
+    {icon:'📦', href:'/css/flexbox.html', name:'CSS Flexbox'},
+    {icon:'🔧', href:'/dev/js-beautifier.html', name:'JS Beautifier'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
