@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>JSON Diff Checker & Visual Compare - Free Online Tool | GameZipper Tools</title>
+  <meta name="description" content="Compare two JSON objects side by side and see exactly what was added, removed, or changed. Free, instant, 100% browser-based — paste two JSON blobs and get a visual diff.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/json-diff-visual.html">
+  <meta property="og:title" content="JSON Diff Checker & Visual Compare - Free Online Tool | GameZipper Tools">
+  <meta property="og:description" content="Compare two JSON objects and see added, removed, and changed values. Visual side-by-side diff, 100% browser-based — free, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/json-diff-visual.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON Diff Checker & Visual Compare - Free Online Tool | GameZipper Tools">
+<meta name="twitter:description" content="Compare JSON and see additions, removals, and changes — browser-only, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.diff-row{display:grid;grid-template-columns:36px 1fr 1fr;gap:8px;padding:4px 8px;border-bottom:1px solid var(--gz-border);font-family:monospace;font-size:.85em;align-items:start}
+.diff-row .path{color:#888;font-size:.8em}
+.diff-add{background:rgba(46,160,67,.15)}
+.diff-add .b{opacity:.4}
+.diff-rm{background:rgba(248,81,73,.15)}
+.diff-rm .a{opacity:.4}
+.diff-chg{background:rgba(200,150,40,.12)}
+.diff-chg .a{text-decoration:line-through;color:#f85149}
+.diff-chg .b{color:#2ea043}
+.diff-tag{text-align:center;font-weight:700;border-radius:4px;height:20px;line-height:20px}
+.t-add{background:#2ea043;color:#fff}.t-rm{background:#f85149;color:#fff}.t-chg{background:#d4a72c;color:#000}
+.t-eq{background:var(--gz-border);color:#888}
+textarea{min-height:120px;font-family:monospace}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Diff Checker","description":"Compare two JSON objects side by side and see exactly what was added, removed, or changed. Free, instant, 100% browser-based visual diff.","url":"https://tools.gamezipper.com/dev/json-diff-visual.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the JSON diff work?", "acceptedAnswer": {"@type": "Answer", "text": "Paste a left JSON and a right JSON, then click Compare. The tool parses both, walks every key recursively, and shows each leaf as a row marked Added, Removed, or Changed with the old and new values side by side."}}, {"@type": "Question", "name": "Does it work with nested objects and arrays?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Objects are walked recursively and arrays are compared element-by-element. Path uses dot notation for keys and square-bracket index for array items, e.g. users[1].name."}}, {"@type": "Question", "name": "Is my JSON data uploaded anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing and comparison runs entirely in your browser. Your JSON never leaves your computer."}}, {"@type": "Question", "name": "What is the difference between Added, Removed and Changed?", "acceptedAnswer": {"@type": "Answer", "text": "Added means the path exists only in the right JSON. Removed means it exists only in the left JSON. Changed means it exists in both but with a different value."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-diff-visual.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-diff-visual.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-diff-visual.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label id="lbl-a" style="font-size:.85em;font-weight:600"></label>
+        <textarea id="a" spellcheck="false" placeholder='{ "name": "Alice", "age": 30 }'></textarea>
+      </div>
+      <div>
+        <label id="lbl-b" style="font-size:.85em;font-weight:600"></label>
+        <textarea id="b" spellcheck="false" placeholder='{ "name": "Alice", "age": 31 }'></textarea>
+      </div>
+    </div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+    <div style="margin-top:8px">
+      <label style="font-size:.85em"><input type="checkbox" id="show-eq" checked> <span id="eq-lbl"></span></label>
+    </div>
+    <div id="output" style="margin-top:12px;border:1px solid var(--gz-border);border-radius:8px;overflow:hidden"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Diff Checker & Visual Compare',
+    toolDesc: 'Compare two JSON objects side by side and see exactly what was added, removed, or changed. Deep, recursive, with a clear path for every difference. 100% browser-based.',
+    labelA: 'Original JSON (left)',
+    labelB: 'Changed JSON (right)',
+    showEq: 'Show unchanged rows',
+    step1: 'Paste the original JSON into the left box',
+    step2: 'Paste the changed JSON into the right box',
+    step3: 'Click Compare — every difference appears as a color-coded row',
+    step4: 'Uncheck "Show unchanged" to focus only on what changed',
+    compare: 'Compare',
+    swap: 'Swap A⇄B',
+    example: 'Example',
+    clear: 'Clear',
+    added: 'Added',
+    removed: 'Removed',
+    changed: 'Changed',
+    same: 'Same',
+    errA: 'Left JSON invalid',
+    errB: 'Right JSON invalid',
+    summary: 'Summary',
+  },
+  zh: {
+    toolTitle: 'JSON 差异对比工具（可视化）',
+    toolDesc: '并排对比两个 JSON 对象，清晰展示新增、删除和修改的内容。深度递归对比，为每个差异显示完整路径。100% 浏览器本地运行。',
+    labelA: '原 JSON（左）',
+    labelB: '变更 JSON（右）',
+    showEq: '显示未变化行',
+    step1: '将原始 JSON 粘贴到左侧输入框',
+    step2: '将变更后的 JSON 粘贴到右侧输入框',
+    step3: '点击「对比」— 每个差异以颜色编码行显示',
+    step4: '取消勾选「显示未变化」可仅关注差异',
+    compare: '对比',
+    swap: '交换 A⇄B',
+    example: '示例',
+    clear: '清空',
+    added: '新增',
+    removed: '删除',
+    changed: '修改',
+    same: '相同',
+    errA: '左侧 JSON 无效',
+    errB: '右侧 JSON 无效',
+    summary: '统计',
+  }
+});
+
+const { $, t } = GZ;
+$('#lbl-a').textContent = t('labelA');
+$('#lbl-b').textContent = t('labelB');
+$('#eq-lbl').textContent = t('showEq');
+
+function leaves(val, prefix, out) {
+  if (val === null) { out.push([prefix, 'null']); return; }
+  if (Array.isArray(val)) {
+    if (val.length === 0) { out.push([prefix, '[]']); return; }
+    val.forEach((v, i) => leaves(v, prefix + '[' + i + ']', out));
+    return;
+  }
+  if (typeof val === 'object') {
+    const keys = Object.keys(val);
+    if (keys.length === 0) { out.push([prefix, '{}']); return; }
+    keys.forEach(k => leaves(val[k], prefix ? prefix + '.' + k : k, out));
+    return;
+  }
+  out.push([prefix, JSON.stringify(val)]);
+}
+
+function compare() {
+  const aText = $('#a').value.trim();
+  const bText = $('#b').value.trim();
+  $('#status').innerHTML = '';
+  if (!aText || !bText) { $('#output').innerHTML = ''; return; }
+  let a, b;
+  try { a = JSON.parse(aText); } catch (e) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">⚠ ${t('errA')}: ${e.message}</span>`; $('#output').innerHTML=''; return; }
+  try { b = JSON.parse(bText); } catch (e) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">⚠ ${t('errB')}: ${e.message}</span>`; $('#output').innerHTML=''; return; }
+
+  const la = [], lb = [];
+  leaves(a, '', la);
+  leaves(b, '', lb);
+  const mapA = new Map(la);
+  const mapB = new Map(lb);
+  const allPaths = new Set([...mapA.keys(), ...mapB.keys()]);
+  let added = 0, removed = 0, changed = 0, same = 0;
+  const showEq = $('#show-eq').checked;
+  let rows = '';
+  for (const p of allPaths) {
+    const va = mapA.get(p);
+    const vb = mapB.get(p);
+    let cls, tag, tagCls, aCell, bCell;
+    if (va === undefined) { cls = 'diff-add'; tag = '+'; tagCls = 't-add'; aCell = ''; bCell = vb ?? ''; added++; }
+    else if (vb === undefined) { cls = 'diff-rm'; tag = '−'; tagCls = 't-rm'; aCell = va ?? ''; bCell = ''; removed++; }
+    else if (va !== vb) { cls = 'diff-chg'; tag = '~'; tagCls = 't-chg'; aCell = va; bCell = vb; changed++; }
+    else { cls = ''; tag = '='; tagCls = 't-eq'; aCell = va; bCell = vb; same++; if (!showEq) continue; }
+    rows += `<div class="diff-row ${cls}"><div class="diff-tag ${tagCls}">${tag}</div><div class="a">${esc(aCell)} <span class="path">${esc(p)}</span></div><div class="b">${esc(bCell)}</div></div>`;
+  }
+  if (!rows) rows = `<div style="padding:12px;color:#888">JSON is identical ✅</div>`;
+  $('#output').innerHTML = rows;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">📊 ${t('summary')}: <b style="color:#2ea043">+${added} ${t('added')}</b> · <b style="color:#f85149">−${removed} ${t('removed')}</b> · <b style="color:#d4a72c">~${changed} ${t('changed')}</b> · <b style="color:#888">=${same} ${t('same')}</b></span>`;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+$('#show-eq').addEventListener('change', compare);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="compare()">${t('compare')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="swapAB()">🔄 ${t('swap')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+
+window.swapAB = () => { const a=$('#a').value; $('#a').value=$('#b').value; $('#b').value=a; compare(); };
+window.clearAll = () => { $('#a').value=''; $('#b').value=''; $('#output').innerHTML=''; $('#status').innerHTML=''; };
+window.loadExample = () => {
+  $('#a').value = JSON.stringify({ app:'GameZipper', version:'1.0', tools:['json','base64'], meta:{author:'team', license:'MIT'} }, null, 2);
+  $('#b').value = JSON.stringify({ app:'GameZipper', version:'1.1', tools:['json','base64','yaml'], meta:{author:'team', license:'Apache-2.0', updated:true} }, null, 2);
+  compare();
+};
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔍', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔀', href:'/dev/json-merge.html', name:'JSON Merge'},
+    {icon:'🌳', href:'/dev/json-tree.html', name:'JSON Tree'},
+    {icon:'📊', href:'/dev/json-statistics.html', name:'JSON Stats'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
