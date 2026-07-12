@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Port Number Lookup - TCP/UDP Port Reference | GameZipper Tools</title>
+  <meta name="description" content="Free online port number lookup tool. Search any TCP or UDP port number to find its service, protocol, description, and status. Complete IANA port reference.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/port-lookup.html">
+  <meta property="og:title" content="Port Number Lookup - TCP/UDP Port Reference | GameZipper Tools">
+  <meta property="og:description" content="Free online port number lookup tool. Search any TCP or UDP port number to find its service, protocol, description, and status. Complete IANA port reference.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/port-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Port Number Lookup - TCP/UDP Port Reference | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.port-search{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.port-search input{flex:1;min-width:200px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:1rem}
+.port-search input:focus{outline:none;border-color:var(--accent)}
+.port-table{width:100%;border-collapse:collapse;font-size:0.85rem}
+.port-table th{text-align:left;padding:10px;background:var(--glass2);border-bottom:2px solid var(--border2);color:var(--text2);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;user-select:none}
+.port-table th:hover{color:var(--accent)}
+.port-table td{padding:10px;border-bottom:1px solid var(--border);color:var(--text)}
+.port-table tr:hover{background:var(--glass2)}
+.port-num{font-family:'SF Mono',Consolas,monospace;color:var(--accent2);font-weight:700}
+.port-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.7rem;font-weight:600}
+.badge-tcp{background:rgba(0,214,114,0.15);color:#00d672}
+.badge-udp{background:rgba(97,175,239,0.15);color:#61afef}
+.badge-both{background:rgba(209,154,102,0.15);color:#d19a66}
+.port-cat{font-size:0.7rem;padding:2px 8px;border-radius:4px;margin-left:6px}
+.cat-well{background:rgba(0,214,114,0.1);color:#00d672}
+.cat-reg{background:rgba(97,175,239,0.1);color:#61afef}
+.cat-dyn{background:rgba(209,154,102,0.1);color:#d19a66}
+.no-results{padding:2rem;text-align:center;color:var(--text2);font-size:0.9rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Port Number Lookup","description":"Free online port number lookup tool. Search any TCP or UDP port number to find its service, protocol, description, and status. Complete IANA port reference.","url":"https://tools.gamezipper.com/dev/port-lookup.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are well-known port numbers?", "acceptedAnswer": {"@type": "Answer", "text": "Well-known ports are 0-1023, assigned by IANA to common services like HTTP (80), HTTPS (443), FTP (21), SSH (22), DNS (53), and SMTP (25)."}}, {"@type": "Question", "name": "What is the difference between TCP and UDP ports?", "acceptedAnswer": {"@type": "Answer", "text": "TCP (Transmission Control Protocol) provides reliable, ordered delivery of data. UDP (User Datagram Protocol) is faster but does not guarantee delivery. Some ports support both protocols."}}, {"@type": "Question", "name": "How many registered ports are there?", "acceptedAnswer": {"@type": "Answer", "text": "Registered ports range from 1024 to 49151, assigned by IANA for specific applications. Dynamic/private ports range from 49152 to 65535."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/port-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/port-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/port-lookup.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="port-search">
+      <input type="text" id="search" placeholder="" data-i18n-ph="searchPlaceholder">
+      <button class="gz-btn gz-btn-secondary" onclick="clearSearch()" id="btn-clear"></button>
+    </div>
+    <div style="max-height:500px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+      <table class="port-table" id="portTable">
+        <thead>
+          <tr>
+            <th id="th-port"></th>
+            <th id="th-proto"></th>
+            <th id="th-service"></th>
+            <th id="th-desc"></th>
+          </tr>
+        </thead>
+        <tbody id="portBody"></tbody>
+      </table>
+    </div>
+    <div id="port-count" style="margin-top:8px;font-size:0.8rem;color:var(--text2)"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Port Number Lookup',
+    toolDesc: 'Search any TCP/UDP port number to find its service, protocol, and description. Complete IANA port reference.',
+    searchPlaceholder: 'Search port number or service name (e.g. 443 or HTTP)...',
+    thPort: 'Port',
+    thProto: 'Protocol',
+    thService: 'Service',
+    thDesc: 'Description',
+    btnClear: 'Clear',
+    step1: 'Type a port number (e.g. 80, 443) or service name (e.g. HTTP, SSH) in the search box',
+    step2: 'Results filter instantly as you type',
+    step3: 'Click a column header to sort by that column',
+    step4: 'Use Clear to reset the search',
+  },
+  zh: {
+    toolTitle: '端口号查询',
+    toolDesc: '搜索任意 TCP/UDP 端口号，查看其服务、协议和描述。完整的 IANA 端口参考表。',
+    searchPlaceholder: '搜索端口号或服务名（如 443 或 HTTP）...',
+    thPort: '端口',
+    thProto: '协议',
+    thService: '服务',
+    thDesc: '描述',
+    btnClear: '清除',
+    step1: '在搜索框输入端口号（如 80、443）或服务名（如 HTTP、SSH）',
+    step2: '结果会随输入即时过滤',
+    step3: '点击列标题可按该列排序',
+    step4: '点击"清除"重置搜索',
+  }
+});
+
+const { $, t } = GZ;
+
+const PORTS = [
+  [20,'tcp','FTP-DATA','File Transfer Protocol - Data Transfer'],
+  [21,'tcp','FTP','File Transfer Protocol - Control'],
+  [22,'tcp','SSH','Secure Shell - Remote Login'],
+  [23,'tcp','TELNET','Telnet - Unencrypted Remote Login'],
+  [25,'tcp','SMTP','Simple Mail Transfer Protocol'],
+  [26,'tcp','RSFTP','Alternate FTP'],
+  [53,'both','DNS','Domain Name System'],
+  [67,'udp','DHCP-SERVER','Dynamic Host Configuration Protocol - Server'],
+  [68,'udp','DHCP-CLIENT','Dynamic Host Configuration Protocol - Client'],
+  [69,'udp','TFTP','Trivial File Transfer Protocol'],
+  [79,'tcp','FINGER','Finger User Information Protocol'],
+  [80,'both','HTTP','Hypertext Transfer Protocol - Web'],
+  [88,'tcp','KERBEROS','Kerberos Authentication'],
+  [110,'tcp','POP3','Post Office Protocol v3 - Email Retrieval'],
+  [111,'both','RPC','Remote Procedure Call (Sun RPC)'],
+  [113,'tcp','IDENT','Authentication Service'],
+  [119,'tcp','NNTP','Network News Transfer Protocol - Usenet'],
+  [123,'udp','NTP','Network Time Protocol'],
+  [135,'both','MS-RPC','Microsoft RPC Endpoint Mapper'],
+  [137,'udp','NETBIOS-NS','NetBIOS Name Service'],
+  [138,'udp','NETBIOS-DGM','NetBIOS Datagram Service'],
+  [139,'tcp','NETBIOS-SSN','NetBIOS Session Service'],
+  [143,'tcp','IMAP','Internet Message Access Protocol - Email'],
+  [161,'udp','SNMP','Simple Network Management Protocol'],
+  [162,'udp','SNMP-TRAP','SNMP Trap'],
+  [179,'tcp','BGP','Border Gateway Protocol - Internet Routing'],
+  [194,'tcp','IRC','Internet Relay Chat'],
+  [389,'both','LDAP','Lightweight Directory Access Protocol'],
+  [443,'tcp','HTTPS','HTTP Secure - Encrypted Web'],
+  [445,'both','SMB','Server Message Block - File Sharing'],
+  [465,'tcp','SMTPS','SMTP over SSL/TLS'],
+  [500,'udp','ISAKMP','Internet Security Association - VPN'],
+  [512,'tcp','EXEC','Remote Process Execution'],
+  [513,'tcp','LOGIN','Remote Login (rlogin)'],
+  [514,'tcp','SHELL','Remote Shell (rsh)'],
+  [514,'udp','SYSLOG','System Logging Protocol'],
+  [515,'tcp','LPR','Line Printer Remote - Print Spooler'],
+  [520,'udp','RIP','Routing Information Protocol'],
+  [587,'tcp','SMTP-SUBMISSION','Mail Submission - Modern SMTP'],
+  [631,'both','IPP','Internet Printing Protocol'],
+  [636,'tcp','LDAPS','LDAP over SSL/TLS'],
+  [873,'tcp','RSYNC','Remote Synchronization'],
+  [990,'tcp','FTPS','FTP over SSL/TLS'],
+  [993,'tcp','IMAPS','IMAP over SSL/TLS'],
+  [995,'tcp','POP3S','POP3 over SSL/TLS'],
+  [1025,'tcp','NFS','Network File System'],
+  [1080,'tcp','SOCKS','SOCKS Proxy'],
+  [1194,'udp','OPENVPN','OpenVPN'],
+  [1433,'tcp','MSSQL','Microsoft SQL Server'],
+  [1521,'tcp','ORACLE','Oracle Database Listener'],
+  [1701,'udp','L2TP','Layer 2 Tunneling Protocol - VPN'],
+  [1723,'tcp','PPTP','Point-to-Point Tunneling Protocol - VPN'],
+  [1812,'udp','RADIUS','RADIUS Authentication'],
+  [1813,'udp','RADIUS-ACCT','RADIUS Accounting'],
+  [2049,'tcp','NFS','Network File System'],
+  [2082,'tcp','CPANEL','cPanel Web Interface'],
+  [2083,'tcp','CPANEL-SSL','cPanel Secure Web Interface'],
+  [2483,'tcp','ORACLE-XML','Oracle XML DB'],
+  [2484,'tcp','ORACLE-XML-SSL','Oracle XML DB over SSL'],
+  [3000,'tcp','NODE-DEV','Node.js Development Server'],
+  [3306,'tcp','MYSQL','MySQL Database'],
+  [3389,'tcp','RDP','Remote Desktop Protocol'],
+  [3478,'udp','STUN','Session Traversal Utilities for NAT'],
+  [4242,'tcp','NPM','Network Printer Manager'],
+  [4321,'tcp','R-TOOLS','Remote Tools'],
+  [4369,'tcp','EPMD','Erlang Port Mapper Daemon'],
+  [4500,'udp','ISAKMP-NAT','IPSec NAT Traversal'],
+  [4567,'tcp','SPIGOT','Minecraft Server Query'],
+  [5000,'tcp','UPNP','Universal Plug and Play'],
+  [5004,'udp','RTP','Real-Time Transport Protocol'],
+  [5060,'both','SIP','Session Initiation Protocol - VoIP'],
+  [5061,'tcp','SIPS','SIP over TLS'],
+  [5222,'tcp','XMPP','Jabber/XMPP Client Connection'],
+  [5269,'tcp','XMPP-SERVER','XMPP Server-to-Server'],
+  [5353,'udp','MDNS','Multicast DNS - Bonjour'],
+  [5432,'tcp','POSTGRESQL','PostgreSQL Database'],
+  [5500,'tcp','VNC','Virtual Network Computing - Display'],
+  [5672,'tcp','AMQP','Advanced Message Queuing Protocol'],
+  [5800,'tcp','VNC-HTTP','VNC over HTTP'],
+  [5900,'tcp','VNC','Virtual Network Computing'],
+  [5984,'tcp','COUCHDB','Apache CouchDB'],
+  [5985,'tcp','WINRM','Windows Remote Management - HTTP'],
+  [5986,'tcp','WINRM-SSL','Windows Remote Management - HTTPS'],
+  [6379,'tcp','REDIS','Redis Key-Value Store'],
+  [6443,'tcp','K8S','Kubernetes API Server'],
+  [6600,'tcp','MPD','Music Player Daemon'],
+  [6660,'tcp','IRC','Alternate IRC'],
+  [6667,'tcp','IRC','IRC - Default'],
+  [6668,'tcp','IRC','Alternate IRC'],
+  [6669,'tcp','IRC','Alternate IRC'],
+  [6679,'tcp','IRC-SSL','IRC over SSL'],
+  [6697,'tcp','IRC-SSL','IRC over SSL'],
+  [7000,'tcp','CASSANDRA','Apache Cassandra'],
+  [7001,'tcp','WEBLOGIC','Oracle WebLogic Server'],
+  [7474,'tcp','NEO4J','Neo4j Graph Database'],
+  [7777,'tcp','MULTIPLAYER','Multiplayer Game Server'],
+  [8000,'tcp','HTTP-DEV','Alternate HTTP'],
+  [8008,'tcp','HTTP-ALT','Alternate HTTP'],
+  [8009,'tcp','AJP','Apache JServ Protocol - Tomcat'],
+  [8080,'tcp','HTTP-PROXY','Alternate HTTP / Proxy'],
+  [8081,'tcp','HTTP-DEV','Alternate HTTP Dev Server'],
+  [8086,'tcp','INFLUXDB','InfluxDB Time Series Database'],
+  [8088,'tcp','HTTP','Alternate HTTP'],
+  [8443,'tcp','HTTPS-ALT','Alternate HTTPS'],
+  [8484,'tcp','ETCD','etcd Cluster'],
+  [8500,'tcp','CONSUL','HashiCorp Consul'],
+  [8631,'tcp','P2P','Peer to Peer'],
+  [8649,'tcp','GANGLIA','Ganglia Monitoring'],
+  [8765,'tcp','TORRENT','Alternate BitTorrent'],
+  [8888,'tcp','HTTP-DEV','Alternate HTTP / Jupyter'],
+  [9000,'tcp','PHP-FPM','PHP-FPM / Alternate HTTP'],
+  [9042,'tcp','CASSANDRA','Cassandra CQL'],
+  [9080,'tcp','HTTP-DEV','Alternate HTTP'],
+  [9090,'tcp','WEBSOCKET','WebSocket / Prometheus'],
+  [9092,'tcp','KAFKA','Apache Kafka'],
+  [9100,'tcp','JETDIRECT','HP JetDirect Printing'],
+  [9200,'tcp','ELASTICSEARCH','Elasticsearch HTTP'],
+  [9300,'tcp','ELASTICSEARCH','Elasticsearch Transport'],
+  [9418,'tcp','GIT','Git Protocol'],
+  [9999,'tcp','HTTP-DEV','Alternate HTTP'],
+  [10000,'tcp','WEBMIN','Webmin Admin Panel'],
+  [11211,'tcp','MEMCACHED','Memcached'],
+  [11214,'udp','MEMCACHED','Memcached'],
+  [15672,'tcp','RABBITMQ','RabbitMQ Management'],
+  [16992,'udp','INTEL-AMT','Intel AMT'],
+  [17000,'tcp','CONTAINER','Container Registry'],
+  [17500,'tcp','DROPBOX','Dropbox LanSync'],
+  [18080,'tcp','HTTP','Alternate HTTP'],
+  [19000,'tcp','HTTP','Alternate HTTP'],
+  [20000,'tcp','USERMIN','Usermin Webmail'],
+  [22222,'tcp','SSH','Alternate SSH'],
+  [23424,'tcp','LIFE-LINE','Life-Line Utility'],
+  [25565,'tcp','MINECRAFT','Minecraft Server'],
+  [25575,'tcp','MC-RCON','Minecraft RCON'],
+  [26000,'tcp','MULTIPLAYER','Quake Multiplayer'],
+  [27000,'udp','SRCDS','Source Engine Game Server'],
+  [27015,'udp','SRCDS','Steam Game Server'],
+  [27017,'tcp','MONGODB','MongoDB Database'],
+  [27018,'tcp','MONGODB','MongoDB Alternate'],
+  [28015,'tcp','RETHINKDB','RethinkDB Database'],
+  [30032,'tcp','SERVER','Alternate Server'],
+  [33000,'tcp','HTTP','Alternate HTTP'],
+  [33434,'udp','TRACEROUTE','Traceroute'],
+  [49151,'tcp','IANA-REG','Last Registered Port'],
+  [49152,'udp','DYNAMIC','First Dynamic/Private Port'],
+  [50000,'tcp','HTTP','Alternate HTTP / IBM DB2'],
+  [50070,'tcp','HADOOP','Hadoop NameNode'],
+  [50090,'tcp','HADOOP','Hadoop NameNode Backup'],
+  [54321,'tcp','BO2K','Back Orifice 2000'],
+  [60000,'tcp','X11','X Window System Display 0'],
+  [65535,'tcp','IANA-DYN','Last Dynamic Port'],
+];
+
+let sortCol = 'port';
+let sortDir = 1;
+let filtered = [...PORTS];
+
+function getCategory(port) {
+  if (port <= 1023) return 'well';
+  if (port <= 49151) return 'reg';
+  return 'dyn';
+}
+
+function catLabel(cat) {
+  return cat === 'well' ? t('wellKnown') : cat === 'reg' ? t('registered') : t('dynamic');
+}
+
+GZI18n.register({
+  en: { wellKnown: 'Well-Known', registered: 'Registered', dynamic: 'Dynamic', results: 'results' },
+  zh: { wellKnown: '知名', registered: '注册', dynamic: '动态', results: '条结果' }
+});
+
+function protoBadge(proto) {
+  const cls = proto === 'both' ? 'badge-both' : proto === 'tcp' ? 'badge-tcp' : 'badge-udp';
+  return `<span class="port-badge ${cls}">${proto.toUpperCase()}</span>`;
+}
+
+function render() {
+  const body = $('#portBody');
+  if (!filtered.length) {
+    body.innerHTML = `<tr><td colspan="4" class="no-results">${t('noResults') || 'No matching ports found.'}</td></tr>`;
+    $('#port-count').textContent = '0 ' + t('results');
+    return;
+  }
+  body.innerHTML = filtered.map(p => {
+    const cat = getCategory(p[0]);
+    return `<tr>
+      <td><span class="port-num">${p[0]}</span><span class="port-cat cat-${cat}">${catLabel(cat)}</span></td>
+      <td>${protoBadge(p[1])}</td>
+      <td style="font-weight:600">${p[2]}</td>
+      <td style="color:var(--text2)">${p[3]}</td>
+    </tr>`;
+  }).join('');
+  $('#port-count').textContent = `${filtered.length} ${t('results')}`;
+}
+
+function doSearch() {
+  const q = $('#search').value.trim().toLowerCase();
+  if (!q) { filtered = [...PORTS]; render(); return; }
+  filtered = PORTS.filter(p =>
+    String(p[0]).includes(q) ||
+    p[1].toLowerCase().includes(q) ||
+    p[2].toLowerCase().includes(q) ||
+    p[3].toLowerCase().includes(q)
+  );
+  sortFiltered();
+  render();
+}
+
+function sortFiltered() {
+  const idx = sortCol === 'port' ? 0 : sortCol === 'proto' ? 1 : sortCol === 'service' ? 2 : 3;
+  filtered.sort((a, b) => {
+    let va = a[idx], vb = b[idx];
+    if (typeof va === 'number') return (va - vb) * sortDir;
+    return String(va).toLowerCase().localeCompare(String(vb).toLowerCase()) * sortDir;
+  });
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir = -sortDir;
+  else { sortCol = col; sortDir = 1; }
+  sortFiltered();
+  render();
+}
+
+function clearSearch() {
+  $('#search').value = '';
+  filtered = [...PORTS];
+  sortFiltered();
+  render();
+}
+
+// Fix data issues
+PORTS.forEach((p, i) => {
+  if (typeof p[1] !== 'string' || p[1].includes(',')) {
+    p[1] = p[1].toString().replace(/['"]|,/g, '').trim();
+  }
+});
+
+$('#search').addEventListener('input', doSearch);
+$('#th-port').addEventListener('click', () => sortBy('port'));
+$('#th-proto').addEventListener('click', () => sortBy('proto'));
+$('#th-service').addEventListener('click', () => sortBy('service'));
+$('#th-desc').addEventListener('click', () => sortBy('desc'));
+
+// Apply placeholder i18n
+const si = $('#search');
+si.placeholder = t('searchPlaceholder');
+document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
+
+sortFiltered();
+render();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔌', href:'/dev/port-numbers.html', name:'Port Numbers'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔐', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+    {icon:'📡', href:'/network/ping-test.html', name:'Ping Test'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
