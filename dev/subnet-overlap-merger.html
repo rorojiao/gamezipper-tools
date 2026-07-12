@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Subnet Overlap & Merge Calculator - CIDR Set Operations | GameZipper Tools</title>
+  <meta name="description" content="Compare two or more IPv4/IPv6 CIDR blocks: detect overlaps, find the union (merged) and intersection (common range), exclude subnets and visualize hierarchy. Free, private, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/subnet-overlap-merger.html">
+  <meta property="og:title" content="Subnet Overlap & Merge Calculator - CIDR Set Operations | GameZipper Tools">
+  <meta property="og:description" content="Compare two or more IPv4/IPv6 CIDR blocks: detect overlaps, find the union (merged) and intersection (common range), exclude subnets and visualize hierarchy. Free, private, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/subnet-overlap-merger.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Subnet Overlap & Merge Calculator - CIDR Set Operations | GameZipper Tools">
+<meta name="twitter:description" content="Compare two or more IPv4/IPv6 CIDR blocks: detect overlaps, find union and intersection, exclude subnets and visualize hierarchy. Free and browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+textarea{min-height:140px;font-family:monospace}
+.op-btn{flex:1;min-width:120px}
+.result-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.result-card h3{margin:0 0 8px;font-size:1rem}
+.cidr-line{font-family:monospace;padding:5px 10px;border-bottom:1px solid var(--border);font-size:.88rem}
+.cidr-line:last-child{border-bottom:none}
+.kv{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.9rem}
+.kv:last-child{border-bottom:none}
+.overlap-yes{color:#e74c3c;font-weight:700}
+.overlap-no{color:#27ae60;font-weight:700}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Subnet Overlap & Merge Calculator","description":"Compare two or more IPv4/IPv6 CIDR blocks: detect overlaps, find the union (merged) and intersection (common range), exclude subnets and visualize hierarchy. Free, private, browser-only.","url":"https://tools.gamezipper.com/dev/subnet-overlap-merger.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I check if two CIDR ranges overlap?","acceptedAnswer":{"@type":"Answer","text":"Paste both CIDRs (one per line) and click Overlap. The tool computes the integer range of each block and checks if any pair shares addresses. Overlapping blocks are highlighted in red."}},{"@type":"Question","name":"What is the union of CIDR blocks?","acceptedAnswer":{"@type":"Answer","text":"The union (merge) is the smallest set of aligned CIDR blocks that together cover every IP in any of the input blocks, with no duplicates. Use this to compact a long firewall rule list."}},{"@type":"Question","name":"What is the intersection of CIDR blocks?","acceptedAnswer":{"@type":"Answer","text":"The intersection is the set of IPs that are present in BOTH inputs at the same time. If the blocks do not overlap, the intersection is empty. This is useful for finding the common subnet between two networks."}},{"@type":"Question","name":"Does this work with both IPv4 and IPv6?","acceptedAnswer":{"@type":"Answer","text":"Yes. The tool uses big-integer arithmetic so it can handle both IPv4 (32-bit) and IPv6 (128-bit) CIDRs — even mixed inputs are detected and reported as incompatible."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/subnet-overlap-merger.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/subnet-overlap-merger.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/subnet-overlap-merger.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <label id="lbl-in" style="font-weight:600;display:block;margin-bottom:4px"></label>
+    <textarea id="input" style="width:100%" spellcheck="false" placeholder="192.168.1.0/24&#10;192.168.2.0/24&#10;10.0.0.0/8"></textarea>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="gz-btn op-btn" id="overlapBtn"></button>
+      <button class="gz-btn op-btn" id="unionBtn"></button>
+      <button class="gz-btn op-btn" id="intersectBtn"></button>
+      <button class="gz-btn op-btn" id="containBtn"></button>
+      <button class="gz-btn gz-btn-secondary" id="exampleBtn"></button>
+      <button class="gz-btn gz-btn-secondary" id="clearBtn"></button>
+    </div>
+    <div id="status" style="margin-top:12px"></div>
+    <div id="result" style="margin-top:10px"></div>
+    <div id="copyBtns" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Subnet Overlap & Merge Calculator',
+    toolDesc: 'Perform set operations on IPv4 and IPv6 CIDR blocks: detect overlaps, merge (union) into the smallest set, find the intersection, and check containment. Used for firewall, ACL and cloud-security rule cleanup — free and private.',
+    inputLabel: 'CIDR Blocks (one per line)',
+    overlap: 'Check Overlap',
+    union: 'Union (Merge)',
+    intersect: 'Intersection',
+    contain: 'Containment',
+    example: 'Example',
+    clear: 'Clear',
+    step1: 'Paste your CIDR blocks into the input area — one per line',
+    step2: 'Pick an operation: Overlap, Union, Intersection or Containment',
+    step3: 'Review the highlighted results — red pairs overlap, green are clean',
+    step4: 'Use Copy to copy the merged or result list into your config',
+    need2: 'Enter at least 2 CIDR blocks to compare.',
+    invalid: 'Invalid CIDR on line',
+    mixedProto: 'Mixed IPv4 and IPv6 detected. Operations only work within one protocol.',
+    noOverlap: '✓ No overlaps — the blocks are disjoint.',
+    overlapsFound: '⚠ Overlapping pairs found:',
+    unionResult: 'Union — merged into',
+    blocks: 'blocks',
+    intersectResult: 'Intersection — addresses in ALL inputs',
+    intersectEmpty: 'Intersection is empty — no IP is in every input block.',
+    containResult: 'Containment Check',
+    containYes: 'is fully contained in',
+    containNo: 'is NOT contained in',
+    pairs: 'pair(s)',
+    copyResult: 'Copy Result',
+  },
+  zh: {
+    toolTitle: '子网重叠与合并计算器',
+    toolDesc: '对 IPv4 和 IPv6 CIDR 块执行集合运算：检测重叠、合并（并集）为最少块、求交集、检查包含关系。常用于防火墙、ACL 和云安全组规则清理 — 免费且私密。',
+    inputLabel: 'CIDR 块（每行一个）',
+    overlap: '检测重叠',
+    union: '并集（合并）',
+    intersect: '交集',
+    contain: '包含关系',
+    example: '示例',
+    clear: '清空',
+    step1: '将 CIDR 块粘贴到输入区 — 每行一个',
+    step2: '选择一个操作：重叠、并集、交集或包含',
+    step3: '查看高亮结果 — 红色为重叠，绿色为无重叠',
+    step4: '点击「复制」将合并或结果列表粘贴到配置中',
+    need2: '请输入至少 2 个 CIDR 块进行比较。',
+    invalid: '第 N 行 CIDR 无效：',
+    mixedProto: '检测到 IPv4 与 IPv6 混用。运算只能在同一协议内进行。',
+    noOverlap: '✓ 无重叠 — 各块互不相交。',
+    overlapsFound: '⚠ 发现重叠对：',
+    unionResult: '并集 — 已合并为',
+    blocks: '块',
+    intersectResult: '交集 — 同时在所有输入块中的地址',
+    intersectEmpty: '交集为空 — 没有 IP 同时存在于所有输入块中。',
+    containResult: '包含关系检查',
+    containYes: '完全包含于',
+    containNo: '不包含于',
+    pairs: '对',
+    copyResult: '复制结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+$('#lbl-in').textContent = t('inputLabel');
+$('#overlapBtn').textContent = t('overlap');
+$('#unionBtn').textContent = t('union');
+$('#intersectBtn').textContent = t('intersect');
+$('#containBtn').textContent = t('contain');
+$('#exampleBtn').textContent = t('example');
+$('#clearBtn').textContent = t('clear');
+
+$('#overlapBtn').onclick = () => runOp('overlap');
+$('#unionBtn').onclick = () => runOp('union');
+$('#intersectBtn').onclick = () => runOp('intersect');
+$('#containBtn').onclick = () => runOp('contain');
+$('#exampleBtn').onclick = () => {
+  $('#input').value = '192.168.1.0/24\n192.168.1.128/25\n192.168.2.0/23\n10.0.0.0/8';
+  runOp('overlap');
+};
+$('#clearBtn').onclick = () => { $('#input').value=''; $('#result').innerHTML=''; $('#status').innerHTML=''; $('#copyBtns').innerHTML=''; };
+
+// --- BigInt IP/CIDR helpers (shared with ip-cidr-converter) ---
+function ipToBigInt(ip) {
+  ip = ip.trim();
+  if (ip.includes(':')) {
+    let parts = ip.split(':');
+    const dbl = parts.indexOf('');
+    if (dbl !== -1) {
+      if (parts[parts.length-1] === '') parts.pop();
+      if (parts[0] === '') parts.shift();
+      const left = parts.slice(0, dbl-1 < 0 ? 0 : dbl);
+      const right = parts.slice(dbl);
+      const missing = 8 - (left.length + right.length);
+      parts = [...left, ...Array(missing > 0 ? missing : 0).fill('0'), ...right];
+    }
+    if (parts.length !== 8) return null;
+    let n = 0n;
+    for (const p of parts) {
+      if (p === '') return null;
+      const v = parseInt(p, 16);
+      if (isNaN(v) || v < 0 || v > 0xffff) return null;
+      n = (n << 16n) | BigInt(v);
+    }
+    return { n, bits: 128 };
+  } else if (ip.includes('.')) {
+    const parts = ip.split('.');
+    if (parts.length !== 4) return null;
+    let n = 0n;
+    for (const p of parts) {
+      const v = parseInt(p, 10);
+      if (isNaN(v) || v < 0 || v > 255 || String(v) !== p) return null;
+      n = (n << 8n) | BigInt(v);
+    }
+    return { n, bits: 32 };
+  }
+  return null;
+}
+
+function bigIntToIp(n, bits) {
+  if (bits === 32) {
+    const m = 0xffn;
+    return [(n >> 24n) & m, (n >> 16n) & m, (n >> 8n) & m, n & m].join('.');
+  }
+  const parts = [];
+  const mask = 0xffffn;
+  for (let i = 7; i >= 0; i--) parts.push(((n >> BigInt(i*16)) & mask).toString(16));
+  return parts.join(':');
+}
+
+function parseCidr(line) {
+  line = line.trim();
+  if (!line) return null;
+  const m = line.split('/');
+  if (m.length !== 2) return null;
+  const ipObj = ipToBigInt(m[0]);
+  const prefix = parseInt(m[1], 10);
+  if (!ipObj || isNaN(prefix) || prefix < 0 || prefix > ipObj.bits) return null;
+  const hostBits = BigInt(ipObj.bits - prefix);
+  const netMask = ((1n << BigInt(prefix)) - 1n) << hostBits;
+  const start = ipObj.n & netMask;
+  const end = start | ((1n << hostBits) - 1n);
+  return { start, end, bits: ipObj.bits, prefix, raw: line };
+}
+
+function parseInput() {
+  const lines = $('#input').value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (lines.length < 2) return { error: t('need2') };
+  const blocks = [];
+  for (let i = 0; i < lines.length; i++) {
+    const b = parseCidr(lines[i]);
+    if (!b) return { error: `${t('invalid')} ${i+1}: ${lines[i]}` };
+    blocks.push(b);
+  }
+  const bits = blocks[0].bits;
+  if (blocks.some(b => b.bits !== bits)) return { error: t('mixedProto') };
+  return { blocks, bits };
+}
+
+function rangeToCidr(start, end, bits) {
+  const result = [];
+  let s = start, e = end;
+  while (s <= e) {
+    let maxBits = bits;
+    for (let b = 1; b <= bits; b++) {
+      const blockMask = (1n << BigInt(b)) - 1n;
+      if ((s & blockMask) !== 0n) { maxBits = b - 1; break; }
+      maxBits = b;
+    }
+    let diff = e - s + 1n;
+    let maxFromEnd = 0n;
+    let tmp = diff;
+    while ((tmp & 1n) === 0n) { maxFromEnd++; tmp >>= 1n; }
+    const blockSize = BigInt(maxBits) < maxFromEnd ? BigInt(maxBits) : maxFromEnd;
+    const prefixLen = BigInt(bits) - blockSize;
+    result.push(`${bigIntToIp(s, bits)}/${Number(prefixLen)}`);
+    s = s + (1n << blockSize);
+    if (result.length > 5000) break;
+  }
+  return result;
+}
+
+function runOp(op) {
+  const r = parseInput();
+  if (r.error) {
+    $('#status').innerHTML = `<div style="color:var(--gz-accent);padding:8px">⚠ ${r.error}</div>`;
+    $('#result').innerHTML = '';
+    $('#copyBtns').innerHTML = '';
+    return;
+  }
+  const { blocks, bits } = r;
+
+  if (op === 'overlap') {
+    const pairs = [];
+    for (let i = 0; i < blocks.length; i++) {
+      for (let j = i+1; j < blocks.length; j++) {
+        if (blocks[i].start <= blocks[j].end && blocks[j].start <= blocks[i].end) {
+          pairs.push([blocks[i].raw, blocks[j].raw]);
+        }
+      }
+    }
+    if (pairs.length === 0) {
+      $('#status').innerHTML = `<span class="overlap-no">${t('noOverlap')}</span>`;
+      $('#result').innerHTML = `<div class="result-card"><span class="overlap-no">✓ ${t('noOverlap')}</span></div>`;
+    } else {
+      const rows = pairs.map(p => `<div class="cidr-line"><span class="overlap-yes">⚠</span> <b>${p[0]}</b> ↔ <b>${p[1]}</b></div>`).join('');
+      $('#result').innerHTML = `
+        <div class="result-card">
+          <h3>${t('overlapsFound')} <span class="overlap-yes">${pairs.length} ${t('pairs')}</span></h3>
+          ${rows}
+        </div>`;
+      $('#status').innerHTML = `<span class="overlap-yes">⚠ ${pairs.length} ${t('pairs')}</span>`;
+    }
+    $('#copyBtns').innerHTML = '';
+    return;
+  }
+
+  if (op === 'union') {
+    const sorted = [...blocks].sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
+    // Merge overlapping/adjacent ranges
+    const merged = [];
+    for (const b of sorted) {
+      const last = merged[merged.length - 1];
+      if (last && b.start <= last.end + 1n) {
+        if (b.end > last.end) last.end = b.end;
+      } else {
+        merged.push({ start: b.start, end: b.end });
+      }
+    }
+    // Convert each merged range back to CIDR
+    let allCidrs = [];
+    for (const m of merged) {
+      allCidrs = allCidrs.concat(rangeToCidr(m.start, m.end, bits));
+    }
+    const rows = allCidrs.map(c => `<div class="cidr-line">${c}</div>`).join('');
+    $('#result').innerHTML = `
+      <div class="result-card">
+        <h3>${t('unionResult')} <b>${allCidrs.length}</b> ${t('blocks')}</h3>
+        ${rows}
+      </div>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${allCidrs.length} ${t('blocks')}</span>`;
+    $('#copyBtns').innerHTML = `<button class="gz-btn" id="copyAll">${t('copyResult')}</button>`;
+    $('#copyAll').onclick = () => copyText(allCidrs.join('\n'));
+    return;
+  }
+
+  if (op === 'intersect') {
+    // Intersection: max(starts) to min(ends). If maxStart > minEnd → empty.
+    let maxStart = blocks[0].start, minEnd = blocks[0].end;
+    for (const b of blocks) {
+      if (b.start > maxStart) maxStart = b.start;
+      if (b.end < minEnd) minEnd = b.end;
+    }
+    if (maxStart > minEnd) {
+      $('#result').innerHTML = `<div class="result-card"><span style="color:var(--text2)">${t('intersectEmpty')}</span></div>`;
+      $('#status').innerHTML = `<span style="color:var(--gz-accent)">∅</span>`;
+      $('#copyBtns').innerHTML = '';
+      return;
+    }
+    const cidrs = rangeToCidr(maxStart, minEnd, bits);
+    const rows = cidrs.map(c => `<div class="cidr-line">${c}</div>`).join('');
+    $('#result').innerHTML = `
+      <div class="result-card">
+        <h3>${t('intersectResult')} — ${cidrs.length} ${t('blocks')}</h3>
+        <div class="kv"><span>Start</span><span style="font-family:monospace">${bigIntToIp(maxStart, bits)}</span></div>
+        <div class="kv"><span>End</span><span style="font-family:monospace">${bigIntToIp(minEnd, bits)}</span></div>
+        ${rows}
+      </div>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${cidrs.length} ${t('blocks')}</span>`;
+    $('#copyBtns').innerHTML = `<button class="gz-btn" id="copyAll">${t('copyResult')}</button>`;
+    $('#copyAll').onclick = () => copyText(cidrs.join('\n'));
+    return;
+  }
+
+  if (op === 'contain') {
+    // For each consecutive pair, check if line[i] contains line[i+1]
+    const rows = [];
+    for (let i = 1; i < blocks.length; i++) {
+      const a = blocks[i-1], b = blocks[i];
+      const contains = (a.start <= b.start && b.end <= a.end);
+      const reverse = (b.start <= a.start && a.end <= b.end);
+      let icon, txt, cls;
+      if (contains) { icon = '✓'; txt = `<b>${b.raw}</b> ${t('containYes')} <b>${a.raw}</b>`; cls = 'overlap-no'; }
+      else if (reverse) { icon = '⇄'; txt = `<b>${a.raw}</b> ${t('containYes')} <b>${b.raw}</b> (reverse)`; cls = 'overlap-no'; }
+      else { icon = '✗'; txt = `<b>${b.raw}</b> ${t('containNo')} <b>${a.raw}</b>`; cls = 'overlap-yes'; }
+      rows.push(`<div class="cidr-line"><span class="${cls}">${icon}</span> ${txt}</div>`);
+    }
+    $('#result').innerHTML = `
+      <div class="result-card">
+        <h3>${t('containResult')}</h3>
+        ${rows.join('')}
+      </div>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${blocks.length-1} ${t('pairs')}</span>`;
+    $('#copyBtns').innerHTML = '';
+    return;
+  }
+}
+
+$('#toolbar').innerHTML = '';
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/ipv4-subnet-calculator.html', name:'IPv4 Subnet'},
+    {icon:'🔗', href:'/dev/cidr-merger.html', name:'CIDR Merger'},
+    {icon:'🔀', href:'/dev/ip-cidr-converter.html', name:'IP ⇄ CIDR'},
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

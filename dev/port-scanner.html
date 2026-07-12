@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Port Scanner & Open Port Tester | GameZipper Tools</title>
+  <meta name="description" content="Test whether common TCP ports are open on any host. Scan port 80, 443, 22, 21, 3389, 8080 and more against a hostname or IP — free, fast and runs in your browser. No signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/port-scanner.html">
+  <meta property="og:title" content="Port Scanner & Open Port Tester | GameZipper Tools">
+  <meta property="og:description" content="Test whether common TCP ports are open on any host. Scan port 80, 443, 22, 21, 3389, 8080 and more against a hostname or IP — free, fast and runs in your browser. No signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/port-scanner.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Port Scanner & Open Port Tester | GameZipper Tools">
+<meta name="twitter:description" content="Test whether common TCP ports are open on any host. Scan port 80, 443, 22, 21, 3389, 8080 and more — free, fast, browser-only.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.host-input{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.host-input input{flex:1;min-width:200px}
+.port-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);font-size:.9rem}
+.port-row:last-child{border-bottom:none}
+.port-num{font-family:monospace;font-weight:700;color:var(--accent)}
+.port-svc{color:var(--text2);font-size:.85em}
+.tag{display:inline-block;padding:2px 10px;border-radius:14px;font-size:.78em;font-weight:700}
+.tag-open{background:#27ae60;color:#fff}
+.tag-closed{background:#e74c3c;color:#fff}
+.tag-filtered{background:#f39c12;color:#fff}
+.tag-pending{background:var(--glass);color:var(--text3)}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.summary .pill{background:var(--glass2);border:1px solid var(--border);padding:8px 14px;border-radius:20px;font-size:.9rem;font-weight:600}
+.note{font-size:.82em;color:var(--text2);padding:10px;background:var(--glass);border-radius:10px;margin-top:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Port Scanner & Open Port Tester","description":"Test whether common TCP ports are open on any host. Scan port 80, 443, 22, 21, 3389, 8080 and more against a hostname or IP — free, fast and runs in your browser. No signup.","url":"https://tools.gamezipper.com/dev/port-scanner.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can a browser really scan ports?","acceptedAnswer":{"@type":"Answer","text":"Browsers cannot open raw TCP sockets, but they can attempt to load resources from well-known URLs on each port (HTTP, HTTPS, FTP). If the connection succeeds or fails fast, the port is open; if it times out, the port is filtered by a firewall. This produces a useful quick scan."}},{"@type":"Question","name":"What are the most common TCP ports?","acceptedAnswer":{"@type":"Answer","text":"Port 80 (HTTP), 443 (HTTPS), 22 (SSH), 21 (FTP), 25 (SMTP), 53 (DNS), 110 (POP3), 143 (IMAP), 3306 (MySQL), 3389 (RDP), 5432 (PostgreSQL), 6379 (Redis), 8080 (HTTP alt), 8443 (HTTPS alt) and 27017 (MongoDB)."}},{"@type":"Question","name":"Why does a port show as 'filtered'?","acceptedAnswer":{"@type":"Answer","text":"A filtered port means the scan could not determine if it is open or closed because a firewall silently dropped the connection (no response). This usually means a firewall is active."}},{"@type":"Question","name":"Is this port scanner legal?","acceptedAnswer":{"@type":"Answer","text":"Yes for hosts you own or have permission to test. Scanning third-party hosts without authorization may violate terms of service or computer-misuse laws in some countries. Only scan your own servers."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/port-scanner.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/port-scanner.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/port-scanner.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="host-input">
+      <input id="hostInput" placeholder="example.com or 1.2.3.4" autocomplete="off">
+      <button class="gz-btn" id="scanBtn"></button>
+    </div>
+    <div id="status" style="margin-bottom:10px"></div>
+    <div id="summary"></div>
+    <div id="result"></div>
+    <div class="note" id="note"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Port Scanner & Open Port Tester',
+    toolDesc: 'Quickly check whether common TCP ports (80, 443, 22, 21, 3389, 8080 and more) are open on any host. Browser-based fetch probing with per-port results — free, fast and no signup.',
+    scan: 'Scan Ports',
+    step1: 'Enter a hostname (example.com) or an IP address (1.2.3.4)',
+    step2: 'Click Scan Ports — the tool probes common TCP ports in parallel',
+    step3: 'Each port shows as open, closed or filtered (firewalled)',
+    step4: 'Use this only on hosts you own or are authorized to test',
+    invalidHost: 'Please enter a valid hostname or IP address.',
+    scanning: 'Scanning',
+    open: 'Open',
+    closed: 'Closed',
+    filtered: 'Filtered',
+    pending: 'checking…',
+    openCount: 'Open',
+    closedCount: 'Closed',
+    filteredCount: 'Filtered',
+    note: 'Note: browsers cannot open raw sockets. This tool probes well-known HTTP/HTTPS/FTP URLs on each port — a fast success or fail means open or closed, a timeout means filtered. Only scan hosts you own or are authorized to test.',
+    portSvc: 'service',
+  },
+  zh: {
+    toolTitle: '端口扫描器 — 开放端口测试',
+    toolDesc: '快速检测任意主机上的常见 TCP 端口（80、443、22、21、3389、8080 等）是否开放。浏览器端并行探测，逐端口显示结果 — 免费、快速、无需注册。',
+    scan: '扫描端口',
+    step1: '输入主机名（example.com）或 IP 地址（1.2.3.4）',
+    step2: '点击「扫描端口」— 工具会并行探测常见 TCP 端口',
+    step3: '每个端口显示为开放、关闭或被过滤（防火墙）',
+    step4: '仅对你拥有或被授权测试的主机使用本工具',
+    invalidHost: '请输入有效的主机名或 IP 地址。',
+    scanning: '正在扫描',
+    open: '开放',
+    closed: '关闭',
+    filtered: '被过滤',
+    pending: '检测中…',
+    openCount: '开放',
+    closedCount: '关闭',
+    filteredCount: '被过滤',
+    note: '注意：浏览器无法打开原始套接字。本工具通过探测每个端口上的常见 HTTP/HTTPS/FTP URL 来判断 — 快速成功或失败表示开放或关闭，超时表示被过滤。请仅扫描你拥有或被授权测试的主机。',
+    portSvc: '服务',
+  }
+});
+
+const { $, t } = GZ;
+$('#scanBtn').textContent = t('scan');
+$('#hostInput').addEventListener('keydown', e => { if (e.key === 'Enter') doScan(); });
+$('#scanBtn').addEventListener('click', doScan);
+$('#note').textContent = t('note');
+
+const COMMON_PORTS = [
+  { p: 20,   svc: 'FTP Data',     proto: 'ftp' },
+  { p: 21,   svc: 'FTP',          proto: 'ftp' },
+  { p: 22,   svc: 'SSH',          proto: 'ssh' },
+  { p: 23,   svc: 'Telnet',       proto: 'telnet' },
+  { p: 25,   svc: 'SMTP',         proto: 'smtp' },
+  { p: 53,   svc: 'DNS',          proto: 'dns' },
+  { p: 80,   svc: 'HTTP',         proto: 'http' },
+  { p: 110,  svc: 'POP3',         proto: 'pop3' },
+  { p: 143,  svc: 'IMAP',         proto: 'imap' },
+  { p: 443,  svc: 'HTTPS',        proto: 'https' },
+  { p: 445,  svc: 'SMB',          proto: 'smb' },
+  { p: 993,  svc: 'IMAPS',        proto: 'imaps' },
+  { p: 995,  svc: 'POP3S',        proto: 'pop3s' },
+  { p: 1433, svc: 'MS SQL',       proto: 'mssql' },
+  { p: 3306, svc: 'MySQL',        proto: 'mysql' },
+  { p: 3389, svc: 'RDP',          proto: 'rdp' },
+  { p: 5432, svc: 'PostgreSQL',   proto: 'postgres' },
+  { p: 5900, svc: 'VNC',          proto: 'vnc' },
+  { p: 6379, svc: 'Redis',        proto: 'redis' },
+  { p: 8080, svc: 'HTTP Alt',     proto: 'http' },
+  { p: 8443, svc: 'HTTPS Alt',    proto: 'https' },
+  { p: 27017,svc: 'MongoDB',      proto: 'mongodb' },
+];
+
+function validHost(h) {
+  h = h.trim();
+  if (!h) return false;
+  // IP or hostname
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(h)) return true;
+  if (/^[a-f0-9:]+$/i.test(h) && h.includes(':')) return true;
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(h);
+}
+
+function buildUrl(host, portInfo) {
+  const proto = (portInfo.p === 443 || portInfo.p === 8443 || portInfo.p === 993 || portInfo.p === 995) ? 'https' : 'http';
+  return `${proto}://${host}:${portInfo.p}/`;
+}
+
+async function probePort(host, portInfo) {
+  const url = buildUrl(host, portInfo);
+  const start = performance.now();
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    await fetch(url, { mode: 'no-cors', signal: ctrl.signal, cache: 'no-store', redirect: 'manual' });
+    clearTimeout(tid);
+    const elapsed = Math.round(performance.now() - start);
+    return { status: 'open', ms: elapsed };
+  } catch (e) {
+    clearTimeout(tid);
+    const elapsed = Math.round(performance.now() - start);
+    if (e.name === 'AbortError') return { status: 'filtered', ms: elapsed };
+    // Network errors that arrive quickly → port is closed (TCP RST)
+    if (elapsed < 1500) return { status: 'closed', ms: elapsed };
+    return { status: 'filtered', ms: elapsed };
+  }
+}
+
+async function doScan() {
+  const host = $('#hostInput').value.trim();
+  if (!validHost(host)) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">⚠ ${t('invalidHost')}</span>`;
+    $('#result').innerHTML = '';
+    $('#summary').innerHTML = '';
+    return;
+  }
+  $('#status').innerHTML = `<span style="color:var(--text2)">⏳ ${t('scanning')} ${host}…</span>`;
+  $('#summary').innerHTML = '';
+  // Render pending rows
+  $('#result').innerHTML = COMMON_PORTS.map(pt => `
+    <div class="port-row" id="row-${pt.p}">
+      <span><span class="port-num">${pt.p}</span> <span class="port-svc">${pt.svc}</span></span>
+      <span class="tag tag-pending" id="tag-${pt.p}">${t('pending')}</span>
+    </div>`).join('');
+
+  // Probe in parallel batches of 6
+  const counts = { open: 0, closed: 0, filtered: 0 };
+  let done = 0;
+  const total = COMMON_PORTS.length;
+
+  async function worker(idx) {
+    for (let i = idx; i < COMMON_PORTS.length; i += 6) {
+      const pt = COMMON_PORTS[i];
+      const r = await probePort(host, pt);
+      const tag = $(`#tag-${pt.p}`);
+      if (tag) {
+        counts[r.status]++;
+        tag.className = 'tag tag-' + r.status;
+        tag.textContent = `${t(r.status)}${r.ms ? ' · ' + r.ms + 'ms' : ''}`;
+      }
+      done++;
+      $('#status').innerHTML = `<span style="color:var(--text2)">⏳ ${t('scanning')} ${host}… (${done}/${total})</span>`;
+    }
+  }
+
+  await Promise.all([worker(0), worker(1), worker(2), worker(3), worker(4), worker(5)]);
+
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${host}: ${counts.open} ${t('openCount')} / ${counts.closed} ${t('closedCount')} / ${counts.filtered} ${t('filteredCount')}</span>`;
+  $('#summary').innerHTML = `
+    <div class="summary">
+      <span class="pill">✓ ${counts.open} ${t('openCount')}</span>
+      <span class="pill">✗ ${counts.closed} ${t('closedCount')}</span>
+      <span class="pill">⚠ ${counts.filtered} ${t('filteredCount')}</span>
+    </div>`;
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('hostInput').value='example.com'">example.com</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('hostInput').value='github.com'">github.com</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('hostInput').value='cloudflare.com'">cloudflare.com</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔌', href:'/dev/port-checker.html', name:'Port Checker'},
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP'},
+    {icon:'🔍', href:'/dev/whois-lookup.html', name:'Whois'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
