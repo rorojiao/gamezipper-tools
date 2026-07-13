@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>批量网址打开工具 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="一键批量打开多个网址。粘贴链接列表（每行一个，或用逗号/空格分隔）、预览，然后在单独标签页中全部打开。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/multi-url-opener.html">
+<meta property="og:title" content="批量网址打开工具">
+<meta property="og:description" content="一键批量打开多个网址。粘贴链接列表（每行一个，或用逗号/空格分隔）、预览，然后在单独标签页中全部打开。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/multi-url-opener.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="批量网址打开工具">
+<meta name="twitter:description" content="一键批量打开多个网址。粘贴链接列表（每行一个，或用逗号/空格分隔）、预览，然后在单独标签页中全部打开。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.opts{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center;margin:10px 0;font-size:.85rem;color:var(--text2)}
+.opts label{display:flex;gap:6px;align-items:center}
+#input{min-height:200px;font-family:monospace;font-size:.9em}
+#status{margin-top:10px;font-size:.85em}
+.url-list{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.url-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--glass2);border:1px solid var(--border);border-radius:8px;font-size:.85rem}
+.url-item.invalid{opacity:.5}
+.url-item .ic{font-size:1.1em}
+.url-item .url{flex:1;word-break:break-all;font-family:monospace}
+.url-item .tag{font-size:.75em;padding:2px 8px;border-radius:10px;background:var(--glass)}
+.gz-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Multi URL Opener","description":"Open multiple URLs at once with one click. Paste a list of links and launch them all in separate tabs — free, no signup, 100% browser-only.","url": "https://tools.gamezipper.com/zh/dev/multi-url-opener.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://***@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I open multiple URLs at once?","acceptedAnswer":{"@type":"Answer","text":"Paste your list of URLs into the text area (one per line, or comma/space separated), then click Open All URLs. Each valid link opens in a new browser tab. Your browser may ask permission to open multiple pop-ups — click Allow."}},{"@type":"Question","name":"Why don't all tabs open at once?","acceptedAnswer":{"@type":"Answer","text":"Browsers block mass pop-ups to protect users. When you click Open All, your browser will show a prompt asking whether to allow multiple tabs. Click Allow or Always allow pop-ups for this site, and all links will open."}},{"@type":"Question","name":"Is there a limit to how many URLs I can open?","acceptedAnswer":{"@type":"Answer","text":"There is no hard limit in the tool, but for performance and stability we recommend opening no more than 30-50 URLs at a time. Each open tab uses memory, so very large batches may slow down your browser."}},{"@type":"Question","name":"Is my URL list uploaded to a server?","acceptedAnswer":{"@type":"Answer","text":"No. The list is parsed and the tabs are opened entirely by your browser. Nothing is sent anywhere."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/multi-url-opener.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/multi-url-opener.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/multi-url-opener.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <textarea id="input" spellcheck="false" placeholder="https://example.com&#10;https://google.com&#10;example.org/path"></textarea>
+    <div class="opts">
+      <label><input type="checkbox" id="lazy" checked> <span id="lbl-lazy"></span></label>
+      <label><input type="checkbox" id="dedupe" checked> <span id="lbl-dedupe"></span></label>
+      <label><input type="checkbox" id="https"> <span id="lbl-https"></span></label>
+    </div>
+    <div id="status"></div>
+    <div class="url-list" id="urllist"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Multi URL Opener',
+    toolDesc: 'Open many URLs at once with a single click. Paste a list of links (one per line, or comma/space separated), preview, and launch them all in separate tabs.',
+    openAll: 'Open All URLs',
+    preview: 'Preview',
+    clear: 'Clear',
+    example: 'Example',
+    lblIn: 'Paste URLs here — one per line',
+    lblOut: 'Status',
+    lblLazy: 'Open in background tab (lazy)',
+    lblDedupe: 'Remove duplicates',
+    lblHttps: 'Add https:// to bare domains',
+    found: (n, o) => `${n} valid URL${n===1?'':'s'} found (${o} skipped)`,
+    noValid: 'No valid URLs found',
+    popupHint: '⚠️ Your browser may prompt to allow multiple pop-ups — click Allow to open all tabs.',
+    opened: (n) => `Opening ${n} URL${n===1?'':'s'}...`,
+    step1: 'Paste your URLs into the text box (one per line, or separated by commas/spaces)',
+    step2: 'Tick options: deduplicate, add https://, open in background',
+    step3: 'Click Preview to see how many valid URLs were found',
+    step4: 'Click Open All URLs — allow pop-ups if your browser asks',
+  },
+  zh: {
+    toolTitle: '批量网址打开工具',
+    toolDesc: '一键批量打开多个网址。粘贴链接列表（每行一个，或用逗号/空格分隔）、预览，然后在单独标签页中全部打开。',
+    openAll: '全部打开',
+    preview: '预览',
+    clear: '清空',
+    example: '示例',
+    lblIn: '在此粘贴网址 — 每行一个',
+    lblOut: '状态',
+    lblLazy: '在后台标签页打开（延迟加载）',
+    lblDedupe: '去除重复',
+    lblHttps: '为裸域名补加 https://',
+    found: (n, o) => `找到 ${n} 个有效网址（跳过 ${o} 个）`,
+    noValid: '未找到有效网址',
+    popupHint: '⚠️ 浏览器可能提示是否允许打开多个弹窗 — 点击「允许」即可全部打开。',
+    opened: (n) => `正在打开 ${n} 个网址...`,
+    step1: '把网址粘贴到文本框（每行一个，或用逗号/空格分隔）',
+    step2: '勾选选项：去重、补加 https://、后台打开',
+    step3: '点击「预览」查看识别到多少个有效网址',
+    step4: '点击「全部打开」— 如浏览器询问，允许弹窗',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseUrls() {
+  const raw = $('#input').value.trim();
+  if (!raw) return [];
+  // Split on newlines, commas, and whitespace
+  const tokens = raw.split(/[\n,\s]+/).map(s => s.trim()).filter(Boolean);
+  const addHttps = $('#https').checked;
+  const dedupe = $('#dedupe').checked;
+  const seen = new Set();
+  const valid = [];
+  let skipped = 0;
+  for (let tok of tokens) {
+    // Strip surrounding <>, (), []
+    tok = tok.replace(/^[<(\[]+|[>\)\]]+$/g, '');
+    if (!tok) continue;
+    let candidate = tok;
+    if (addHttps && !/^[a-z]+:\/\//i.test(candidate) && !candidate.startsWith('//')) {
+      candidate = 'https://' + candidate;
+    } else if (candidate.startsWith('//')) {
+      candidate = 'https:' + candidate;
+    }
+    // Validate URL
+    let u;
+    try { u = new URL(candidate); } catch (e) { skipped++; continue; }
+    if (!['http:','https:'].includes(u.protocol)) { skipped++; continue; }
+    if (dedupe) {
+      const key = u.href.replace(/\/$/, '');
+      if (seen.has(key)) { skipped++; continue; }
+      seen.add(key);
+    }
+    valid.push(u.href);
+  }
+  $('#status').dataset.skipped = skipped;
+  return valid;
+}
+
+function renderPreview(urls) {
+  const list = $('#urllist');
+  list.innerHTML = '';
+  urls.forEach(u => {
+    const item = document.createElement('div');
+    item.className = 'url-item';
+    let host = '';
+    try { host = new URL(u).hostname.replace(/^www\./,''); } catch(e){}
+    item.innerHTML = `<span class="ic">🔗</span><span class="url">${u.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span><span class="tag">${host}</span>`;
+    list.appendChild(item);
+  });
+}
+
+function doPreview() {
+  const urls = parseUrls();
+  renderPreview(urls);
+  const skipped = parseInt($('#status').dataset.skipped || '0', 10);
+  if (urls.length === 0) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noValid')}</span>`;
+  } else {
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('found', urls.length, skipped)}</span><br><small>${t('popupHint')}</small>`;
+  }
+}
+
+function doOpenAll() {
+  const urls = parseUrls();
+  if (!urls.length) { $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noValid')}</span>`; return; }
+  const lazy = $('#lazy').checked;
+  urls.forEach(u => {
+    const a = document.createElement('a');
+    a.href = u;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    // For "lazy/background" we just rely on browser default; noopener prevents focus in most browsers anyway
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+  renderPreview(urls);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('opened', urls.length)}</span><br><small>${t('popupHint')}</small>`;
+}
+
+function loadExample() {
+  $('#input').value = 'https://google.com\nhttps://github.com\nexample.org/page\ntools.gamezipper.com\nhttps://news.ycombinator.com';
+  doPreview();
+}
+
+function doClear() {
+  $('#input').value = '';
+  $('#urllist').innerHTML = '';
+  $('#status').innerHTML = '';
+}
+
+// Re-preview on option change
+['lazy','dedupe','https'].forEach(id => $('#'+id).addEventListener('change', doPreview));
+$('#input').addEventListener('input', () => { /* live preview only on demand to avoid flicker */ });
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doOpenAll()">🚀 ${t('openAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doPreview()">${t('preview')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-lazy').textContent = t('lblLazy');
+$('#lbl-dedupe').textContent = t('lblDedupe');
+$('#lbl-https').textContent = t('lblHttps');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/dev/url-encode.html', name:'URL Encode/Decode'},
+    {icon:'🔗', href:'/text/slug.html', name:'Slug Generator'},
+    {icon:'📋', href:'/seo/redirect-checker.html', name:'Redirect Checker'},
+    {icon:'📑', href:'/dev/http-headers-checker.html', name:'HTTP Headers Checker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

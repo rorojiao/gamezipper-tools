@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Cron 表达式验证器 & 解释器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="验证任意 cron 表达式并用通俗语言解释。查看接下来 10 次执行时间，即时发现语法错误。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/cron-validator.html">
+  <meta property="og:title" content="Cron 表达式验证器 & 解释器">
+  <meta property="og:description" content="验证任意 cron 表达式并用通俗语言解释。查看接下来 10 次执行时间，即时发现语法错误。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/cron-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Cron 表达式验证器 & 解释器">
+<meta name="twitter:description" content="验证任意 cron 表达式并用通俗语言解释。查看接下来 10 次执行时间，即时发现语法错误。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.cron-field{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cron-field input{flex:1;min-width:240px;font-family:monospace;font-size:1rem;padding:10px 12px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text)}
+.cron-field input:focus{outline:none;border-color:var(--accent)}
+.cron-explain{font-size:1.1rem;font-weight:700;min-height:1.6em;text-align:center;margin:10px 0}
+.cron-explain.ok{color:var(--accent)}
+.cron-explain.err{color:#ff6b6b}
+.cron-segs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}
+@media(max-width:680px){.cron-segs{grid-template-columns:repeat(2,1fr)}}
+.cron-seg{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.cron-seg .h{font-size:.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.cron-seg .v{font-family:monospace;font-weight:800;font-size:1.05rem;margin:2px 0}
+.cron-seg .d{font-size:.74rem;color:var(--text3)}
+.cron-next{margin-top:10px}
+.cron-next h3{margin:0 0 6px;font-size:.95rem}
+.cron-next ol{margin:0;padding-left:20px;font-family:monospace;font-size:.85rem}
+.cron-presets{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.cron-presets button{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--glass);color:var(--text);cursor:pointer;font-size:.8rem}
+.cron-presets button:hover{border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Cron Expression Validator","description":"Validate cron expressions and explain them in plain English. Check syntax, see the next 10 run times, and catch errors instantly. Supports 5-field standard cron. Free, browser-only, no signup.","url": "https://tools.gamezipper.com/zh/dev/cron-validator.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a cron expression?", "acceptedAnswer": {"@type": "Answer", "text": "A cron expression is a string of 5 fields (minute, hour, day of month, month, day of week) used by job schedulers like Linux cron to describe when a task should run. For example, 0 9 * * 1-5 runs at 9:00 AM every weekday."}}, {"@type": "Question", "name": "What does each cron field mean?", "acceptedAnswer": {"@type": "Answer", "text": "Field 1 is minute (0-59), field 2 is hour (0-23), field 3 is day of the month (1-31), field 4 is month (1-12 or JAN-DEC), and field 5 is day of the week (0-6 or SUN-SAT, where 0 and 7 are both Sunday). An asterisk means every value."}}, {"@type": "Question", "name": "What special characters are supported?", "acceptedAnswer": {"@type": "Answer", "text": "Asterisk * means all values, comma lists values (1,15,30), hyphen gives a range (9-17), slash sets a step (*/15 means every 15 minutes), and you can combine them like 1-59/15."}}, {"@type": "Question", "name": "Does this handle 6-field or Quartz cron?", "acceptedAnswer": {"@type": "Answer", "text": "This validator focuses on the standard 5-field Unix cron format, which is the most common. For advanced formats with seconds or year fields, check the generated explanation carefully against your specific scheduler's documentation."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/cron-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/cron-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/cron-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="cron-field">
+      <input type="text" id="cronInput" value="*/5 * * * *" spellcheck="false" placeholder="*/5 * * * *" />
+      <button class="gz-btn" id="btnCheck" onclick="doCheck()">✓ <span id="lblCheck"></span></button>
+    </div>
+    <div class="cron-presets" id="presets"></div>
+    <div class="cron-explain" id="explain"></div>
+    <div class="cron-segs" id="segs"></div>
+    <div class="cron-next">
+      <h3 id="lblNextRuns"></h3>
+      <ol id="nextRuns"></ol>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Cron Expression Validator & Explainer',
+    toolDesc: 'Validate any cron expression and read it in plain English. See the next 10 scheduled run times and catch syntax errors instantly.',
+    lblCheck: 'Validate',
+    lblNextRuns: 'Next 10 run times (from now)',
+    valid: '✓ Valid',
+    invalid: (m) => '✗ Invalid: ' + m,
+    minute: 'Minute', hour: 'Hour', dom: 'Day of Month', month: 'Month', dow: 'Day of Week',
+    every: (u) => 'every ' + u,
+    everyN: (n,u) => 'every ' + n + ' ' + u,
+    at: (v,u) => 'at ' + v + ' ' + u,
+    range: (a,b,u) => a + '-' + b + ' ' + u,
+    values: (v,u) => v + ' ' + u,
+    step1: 'Type or paste a cron expression (5 fields separated by spaces)',
+    step2: 'Press Validate or just start typing to check it live',
+    step3: 'Read the plain-English explanation of when it runs',
+    step4: 'Check the next 10 scheduled run times to confirm the schedule',
+  },
+  zh: {
+    toolTitle: 'Cron 表达式验证器 & 解释器',
+    toolDesc: '验证任意 cron 表达式并用通俗语言解释。查看接下来 10 次执行时间，即时发现语法错误。',
+    lblCheck: '验证',
+    lblNextRuns: '接下来 10 次运行时间（从现在起）',
+    valid: '✓ 有效',
+    invalid: (m) => '✗ 无效：' + m,
+    minute: '分钟', hour: '小时', dom: '日期', month: '月份', dow: '星期',
+    every: (u) => '每 ' + u,
+    everyN: (n,u) => '每 ' + n + ' ' + u,
+    at: (v,u) => v + ' ' + u,
+    range: (a,b,u) => a + '-' + b + ' ' + u,
+    values: (v,u) => v + ' ' + u,
+    step1: '输入或粘贴 cron 表达式（5 个字段，用空格分隔）',
+    step2: '点击「验证」或直接输入实时检查',
+    step3: '阅读通俗语言解释，了解何时运行',
+    step4: '查看接下来 10 次计划运行时间以确认',
+  }
+});
+
+const { $, t } = GZ;
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const DOWS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const FIELDS = [
+  {key:'minute', min:0, max:59, unit:'minute(s)'},
+  {key:'hour', min:0, max:23, unit:'hour(s)'},
+  {key:'dom', min:1, max:31, unit:'day(s)'},
+  {key:'month', min:1, max:12, unit:'month(s)', names:MONTHS},
+  {key:'dow', min:0, max:7, unit:'weekday(s)', names:DOWS},
+];
+
+function parseField(raw, f){
+  const errors = [];
+  // normalize names to numbers
+  let s = raw.toUpperCase();
+  if(f.names){ for(let i=0;i<f.names.length;i++){ s = s.split(f.names[i]).join(String(f.key==='dow'? (i%7)+1 : i+1)); } }
+  // handle 7 -> 0 for dow
+  if(f.key==='dow') s = s.replace(/\b7\b/g,'0');
+  if(s === '*') return {values:null, raw, err:null};
+  const result = new Set();
+  for(const part of s.split(',')){
+    const m = part.match(/^(\*|\d+(?:-\d+)?)?(?:\/(\d+))?$/);
+    if(!m){ errors.push(part); continue; }
+    let base = m[1] || '*';
+    const step = m[2] ? parseInt(m[2],10) : 1;
+    let lo, hi;
+    if(base === '*'){ lo = f.min; hi = f.max; }
+    else if(base.includes('-')){ const[ a,b ] = base.split('-').map(n=>parseInt(n,10)); lo=a; hi=b; }
+    else { lo = parseInt(base,10); hi = (m[2] ? f.max : lo); }
+    if(lo < f.min || hi > f.max || lo > hi){ errors.push(part); continue; }
+    for(let v=lo; v<=hi; v+=step){ result.add(f.key==='dow' ? v%7 : v); }
+  }
+  if(errors.length) return {values:null, raw, err:errors.join(', ')+' in '+f.key};
+  return {values:Array.from(result).sort((a,b)=>a-b), raw, err:null};
+}
+
+function describeField(parsed, f, lang){
+  const zh = lang==='zh';
+  const unitZh = {minute:'分钟',hour:'小时',dom:'日',month:'月',dow:'周'}[f.key];
+  const u = zh ? unitZh : f.unit;
+  const name = t(f.key);
+  if(parsed.values === null) return `${name}: ${t('every', zh?'':u).replace('every ','')||u}`.replace(': :',': ') ;
+  // simpler: just describe
+  if(parsed.values === null) return `${name}: ${zh?'每'+unitZh : 'every '+f.unit}`;
+  const vs = parsed.values;
+  if(vs.length > 10) return `${name}: ${vs.slice(0,10).join(',')}… (${vs.length} values)`;
+  return `${name}: ${vs.join(',')}`;
+}
+
+function doCheck(){
+  const raw = $('#cronInput').value.trim();
+  const exp = $('#explain'); exp.className='cron-explain';
+  if(!raw){ exp.textContent=''; $('#segs').innerHTML=''; $('#nextRuns').innerHTML=''; return; }
+  const parts = raw.split(/\s+/);
+  if(parts.length !== 5){ exp.textContent = t('invalid', 'expected 5 fields'); exp.className='cron-explain err'; $('#segs').innerHTML=''; $('#nextRuns').innerHTML=''; return; }
+  const parsed = parts.map((p,i)=>parseField(p, FIELDS[i]));
+  const errField = parsed.find(p=>p.err);
+  if(errField){ exp.textContent = t('invalid', errField.err); exp.className='cron-explain err'; $('#segs').innerHTML=''; $('#nextRuns').innerHTML=''; return; }
+  exp.textContent = t('valid') + ' — ' + describeSchedule(parsed);
+  exp.className = 'cron-explain ok';
+  // segments
+  const lang = GZI18n.getLang();
+  $('#segs').innerHTML = FIELDS.map((f,i)=>`<div class="cron-seg"><div class="h">${t(f.key)}</div><div class="v">${parts[i]}</div><div class="d">${describeField(parsed[i],f,lang)}</div></div>`).join('');
+  // next runs
+  const next = computeNextRuns(parsed, 10);
+  $('#nextRuns').innerHTML = next.map(d=>`<li>${d.toLocaleString(lang==='zh'?'zh-CN':'en-US')}</li>`).join('');
+}
+
+function describeSchedule(p){
+  const lang = GZI18n.getLang();
+  const zh = lang==='zh';
+  const min = p[0].values, hr = p[1].values;
+  const dom = p[2].values, mon = p[3].values, dow = p[4].values;
+  const timePart = (min&&hr) ? `${zh?'在 '+hr.join(',')+' 时 '+min.join(',')+' 分':'at '+hr.join(',')+':'+min.map(m=>String(m).padStart(2,'0')).join(',')}` : (min? `${zh?'每 '+min.join(',')+' 分':'minute '+min.join(',')}`:'');
+  const freq = [];
+  if(mon===null && dom===null && dow===null) freq.push(zh?'每天':'every day');
+  else {
+    if(dow && dow.length<=7) freq.push(zh?'每周 '+dow.map(d=>DOWS[d]).join(','):'on '+dow.map(d=>DOWS[d]).join(','));
+    if(dom && dom.length<=31) freq.push(zh?'每月 '+dom.join(',')+' 号':'on day '+dom.join(','));
+    if(mon && mon.length<=12) freq.push(zh?'在 '+mon.map(m=>MONTHS[m-1]).join(',')+' 月':'in '+mon.map(m=>MONTHS[m-1]).join(','));
+  }
+  return [timePart, ...freq].filter(Boolean).join(zh?'，':' ');
+}
+
+function computeNextRuns(parsed, count){
+  const runs = [];
+  let d = new Date(); d.setSeconds(0,0); d.setMinutes(d.getMinutes()+1);
+  const inSet = (v,set)=> set===null || set.includes(v);
+  let safety = 0;
+  while(runs.length < count && safety < 500000){
+    safety++;
+    const min=d.getMinutes(), hr=d.getHours(), dom=d.getDate(), mon=d.getMonth()+1, dow=d.getDay();
+    if(inSet(min,parsed[0].values) && inSet(hr,parsed[1].values) &&
+       inSet(dom,parsed[2].values) && inSet(mon,parsed[3].values) && inSet(dow,parsed[4].values)){
+      runs.push(new Date(d));
+    }
+    d.setMinutes(d.getMinutes()+1);
+  }
+  return runs;
+}
+
+const PRESETS = [
+  {v:'*/5 * * * *', l:{en:'Every 5 min',zh:'每 5 分钟'}},
+  {v:'0 * * * *', l:{en:'Hourly',zh:'每小时'}},
+  {v:'0 0 * * *', l:{en:'Daily midnight',zh:'每天 0 点'}},
+  {v:'0 9 * * 1-5', l:{en:'Weekdays 9AM',zh:'工作日 9 点'}},
+  {v:'0 0 * * 0', l:{en:'Weekly (Sun)',zh:'每周日'}},
+  {v:'0 0 1 * *', l:{en:'Monthly 1st',zh:'每月 1 号'}},
+];
+const lang = GZI18n.getLang();
+$('#presets').innerHTML = PRESETS.map(p=>`<button onclick="setPreset('${p.v}')">${lang==='zh'?p.l.zh:p.l.en}</button>`).join('');
+function setPreset(v){ $('#cronInput').value=v; doCheck(); }
+
+$('#cronInput').addEventListener('input', doCheck);
+$('#toolbar').innerHTML = '';
+$('#lblCheck').textContent = t('lblCheck');
+$('#lblNextRuns').textContent = t('lblNextRuns');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏰', href:'/dev/cron.html', name:'Cron Generator'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔐', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🌐', href:'/dev/regex-tester.html', name:'Regex Tester'},
+  ]
+});
+doCheck();
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

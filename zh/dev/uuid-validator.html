@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>UUID 验证器与检测器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="验证 UUID/GUID 字符串并检测版本（v1-v7）。从 v1 提取时间戳，检查变体 — 支持批量验证。免费且私密。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/uuid-validator.html">
+  <meta property="og:title" content="UUID 验证器与检测器">
+  <meta property="og:description" content="验证 UUID/GUID 字符串并检测版本（v1-v7）。从 v1 提取时间戳，检查变体 — 支持批量验证。免费且私密。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/uuid-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="UUID 验证器与检测器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{font-family:monospace;font-size:.9em;line-height:1.7}
+.uuid-result{padding:16px;border-radius:12px;margin-bottom:12px}
+.uuid-valid{background:rgba(0,214,114,.1);border:1px solid rgba(0,214,114,.3)}
+.uuid-invalid{background:rgba(233,69,96,.1);border:1px solid rgba(233,69,96,.3)}
+.uuid-detail{display:flex;gap:8px;margin:4px 0}
+.uuid-detail .label{color:var(--text2);min-width:100px;font-size:.85em}
+.uuid-detail .value{color:var(--text);font-weight:600}
+.uuid-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.75em;font-weight:700;margin-left:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"UUID Validator & Detector","description":"Validate UUID/GUID strings and detect their version (v1-v7). Check format, variant, and extract timestamp from v1 UUIDs. Free, private, browser-only.","url": "https://tools.gamezipper.com/zh/dev/uuid-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a UUID?", "acceptedAnswer": {"@type": "Answer", "text": "A UUID (Universally Unique Identifier), also called GUID, is a 128-bit identifier represented as 32 hex digits in 5 groups separated by hyphens, like 550e8400-e29b-41d4-a716-446655440000."}}, {"@type": "Question", "name": "What UUID versions exist?", "acceptedAnswer": {"@type": "Answer", "text": "Common versions: v1 (time-based), v2 (DCE security), v3 (MD5 namespace), v4 (random), v5 (SHA-1 namespace), v6 (reordered time), v7 (Unix timestamp + random). This tool detects all of them."}}, {"@type": "Question", "name": "How does the validator detect the version?", "acceptedAnswer": {"@type": "Answer", "text": "The version is encoded in the 13th hex digit (the first digit of the 3rd group). For example, 4 in xxxxxxxx-xxxx-4xxx means v4. The variant is in the 17th digit."}}, {"@type": "Question", "name": "Can I validate multiple UUIDs at once?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Enter one UUID per line and the tool validates each one individually, showing the version, variant and validity status for all of them."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/uuid-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/uuid-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/uuid-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="550e8400-e29b-41d4-a716-446655440000&#10;One UUID per line — validate multiple at once"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'UUID Validator & Detector',
+    toolDesc: 'Validate UUID/GUID strings and detect their version (v1-v7). Extract timestamps from v1, check variants — batch validate. Free and private.',
+    step1: 'Paste one or more UUIDs (one per line)',
+    step2: 'The tool validates each UUID automatically',
+    step3: 'View version, variant and timestamp details',
+    step4: 'Use the UUID generator for new random UUIDs',
+  },
+  zh: {
+    toolTitle: 'UUID 验证器与检测器',
+    toolDesc: '验证 UUID/GUID 字符串并检测版本（v1-v7）。从 v1 提取时间戳，检查变体 — 支持批量验证。免费且私密。',
+    step1: '粘贴一个或多个 UUID（每行一个）',
+    step2: '工具自动验证每个 UUID',
+    step3: '查看版本、变体和时间戳详情',
+    step4: '使用 UUID 生成器创建新的随机 UUID',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const UUID_REGEX = /^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$/i;
+
+function validateUUID(uuid) {
+  const clean = uuid.trim().toLowerCase();
+  if (!clean) return null;
+  const match = clean.match(UUID_REGEX);
+  if (!match) return { valid: false, input: uuid, reason: 'Invalid format — expected 8-4-4-4-12 hex digits' };
+
+  const versionHex = match[3][0];
+  const version = parseInt(versionHex, 16);
+  const variantChar = match[4][0];
+  const variantVal = parseInt(variantChar, 16);
+
+  // Variant check: high bits of the 17th hex digit
+  // Standard UUID variant: 10xx → 8-b
+  let variant;
+  if ((variantVal & 0xc) === 0x8) variant = 'RFC 4122 (Standard)';
+  else if ((variantVal & 0xe) === 0xc) variant = 'Microsoft (Obsolete)';
+  else if ((variantVal & 0x8) === 0x0) variant = 'NCS (Obsolete)';
+  else variant = 'Unknown';
+
+  const result = {
+    valid: version >= 1 && version <= 7 && (variantVal & 0xc) === 0x8,
+    input: uuid,
+    version: `v${version}`,
+    variant,
+    canonical: clean,
+    urn: `urn:uuid:${clean}`,
+  };
+
+  // V1 timestamp extraction
+  if (version === 1) {
+    const tl = parseInt(match[2], 16) & 0x0fff; // time_low is match[1], but timestamp is assembled differently
+    // UUID v1 timestamp: 60-bit value
+    // time_low (32), time_mid (16), time_hi_and_version (16, minus 4 version bits = 12)
+    const timeLow = parseInt(match[1], 16);
+    const timeMid = parseInt(match[2], 16);
+    const timeHi = parseInt(match[3], 16) & 0x0fff;
+    const timestamp100ns = (timeHi * Math.pow(2, 48)) + (timeMid * Math.pow(2, 32)) + timeLow;
+    // UUID epoch: October 15, 1582
+    const uuidEpoch = Date.UTC(1582, 9, 15);
+    const msSinceEpoch = timestamp100ns / 10000 - 12219292800000; // subtract offset from 1582 to 1970
+    const date = new Date(msSinceEpoch);
+    if (!isNaN(date.getTime())) {
+      result.timestamp = date.toISOString();
+    }
+    // Clock sequence
+    const clockSeq = (parseInt(match[4], 16) & 0x3fff);
+    result.clockSeq = clockSeq;
+    // Node (MAC)
+    result.node = match[5];
+  }
+
+  // V7 timestamp extraction (Unix milliseconds in first 48 bits)
+  if (version === 7) {
+    const timeMsHex = match[1] + match[2];
+    const timeMs = parseInt(timeMsHex, 16);
+    if (!isNaN(timeMs)) {
+      result.timestamp = new Date(timeMs).toISOString();
+    }
+  }
+
+  // V6 timestamp (reordered v1)
+  if (version === 6) {
+    const timeHigh = parseInt(match[1], 16);
+    const timeMid = parseInt(match[2], 16);
+    const timeLow = parseInt(match[3], 16) & 0x0fff;
+    const timestamp100ns = (timeHigh * Math.pow(2, 28)) + (timeMid * Math.pow(2, 12)) + timeLow;
+    const msSinceEpoch = timestamp100ns / 10000 - 12219292800000;
+    const date = new Date(msSinceEpoch);
+    if (!isNaN(date.getTime())) {
+      result.timestamp = date.toISOString();
+    }
+  }
+
+  return result;
+}
+
+function doValidate() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').innerHTML = ''; return; }
+  const lines = inp.split('\n').map(l => l.trim()).filter(l => l);
+  const html = lines.map(line => {
+    const r = validateUUID(line);
+    if (!r) return '';
+    if (!r.valid) {
+      return `<div class="uuid-result uuid-invalid">
+        <div><strong>✗ Invalid</strong> <code style="color:var(--text2)">${escapeHtml(r.input)}</code></div>
+        <div style="color:var(--text2);font-size:.85em;margin-top:4px">${r.reason}</div>
+      </div>`;
+    }
+    let details = `<div class="uuid-detail"><span class="label">Version:</span><span class="value"><span class="uuid-badge" style="background:var(--accent);color:#000">${r.version}</span></span></div>`;
+    details += `<div class="uuid-detail"><span class="label">Variant:</span><span class="value">${r.variant}</span></div>`;
+    details += `<div class="uuid-detail"><span class="label">Canonical:</span><span class="value" style="font-size:.8em">${r.canonical}</span></div>`;
+    details += `<div class="uuid-detail"><span class="label">URN:</span><span class="value" style="font-size:.8em">${r.urn}</span></div>`;
+    if (r.timestamp) details += `<div class="uuid-detail"><span class="label">Timestamp:</span><span class="value">${r.timestamp}</span></div>`;
+    if (r.clockSeq !== undefined) details += `<div class="uuid-detail"><span class="label">Clock Seq:</span><span class="value">0x${r.clockSeq.toString(16).padStart(4,'0')}</span></div>`;
+    if (r.node) details += `<div class="uuid-detail"><span class="label">Node (MAC):</span><span class="value">${r.node}</span></div>`;
+    return `<div class="uuid-result uuid-valid">
+      <div><strong>✓ Valid</strong> <code>${r.canonical}</code></div>
+      ${details}
+    </div>`;
+  }).join('');
+  $('#output').innerHTML = html || '<span style="color:var(--text2)">No valid UUIDs found</span>';
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadExample() {
+  $('#input').value = `550e8400-e29b-41d4-a716-446655440000
+6ba7b810-9dad-11d1-80b4-00c04fd430c8
+6ba7b811-9dad-41d1-80b4-00c04fd430c8
+6ba7b812-9dad-51d1-80b4-00c04fd430c8
+6ba7b814-9dad-61d1-80b4-00c04fd430c8
+1ed3a80a-a000-7000-b000-000000000000
+12345678-1234-5678-9abc-def012345678
+not-a-valid-uuid
+{}`;
+  doValidate();
+}
+
+function genV4() {
+  if (crypto.randomUUID) {
+    $('#input').value = crypto.randomUUID();
+  } else {
+    // Fallback
+    const b = new Uint8Array(16);
+    crypto.getRandomValues(b);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    const h = [...b].map(x => x.toString(16).padStart(2,'0'));
+    $('#input').value = `${h.slice(0,4).join('')}-${h.slice(4,6).join('')}-${h.slice(6,8).join('')}-${h.slice(8,10).join('')}-${h.slice(10,16).join('')}`;
+  }
+  doValidate();
+}
+
+function doClear() { $('#input').value = ''; $('#output').innerHTML = ''; }
+
+$('#input').addEventListener('input', doValidate);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="genV4()">🎲 Generate v4</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🆔', href:'/dev/uuid.html', name:'UUID Generator'},
+    {icon:'🔐', href:'/dev/api-key-generator.html', name:'API Key Gen'},
+    {icon:'🔑', href:'/dev/password-generator.html', name:'Password Gen'},
+    {icon:'🎟️', href:'/dev/license-key-generator.html', name:'License Key'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

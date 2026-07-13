@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>HJSON 转 JSON 转换器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="将 HJSON（Human JSON）转换为标准 JSON。支持注释、不加引号的键/值、多行字符串和尾随逗号 — 100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/hjson-to-json.html">
+  <meta property="og:title" content="HJSON 转 JSON 转换器">
+  <meta property="og:description" content="将 HJSON（Human JSON）转换为标准 JSON。支持注释、不加引号的键/值、多行字符串和尾随逗号 — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/hjson-to-json.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HJSON 转 JSON 转换器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:60px}
+#status{margin-top:8px;font-size:.85em}
+.gz-check{display:flex;align-items:center;gap:4px;font-size:.85em;cursor:pointer}
+.gz-check input{margin:0}
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HJSON to JSON Converter","description":"Convert HJSON (Human JSON) to standard JSON instantly. Supports comments, unquoted keys/values, multiline strings and trailing commas. Free, private, browser-based.","url": "https://tools.gamezipper.com/zh/dev/hjson-to-json.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is HJSON?", "acceptedAnswer": {"@type": "Answer", "text": "HJSON (Human JSON) is a relaxation of JSON that allows comments (// and #), unquoted keys and values, multiline strings, and trailing commas, making config files easier to write and read."}}, {"@type": "Question", "name": "Does this converter support comments and unquoted strings?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The converter strips line comments (# and //), block comments, and handles unquoted keys and values, converting everything to valid standard JSON."}}, {"@type": "Question", "name": "Is my data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All conversion happens entirely in your browser. No HJSON data is sent to any server."}}, {"@type": "Question", "name": "Can I minify or pretty-print the JSON output?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Choose between minified output or pretty-printed JSON with 2-space indentation using the indent selector."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/hjson-to-json.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/hjson-to-json.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/hjson-to-json.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" rows="14"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HJSON to JSON Converter',
+    toolDesc: 'Convert HJSON (Human JSON) to standard JSON. Supports comments, unquoted keys/values, multiline strings and trailing commas — 100% browser-based.',
+    convert: 'Convert',
+    indent: 'indent',
+    step1: 'Paste your HJSON into the input area',
+    step2: 'Choose output indent (minified or 2/4 spaces)',
+    step3: 'Click Convert to generate valid JSON',
+    step4: 'Copy or download the result',
+  },
+  zh: {
+    toolTitle: 'HJSON 转 JSON 转换器',
+    toolDesc: '将 HJSON（Human JSON）转换为标准 JSON。支持注释、不加引号的键/值、多行字符串和尾随逗号 — 100% 浏览器本地运行。',
+    convert: '转换',
+    indent: '缩进',
+    step1: '在输入区粘贴您的 HJSON',
+    step2: '选择输出缩进（压缩或 2/4 空格）',
+    step3: '点击「转换」生成有效 JSON',
+    step4: '复制或下载结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let indent = 2;
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g, m => {
+      let c = 'json-number';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-string';
+      else if (/true|false/.test(m)) c = 'json-bool';
+      else if (/null/.test(m)) c = 'json-null';
+      return `<span class="${c}">${m}</span>`;
+    });
+}
+
+/* Minimal HJSON parser */
+function parseHJSON(text) {
+  let pos = 0;
+  const src = text;
+
+  function skipWS() {
+    while (pos < src.length) {
+      const c = src[pos];
+      if (c === ' ' || c === '\t' || c === '\r' || c === '\n') { pos++; }
+      else if (c === '#') { while (pos < src.length && src[pos] !== '\n') pos++; }
+      else if (c === '/' && src[pos+1] === '/') { while (pos < src.length && src[pos] !== '\n') pos++; }
+      else if (c === '/' && src[pos+1] === '*') {
+        pos += 2;
+        while (pos < src.length && !(src[pos] === '*' && src[pos+1] === '/')) pos++;
+        pos += 2;
+      }
+      else break;
+    }
+  }
+
+  function parseValue() {
+    skipWS();
+    if (pos >= src.length) throw new Error('Unexpected end of input');
+    const c = src[pos];
+    if (c === '{') return parseObject();
+    if (c === '[') return parseArray();
+    if (c === '"') return parseQuotedString();
+    if (c === "'") return parseSingleQuotedString();
+    return parseUnquotedOrLiteral();
+  }
+
+  function parseObject() {
+    const obj = {};
+    pos++; // skip {
+    skipWS();
+    while (pos < src.length && src[pos] !== '}') {
+      skipWS();
+      if (pos >= src.length || src[pos] === '}') break;
+      let key;
+      if (src[pos] === '"' || src[pos] === "'") {
+        key = src[pos] === '"' ? parseQuotedString() : parseSingleQuotedString();
+      } else {
+        key = parseUnquotedKey();
+      }
+      skipWS();
+      if (src[pos] !== ':') throw new Error('Expected ":" at position ' + pos);
+      pos++; // skip :
+      const val = parseValue();
+      obj[key] = val;
+      skipWS();
+      if (src[pos] === ',') pos++;
+      skipWS();
+    }
+    if (pos < src.length && src[pos] === '}') pos++;
+    return obj;
+  }
+
+  function parseArray() {
+    const arr = [];
+    pos++; // skip [
+    skipWS();
+    while (pos < src.length && src[pos] !== ']') {
+      const val = parseValue();
+      arr.push(val);
+      skipWS();
+      if (src[pos] === ',') pos++;
+      skipWS();
+    }
+    if (pos < src.length && src[pos] === ']') pos++;
+    return arr;
+  }
+
+  function parseQuotedString() {
+    pos++; // skip "
+    let result = '';
+    while (pos < src.length && src[pos] !== '"') {
+      if (src[pos] === '\\' && pos + 1 < src.length) {
+        const next = src[pos+1];
+        if (next === 'n') result += '\n';
+        else if (next === 't') result += '\t';
+        else if (next === 'r') result += '\r';
+        else if (next === '"') result += '"';
+        else if (next === '\\') result += '\\';
+        else result += next;
+        pos += 2;
+      } else {
+        result += src[pos]; pos++;
+      }
+    }
+    pos++; // skip closing "
+    return result;
+  }
+
+  function parseSingleQuotedString() {
+    pos++; // skip '
+    let result = '';
+    while (pos < src.length && src[pos] !== "'") {
+      result += src[pos]; pos++;
+    }
+    pos++; // skip closing '
+    return result;
+  }
+
+  function parseUnquotedKey() {
+    let result = '';
+    while (pos < src.length && /[\w\-.$]/.test(src[pos])) {
+      result += src[pos]; pos++;
+    }
+    return result;
+  }
+
+  function parseUnquotedOrLiteral() {
+    let result = '';
+    while (pos < src.length && src[pos] !== '\n' && src[pos] !== ',' && src[pos] !== '}' && src[pos] !== ']') {
+      result += src[pos]; pos++;
+    }
+    result = result.trim();
+    if (result === 'true') return true;
+    if (result === 'false') return false;
+    if (result === 'null') return null;
+    if (/^-?\d+$/.test(result)) return parseInt(result, 10);
+    if (/^-?\d+\.\d+([eE][+-]?\d+)?$/.test(result)) return parseFloat(result);
+    return result;
+  }
+
+  skipWS();
+  const result = parseValue();
+  return result;
+}
+
+function doConvert() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj = parseHJSON(inp);
+    const formatted = JSON.stringify(obj, null, indent === 0 ? undefined : indent);
+    if (indent === 0) {
+      $('#output').textContent = JSON.stringify(obj);
+    } else {
+      $('#output').innerHTML = syntaxHighlight(formatted);
+    }
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Valid JSON generated</span>`;
+  } catch(e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Error: ${e.message}</span>`;
+  }
+}
+
+function doDownload() {
+  const text = $('#output').textContent;
+  if (!text) return;
+  const blob = new Blob([text], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadExample() {
+  $('#input').value = `# HJSON example — comments allowed!
+{
+  name: GameZipper
+  version: 1.0
+  description: "Free online tools"
+  active: true
+
+  // Array with unquoted values
+  tags: [
+    json
+    yaml
+    toml
+  ]
+
+  config: {
+    port: 3000
+    debug: false
+  }
+}`;
+  doConvert();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; $('#status').innerHTML = ''; }
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doConvert()">${t('convert')}</button>
+  <select class="gz-select" onchange="indent=+this.value;doConvert()">
+    <option value="2">2 ${t('indent')}</option>
+    <option value="4">4 ${t('indent')}</option>
+    <option value="0">Minified</option>
+  </select>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ .json</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json5-to-json.html', name:'JSON5 to JSON'},
+    {icon:'🔧', href:'/dev/jsonc-to-json.html', name:'JSONC to JSON'},
+    {icon:'📄', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📑', href:'/convert/yaml-to-json.html', name:'YAML to JSON'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>JSON 树形查看器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="粘贴 JSON，以可折叠的树形结构浏览。展开节点、点击复制路径，可视化导航深层嵌套数据。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-viewer.html">
+  <meta property="og:title" content="JSON 树形查看器">
+  <meta property="og:description" content="粘贴 JSON，以可折叠的树形结构浏览。展开节点、点击复制路径，可视化导航深层嵌套数据。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON 树形查看器">
+<meta name="twitter:description" content="粘贴 JSON，以可折叠的树形结构浏览。展开节点、点击复制路径，可视化导航深层嵌套数据。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.jv-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.jv-wrap{grid-template-columns:1fr}}
+#input{min-height:400px}
+.jv-tree{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:400px;max-height:600px;overflow:auto;font-family:monospace;font-size:.85em;line-height:1.7}
+.jv-node{padding-left:18px;position:relative}
+.jv-toggle{cursor:pointer;user-select:none;display:inline-block;width:16px;color:var(--accent,#e94560);font-weight:bold;text-align:center}
+.jv-toggle.jv-leaf{color:transparent;cursor:default}
+.jv-key{color:#e94560}
+.jv-string{color:#00d672}
+.jv-number{color:#61afef}
+.jv-bool{color:#d19a66}
+.jv-null{color:#888;font-style:italic}
+.jv-bracket{color:var(--text2,#aaa)}
+.jv-count{color:var(--text2,#aaa);font-size:.85em;margin-left:4px}
+.jv-search{margin-bottom:10px;width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text,#eee);font-size:.9em;font-family:inherit}
+.jv-path{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:10px;font-family:monospace;font-size:.8em;color:var(--accent,#e94560);word-break:break-all}
+.jv-hover .jv-node:hover{background:rgba(255,255,255,.05);border-radius:4px}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"JSON Viewer & Tree Explorer","description":"View and explore JSON data as an interactive, collapsible tree. Expand, collapse, search and copy paths. Free online JSON tree viewer.","url": "https://tools.gamezipper.com/zh/dev/json-viewer.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a JSON viewer?", "acceptedAnswer": {"@type": "Answer", "text": "A JSON viewer is a tool that displays JSON data as a visual, collapsible tree instead of raw text. You can expand and collapse objects and arrays, search for keys or values, and click any node to see its path — making large JSON files much easier to navigate."}}, {"@type": "Question", "name": "How do I view a JSON file online?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your JSON into the input area or drag and drop a .json file. The tree viewer renders instantly on the right. No upload happens — everything stays in your browser."}}, {"@type": "Question", "name": "Can I search inside my JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the search box to highlight matching keys and values across the entire JSON tree. Matches expand automatically so you can find what you need in deeply nested data."}}, {"@type": "Question", "name": "How do I get the path to a value in JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Click any key or value in the tree. Its full path (like root.users[2].email) is displayed at the bottom and copied to your clipboard so you can use it in code or JSONPath queries."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-viewer.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="jv-wrap">
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="input" spellcheck="false" placeholder='{"name":"GameZipper","tools":["json","base64"],"count":42}'></textarea>
+        <div id="status" style="margin-top:8px;font-size:.85em"></div>
+      </div>
+      <div>
+        <input type="text" id="search" class="jv-search" placeholder="">
+        <div class="jv-tree jv-hover" id="tree"></div>
+        <div class="jv-path" id="pathInfo" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Viewer & Tree Explorer',
+    toolDesc: 'Paste JSON and explore it as a collapsible, searchable tree. Expand nodes, click to copy paths and navigate deeply nested data visually.',
+    expandAll: 'Expand All',
+    collapseAll: 'Collapse All',
+    searchPh: 'Search keys or values…',
+    invalid: '✗ Invalid JSON',
+    valid: '✓ Valid JSON',
+    pathLabel: 'Path:',
+    copied: 'Path copied!',
+    step1: 'Paste your JSON into the left panel',
+    step2: 'Click the arrows to expand or collapse nodes',
+    step3: 'Use the search box to highlight matching keys',
+    step4: 'Click any key or value to copy its path',
+  },
+  zh: {
+    toolTitle: 'JSON 树形查看器',
+    toolDesc: '粘贴 JSON，以可折叠的树形结构浏览。展开节点、点击复制路径，可视化导航深层嵌套数据。',
+    expandAll: '全部展开',
+    collapseAll: '全部折叠',
+    searchPh: '搜索键名或值…',
+    invalid: '✗ JSON 无效',
+    valid: '✓ JSON 有效',
+    pathLabel: '路径：',
+    copied: '路径已复制！',
+    step1: '在左侧面板粘贴 JSON',
+    step2: '点击箭头展开或折叠节点',
+    step3: '使用搜索框高亮匹配的键',
+    step4: '点击任意键或值复制其路径',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let rootData = null;
+let searchTerm = '';
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function valType(v) {
+  if (v === null) return 'null';
+  if (typeof v === 'string') return 'string';
+  if (typeof v === 'number') return 'number';
+  if (typeof v === 'boolean') return 'bool';
+  if (Array.isArray(v)) return 'array';
+  return 'object';
+}
+
+function valColor(v) {
+  const t2 = valType(v);
+  if (t2 === 'string') return 'jv-string';
+  if (t2 === 'number') return 'jv-number';
+  if (t2 === 'bool') return 'jv-bool';
+  if (t2 === 'null') return 'jv-null';
+  return '';
+}
+
+function matchSearch(text) {
+  if (!searchTerm) return false;
+  return String(text).toLowerCase().includes(searchTerm.toLowerCase());
+}
+
+function buildTree(data, key, path, isLast) {
+  const type = valType(data);
+  const toggle = type === 'array' || type === 'object';
+  const pathStr = path || 'root';
+
+  let html = '<div class="jv-node">';
+  const toggleCls = toggle ? '' : ' jv-leaf';
+  const highlight = matchSearch(key) || matchSearch(data) ? 'background:rgba(233,69,96,.15);border-radius:4px;padding:0 2px' : '';
+  const style = highlight ? ` style="${highlight}"` : '';
+
+  if (key !== null) {
+    const keyDisplay = escapeHtml(key);
+    const keyHL = matchSearch(key) ? ' style="background:rgba(233,69,96,.25);border-radius:3px"' : '';
+    html += `<span class="jv-toggle${toggleCls}" data-path="${escapeHtml(pathStr)}">${toggle ? '▾' : ''}</span>`;
+    html += `<span class="jv-key" data-path="${escapeHtml(pathStr)}"${keyHL}>"${keyDisplay}"</span>: `;
+  } else {
+    html += `<span class="jv-toggle jv-leaf"></span>`;
+  }
+
+  if (toggle) {
+    const entries = type === 'array' ? data.map((v,i) => [i, v]) : Object.entries(data);
+    const openBrace = type === 'array' ? '[' : '{';
+    const closeBrace = type === 'array' ? ']' : '}';
+    const collapsed = searchTerm ? '' : '';
+
+    html += `<span class="jv-bracket">${openBrace}</span><span class="jv-count">${entries.length} items</span>`;
+    if (entries.length > 0) {
+      html += `<div class="jv-children" style="${searchTerm ? '' : ''}">`;
+      entries.forEach(([k, v], idx) => {
+        const childPath = type === 'array' ? `${pathStr}[${k}]` : `${pathStr}.${k}`;
+        html += buildTree(v, String(k), childPath, idx === entries.length - 1);
+      });
+      html += '</div>';
+    }
+    html += `<span class="jv-bracket">${closeBrace}</span>${isLast ? '' : '<span class="jv-bracket">,</span>'}`;
+  } else {
+    let valDisplay;
+    if (type === 'string') valDisplay = `"${escapeHtml(data)}"`;
+    else if (type === 'null') valDisplay = 'null';
+    else valDisplay = escapeHtml(String(data));
+    const cls = valColor(data);
+    const valHL = matchSearch(data) ? ' style="background:rgba(233,69,96,.25);border-radius:3px"' : '';
+    html += `<span class="${cls}" data-path="${escapeHtml(pathStr)}"${valHL}>${valDisplay}</span>${isLast ? '' : '<span class="jv-bracket">,</span>'}`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderTree() {
+  if (!rootData) { $('#tree').innerHTML = '<span style="color:var(--text2)">—</span>'; return; }
+  $('#tree').innerHTML = buildTree(rootData, null, 'root', true);
+  attachListeners();
+}
+
+function attachListeners() {
+  $('#tree').querySelectorAll('.jv-toggle:not(.jv-leaf)').forEach(el => {
+    el.addEventListener('click', function() {
+      const node = this.closest('.jv-node');
+      const children = node.querySelector(':scope > .jv-children');
+      if (children) {
+        const hidden = children.style.display === 'none';
+        children.style.display = hidden ? '' : 'none';
+        this.textContent = hidden ? '▾' : '▸';
+      }
+    });
+  });
+  $('#tree').querySelectorAll('.jv-key[data-path], .jv-string[data-path], .jv-number[data-path], .jv-bool[data-path], .jv-null[data-path]').forEach(el => {
+    el.addEventListener('click', function() {
+      const p = this.dataset.path;
+      $('#pathInfo').textContent = t('pathLabel') + ' ' + p;
+      $('#pathInfo').style.display = 'block';
+      copyText(p);
+      const orig = this.style.background;
+      this.style.background = 'rgba(0,214,114,.3)';
+      setTimeout(() => { this.style.background = orig; }, 500);
+    });
+  });
+}
+
+function doExpandAll() {
+  $('#tree').querySelectorAll('.jv-children').forEach(el => el.style.display = '');
+  $('#tree').querySelectorAll('.jv-toggle:not(.jv-leaf)').forEach(el => el.textContent = '▾');
+}
+function doCollapseAll() {
+  $('#tree').querySelectorAll('.jv-children').forEach(el => { if (el.parentElement.parentElement.closest('.jv-children')) el.style.display = 'none'; });
+}
+
+function doView() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#tree').innerHTML = '<span style="color:var(--text2)">—</span>'; $('#status').innerHTML = ''; rootData = null; return; }
+  try {
+    rootData = JSON.parse(inp);
+    renderTree();
+    const count = JSON.stringify(rootData).length;
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('valid')}</span> <span style="opacity:.7">(${count.toLocaleString()} chars)</span>`;
+  } catch(e) {
+    rootData = null;
+    $('#tree').innerHTML = `<span style="color:var(--gz-accent)">${escapeHtml(e.message)}</span>`;
+    const msg = e.message;
+    const posMatch = msg.match(/position (\d+)/);
+    let info = `<span style="color:var(--gz-accent)">${t('invalid')}: ${escapeHtml(msg)}</span>`;
+    if (posMatch) {
+      const pos = parseInt(posMatch[1]);
+      const before = inp.substring(0, pos);
+      const line = before.split('\n').length;
+      const col = pos - before.lastIndexOf('\n');
+      info += ` <span style="opacity:.7">(Line ${line}, Col ${col})</span>`;
+    }
+    $('#status').innerHTML = info;
+  }
+}
+
+function loadExample() {
+  $('#input').value = JSON.stringify({
+    "company": "GameZipper",
+    "founded": 2024,
+    "active": true,
+    "tagline": null,
+    "products": ["tools", "games", "api"],
+    "stats": {
+      "totalTools": 2164,
+      "monthlyVisitors": 850000,
+      "languages": ["en", "zh"],
+      "uptime": 99.98
+    },
+    "team": [
+      {"name": "Alice", "role": "Founder", "skills": ["design", "code"]},
+      {"name": "Bob", "role": "Developer", "skills": ["frontend", "backend"]}
+    ]
+  }, null, 2);
+  doView();
+}
+
+function doClear() { $('#input').value = ''; $('#tree').innerHTML = ''; $('#status').innerHTML = ''; $('#pathInfo').style.display = 'none'; rootData = null; }
+
+$('#input').addEventListener('input', doView);
+$('#search').addEventListener('input', function() { searchTerm = this.value; renderTree(); });
+$('#search').placeholder = t('searchPh');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doView()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doExpandAll()">${t('expandAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doCollapseAll()">${t('collapseAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🌳', href:'/dev/json-tree-viewer.html', name:'JSON Tree'},
+    {icon:'🔍', href:'/dev/jsonpath.html', name:'JSONPath'},
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+  ]
+});
+
+loadExample();
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

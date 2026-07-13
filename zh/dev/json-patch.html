@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JSON Patch 生成器 (RFC 6902) - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="计算两个 JSON 文档之间的 JSON Patch。生成标准的 add/remove/replace 操作，使用 JSON Pointer 路径 — 100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json-patch.html">
+  <meta property="og:title" content="JSON Patch 生成器 (RFC 6902)">
+  <meta property="og:description" content="计算两个 JSON 文档之间的 JSON Patch。生成标准的 add/remove/replace 操作，使用 JSON Pointer 路径 — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json-patch.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="JSON Patch 生成器 (RFC 6902)">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;min-height:60px}
+#status{margin-top:8px;font-size:.85em}
+.gz-patch-label{font-weight:bold;margin-bottom:4px;display:block}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"JSON Patch Generator","description":"Generate and apply JSON Patch (RFC 6902) operations between two JSON documents. Diff, add, remove, replace, move, copy — free, private, browser-based.","url": "https://tools.gamezipper.com/zh/dev/json-patch.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is JSON Patch (RFC 6902)?", "acceptedAnswer": {"@type": "Answer", "text": "JSON Patch is a standard format for describing changes to a JSON document. It uses operations like add, remove, replace, move, copy, and test, each with a JSON Pointer path."}}, {"@type": "Question", "name": "How do I use this tool?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your original JSON in the first input and the modified JSON in the second. The tool computes the JSON Patch operations needed to transform one into the other."}}, {"@type": "Question", "name": "Is my data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All processing happens entirely in your browser. No JSON data is sent to any server."}}, {"@type": "Question", "name": "What is a JSON Pointer?", "acceptedAnswer": {"@type": "Answer", "text": "A JSON Pointer (RFC 6901) is a string like /foo/0/bar that references a specific location in a JSON document using slash-separated path segments."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json-patch.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json-patch.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json-patch.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div>
+        <span class="gz-patch-label" id="lbl-orig"></span>
+        <textarea id="original" spellcheck="false" rows="12"></textarea>
+      </div>
+      <div>
+        <span class="gz-patch-label" id="lbl-mod"></span>
+        <textarea id="modified" spellcheck="false" rows="12"></textarea>
+      </div>
+    </div>
+    <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON Patch Generator (RFC 6902)',
+    toolDesc: 'Compute the JSON Patch between two JSON documents. Generates standard add/remove/replace operations using JSON Pointer paths — 100% browser-based.',
+    generate: 'Generate Patch',
+    original: 'Original JSON',
+    modified: 'Modified JSON',
+    step1: 'Paste the original JSON in the left input',
+    step2: 'Paste the modified JSON in the right input',
+    step3: 'Click Generate Patch to compute RFC 6902 operations',
+    step4: 'Copy or download the resulting JSON Patch array',
+  },
+  zh: {
+    toolTitle: 'JSON Patch 生成器 (RFC 6902)',
+    toolDesc: '计算两个 JSON 文档之间的 JSON Patch。生成标准的 add/remove/replace 操作，使用 JSON Pointer 路径 — 100% 浏览器本地运行。',
+    generate: '生成 Patch',
+    original: '原始 JSON',
+    modified: '修改后的 JSON',
+    step1: '在左侧输入框粘贴原始 JSON',
+    step2: '在右侧输入框粘贴修改后的 JSON',
+    step3: '点击「生成 Patch」计算 RFC 6902 操作',
+    step4: '复制或下载生成的 JSON Patch 数组',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (typeof a !== typeof b) return false;
+  if (a === null || b === null) return a === b;
+  if (typeof a !== 'object') return a === b;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!deepEqual(a[i], b[i])) return false;
+    return true;
+  }
+  const ka = Object.keys(a), kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) if (!deepEqual(a[k], b[k])) return false;
+  return true;
+}
+
+function escapePointer(seg) {
+  return String(seg).replace(/~/g, '~0').replace(/\//g, '~1');
+}
+
+function diff(obj1, obj2, basePath, ops) {
+  if (deepEqual(obj1, obj2)) return;
+
+  if (Array.isArray(obj1) && Array.isArray(obj2)) {
+    const maxLen = Math.max(obj1.length, obj2.length);
+    let changed = false;
+    for (let i = 0; i < maxLen; i++) {
+      const path = basePath + '/' + i;
+      if (i >= obj2.length) {
+        ops.push({ op: 'remove', path });
+        changed = true;
+      } else if (i >= obj1.length) {
+        ops.push({ op: 'add', path, value: obj2[i] });
+        changed = true;
+      } else if (!deepEqual(obj1[i], obj2[i])) {
+        if (typeof obj1[i] === 'object' && obj1[i] !== null &&
+            typeof obj2[i] === 'object' && obj2[i] !== null &&
+            Array.isArray(obj1[i]) === Array.isArray(obj2[i])) {
+          diff(obj1[i], obj2[i], path, ops);
+        } else {
+          ops.push({ op: 'replace', path, value: obj2[i] });
+        }
+        changed = true;
+      }
+    }
+    return;
+  }
+
+  if (typeof obj1 === 'object' && obj1 !== null && typeof obj2 === 'object' && obj2 !== null) {
+    for (const key of Object.keys(obj1)) {
+      const path = basePath + '/' + escapePointer(key);
+      if (!(key in obj2)) {
+        ops.push({ op: 'remove', path });
+      } else if (!deepEqual(obj1[key], obj2[key])) {
+        if (typeof obj1[key] === 'object' && obj1[key] !== null &&
+            typeof obj2[key] === 'object' && obj2[key] !== null &&
+            Array.isArray(obj1[key]) === Array.isArray(obj2[key])) {
+          diff(obj1[key], obj2[key], path, ops);
+        } else {
+          ops.push({ op: 'replace', path, value: obj2[key] });
+        }
+      }
+    }
+    for (const key of Object.keys(obj2)) {
+      if (!(key in obj1)) {
+        const path = basePath + '/' + escapePointer(key);
+        ops.push({ op: 'add', path, value: obj2[key] });
+      }
+    }
+    return;
+  }
+
+  ops.push({ op: 'replace', path: basePath || '', value: obj2 });
+}
+
+function doGenerate() {
+  const orig = $('#original').value.trim();
+  const mod = $('#modified').value.trim();
+  if (!orig || !mod) { $('#output').textContent = ''; $('#status').innerHTML = ''; return; }
+  try {
+    const obj1 = JSON.parse(orig);
+    const obj2 = JSON.parse(mod);
+    const ops = [];
+    diff(obj1, obj2, '', ops);
+    if (ops.length === 0) {
+      $('#output').textContent = '[]';
+      $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ Documents are identical — no operations needed</span>`;
+    } else {
+      $('#output').textContent = JSON.stringify(ops, null, 2);
+      $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${ops.length} patch operation${ops.length!==1?'s':''} generated</span>`;
+    }
+  } catch(e) {
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${e.message}</span>`;
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">✗ Invalid JSON</span>`;
+  }
+}
+
+function doDownload() {
+  const text = $('#output').textContent;
+  if (!text) return;
+  const blob = new Blob([text], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'patch.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadExample() {
+  $('#original').value = JSON.stringify({
+    "name": "Alice", "age": 30, "city": "NYC",
+    "hobbies": ["reading", "coding"],
+    "address": { "street": "123 Main St", "zip": "10001" }
+  }, null, 2);
+  $('#modified').value = JSON.stringify({
+    "name": "Alice", "age": 31, "city": "Boston",
+    "hobbies": ["reading", "coding", "gaming"],
+    "address": { "street": "456 Oak Ave", "zip": "10001", "state": "MA" }
+  }, null, 2);
+  doGenerate();
+}
+
+function doClear() {
+  $('#original').value = ''; $('#modified').value = '';
+  $('#output').textContent = ''; $('#status').innerHTML = '';
+}
+
+$('#lbl-orig').textContent = t('original');
+$('#lbl-mod').textContent = t('modified');
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ .json</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/dev/json-diff.html', name:'JSON Diff'},
+    {icon:'🔗', href:'/dev/json-pointer.html', name:'JSON Pointer'},
+    {icon:'📊', href:'/dev/json-merge.html', name:'JSON Merge'},
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

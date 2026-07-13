@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>PowerShell 脚本美化器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="粘贴杂乱或压缩的 PowerShell（.ps1）脚本，即时美化：函数、if/else、foreach、try/catch 等块内正确缩进。支持 cmdlet、变量、哈希表和 here-string。支持压缩。完全在浏览器本地运行，不上传任何数据。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/powershell-formatter.html">
+<meta property="og:title" content="PowerShell 脚本美化器">
+<meta property="og:description" content="粘贴杂乱或压缩的 PowerShell（.ps1）脚本，即时美化：函数、if/else、foreach、try/catch 等块内正确缩进。支持 cmdlet、变量、哈希表和 here-string。支持压缩。完全在浏览器本地运行，不上传任何数据。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/powershell-formatter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PowerShell 脚本美化器">
+<meta name="twitter:description" content="粘贴杂乱或压缩的 PowerShell（.ps1）脚本，即时美化：函数、if/else、foreach、try/catch 等块内正确缩进。支持 cmdlet、变量、哈希表和 here-string。支持压缩。完全在浏览器本地运行，不上传任何数据。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.8em;line-height:1.55;min-height:200px}
+#status{margin-top:8px;font-size:.85rem}
+.opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:.8rem;color:var(--text2)}
+.opt-row select{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px}
+.opt-row label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.opt-row input[type=checkbox]{accent-color:var(--accent)}
+.ps-kw{color:#c678dd;font-weight:bold}
+.ps-cmdlet{color:#e5c07b}
+.ps-str{color:var(--gz-success)}
+.ps-num{color:#61afef}
+.ps-com{color:var(--text3);font-style:italic}
+.ps-var{color:#d19a66}
+.ps-op{color:#56b6c2}
+.ps-type{color:#56b6c2}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"PowerShell Script Beautifier","description":"Free online PowerShell script beautifier. Paste messy or minified .ps1 scripts to instantly prettify with proper indentation, line breaks and spacing. Minify mode included. No upload, runs in your browser.","url": "https://tools.gamezipper.com/zh/dev/powershell-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does a PowerShell beautifier do?", "acceptedAnswer": {"@type": "Answer", "text": "A PowerShell beautifier (PS1 formatter or prettifier) takes messy, minified or poorly indented PowerShell scripts and re-emits them with consistent indentation inside script blocks, functions, if/else, foreach, while, try/catch, switch and other constructs, with one statement per line and readable spacing."}}, {"@type": "Question", "name": "Will beautifying change how my script runs?", "acceptedAnswer": {"@type": "Answer", "text": "No. Beautification only changes whitespace — indentation, newlines and spacing around operators. The tokens, cmdlets and logic stay identical so the script runs exactly the same. It is safe to beautify before committing or reviewing code."}}, {"@type": "Question", "name": "Does it handle PowerShell-specific syntax?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The formatter handles cmdlets (Get-ChildItem, Write-Host), variables ($var), splatting (@args), arrays (@()), hashtables (@{}), here-strings (@'...'@), type accelerators ([string], [int[]]), pipeline (|), comment-based help (<# .SYNOPSIS #>), and common control flow."}}, {"@type": "Question", "name": "Is my PowerShell script uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. This beautifier runs entirely in your browser using local JavaScript. Your script never leaves your device, so it is safe to paste proprietary or sensitive code."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/powershell-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/powershell-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/powershell-formatter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="16" spellcheck="false" style="width:100%;font-family:monospace;font-size:.78em"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'PowerShell Script Beautifier',
+    toolDesc: 'Paste messy or minified PowerShell (.ps1) scripts to instantly prettify them with proper indentation inside functions, if/else, foreach, try/catch and other blocks. Handles cmdlets, variables, hashtables and here-strings. Minify mode included. Runs entirely in your browser — nothing is uploaded.',
+    beautify: 'Beautify',
+    minify: 'Minify',
+    indent: 'Indent size',
+    spaces: 'spaces',
+    spaceAfterComma: 'Space after comma',
+    lblIn: 'PowerShell input',
+    lblOut: 'Formatted output',
+    empty: 'Please paste a PowerShell script on the left.',
+    done: '✓ Beautified',
+    minified: '✓ Minified',
+    step1: 'Paste your PowerShell script (messy or minified) into the input area',
+    step2: 'Pick an indent size and toggle spacing options',
+    step3: 'Click Beautify to format, or Minify to strip extra whitespace',
+    step4: 'Click Copy to copy the result, or Download to save the .ps1 file',
+  },
+  zh: {
+    toolTitle: 'PowerShell 脚本美化器',
+    toolDesc: '粘贴杂乱或压缩的 PowerShell（.ps1）脚本，即时美化：函数、if/else、foreach、try/catch 等块内正确缩进。支持 cmdlet、变量、哈希表和 here-string。支持压缩。完全在浏览器本地运行，不上传任何数据。',
+    beautify: '美化',
+    minify: '压缩',
+    indent: '缩进',
+    spaces: '空格',
+    spaceAfterComma: '逗号后加空格',
+    lblIn: 'PowerShell 输入',
+    lblOut: '格式化输出',
+    empty: '请在左侧粘贴 PowerShell 脚本。',
+    done: '✓ 已美化',
+    minified: '✓ 已压缩',
+    step1: '将 PowerShell 脚本（杂乱或压缩的）粘贴到输入区',
+    step2: '选择缩进大小并切换空格选项',
+    step3: '点击「美化」格式化，或「压缩」去除多余空白',
+    step4: '点击「复制」复制结果，或「下载」保存 .ps1 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const KEYWORDS = new Set(['if','elseif','else','switch','foreach','for','while','do','until','function','filter','return','break','continue','param','begin','process','end','try','catch','finally','throw','using','namespace','class','enum','hidden','static','in','where','select','workflow','parallel','sequence','workflow','workflow','parallel']);
+const TYPE_ACCEL = new Set(['string','int','int32','int64','bool','double','float','decimal','char','byte','object','array','hashtable','void','switch','xml','datetime','timespan','regex','scriptblock','psobject','wmi','ciminstance','type','math','math','math','pscustomobject']);
+
+function beautifyPS(src, opts){
+  const indent = opts.indent;
+  const pad = d => ' '.repeat(d * indent);
+  let out = [];
+  let depth = 0;
+  let i = 0, n = src.length;
+  let buf = '';
+  let pendingNewline = false;
+  let inBlockComment = false;
+
+  function flush(){
+    if (buf.length){
+      const trimmed = buf.trim();
+      if (trimmed.length) out.push(pad(depth) + trimmed);
+      buf = '';
+    }
+  }
+  function addSpace(){ if (buf && !/\s$/.test(buf)) buf += ' '; }
+
+  while (i < n){
+    const c = src[i];
+    const c2 = src[i+1];
+
+    // block comment <# ... #>
+    if (c === '<' && c2 === '#'){ inBlockComment = true; flush(); buf += '<#'; i += 2; continue; }
+    if (inBlockComment){
+      if (c === '#' && c2 === '>'){ buf += '#>'; i += 2; inBlockComment = false; out.push(buf); buf=''; continue; }
+      buf += c; i++; continue;
+    }
+    // line comment
+    if (c === '#'){
+      let e = src.indexOf('\n', i); if (e === -1) e = n;
+      flush();
+      out.push(pad(depth) + src.substring(i, e).trim());
+      i = e;
+      continue;
+    }
+    // here-strings @'...'@ or @"..."@
+    if (c === '@' && (c2 === "'" || c2 === '"') && /\s/.test(src[i-1]||'\n')){
+      const heredoc = c2;
+      let j = i + 2;
+      // find closing '@' or "'@"
+      const closeStr = heredoc === "'" ? "'@" : '"@';
+      let closeIdx = src.indexOf(closeStr, j);
+      if (closeIdx !== -1){
+        const body = src.substring(i, closeIdx + 2);
+        flush();
+        out.push(body); // heredoc verbatim
+        i = closeIdx + 2;
+        continue;
+      }
+    }
+
+    // strings
+    if (c === "'" || c === '"'){
+      const q = c;
+      let j = i;
+      // handle PowerShell escaping: '' inside '' and "" inside ""
+      j++;
+      while (j < n){
+        if (src[j] === q){
+          if (src[j+1] === q){ j += 2; continue; } // escaped quote
+          break;
+        }
+        j++;
+      }
+      buf += src.substring(i, Math.min(j+1, n));
+      i = Math.min(j+1, n);
+      continue;
+    }
+
+    if (c === '\n'){ flush(); i++; continue; }
+    if (/\s/.test(c)){ if (buf.length && !/\s$/.test(buf)) buf += ' '; i++; continue; }
+
+    // braces
+    if (c === '{'){
+      addSpace();
+      buf += '{';
+      i++;
+      flush();
+      depth++;
+      continue;
+    }
+    if (c === '}'){
+      flush();
+      if (depth > 0) depth--;
+      buf += '}';
+      i++;
+      continue;
+    }
+    if (c === '(' || c === '['){
+      buf += c; i++; continue;
+    }
+    if (c === ')' || c === ']'){
+      buf += c; i++; continue;
+    }
+    if (c === ';'){
+      buf += ';';
+      i++;
+      flush();
+      continue;
+    }
+    if (c === '|'){
+      addSpace(); buf += '|'; addSpace(); i++; continue;
+    }
+    if (c === ','){
+      buf += opts.spaceAfterComma ? ', ' : ',';
+      i++; continue;
+    }
+    // variables $name
+    if (c === '$'){
+      buf += '$';
+      i++;
+      let j = i;
+      while (j < n && /[A-Za-z0-9_:?]/.test(src[j])) j++;
+      buf += src.substring(i, j);
+      i = j;
+      continue;
+    }
+    // type accelerator [string]
+    if (c === '['){
+      buf += '['; i++;
+      let j = i;
+      while (j < n && /[A-Za-z0-9_.\[\]]/.test(src[j])) j++;
+      buf += src.substring(i, j);
+      i = j;
+      continue;
+    }
+    // identifiers
+    if (/[A-Za-z_]/.test(c)){
+      let j = i;
+      while (j < n && /[A-Za-z0-9_-]/.test(src[j])) j++;
+      const word = src.substring(i, j);
+      addSpace();
+      buf += word;
+      i = j;
+      // handle special: "-Verb" etc parameter flag after "-"
+      continue;
+    }
+    // dash parameter
+    if (c === '-' && /[A-Za-z]/.test(src[i-1]||' ') && /[A-Za-z]/.test(c2||' ')){
+      // parameter: "-Name" / "-eq" / "-gt"
+      let j = i + 1;
+      while (j < n && /[A-Za-z]/.test(src[j])) j++;
+      addSpace();
+      buf += src.substring(i, j);
+      i = j;
+      addSpace();
+      continue;
+    }
+
+    buf += c; i++;
+  }
+  flush();
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '') + (out.length ? '\n' : '');
+}
+
+function minifyPS(src){
+  const lines = src.split('\n');
+  const out = [];
+  let prevBlank = false;
+  for (const line of lines){
+    const trimmed = line.trim();
+    if (trimmed === ''){ if (!prevBlank){ out.push(''); prevBlank = true; } continue; }
+    let m = trimmed.replace(/[ \t]+/g, ' ');
+    out.push(m);
+    prevBlank = false;
+  }
+  return out.join('\n');
+}
+
+function highlight(code){
+  let i = 0, n = code.length, out = '';
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  while (i < n){
+    const c = code[i];
+    if (c === '<' && code[i+1] === '#'){
+      let j = i+2; while (j < n && !(code[j] === '#' && code[j+1] === '>')) j++;
+      out += `<span class="ps-com">${esc(code.substring(i, Math.min(j+2,n)))}</span>`;
+      i = Math.min(j+2, n); continue;
+    }
+    if (c === '#'){
+      let e = code.indexOf('\n', i); if (e === -1) e = n;
+      out += `<span class="ps-com">${esc(code.substring(i, e))}</span>`;
+      i = e; continue;
+    }
+    if (c === "'" || c === '"'){
+      const q = c; let j = i+1;
+      while (j < n){ if (code[j] === q){ if (code[j+1] === q){ j += 2; continue; } break; } j++; }
+      out += `<span class="ps-str">${esc(code.substring(i, Math.min(j+1,n)))}</span>`;
+      i = Math.min(j+1, n); continue;
+    }
+    if (c === '$'){
+      let j = i+1;
+      while (j < n && /[A-Za-z0-9_:?]/.test(code[j])) j++;
+      out += `<span class="ps-var">${esc(code.substring(i, j))}</span>`;
+      i = j; continue;
+    }
+    if (/[A-Za-z_]/.test(c)){
+      let j = i;
+      while (j < n && /[A-Za-z0-9_-]/.test(code[j])) j++;
+      const word = code.substring(i, j);
+      // cmdlets: Verb-Noun pattern
+      if (/^[A-Z][a-z]+-[A-Z]/.test(word)) out += `<span class="ps-cmdlet">${esc(word)}</span>`;
+      else if (KEYWORDS.has(word.toLowerCase())) out += `<span class="ps-kw">${esc(word)}</span>`;
+      else out += esc(word);
+      i = j; continue;
+    }
+    out += esc(c); i++;
+  }
+  return out;
+}
+
+function getOpts(){
+  return {
+    indent: parseInt($('#ind').value) || 2,
+    spaceAfterComma: $('#sac').checked,
+  };
+}
+
+function doBeautify(){
+  const inp = $('#input').value;
+  if (!inp.trim()){ $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`; $('#output').innerHTML=''; return; }
+  const out = beautifyPS(inp, getOpts());
+  $('#output').innerHTML = highlight(out);
+  window._psOut = out;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')} · ${out.split('\n').length} lines</span>`;
+}
+function doMinify(){
+  const inp = $('#input').value;
+  if (!inp.trim()){ $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`; $('#output').innerHTML=''; return; }
+  const out = minifyPS(inp);
+  window._psOut = out;
+  $('#output').innerHTML = highlight(out);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('minified')} · ${out.length} chars</span>`;
+}
+function doCopy(){ if (window._psOut != null) copyText(window._psOut); }
+function doDownload(){
+  if (window._psOut == null) return;
+  const blob = new Blob([window._psOut], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'beautified.ps1';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function loadExample(){
+  $('#input').value =
+`param([string]$Path=".",[switch]$Recurse)$items=Get-ChildItem-Path$Path;if($Recurse){$items=$items|Where-Object{$_.PSIsContainer}};foreach($item in $items){try{Write-Host"Processing $($item.Name)";if($item.Length-gt1MB){Write-Warning"Large file: $($item.Name)"}else{Copy-Item$item.FullName-Destination"$env:TEMP\backup\"}}catch{Write-Error"Failed: $_"}}`;
+  doBeautify();
+}
+function doClear(){ $('#input').value=''; $('#output').innerHTML=''; $('#status').innerHTML=''; window._psOut=null; }
+
+$('#opts').innerHTML = `
+  <label>${t('indent')}:
+    <select id="ind">
+      <option value="2">2 ${t('spaces')}</option>
+      <option value="4">4 ${t('spaces')}</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="sac" checked> ${t('spaceAfterComma')}</label>`;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doBeautify()">${t('beautify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="doCopy()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ .ps1</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', ()=>{ window._psOut=null; });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🐚', href:'/dev/bash-formatter.html', name:'Bash Beautifier'},
+    {icon:'📜', href:'/dev/js-beautifier.html', name:'JS Beautifier'},
+    {icon:'📄', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'📝', href:'/dev/yaml-formatter.html', name:'YAML Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

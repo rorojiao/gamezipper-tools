@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>迷宫生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费在线生成可打印迷宫。从小到大四种尺寸，打印或下载为 PDF。适合儿童、课堂和益智书 — 无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/maze-printable-generator.html">
+  <meta property="og:title" content="迷宫生成器">
+  <meta property="og:description" content="免费在线生成可打印迷宫。从小到大四种尺寸，打印或下载为 PDF。适合儿童、课堂和益智书 — 无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/maze-printable-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="迷宫生成器">
+<meta name="twitter:description" content="免费在线生成可打印迷宫。从小到大四种尺寸，打印或下载为 PDF。适合儿童、课堂和益智书 — 无需注册。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#maze-canvas{display:block;margin:12px auto;background:#fff;border-radius:8px;max-width:100%;height:auto}
+.gz-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+#maze-solution-toggle{font-size:.85rem}
+@media print{.no-print{display:none!important}body{background:#fff}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Maze Generator","description":"Generate free printable mazes online. Choose size and difficulty, print or download as PDF. 100% browser-based, no signup.","url": "https://tools.gamezipper.com/zh/fun/maze-printable-generator.html","applicationCategory":"Game","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the maze generator work?","acceptedAnswer":{"@type":"Answer","text":"Choose a size (small to giant) and click Generate. The tool builds a random solvable maze using recursive backtracking. Start is top-left, exit is bottom-right."}},{"@type":"Question","name":"Can I print the maze?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click Print to print or save as PDF. The maze prints on clean white paper, perfect for kids and classrooms."}},{"@type":"Question","name":"Can I see the solution?","acceptedAnswer":{"@type":"Answer","text":"Yes. Toggle 'Show solution' to overlay the correct path in red on the maze."}},{"@type":"Question","name":"Is this maze generator free?","acceptedAnswer":{"@type":"Answer","text":"Yes, completely free with no signup. All maze generation runs in your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/maze-printable-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/maze-printable-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/maze-printable-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar no-print" id="toolbar"></div>
+    <canvas id="maze-canvas" width="540" height="540"></canvas>
+    <div id="status" style="text-align:center;font-size:.85em;opacity:.7"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Maze Generator',
+    toolDesc: 'Generate free printable mazes online. Pick a size from small to giant, print or download as PDF. Perfect for kids, classrooms and puzzle books — no signup.',
+    size: 'Size',
+    small: 'Small (10×10)',
+    medium: 'Medium (15×15)',
+    large: 'Large (20×20)',
+    giant: 'Giant (30×30)',
+    generate: 'Generate New',
+    showSolution: 'Show solution',
+    print: 'Print / PDF',
+    generated: (w) => `${w}×${w} maze generated`,
+    step1: 'Pick a maze size (small to giant)',
+    step2: 'Click "Generate New" to create a fresh maze',
+    step3: 'Toggle "Show solution" to reveal the path',
+    step4: 'Click "Print / PDF" to print or save',
+  },
+  zh: {
+    toolTitle: '迷宫生成器',
+    toolDesc: '免费在线生成可打印迷宫。从小到大四种尺寸，打印或下载为 PDF。适合儿童、课堂和益智书 — 无需注册。',
+    size: '尺寸',
+    small: '小 (10×10)',
+    medium: '中 (15×15)',
+    large: '大 (20×20)',
+    giant: '超大 (30×30)',
+    generate: '生成新迷宫',
+    showSolution: '显示答案路径',
+    print: '打印 / PDF',
+    generated: (w) => `已生成 ${w}×${w} 迷宫`,
+    step1: '选择迷宫尺寸（小到大）',
+    step2: '点击「生成新迷宫」创建新迷宫',
+    step3: '勾选「显示答案路径」查看正确路径',
+    step4: '点击「打印 / PDF」打印或保存',
+  }
+});
+
+const { $, t } = GZ;
+let cols=15, rows=15, grid=[], showSol=false;
+const canvas=$('#maze-canvas');
+const ctx=canvas.getContext('2d');
+
+// Each cell: walls {top,right,bottom,left}, visited
+function initGrid(c,r){
+  cols=c; rows=r;
+  grid=[];
+  for(let y=0;y<rows;y++){
+    const row=[];
+    for(let x=0;x<cols;x++){ row.push({x,y,walls:{top:true,right:true,bottom:true,left:true},visited:false}); }
+    grid.push(row);
+  }
+}
+
+function generateMaze(){
+  // Recursive backtracker (iterative)
+  const stack=[];
+  const start=grid[0][0];
+  start.visited=true;
+  stack.push(start);
+  while(stack.length){
+    const cur=stack[stack.length-1];
+    const neighbors=[];
+    const {x,y}=cur;
+    if(y>0&&!grid[y-1][x].visited) neighbors.push({cell:grid[y-1][x],dir:'top'});
+    if(x<cols-1&&!grid[y][x+1].visited) neighbors.push({cell:grid[y][x+1],dir:'right'});
+    if(y<rows-1&&!grid[y+1][x].visited) neighbors.push({cell:grid[y+1][x],dir:'bottom'});
+    if(x>0&&!grid[y][x-1].visited) neighbors.push({cell:grid[y][x-1],dir:'left'});
+    if(neighbors.length){
+      const pick=neighbors[Math.floor(Math.random()*neighbors.length)];
+      // knock down walls
+      if(pick.dir==='top'){ cur.walls.top=false; pick.cell.walls.bottom=false; }
+      else if(pick.dir==='right'){ cur.walls.right=false; pick.cell.walls.left=false; }
+      else if(pick.dir==='bottom'){ cur.walls.bottom=false; pick.cell.walls.top=false; }
+      else { cur.walls.left=false; pick.cell.walls.right=false; }
+      pick.cell.visited=true;
+      stack.push(pick.cell);
+    } else { stack.pop(); }
+  }
+}
+
+function solveMaze(){
+  // BFS from (0,0) to (cols-1,rows-1)
+  const start=grid[0][0], end=grid[rows-1][cols-1];
+  const queue=[start]; const prev=new Map(); const visited=new Set([`0,0`]);
+  while(queue.length){
+    const cur=queue.shift();
+    if(cur===end) break;
+    const {x,y}=cur;
+    const neighbors=[];
+    if(!cur.walls.top&&y>0) neighbors.push(grid[y-1][x]);
+    if(!cur.walls.right&&x<cols-1) neighbors.push(grid[y][x+1]);
+    if(!cur.walls.bottom&&y<rows-1) neighbors.push(grid[y+1][x]);
+    if(!cur.walls.left&&x>0) neighbors.push(grid[y][x-1]);
+    for(const n of neighbors){
+      const k=`${n.x},${n.y}`;
+      if(!visited.has(k)){ visited.add(k); prev.set(k,cur); queue.push(n); }
+    }
+  }
+  // reconstruct
+  const path=[]; let cur=end;
+  while(cur){ path.unshift(cur); cur=prev.get(`${cur.x},${cur.y}`); }
+  return path;
+}
+
+function drawMaze(){
+  const maxSize=540;
+  const cellSize=Math.floor(maxSize/Math.max(cols,rows));
+  canvas.width=cellSize*cols+2;
+  canvas.height=cellSize*rows+2;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  // start/end markers
+  ctx.fillStyle='#4ecdc4'; ctx.fillRect(1,1,cellSize-1,cellSize-1); // start
+  ctx.fillStyle='#ff6b6b'; ctx.fillRect((cols-1)*cellSize+1,(rows-1)*cellSize+1,cellSize-1,cellSize-1); // end
+  // solution path
+  if(showSol){
+    const path=solveMaze();
+    ctx.strokeStyle='rgba(255,107,107,.5)'; ctx.lineWidth=Math.max(2,cellSize*0.3); ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath();
+    path.forEach((c,i)=>{
+      const px=c.x*cellSize+cellSize/2+1, py=c.y*cellSize+cellSize/2+1;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+  }
+  // walls
+  ctx.strokeStyle='#222'; ctx.lineWidth=2;
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      const c=grid[y][x]; const px=x*cellSize+1, py=y*cellSize+1;
+      ctx.beginPath();
+      if(c.walls.top){ ctx.moveTo(px,py); ctx.lineTo(px+cellSize,py); }
+      if(c.walls.right){ ctx.moveTo(px+cellSize,py); ctx.lineTo(px+cellSize,py+cellSize); }
+      if(c.walls.bottom){ ctx.moveTo(px,py+cellSize); ctx.lineTo(px+cellSize,py+cellSize); }
+      if(c.walls.left){ ctx.moveTo(px,py); ctx.lineTo(px,py+cellSize); }
+      ctx.stroke();
+    }
+  }
+}
+
+function doGenerate(){
+  const sizes={'small':10,'medium':15,'large':20,'giant':30};
+  const sz=+(document.getElementById('sel-size').value);
+  initGrid(sz,sz);
+  generateMaze();
+  drawMaze();
+  $('#status').textContent=t('generated')(sz);
+}
+
+function doPrint(){ window.print(); }
+
+$('#toolbar').innerHTML = `
+  <label style="display:inline-flex;align-items:center;gap:6px">${t('size')}
+  <select class="gz-select" id="sel-size" onchange="doGenerate()">
+    <option value="10">${t('small')}</option>
+    <option value="15" selected>${t('medium')}</option>
+    <option value="20">${t('large')}</option>
+    <option value="30">${t('giant')}</option>
+  </select></label>
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" id="sol-toggle" onchange="showSol=this.checked;drawMaze()"> ${t('showSolution')}</label>
+  <button class="gz-btn gz-btn-secondary" onclick="doPrint()">🖨️ ${t('print')}</button>`;
+
+doGenerate();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🟦', href:'/fun/sudoku-generator.html', name:'Sudoku Generator'},
+    {icon:'🔤', href:'/text/word-search-maker.html', name:'Word Search'},
+    {icon:'📐', href:'/image/isometric-paper.html', name:'Isometric Paper'},
+    {icon:'🔵', href:'/image/dot-grid-paper.html', name:'Dot Grid Paper'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

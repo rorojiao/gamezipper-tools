@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>数独生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="免费生成可打印的数独谜题。从简单到专家四个难度 — 在线玩、打印或下载。100% 浏览器本地运行，无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/fun/sudoku-generator.html">
+  <meta property="og:title" content="数独生成器">
+  <meta property="og:description" content="免费生成可打印的数独谜题。从简单到专家四个难度 — 在线玩、打印或下载。100% 浏览器本地运行，无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/fun/sudoku-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="数独生成器">
+<meta name="twitter:description" content="免费生成可打印的数独谜题。从简单到专家四个难度 — 在线玩、打印或下载。100% 浏览器本地运行，无需注册。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#sudoku-grid{display:grid;grid-template-columns:repeat(9,1fr);max-width:468px;margin:0 auto;border:2px solid var(--text,#333);background:var(--text,#333);gap:1px;padding:1px;border-radius:4px}
+#sudoku-grid .cell{aspect-ratio:1;background:var(--bg,#fff);display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:600;color:var(--text,#333);cursor:pointer;user-select:none}
+#sudoku-grid .cell.given{color:var(--gz-accent,#4ecdc4)}
+#sudoku-grid .cell:nth-child(3n){box-shadow:1px 0 0 var(--text,#333)}
+#sudoku-grid .cell:nth-child(9n){box-shadow:none}
+/* thick borders for 3x3 boxes via row borders */
+.sudoku-row{display:contents}
+#sudoku-grid .box-rb{box-shadow:0 1px 0 var(--text,#333)}
+#sudoku-grid .box-rb:nth-child(3n){box-shadow:1px 1px 0 var(--text,#333)}
+#sudoku-grid .cell.selected{background:rgba(78,205,196,.25)}
+#sudoku-grid .cell:hover{background:rgba(78,205,196,.12)}
+#givens-count{font-size:.85rem;opacity:.7;margin-top:8px;text-align:center}
+.gz-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.gz-controls select,.gz-controls button{margin:0}
+.num-pad{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}
+.num-pad button{width:40px;height:40px;font-size:1.1rem;font-weight:600}
+@media(max-width:520px){#sudoku-grid{max-width:100%}#sudoku-grid .cell{font-size:1rem}.num-pad button{width:36px;height:36px}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sudoku Generator","description":"Generate free printable Sudoku puzzles online. Choose easy, medium, hard or expert difficulty. Print, play online or download — 100% browser-based, no signup.","url": "https://tools.gamezipper.com/zh/fun/sudoku-generator.html","applicationCategory":"Game","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the Sudoku generator work?","acceptedAnswer":{"@type":"Answer","text":"Pick a difficulty (easy, medium, hard, expert) and click Generate. The tool builds a valid solved grid, then removes cells to create a unique puzzle. Play right in your browser or print it out."}},{"@type":"Question","name":"Can I print the generated Sudoku?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click Print to send the current puzzle to your printer. The givens (pre-filled numbers) print on a clean grid you can fill in by hand."}},{"@type":"Question","name":"Are these Sudoku puzzles solvable?","acceptedAnswer":{"@type":"Answer","text":"Every generated puzzle has a unique solution that can be reached by logic alone. Harder difficulties simply leave more cells empty."}},{"@type":"Question","name":"Is this Sudoku tool free?","acceptedAnswer":{"@type":"Answer","text":"Yes, completely free with no signup. All generation happens in your browser — nothing is uploaded."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/sudoku-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/sudoku-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/sudoku-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div id="sudoku-grid"></div>
+    <div id="givens-count"></div>
+    <div class="num-pad" id="num-pad"></div>
+    <div id="status" style="margin-top:8px;font-size:.85em"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Sudoku Generator',
+    toolDesc: 'Generate free printable Sudoku puzzles. Choose difficulty from easy to expert — play online, print or download. 100% browser-based, no signup.',
+    generate: 'Generate New',
+    difficulty: 'Difficulty',
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+    expert: 'Expert',
+    solve: 'Show Solution',
+    check: 'Check',
+    print: 'Print Puzzle',
+    clear: 'Clear Cell',
+    givens: (n) => `${n} given numbers • ${81-n} to solve`,
+    solved: '✓ Solved! Well done.',
+    notComplete: 'Puzzle not complete yet.',
+    hasErrors: '✗ Some entries conflict — keep trying.',
+    step1: 'Pick a difficulty level (easy to expert)',
+    step2: 'Click "Generate New" to create a fresh puzzle',
+    step3: 'Click a cell, then use the number pad to fill it in',
+    step4: 'Click "Print" for a printable copy, or "Check" to verify',
+  },
+  zh: {
+    toolTitle: '数独生成器',
+    toolDesc: '免费生成可打印的数独谜题。从简单到专家四个难度 — 在线玩、打印或下载。100% 浏览器本地运行，无需注册。',
+    generate: '生成新题',
+    difficulty: '难度',
+    easy: '简单',
+    medium: '中等',
+    hard: '困难',
+    expert: '专家',
+    solve: '显示答案',
+    check: '检查',
+    print: '打印谜题',
+    clear: '清除单元格',
+    givens: (n) => `已填 ${n} 个数字 • 还需填 ${81-n} 个`,
+    solved: '✓ 已完成！太棒了。',
+    notComplete: '谜题尚未完成。',
+    hasErrors: '✗ 有冲突 — 继续努力。',
+    step1: '选择难度等级（简单到专家）',
+    step2: '点击「生成新题」创建新的谜题',
+    step3: '点击单元格，然后用数字键盘填入数字',
+    step4: '点击「打印」获取可打印版本，或「检查」验证',
+  }
+});
+
+const { $, t } = GZ;
+let solution = [];
+let puzzle = [];
+let userGrid = [];
+let selected = null;
+let currentDiff = 'medium';
+
+const DIFF_CLUES = { easy: 45, medium: 36, hard: 30, expert: 25 };
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function isValid(grid, row, col, num){
+  for(let i=0;i<9;i++){ if(grid[row][i]===num||grid[i][col]===num) return false; }
+  const br=Math.floor(row/3)*3, bc=Math.floor(col/3)*3;
+  for(let r=br;r<br+3;r++)for(let c=bc;c<bc+3;c++){ if(grid[r][c]===num) return false; }
+  return true;
+}
+
+function fillGrid(grid){
+  for(let i=0;i<81;i++){
+    const r=Math.floor(i/9), c=i%9;
+    if(grid[r][c]===0){
+      const nums=shuffle([1,2,3,4,5,6,7,8,9]);
+      for(const n of nums){
+        if(isValid(grid,r,c,n)){ grid[r][c]=n; if(fillGrid(grid)) return true; grid[r][c]=0; }
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
+function countSolutions(grid, limit){
+  let count=0;
+  function solve(){
+    for(let i=0;i<81;i++){
+      const r=Math.floor(i/9), c=i%9;
+      if(grid[r][c]===0){
+        for(let n=1;n<=9;n++){
+          if(isValid(grid,r,c,n)){ grid[r][c]=n; solve(); grid[r][c]=0; if(count>=limit) return; }
+        }
+        return;
+      }
+    }
+    count++;
+  }
+  solve();
+  return count;
+}
+
+function generatePuzzle(diff){
+  const full = Array.from({length:9},()=>Array(9).fill(0));
+  fillGrid(full);
+  solution = full.map(r=>r.slice());
+
+  const target = DIFF_CLUES[diff] || 36;
+  const positions = shuffle([...Array(81).keys()]);
+  let clues = 81;
+  const work = full.map(r=>r.slice());
+  // Remove cells while keeping unique solution (bounded attempts for speed)
+  const maxRemove = 81 - target;
+  let removed = 0;
+  for(const pos of positions){
+    if(removed>=maxRemove) break;
+    const r=Math.floor(pos/9), c=pos%9;
+    const backup = work[r][c];
+    work[r][c]=0;
+    const test = work.map(row=>row.slice());
+    if(countSolutions(test,2)===1){ removed++; }
+    else { work[r][c]=backup; }
+  }
+  puzzle = work.map(r=>r.slice());
+  userGrid = work.map(r=>r.slice());
+}
+
+function renderGrid(){
+  const grid=$('#sudoku-grid');
+  grid.innerHTML='';
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      const val=userGrid[r][c];
+      if(val){ cell.textContent=val; if(puzzle[r][c]!==0) cell.classList.add('given'); }
+      if((r+1)%3===0) cell.classList.add('box-rb');
+      cell.dataset.r=r; cell.dataset.c=c;
+      cell.onclick=()=>{ selected=[r,c]; highlightSelected(); };
+      grid.appendChild(cell);
+    }
+  }
+  let clues=0; for(let r=0;r<9;r++)for(let c=0;c<9;c++){ if(puzzle[r][c]!==0) clues++; }
+  $('#givens-count').textContent=t('givens')(clues);
+  highlightSelected();
+}
+
+function highlightSelected(){
+  document.querySelectorAll('#sudoku-grid .cell').forEach(el=>{
+    el.classList.remove('selected');
+    if(selected && +el.dataset.r===selected[0] && +el.dataset.c===selected[1]) el.classList.add('selected');
+  });
+}
+
+function buildNumPad(){
+  const pad=$('#num-pad');
+  pad.innerHTML='';
+  for(let n=1;n<=9;n++){
+    const b=document.createElement('button');
+    b.className='gz-btn'; b.textContent=n;
+    b.onclick=()=>enterNumber(n);
+    pad.appendChild(b);
+  }
+  const erase=document.createElement('button');
+  erase.className='gz-btn gz-btn-secondary'; erase.textContent='✕';
+  erase.onclick=()=>enterNumber(0);
+  pad.appendChild(erase);
+}
+
+function enterNumber(n){
+  if(!selected) return;
+  const [r,c]=selected;
+  if(puzzle[r][c]!==0) return; // can't change givens
+  userGrid[r][c]=n;
+  renderGrid();
+}
+
+function doGenerate(){
+  generatePuzzle(currentDiff);
+  selected=null;
+  renderGrid();
+  $('#status').textContent='';
+}
+
+function doSolve(){
+  userGrid=solution.map(r=>r.slice());
+  renderGrid();
+  $('#status').innerHTML=`<span style="color:var(--gz-success)">${t('solved')}</span>`;
+}
+
+function doCheck(){
+  let complete=true, ok=true;
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    if(userGrid[r][c]===0){ complete=false; }
+    else if(userGrid[r][c]!==solution[r][c]){ ok=false; }
+  }
+  if(complete&&ok) $('#status').innerHTML=`<span style="color:var(--gz-success)">${t('solved')}</span>`;
+  else if(!complete&&ok) $('#status').innerHTML=`<span style="opacity:.7">${t('notComplete')}</span>`;
+  else $('#status').innerHTML=`<span style="color:var(--gz-accent)">${t('hasErrors')}</span>`;
+}
+
+function doPrint(){
+  const w=window.open('','_blank');
+  let clues=0;
+  let html='<!DOCTYPE html><html><head><title>Sudoku Puzzle</title><style>body{font-family:sans-serif;text-align:center}h2{margin:8px}.grid{display:grid;grid-template-columns:repeat(9,40px);gap:0;border:2px solid #000;width:360px;margin:10px auto}.cell{width:40px;height:40px;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600}.br{border-right:2px solid #000}.bb{border-bottom:2px solid #000}@media print{button{display:none}}</style><link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/sudoku-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/sudoku-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/sudoku-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head><body>';
+  html+='<h2>Sudoku</h2><div class="grid">';
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    let cls='cell'; if((c+1)%3===0&&c<8) cls+=' br'; if((r+1)%3===0&&r<8) cls+=' bb';
+    html+=`<div class="${cls}">${puzzle[r][c]||''}</div>`;
+    if(puzzle[r][c]) clues++;
+  }
+  html+='</div>';
+  html+=`<button onclick="window.print()" style="margin-top:12px;padding:8px 20px;font-size:14px">Print</button>`;
+  html+='</body></html>';
+  w.document.write(html); w.document.close();
+}
+
+$('#toolbar').innerHTML = `
+  <label style="display:inline-flex;align-items:center;gap:6px">${t('difficulty')}
+  <select class="gz-select" onchange="currentDiff=this.value">
+    <option value="easy">${t('easy')}</option>
+    <option value="medium" selected>${t('medium')}</option>
+    <option value="hard">${t('hard')}</option>
+    <option value="expert">${t('expert')}</option>
+  </select></label>
+  <button class="gz-btn" onclick="doGenerate()">${t('generate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doCheck()">${t('check')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doSolve()">${t('solve')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doPrint()">🖨️ ${t('print')}</button>`;
+
+buildNumPad();
+doGenerate();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔤', href:'/text/word-search-maker.html', name:'Word Search Maker'},
+    {icon:'🎲', href:'/text/decision-maker.html', name:'Decision Maker'},
+    {icon:'📝', href:'/text/cornell-notes.html', name:'Cornell Notes'},
+    {icon:'🏆', href:'/text/award-certificate.html', name:'Award Certificate'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>JSON5 格式化与验证工具 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="格式化、美化和验证 JSON5 数据。支持注释、尾随逗号、无引号键、单引号、十六进制数、Infinity 和 NaN。可转换为干净的标准 JSON。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/json5-formatter.html">
+<meta property="og:title" content="JSON5 格式化与验证工具">
+<meta property="og:description" content="格式化、美化和验证 JSON5 数据。支持注释、尾随逗号、无引号键、单引号、十六进制数、Infinity 和 NaN。可转换为干净的标准 JSON。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/json5-formatter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JSON5 格式化与验证工具">
+<meta name="twitter:description" content="格式化、美化和验证 JSON5 数据。支持注释、尾随逗号、无引号键、单引号、十六进制数、Infinity 和 NaN。可转换为干净的标准 JSON。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.json-key{color:#e94560}.json-string{color:#00d672}.json-number{color:#61afef}.json-bool{color:#d19a66}.json-null{color:#888}
+#output{white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:.85em;line-height:1.5;max-height:600px;overflow:auto}
+#status{margin-top:8px;font-size:.85em}
+.options{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.85em}
+.options label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.options select{padding:4px 8px;background:var(--glass);border:1px solid var(--border);border-radius:6px;color:inherit}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"JSON5 Formatter & Validator","description":"Format, beautify, validate and minify JSON5 data online. Supports comments, trailing commas, unquoted keys, single quotes, hex numbers, Infinity, NaN and more. Free, browser-only, no upload.","url": "https://tools.gamezipper.com/zh/dev/json5-formatter.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is JSON5?", "acceptedAnswer": {"@type": "Answer", "text": "JSON5 is a superset of JSON that aims to make it easier for humans to write and maintain by hand. It allows comments, trailing commas, unquoted object keys, single-quoted strings, multi-line strings, hexadecimal numbers, Infinity, NaN, and leading/trailing decimal points."}}, {"@type": "Question", "name": "How do I format JSON5 online?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your JSON5 data into the input area and click Format. The tool will parse your JSON5 (including comments and trailing commas), then output clean, beautified JSON with proper indentation and syntax highlighting."}}, {"@type": "Question", "name": "Can this tool convert JSON5 to standard JSON?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The formatted output is always valid standard JSON — comments are stripped, trailing commas are removed, single-quoted strings are converted to double quotes, and special values like Infinity and NaN are converted to null. This makes it perfect for converting JSON5 config files to strict JSON."}}, {"@type": "Question", "name": "Is my JSON5 data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing and formatting happens entirely in your browser using a custom JSON5 parser. No data is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/json5-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/json5-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/json5-formatter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="options">
+      <label><span id="lbl-indent"></span>
+        <select id="indentSel" onchange="doFormat()">
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="\t">Tab</option>
+          <option value="0">Minify</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="optQuotes" checked onchange="doFormat()"> <span id="lbl-quotes"></span></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" style="min-height:260px"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'JSON5 Formatter & Validator',
+    toolDesc: 'Format, beautify, validate and minify JSON5 data. Supports comments, trailing commas, unquoted keys, single quotes, hex numbers, Infinity and NaN. Converts to clean standard JSON.',
+    lblIndent: 'Indent:',
+    lblQuotes: 'Highlight output',
+    lblIn: 'JSON5 input',
+    lblOut: 'Formatted JSON',
+    jsonValid: '✓ Valid JSON5',
+    jsonInvalid: '✗ Invalid JSON5: ',
+    step1: 'Paste your JSON5 data into the input area',
+    step2: 'Choose indent size or Minify mode',
+    step3: 'Click Format to beautify with syntax highlighting',
+    step4: 'Comments and trailing commas are stripped — output is valid standard JSON',
+  },
+  zh: {
+    toolTitle: 'JSON5 格式化与验证工具',
+    toolDesc: '格式化、美化和验证 JSON5 数据。支持注释、尾随逗号、无引号键、单引号、十六进制数、Infinity 和 NaN。可转换为干净的标准 JSON。',
+    lblIndent: '缩进：',
+    lblQuotes: '高亮输出',
+    lblIn: 'JSON5 输入',
+    lblOut: '格式化 JSON',
+    jsonValid: '✓ JSON5 有效',
+    jsonInvalid: '✗ JSON5 无效：',
+    step1: '在输入区粘贴 JSON5 数据',
+    step2: '选择缩进大小或压缩模式',
+    step3: '点击「格式化」美化并高亮显示',
+    step4: '注释和尾随逗号会被移除 — 输出为有效的标准 JSON',
+  }
+});
+const { $, copyText, t } = GZ;
+
+/* ---------- Minimal JSON5 parser ---------- */
+/* Parses JSON5 syntax into native JS values.
+   Supports: comments (// and / *), trailing commas, unquoted keys,
+   single-quoted strings, multi-line template strings, hex/infinity/nan numbers,
+   escaped identifiers. Returns {value} on success, throws Error on failure. */
+function parseJSON5(text){
+  let pos = 0;
+  const src = text;
+  const len = src.length;
+
+  function err(msg){
+    /* compute line/col */
+    let line=1,col=1;
+    for(let i=0;i<pos&&i<len;i++){
+      if(src[i]==='\n'){line++;col=1;}else col++;
+    }
+    return new Error(msg+' at line '+line+', column '+col);
+  }
+
+  function skipWS(){
+    while(pos<len){
+      const c=src[pos];
+      if(c===' '||c==='\t'||c==='\n'||c==='\r'||c==='\f'||c==='\v'){pos++;continue;}
+      if(c==='/'&&src[pos+1]==='/'){pos+=2;while(pos<len&&src[pos]!=='\n')pos++;continue;}
+      if(c==='/'&&src[pos+1]==='*'){pos+=2;while(pos<len&&!(src[pos]==='*'&&src[pos+1]==='/'))pos++;pos+=2;continue;}
+      break;
+    }
+  }
+
+  function parseValue(){
+    skipWS();
+    if(pos>=len) throw err('Unexpected end of input');
+    const c=src[pos];
+    if(c==='{') return parseObject();
+    if(c==='[') return parseArray();
+    if(c==='"'||c==="'") return parseString(c);
+    if(c==='`') return parseTpl();
+    /* number or keyword */
+    return parseNumberOrKeyword();
+  }
+
+  function parseObject(){
+    pos++; /* { */
+    const obj={};
+    skipWS();
+    if(src[pos]==='}'){pos++;return obj;}
+    while(true){
+      skipWS();
+      if(pos>=len) throw err('Unterminated object');
+      if(src[pos]==='}'){pos++;break;}
+      /* key */
+      let key;
+      const c=src[pos];
+      if(c==='"'||c==="'") key=parseString(c);
+      else if(c==='['){
+        /* computed key with string inside */
+        pos++;
+        skipWS();
+        key=parseString(src[pos]);
+        skipWS();
+        if(src[pos]!==']') throw err('Expected ] in computed key');
+        pos++;
+      } else {
+        /* identifier key */
+        let id='';
+        while(pos<len){
+          const ch=src[pos];
+          if(/[A-Za-z0-9_$\-]/.test(ch)){id+=ch;pos++;}
+          else if(ch==='\\'){pos++;id+=src[pos];pos++;}
+          else break;
+        }
+        if(!id) throw err('Expected property name');
+        key=id;
+      }
+      skipWS();
+      if(src[pos] !== ':') throw err("Expected ':' after key '"+key+"'");
+      pos++;
+      skipWS();
+      obj[key]=parseValue();
+      skipWS();
+      if(src[pos]===','){pos++;skipWS();continue;}
+      if(src[pos]==='}'){pos++;break;}
+      /* trailing comma or end — if we reach here without comma or }, error */
+      if(pos>=len) throw err('Unterminated object');
+    }
+    return obj;
+  }
+
+  function parseArray(){
+    pos++; /* [ */
+    const arr=[];
+    skipWS();
+    if(src[pos]===']'){pos++;return arr;}
+    while(true){
+      skipWS();
+      if(pos>=len) throw err('Unterminated array');
+      if(src[pos]===']'){pos++;break;}
+      arr.push(parseValue());
+      skipWS();
+      if(src[pos]===','){pos++;skipWS();continue;}
+      if(src[pos]===']'){pos++;break;}
+      if(pos>=len) throw err('Unterminated array');
+    }
+    return arr;
+  }
+
+  function parseString(quote){
+    pos++; /* skip quote */
+    let out='';
+    while(pos<len){
+      const c=src[pos];
+      if(c===quote){pos++;return out;}
+      if(c==='\\'){
+        pos++;
+        const e=src[pos];
+        if(e==='n'){out+='\n';pos++;}
+        else if(e==='t'){out+='\t';pos++;}
+        else if(e==='r'){out+='\r';pos++;}
+        else if(e==='b'){out+='\b';pos++;}
+        else if(e==='f'){out+='\f';pos++;}
+        else if(e==='v'){out+='\v';pos++;}
+        else if(e==='0'){out+='\0';pos++;}
+        else if(e==='"'||e==="'"||e==='\\'||e==='/'){out+=e;pos++;}
+        else if(e==='u'){pos++;const hex=src.substr(pos,4);out+=String.fromCharCode(parseInt(hex,16));pos+=4;}
+        else if(e==='x'){pos++;const hex=src.substr(pos,2);out+=String.fromCharCode(parseInt(hex,16));pos+=2;}
+        else if(e==='\n'){pos++;} /* line continuation */
+        else {out+=e;pos++;}
+      } else {
+        out+=c;pos++;
+      }
+    }
+    throw err('Unterminated string');
+  }
+
+  function parseTpl(){
+    pos++; /* skip backtick */
+    let out='';
+    while(pos<len){
+      const c=src[pos];
+      if(c==='`'){pos++;return out;}
+      if(c==='\\'){
+        const e=src[pos+1];
+        if(e==='n'){out+='\n';pos+=2;}
+        else if(e==='t'){out+='\t';pos+=2;}
+        else {out+=e;pos+=2;}
+      } else {
+        out+=c;pos++;
+      }
+    }
+    throw err('Unterminated template string');
+  }
+
+  function parseNumberOrKeyword(){
+    const start=pos;
+    /* check for Infinity, NaN, -Infinity, -NaN */
+    if(src[pos]==='-'||src[pos]==='+'){pos++;}
+    const c2=src[pos];
+    /* keyword */
+    const kwMatch=src.substr(pos).match(/^(Infinity|NaN|true|false|null)\b/);
+    if(kwMatch){
+      pos+=kwMatch[0].length;
+      const sign=src[start]==='-'?-1:1;
+      const raw=src[start]==='-'||src[start]==='+'?kwMatch[0]:kwMatch[0];
+      if(raw==='Infinity') return sign*Infinity;
+      if(raw==='NaN') return NaN;
+      if(raw==='true') return true;
+      if(raw==='false') return false;
+      if(raw==='null') return null;
+    }
+    /* hex */
+    if(src[pos]==='0'&&(src[pos+1]==='x'||src[pos+1]==='X')){
+      pos+=2;
+      let hex='';
+      while(pos<len&&/[0-9a-fA-F]/.test(src[pos])){hex+=src[pos];pos++;}
+      return parseInt(hex,16);
+    }
+    /* regular number */
+    let numStr='';
+    while(pos<len){
+      const ch=src[pos];
+      if(/[0-9+\-.eE]/.test(ch)){numStr+=ch;pos++;}
+      else break;
+    }
+    if(!numStr) throw err('Unexpected character: '+JSON.stringify(src[start]));
+    const num=parseFloat(numStr);
+    if(isNaN(num)) throw err('Invalid number: '+numStr);
+    return num;
+  }
+
+  const result=parseValue();
+  skipWS();
+  if(pos<len) throw err('Unexpected trailing characters');
+  return result;
+}
+
+/* ---------- JSON5 syntax highlight ---------- */
+function syntaxHighlight(json){
+  json = json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g, m => {
+    let cls='json-number';
+    if(/^"/.test(m)) cls=/:$/.test(m)?'json-key':'json-string';
+    else if(/true|false/.test(m)) cls='json-bool';
+    else if(/null/.test(m)) cls='json-null';
+    return '<span class="'+cls+'">'+m+'</span>';
+  });
+}
+
+let indent = 2;
+
+function doFormat(){
+  const inp=$('#input').value.trim();
+  if(!inp){$('#output').innerHTML='';$('#status').innerHTML='';return;}
+  const sel=$('#indentSel').value;
+  indent = sel==='\t'?'\t':parseInt(sel);
+
+  let value;
+  try{
+    value = parseJSON5(inp);
+  }catch(e){
+    $('#output').textContent='';
+    $('#status').innerHTML='<span style="color:var(--gz-accent)">'+t('jsonInvalid')+e.message+'</span>';
+    return;
+  }
+
+  /* replace Infinity/NaN with null for valid JSON output */
+  const replacer = function(k,v){
+    if(typeof v==='number'){
+      if(!isFinite(v)) return null;
+    }
+    return v;
+  };
+
+  let out;
+  if(indent===0){
+    out = JSON.stringify(value, replacer);
+  } else {
+    out = JSON.stringify(value, replacer, indent);
+  }
+
+  if($('#optQuotes').checked){
+    $('#output').innerHTML = syntaxHighlight(out);
+  } else {
+    $('#output').textContent = out;
+  }
+  $('#status').innerHTML='<span style="color:var(--gz-success)">'+t('jsonValid')+' ('+out.length+' chars)</span>';
+}
+window.doFormat=doFormat;
+
+function doMinify(){
+  $('#indentSel').value='0';
+  doFormat();
+}
+window.doMinify=doMinify;
+
+function loadExample(){
+  $('#input').value = `{
+  // This is a comment — not valid in standard JSON!
+  "name": "GameZipper Tools",
+  version: "2.0",        // unquoted key + trailing comma
+  'single-quoted': 'yes',
+  features: [
+    "format",
+    "validate",
+    "minify",
+  ],                     // trailing comma
+  hex: 0xFF,
+  ratio: -0.5,
+  /* multi-line
+     block comment */
+  active: true,
+  nothing: null,
+}`;
+  doFormat();
+}
+function doClear(){ $('#input').value=''; $('#output').innerHTML=''; $('#status').innerHTML=''; }
+window.doClear=doClear;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doFormat()">${t('format')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">Minify</button>
+  <button class="gz-btn" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+$('#lbl-in').textContent=t('lblIn');
+$('#lbl-out').textContent=t('lblOut');
+$('#lbl-indent').textContent=t('lblIndent');
+$('#lbl-quotes').textContent=t('lblQuotes');
+$('#input').addEventListener('input',function(){ /* live validate only */ });
+loadExample();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'💬', href:'/dev/jsonc-formatter.html', name:'JSONC Formatter'},
+    {icon:'📝', href:'/dev/jsonl-formatter.html', name:'JSONL Formatter'},
+    {icon:'🌳', href:'/dev/json-tree.html', name:'JSON Tree'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

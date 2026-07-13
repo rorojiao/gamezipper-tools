@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Protobuf 格式化工具 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="粘贴杂乱或压缩的 .proto（proto2 / proto3）定义，即时美化：message、enum 和 service 块内正确缩进、字段编号对齐、可读空格。支持压缩。完全在浏览器本地运行，不上传任何数据。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/protobuf-formatter.html">
+<meta property="og:title" content="Protobuf 格式化工具">
+<meta property="og:description" content="粘贴杂乱或压缩的 .proto（proto2 / proto3）定义，即时美化：message、enum 和 service 块内正确缩进、字段编号对齐、可读空格。支持压缩。完全在浏览器本地运行，不上传任何数据。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/protobuf-formatter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Protobuf 格式化工具">
+<meta name="twitter:description" content="粘贴杂乱或压缩的 .proto（proto2 / proto3）定义，即时美化：message、enum 和 service 块内正确缩进、字段编号对齐、可读空格。支持压缩。完全在浏览器本地运行，不上传任何数据。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.8em;line-height:1.55;min-height:200px}
+#status{margin-top:8px;font-size:.85rem}
+.opt-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:.8rem;color:var(--text2)}
+.opt-row select{background:var(--glass2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px}
+.opt-row label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.pb-kw{color:#c678dd;font-weight:bold}
+.pb-type{color:#e5c07b}
+.pb-name{color:#61afef}
+.pb-num{color:#d19a66}
+.pb-str{color:var(--gz-success)}
+.pb-com{color:var(--text3);font-style:italic}
+.pb-op{color:#56b6c2}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Protocol Buffers Formatter","description":"Free online Protobuf (Protocol Buffers) .proto file formatter and beautifier. Paste messy proto3 / proto2 syntax to instantly prettify with proper indentation. Minify mode included. No upload, runs in your browser.","url": "https://tools.gamezipper.com/zh/dev/protobuf-formatter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Protocol Buffers (protobuf)?", "acceptedAnswer": {"@type": "Answer", "text": "Protocol Buffers (protobuf) is Google's language-neutral, platform-neutral extensible mechanism for serializing structured data. You define your data structure in a .proto file, then protobuf compilers generate code for many languages (Go, Java, Python, C++, etc.) to read and write that data efficiently."}}, {"@type": "Question", "name": "How do I format a .proto file?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your .proto content into the input area and click Beautify. The formatter normalizes indentation inside message, enum and service blocks, aligns field numbers, spaces out option braces, and adds a blank line between top-level blocks for readability."}}, {"@type": "Question", "name": "Does it support proto2 and proto3?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The formatter handles both proto2 and proto3 syntax including syntax declaration, package, import, option, message, enum, service, rpc, oneof, map, reserved, extensions, and field options like [(custom) = value]."}}, {"@type": "Question", "name": "Is my .proto file uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. This formatter runs entirely in your browser using local JavaScript. Your schema definitions never leave your device, so it is safe to paste proprietary IDL."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/protobuf-formatter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/protobuf-formatter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/protobuf-formatter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="opt-row" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" rows="16" spellcheck="false" style="width:100%;font-family:monospace;font-size:.78em"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Protobuf Formatter & Beautifier',
+    toolDesc: 'Paste messy or minified .proto (proto2 / proto3) definitions to instantly prettify with proper indentation inside message, enum and service blocks, aligned field numbers and readable spacing. Minify mode included. Runs entirely in your browser — nothing is uploaded.',
+    beautify: 'Beautify',
+    minify: 'Minify',
+    indent: 'Indent size',
+    spaces: 'spaces',
+    alignFields: 'Align field numbers',
+    lblIn: '.proto input',
+    lblOut: 'Formatted output',
+    empty: 'Please paste a .proto file on the left.',
+    done: '✓ Beautified',
+    minified: '✓ Minified',
+    step1: 'Paste your Protocol Buffers (.proto) definitions into the input area',
+    step2: 'Pick an indent size and toggle field alignment',
+    step3: 'Click Beautify to format, or Minify to compress to one line',
+    step4: 'Click Copy to copy the result, or Download to save the .proto file',
+  },
+  zh: {
+    toolTitle: 'Protobuf 格式化工具',
+    toolDesc: '粘贴杂乱或压缩的 .proto（proto2 / proto3）定义，即时美化：message、enum 和 service 块内正确缩进、字段编号对齐、可读空格。支持压缩。完全在浏览器本地运行，不上传任何数据。',
+    beautify: '美化',
+    minify: '压缩',
+    indent: '缩进',
+    spaces: '空格',
+    alignFields: '对齐字段编号',
+    lblIn: '.proto 输入',
+    lblOut: '格式化输出',
+    empty: '请在左侧粘贴 .proto 文件。',
+    done: '✓ 已美化',
+    minified: '✓ 已压缩',
+    step1: '将 Protocol Buffers（.proto）定义粘贴到输入区',
+    step2: '选择缩进大小并切换字段对齐',
+    step3: '点击「美化」格式化，或「压缩」压缩为一行',
+    step4: '点击「复制」复制结果，或「下载」保存 .proto 文件',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const KEYWORDS = new Set(['syntax','package','import','option','message','enum','service','rpc','returns','stream','oneof','map','reserved','extensions','extend','repeated','optional','required','weak','default','deprecated','packed','json_name','lazy','client_streaming','server_streaming']);
+
+const PRIMITIVE_TYPES = new Set(['double','float','int32','int64','uint32','uint64','sint32','sint64','fixed32','fixed64','sfixed32','sfixed64','bool','string','bytes']);
+
+function beautifyProto(src, opts){
+  const indent = opts.indent;
+  const pad = d => ' '.repeat(d * indent);
+  let lines = [];
+  let depth = 0;
+  let i = 0, n = src.length;
+  let buf = '';
+  let pendingNewline = false;
+
+  function flush(){
+    if (buf.length){
+      const trimmed = buf.trim();
+      if (trimmed.length) lines.push(pad(depth) + trimmed);
+      buf = '';
+    }
+    pendingNewline = false;
+  }
+
+  while (i < n){
+    const c = src[i];
+
+    // line comment
+    if (c === '/' && src[i+1] === '/'){
+      let e = src.indexOf('\n', i); if (e === -1) e = n;
+      if (buf.length) lines.push(pad(depth) + buf.trim());
+      else lines.push(pad(depth) + src.substring(i, e).trim());
+      buf = '';
+      i = e;
+      continue;
+    }
+    // block comment
+    if (c === '/' && src[i+1] === '*'){
+      let j = i + 2;
+      while (j < n && !(src[j] === '*' && src[j+1] === '/')) j++;
+      const end = Math.min(j+2, n);
+      const comment = src.substring(i, end);
+      // preserve multi-line block comments on their own lines
+      flush();
+      lines.push(pad(depth) + comment.replace(/\*/g, '*'));
+      i = end;
+      continue;
+    }
+
+    if (c === '{'){
+      const before = buf.trim();
+      buf = '';
+      lines.push(pad(depth) + before + ' {');
+      depth++;
+      i++;
+      continue;
+    }
+    if (c === '}'){
+      if (depth > 0) depth--;
+      flush();
+      lines.push(pad(depth) + '}');
+      i++;
+      // blank line after closing top-level (depth 0) blocks
+      if (depth === 0) lines.push('');
+      continue;
+    }
+
+    if (c === '\n'){
+      flush();
+      i++;
+      continue;
+    }
+    if (/\s/.test(c)){
+      if (buf.length && !/\s$/.test(buf)) buf += ' ';
+      i++;
+      continue;
+    }
+    if (c === ';'){
+      buf += ';';
+      flush();
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'"){
+      const q = c;
+      let j = i+1;
+      while (j < n && src[j] !== q){ if (src[j] === '\\') j++; j++; }
+      buf += src.substring(i, Math.min(j+1, n));
+      i = Math.min(j+1, n);
+      continue;
+    }
+    buf += c;
+    i++;
+  }
+  flush();
+
+  let result = lines.join('\n');
+  // cleanup multiple blank lines
+  result = result.replace(/\n{3,}/g, '\n\n').replace(/^\n+/,'').replace(/\s+$/,'\n');
+
+  // align field numbers: find max field-number column width per message block
+  if (opts.alignFields){
+    result = alignFieldNumbers(result, indent);
+  }
+
+  return result;
+}
+
+function alignFieldNumbers(src, indent){
+  // For each consecutive run of lines that look like "<type> <name> = <num>;" align the "=" column
+  const out = src.split('\n');
+  for (let k = 0; k < out.length; k++){
+    const m = out[k].match(/^(\s*(?:repeated |optional |required |map<[^>]+> )?\w+(?:\.\w+)*\s+\w+)\s*=\s*(\d+)\s*(.*)$/);
+    if (!m) continue;
+    // find run
+    let end = k;
+    while (end + 1 < out.length){
+      if (out[end+1].match(/^(\s*(?:repeated |optional |required |map<[^>]+> )?\w+(?:\.\w+)*\s+\w+)\s*=\s*\d+/)) end++;
+      else break;
+    }
+    // compute max width of prefix (without the leading indent, but keep indentation)
+    let maxLen = 0;
+    const items = [];
+    for (let j = k; j <= end; j++){
+      const mm = out[j].match(/^(\s*(?:repeated |optional |required |map<[^>]+> )?\w+(?:\.\w+)*\s+\w+)\s*=\s*(\d+)\s*(.*)$/);
+      if (mm){ items.push({idx:j, prefix:mm[1], num:mm[2], rest:mm[3]}); maxLen = Math.max(maxLen, mm[1].length); }
+    }
+    for (const it of items){
+      const aligned = it.prefix + ' '.repeat(Math.max(1, maxLen - it.prefix.length + 1)) + '= ' + it.num + (it.rest ? ' ' + it.rest : '');
+      out[it.idx] = aligned.replace(/\s+;/g, ';');
+    }
+    k = end;
+  }
+  return out.join('\n');
+}
+
+function minifyProto(src){
+  // remove comments, collapse whitespace, keep one statement per relevant space
+  let out = '';
+  let i = 0, n = src.length;
+  let inStr = false, strCh = '';
+  while (i < n){
+    const c = src[i];
+    if (inStr){
+      out += c;
+      if (c === '\\'){ out += src[i+1]||''; i += 2; continue; }
+      if (c === strCh) inStr = false;
+      i++; continue;
+    }
+    if (c === '/' && src[i+1] === '/'){
+      let e = src.indexOf('\n', i); if (e === -1) e = n;
+      i = e; continue;
+    }
+    if (c === '/' && src[i+1] === '*'){
+      let j = i+2; while (j < n && !(src[j] === '*' && src[j+1] === '/')) j++;
+      i = Math.min(j+2, n); continue;
+    }
+    if (c === '"' || c === "'"){ inStr = true; strCh = c; out += c; i++; continue; }
+    if (/\s/.test(c)){
+      if (out.length && !/[\s{;<>,(:=]/.test(out[out.length-1])) out += ' ';
+      i++; continue;
+    }
+    out += c; i++;
+  }
+  // collapse " ;" -> ";", " {" -> "{"
+  out = out.replace(/\s+;/g, ';').replace(/\s*,\s*/g, ', ').replace(/\s*\(\s*/g, '(').replace(/\s*\)\s*/g, ')');
+  return out.trim();
+}
+
+function highlight(code){
+  let i = 0, n = code.length, out = '';
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  while (i < n){
+    const c = code[i];
+    if (c === '/' && code[i+1] === '/'){
+      let e = code.indexOf('\n', i); if (e === -1) e = n;
+      out += `<span class="pb-com">${esc(code.substring(i, e))}</span>`;
+      i = e; continue;
+    }
+    if (c === '/' && code[i+1] === '*'){
+      let j = i+2; while (j < n && !(code[j] === '*' && code[j+1] === '/')) j++;
+      out += `<span class="pb-com">${esc(code.substring(i, Math.min(j+2,n)))}</span>`;
+      i = Math.min(j+2, n); continue;
+    }
+    if (c === '"' || c === "'"){
+      const q = c; let j = i+1;
+      while (j < n && code[j] !== q){ if (code[j] === '\\') j++; j++; }
+      out += `<span class="pb-str">${esc(code.substring(i, Math.min(j+1,n)))}</span>`;
+      i = Math.min(j+1, n); continue;
+    }
+    if (/[A-Za-z_]/.test(c)){
+      let j = i; while (j < n && /[A-Za-z0-9_.]/.test(code[j])) j++;
+      const word = code.substring(i, j);
+      if (KEYWORDS.has(word)) out += `<span class="pb-kw">${esc(word)}</span>`;
+      else if (PRIMITIVE_TYPES.has(word)) out += `<span class="pb-type">${esc(word)}</span>`;
+      else out += esc(word);
+      i = j; continue;
+    }
+    out += esc(c); i++;
+  }
+  return out;
+}
+
+function getOpts(){
+  return {
+    indent: parseInt($('#ind').value) || 2,
+    alignFields: $('#alf').checked,
+  };
+}
+
+function doBeautify(){
+  const inp = $('#input').value;
+  if (!inp.trim()){ $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`; $('#output').innerHTML=''; return; }
+  const out = beautifyProto(inp, getOpts());
+  $('#output').innerHTML = highlight(out);
+  window._pbOut = out;
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')} · ${out.split('\n').length} lines</span>`;
+}
+function doMinify(){
+  const inp = $('#input').value;
+  if (!inp.trim()){ $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`; $('#output').innerHTML=''; return; }
+  const out = minifyProto(inp);
+  window._pbOut = out;
+  $('#output').innerHTML = highlight(out);
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('minified')} · ${out.length} chars</span>`;
+}
+function doCopy(){ if (window._pbOut != null) copyText(window._pbOut); }
+function doDownload(){
+  if (window._pbOut == null) return;
+  const blob = new Blob([window._pbOut], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'schema.proto';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function loadExample(){
+  $('#input').value =
+`syntax = "proto3";package example.v1;option java_package="com.example.v1";import "google/protobuf/timestamp.proto";message User{int64 id=1;string name=2;string email=3;repeated string roles=4;google.protobuf.Timestamp created_at=5;enum Status{UNKNOWN=0;ACTIVE=1;INACTIVE=2;BANNED=3;}Status status=6;}service UserService{rpc GetUser(GetUserRequest)returns(User);rpc ListUsers(ListUsersRequest)returns(stream User);}message GetUserRequest{int64 id=1;}message ListUsersRequest{int32 page_size=1;string page_token=2;}`;
+  doBeautify();
+}
+function doClear(){ $('#input').value=''; $('#output').innerHTML=''; $('#status').innerHTML=''; window._pbOut=null; }
+
+$('#opts').innerHTML = `
+  <label>${t('indent')}:
+    <select id="ind">
+      <option value="2">2 ${t('spaces')}</option>
+      <option value="4">4 ${t('spaces')}</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="alf" checked> ${t('alignFields')}</label>`;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="doBeautify()">${t('beautify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doMinify()">${t('minify')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="doCopy()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doDownload()">⬇ .proto</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#input').addEventListener('input', ()=>{ window._pbOut=null; });
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🟣', href:'/dev/terraform-formatter.html', name:'Terraform HCL'},
+    {icon:'📝', href:'/dev/json-to-proto.html', name:'JSON to Proto'},
+    {icon:'📄', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔧', href:'/dev/toml-formatter.html', name:'TOML Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

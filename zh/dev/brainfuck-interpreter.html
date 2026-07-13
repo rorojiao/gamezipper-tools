@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>Brainfuck 解释器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线运行和调试 Brainfuck 趣味编程语言代码。可单步执行、查看内存带和实时输出。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/brainfuck-interpreter.html">
+  <meta property="og:title" content="Brainfuck 解释器">
+  <meta property="og:description" content="在线运行和调试 Brainfuck 趣味编程语言代码。可单步执行、查看内存带和实时输出。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/brainfuck-interpreter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Brainfuck 解释器">
+<meta name="twitter:description" content="在线运行和调试 Brainfuck 趣味编程语言代码。可单步执行、查看内存带和实时输出。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.bf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.bf-grid{grid-template-columns:1fr}}
+.bf-area label{display:block;font-weight:700;margin-bottom:4px;font-size:.9em}
+.bf-area textarea{width:100%;min-height:180px;font-family:monospace;font-size:.9rem;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);padding:10px;resize:vertical}
+.bf-out{font-family:monospace;font-size:.9rem;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px;min-height:120px;white-space:pre-wrap;word-break:break-all}
+.bf-tape{display:flex;flex-wrap:wrap;gap:3px;font-family:monospace;font-size:.78rem;max-height:90px;overflow-y:auto;padding:4px}
+.bf-cell{min-width:34px;text-align:center;padding:3px 4px;border-radius:5px;border:1px solid var(--border);background:var(--glass2)}
+.bf-cell.ptr{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:800}
+.bf-cell.nonzero{border-color:var(--accent)}
+.bf-status{font-size:.85em;color:var(--text2);margin-top:6px}
+.bf-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.bf-controls input{width:160px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Brainfuck Interpreter","description":"Run Brainfuck code online with a live interpreter. Step through execution, watch memory tape and output, debug your esoteric programs. Supports ASCII and numeric I/O. Free, browser-only, no signup.","url": "https://tools.gamezipper.com/zh/dev/brainfuck-interpreter.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Brainfuck?", "acceptedAnswer": {"@type": "Answer", "text": "Brainfuck is an esoteric programming language created in 1993 with only 8 commands: > < + - . , [ ]. Despite its tiny instruction set it is Turing complete — any computable function can be written in it. It is famous as a minimalist language for code golf and programming puzzles."}}, {"@type": "Question", "name": "What do the 8 Brainfuck commands do?", "acceptedAnswer": {"@type": "Answer", "text": "> moves the pointer right, < moves it left, + increments the current cell, - decrements it, . outputs the current cell as a character, , reads one byte of input into the cell, [ jumps past the matching ] if the cell is zero, and ] jumps back to the matching [ if the cell is non-zero."}}, {"@type": "Question", "name": "How big is the memory tape?", "acceptedAnswer": {"@type": "Answer", "text": "This interpreter uses a tape of 30,000 unsigned 8-bit cells (values 0 to 255, wrapping around), matching the original Brainfuck specification. The pointer starts at cell 0 and all cells begin at 0."}}, {"@type": "Question", "name": "Can I debug step by step?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Use the Step button to execute one command at a time and watch the memory tape, pointer and output update live. You can also set an instruction limit to prevent infinite loops from freezing your browser."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/brainfuck-interpreter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/brainfuck-interpreter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/brainfuck-interpreter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="bf-controls">
+      <button class="gz-btn" id="btnRun" onclick="bfRun()">▶ <span id="lblRun"></span></button>
+      <button class="gz-btn gz-btn-secondary" id="btnStep" onclick="bfStep()">⏭ <span id="lblStep"></span></button>
+      <button class="gz-btn gz-btn-secondary" id="btnReset" onclick="bfReset()">↺ <span id="lblReset"></span></button>
+      <button class="gz-btn gz-btn-secondary" id="btnExample" onclick="loadExample()">★ <span id="lblExample"></span></button>
+      <label style="font-size:.85em"><span id="lblInput"></span> <input type="text" id="bfInput" placeholder=""></label>
+    </div>
+    <div class="bf-grid">
+      <div class="bf-area">
+        <label id="lblCode"></label>
+        <textarea id="code" spellcheck="false" placeholder="++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."></textarea>
+      </div>
+      <div class="bf-area">
+        <label id="lblOutput"></label>
+        <div class="bf-out" id="output"></div>
+        <label id="lblTape" style="margin-top:8px"></label>
+        <div class="bf-tape" id="tape"></div>
+        <div class="bf-status" id="status"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Brainfuck Interpreter',
+    toolDesc: 'Run and debug Brainfuck esoteric code online. Step through execution, watch the memory tape and live output.',
+    lblRun: 'Run',
+    lblStep: 'Step',
+    lblReset: 'Reset',
+    lblExample: 'Hello World',
+    lblInput: 'Input:',
+    lblCode: 'Brainfuck Code',
+    lblOutput: 'Output',
+    lblTape: 'Memory Tape',
+    statusReady: 'Ready',
+    statusDone: (n) => `Done — ${n} instructions executed`,
+    statusHalted: 'Halted (input exhausted)',
+    statusLimit: 'Stopped: instruction limit reached (possible infinite loop)',
+    statusErr: (m) => `Error: ${m}`,
+    step1: 'Type or paste Brainfuck code (only > < + - . , [ ] are commands)',
+    step2: 'Optionally provide input text for comma , commands',
+    step3: 'Press Run to execute, or Step to debug one command at a time',
+    step4: 'Watch the memory tape and output update live in real time',
+  },
+  zh: {
+    toolTitle: 'Brainfuck 解释器',
+    toolDesc: '在线运行和调试 Brainfuck 趣味编程语言代码。可单步执行、查看内存带和实时输出。',
+    lblRun: '运行',
+    lblStep: '单步',
+    lblReset: '重置',
+    lblExample: 'Hello World',
+    lblInput: '输入：',
+    lblCode: 'Brainfuck 代码',
+    lblOutput: '输出',
+    lblTape: '内存带',
+    statusReady: '就绪',
+    statusDone: (n) => `完成 — 执行了 ${n} 条指令`,
+    statusHalted: '暂停（输入已耗尽）',
+    statusLimit: '已停止：达到指令上限（可能是死循环）',
+    statusErr: (m) => `错误：${m}`,
+    step1: '输入或粘贴 Brainfuck 代码（仅 > < + - . , [ ] 为有效命令）',
+    step2: '可选：为逗号 , 命令提供输入文本',
+    step3: '点击「运行」执行，或「单步」逐条调试',
+    step4: '实时查看内存带和输出的变化',
+  }
+});
+
+const { $, t } = GZ;
+const TAPE_SIZE = 30000, MAX_STEPS = 1000000;
+let tape, ptr, pc, out, inputIdx, inputBytes, prog, jumps, steps, halted, done;
+
+function bfReset(){
+  tape = new Uint8Array(TAPE_SIZE);
+  ptr = 0; pc = 0; out = ''; inputIdx = 0; steps = 0; halted = false; done = false;
+  const raw = $('#code').value;
+  prog = [];
+  for(const ch of raw){ if('><+-.,[]'.includes(ch)) prog.push(ch); }
+  // precompute bracket jumps
+  jumps = {}; const stack = [];
+  for(let i=0;i<prog.length;i++){
+    if(prog[i]==='[') stack.push(i);
+    else if(prog[i]===']'){ if(!stack.length){ $('#status').textContent=t('statusErr','unmatched ]'); return; } const o=stack.pop(); jumps[o]=i; jumps[i]=o; }
+  }
+  if(stack.length){ $('#status').textContent=t('statusErr','unmatched ['); return; }
+  inputBytes = new TextEncoder().encode($('#bfInput').value);
+  $('#output').textContent = '';
+  $('#status').textContent = t('statusReady');
+  renderTape();
+}
+
+function bfStep(){
+  if(done) return;
+  if(pc===0 && steps===0 && !jumps.hasOwnProperty('0') && !jumps.length){} // ensure init
+  if(!tape) bfReset();
+  if(prog.length===0) return;
+  if(pc >= prog.length){ done = true; $('#status').textContent = t('statusDone', steps); return; }
+  const cmd = prog[pc];
+  switch(cmd){
+    case '>': ptr = (ptr+1)%TAPE_SIZE; break;
+    case '<': ptr = (ptr-1+TAPE_SIZE)%TAPE_SIZE; break;
+    case '+': tape[ptr] = (tape[ptr]+1)&0xff; break;
+    case '-': tape[ptr] = (tape[ptr]-1)&0xff; break;
+    case '.': out += String.fromCharCode(tape[ptr]); $('#output').textContent = out; break;
+    case ',': if(inputIdx < inputBytes.length){ tape[ptr]=inputBytes[inputIdx++]; } else { halted=true; } break;
+    case '[': if(tape[ptr]===0) pc = jumps[pc]; break;
+    case ']': if(tape[ptr]!==0) pc = jumps[pc]; break;
+  }
+  pc++; steps++;
+  renderTape();
+}
+
+function bfRun(){
+  bfReset();
+  if(prog.length===0) return;
+  while(pc < prog.length && steps < MAX_STEPS){
+    const cmd = prog[pc];
+    switch(cmd){
+      case '>': ptr=(ptr+1)%TAPE_SIZE; break;
+      case '<': ptr=(ptr-1+TAPE_SIZE)%TAPE_SIZE; break;
+      case '+': tape[ptr]=(tape[ptr]+1)&0xff; break;
+      case '-': tape[ptr]=(tape[ptr]-1)&0xff; break;
+      case '.': out+=String.fromCharCode(tape[ptr]); break;
+      case ',': if(inputIdx<inputBytes.length){ tape[ptr]=inputBytes[inputIdx++]; } else { halted=true; } break;
+      case '[': if(tape[ptr]===0) pc=jumps[pc]; break;
+      case ']': if(tape[ptr]!==0) pc=jumps[pc]; break;
+    }
+    if(halted) break;
+    pc++; steps++;
+  }
+  $('#output').textContent = out;
+  if(halted) $('#status').textContent = t('statusHalted');
+  else if(steps >= MAX_STEPS) $('#status').textContent = t('statusLimit');
+  else $('#status').textContent = t('statusDone', steps);
+  renderTape();
+}
+
+function renderTape(){
+  // show first 32 cells or up to max used
+  let maxUsed = 0;
+  for(let i=0;i<32;i++) if(tape[i]) maxUsed = i;
+  const show = Math.max(32, maxUsed+4);
+  let html = '';
+  for(let i=0;i<show;i++){
+    html += `<div class="bf-cell ${i===ptr?'ptr':''} ${tape[i]?'nonzero':''}">${tape[i]}</div>`;
+  }
+  $('#tape').innerHTML = html;
+}
+
+function loadExample(){
+  $('#code').value = '++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.';
+  bfReset();
+}
+
+$('#toolbar').innerHTML = '';
+['lblRun','lblStep','lblReset','lblExample','lblInput','lblCode','lblOutput','lblTape'].forEach(k=>{ const el=$('#'+k.replace('lbl','lbl')); });
+$('#lblRun').textContent=t('lblRun'); $('#lblStep').textContent=t('lblStep');
+$('#lblReset').textContent=t('lblReset'); $('#lblExample').textContent=t('lblExample');
+$('#lblInput').textContent=t('lblInput'); $('#lblCode').textContent=t('lblCode');
+$('#lblOutput').textContent=t('lblOutput'); $('#lblTape').textContent=t('lblTape');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📋', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'⚡', href:'/dev/regex-tester.html', name:'Regex Tester'},
+    {icon:'🔣', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🎲', href:'/dev/random-string.html', name:'Random String'},
+  ]
+});
+bfReset();
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

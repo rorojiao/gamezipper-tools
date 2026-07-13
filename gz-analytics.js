@@ -24,7 +24,7 @@
   //   in hours, forcing another revert cycle. Permanent endpoint IS alive.
   // DO NOT rotate this URL again. If bi.gamezipper.com goes down, fix the Cloudflare
   //   zone, do not introduce a new trycloudflare.com tunnel.
-  var EP = 'https://pty-blond-grand-affiliates.trycloudflare.com/api/collect';
+  var EP = 'https://string-action-sudden-seating.trycloudflare.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;

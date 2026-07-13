@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>工作时间计算器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="计算两个日期时间之间的工作时间，自动跳过夜间、周末和午休。可自定义工作时段和节假日 — 适用于计费、SLA 和工时表。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/calc/business-hours-calculator.html">
+  <meta property="og:title" content="工作时间计算器">
+  <meta property="og:description" content="计算两个日期时间之间的工作时间，自动跳过夜间、周末和午休。可自定义工作时段和节假日 — 适用于计费、SLA 和工时表。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/calc/business-hours-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="工作时间计算器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.field{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+.field label{min-width:140px;font-weight:600;font-size:.92em}
+input[type=number],input[type=date],input[type=time],select{padding:6px 10px;border:1px solid var(--gz-border);border-radius:6px;background:var(--gz-bg);color:inherit;font-size:.95em}
+.workdays{display:flex;gap:6px;flex-wrap:wrap}
+.workday{padding:6px 10px;border:1px solid var(--gz-border);border-radius:6px;cursor:pointer;font-size:.82em;user-select:none;opacity:.5;transition:opacity .15s}
+.workday.on{opacity:1;background:rgba(34,197,94,.15);border-color:#22c55e}
+.result{margin-top:18px;padding:18px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--gz-border)}
+.result .big{font-size:2.2em;font-weight:700;color:var(--gz-accent);font-family:monospace}
+.result .sub{opacity:.75;font-size:.9em;margin-top:4px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px}
+.result-card{padding:10px 12px;background:rgba(0,0,0,.18);border-radius:8px}
+.result-card .k{font-size:.78em;opacity:.7;text-transform:uppercase;letter-spacing:.5px}
+.result-card .v{font-size:1.3em;font-weight:600;margin-top:3px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Business Hours Calculator","description":"Calculate business hours between two dates excluding nights and weekends. Customizable work hours, lunch breaks, and workdays. Free online work time calculator for billing and timesheets.","url": "https://tools.gamezipper.com/zh/calc/business-hours-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What does the business hours calculator do?", "acceptedAnswer": {"@type": "Answer", "text": "It counts the working time between a start and end date-time, skipping nights, weekends, and a configurable lunch break. Perfect for billing clients, estimating SLA response times, or filling out timesheets."}}, {"@type": "Question", "name": "Can I customize my work schedule?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Set your daily start and end time, lunch break duration, and toggle which weekdays count as workdays. The calculator respects these settings for every day in the range."}}, {"@type": "Question", "name": "Does it handle holidays?", "acceptedAnswer": {"@type": "Answer", "text": "You can add holiday dates in YYYY-MM-DD format. Any date listed is treated as a non-working day and excluded from the total, just like a weekend."}}, {"@type": "Question", "name": "How is the total expressed?", "acceptedAnswer": {"@type": "Answer", "text": "You see the total in hours, hours-and-minutes, decimal hours (for billing), and the equivalent number of full 8-hour working days."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/business-hours-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/business-hours-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/business-hours-calculator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="field"><label id="lbl-start"></label><input type="datetime-local" id="start"></div>
+    <div class="field"><label id="lbl-end"></label><input type="datetime-local" id="end"></div>
+    <div class="field"><label id="lbl-workstart"></label><input type="time" id="workstart" value="09:00"> <span style="opacity:.6">→</span> <input type="time" id="workend" value="18:00"></div>
+    <div class="field"><label id="lbl-lunch"></label><input type="number" id="lunch" value="60" min="0" max="240" style="width:80px"> <span style="opacity:.7;font-size:.85em" id="lbl-mins"></span></div>
+    <div class="field"><label id="lbl-days"></label><div class="workdays" id="workdays"></div></div>
+    <div class="field"><label id="lbl-holidays"></label><input type="text" id="holidays" placeholder="2026-01-01, 2026-12-25" style="flex:1;min-width:240px"></div>
+    <button class="gz-btn" id="calc-btn" style="margin-top:14px"></button>
+    <div id="result"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Business Hours Calculator',
+    toolDesc: 'Calculate working time between two date-times, skipping nights, weekends, and lunch breaks. Customizable schedule and holidays — perfect for billing, SLAs and timesheets.',
+    lblStart: 'Start Date & Time',
+    lblEnd: 'End Date & Time',
+    lblWorkstart: 'Work Hours',
+    lblLunch: 'Lunch Break',
+    lblMins: 'minutes',
+    lblDays: 'Workdays',
+    lblHolidays: 'Holidays (YYYY-MM-DD, comma-separated)',
+    calculate: 'Calculate',
+    result: 'Total Business Time',
+    hoursMins: 'hours',
+    decimalHours: 'Decimal hours',
+    fullDays: 'Working days (8h)',
+    minutes: 'Minutes',
+    invalidRange: 'End must be after start.',
+    step1: 'Set the start and end date-time for your task or interval',
+    step2: 'Adjust work hours, lunch break, and toggle which weekdays count',
+    step3: 'Optionally add public holidays in YYYY-MM-DD format',
+    step4: 'Click Calculate to see total hours, decimal hours and equivalent days',
+  },
+  zh: {
+    toolTitle: '工作时间计算器',
+    toolDesc: '计算两个日期时间之间的工作时间，自动跳过夜间、周末和午休。可自定义工作时段和节假日 — 适用于计费、SLA 和工时表。',
+    lblStart: '开始日期与时间',
+    lblEnd: '结束日期与时间',
+    lblWorkstart: '工作时段',
+    lblLunch: '午休时长',
+    lblMins: '分钟',
+    lblDays: '工作日',
+    lblHolidays: '节假日 (YYYY-MM-DD，逗号分隔)',
+    calculate: '计算',
+    result: '总工作时间',
+    hoursMins: '小时',
+    decimalHours: '十进制小时',
+    fullDays: '工作日 (8小时)',
+    minutes: '分钟',
+    invalidRange: '结束时间必须晚于开始时间。',
+    step1: '设置任务或时间段的开始和结束日期时间',
+    step2: '调整工作时段、午休时长，并选择哪些天算工作日',
+    step3: '可选地添加节假日（YYYY-MM-DD 格式）',
+    step4: '点击「计算」查看总小时数、十进制小时和等效工作日',
+  }
+});
+
+const { $, t } = GZ;
+const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+// Default workdays Mon-Fri (1-5)
+let workdayMap = {0:false, 1:true, 2:true, 3:true, 4:true, 5:true, 6:false};
+
+function init() {
+  // default start = today 09:00, end = today+2 days 17:00
+  const now = new Date();
+  const startDef = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0);
+  const endDef = new Date(startDef.getTime() + 2*24*60*60*1000 + 8*60*60*1000);
+  $('#start').value = toLocalDT(startDef);
+  $('#end').value = toLocalDT(endDef);
+
+  $('#lbl-start').textContent = t('lblStart');
+  $('#lbl-end').textContent = t('lblEnd');
+  $('#lbl-workstart').textContent = t('lblWorkstart');
+  $('#lbl-lunch').textContent = t('lblLunch');
+  $('#lbl-mins').textContent = t('lblMins');
+  $('#lbl-days').textContent = t('lblDays');
+  $('#lbl-holidays').textContent = t('lblHolidays');
+  $('#calc-btn').textContent = t('calculate');
+
+  // workday chips
+  const wd = $('#workdays');
+  wd.innerHTML = DAY_LABELS.map((d, i) => `<span class="workday${workdayMap[i]?' on':''}" data-d="${i}">${d}</span>`).join('');
+  wd.querySelectorAll('.workday').forEach(el => el.addEventListener('click', e => {
+    const i = +e.target.dataset.d;
+    workdayMap[i] = !workdayMap[i];
+    e.target.classList.toggle('on', workdayMap[i]);
+  }));
+
+  $('#calc-btn').addEventListener('click', calculate);
+  calculate();
+}
+
+function toLocalDT(d) {
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function parseLocalDT(s) {
+  // datetime-local gives local time
+  return new Date(s);
+}
+
+function overlapMinutes(aStart, aEnd, bStart, bEnd) {
+  const start = Math.max(aStart, bStart);
+  const end = Math.min(aEnd, bEnd);
+  return Math.max(0, end - start);
+}
+
+function calculate() {
+  const start = parseLocalDT($('#start').value);
+  const end = parseLocalDT($('#end').value);
+  if (!(start && end) || isNaN(start) || isNaN(end)) { $('#result').innerHTML = ''; return; }
+  if (end <= start) { $('#result').innerHTML = `<span style="color:var(--gz-accent)">${t('invalidRange')}</span>`; return; }
+
+  const workStartStr = $('#workstart').value || '09:00';
+  const workEndStr = $('#workend').value || '18:00';
+  const [wsH, wsM] = workStartStr.split(':').map(Number);
+  const [weH, weM] = workEndStr.split(':').map(Number);
+  const lunchMin = parseInt($('#lunch').value) || 0;
+
+  // parse holidays
+  const holidays = new Set(($('#holidays').value || '').split(',').map(s => s.trim()).filter(Boolean));
+
+  // iterate day-by-day
+  let totalMs = 0;
+  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  let safety = 0;
+  while (cursor <= endDay && safety < 100000) {
+    safety++;
+    const dow = cursor.getDay();
+    const ymd = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;
+    if (workdayMap[dow] && !holidays.has(ymd)) {
+      const dayWorkStart = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), wsH, wsM);
+      const dayWorkEnd = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), weH, weM);
+      // compute overlap with [start, end]
+      const ovStart = new Date(Math.max(dayWorkStart.getTime(), start.getTime()));
+      const ovEnd = new Date(Math.min(dayWorkEnd.getTime(), end.getTime()));
+      if (ovEnd > ovStart) {
+        let dayMs = ovEnd - ovStart;
+        // subtract lunch if both endpoints of the lunch window are inside the overlap
+        const lunchMid = new Date((dayWorkStart.getTime() + dayWorkEnd.getTime()) / 2);
+        const lunchStart = new Date(lunchMid.getTime() - (lunchMin * 60000) / 2);
+        const lunchEnd = new Date(lunchMid.getTime() + (lunchMin * 60000) / 2);
+        const lunchOverlap = Math.max(0, Math.min(lunchEnd, ovEnd) - Math.max(lunchStart, ovStart));
+        dayMs -= lunchOverlap;
+        if (dayMs > 0) totalMs += dayMs;
+      }
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  const totalMin = Math.round(totalMs / 60000);
+  const hours = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  const decimal = (totalMin / 60).toFixed(2);
+  const fullDays = (totalMin / (8*60)).toFixed(2);
+
+  $('#result').innerHTML = `
+    <div class="result">
+      <div class="big">${hours}<span style="font-size:.5em;opacity:.7">h</span> ${mins}<span style="font-size:.5em;opacity:.7">m</span></div>
+      <div class="sub">${t('result')}</div>
+      <div class="result-grid">
+        <div class="result-card"><div class="k">${t('decimalHours')}</div><div class="v">${decimal} h</div></div>
+        <div class="result-card"><div class="k">${t('minutes')}</div><div class="v">${totalMin.toLocaleString()}</div></div>
+        <div class="result-card"><div class="k">${t('fullDays')}</div><div class="v">${fullDays}</div></div>
+      </div>
+    </div>`;
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="calculate()">${GZ.t('calculate')}</button>`;
+
+init();
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏱️', href:'/calc/hours-calculator.html', name:'Hours Calculator'},
+    {icon:'💼', href:'/calc/work-hours-calculator.html', name:'Work Hours'},
+    {icon:'📅', href:'/calc/date-difference.html', name:'Date Difference'},
+    {icon:'⏰', href:'/calc/timesheet-calculator.html', name:'Timesheet'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

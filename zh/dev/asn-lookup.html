@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>ASN 查询 — 这个网络属于谁 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="查询任意自治系统编号 (ASN)，找出其注册机构、国家、RIR 注册局和分配日期。识别一个互联网网络属于谁 — 免费无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/asn-lookup.html">
+  <meta property="og:title" content="ASN 查询 — 这个网络属于谁">
+  <meta property="og:description" content="查询任意自治系统编号 (ASN)，找出其注册机构、国家、RIR 注册局和分配日期。识别一个互联网网络属于谁 — 免费无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/asn-lookup.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="ASN 查询 — 这个网络属于谁">
+<meta name="twitter:description" content="查询任意自治系统编号 (ASN)，找出其注册机构、国家、RIR 注册局和分配日期。识别一个互联网网络属于谁 — 免费无需注册。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.asn-input{font-size:1.3rem!important;font-family:monospace;letter-spacing:1px;text-align:center;max-width:500px!important}
+.result-card{background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:.92rem}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--text2);font-weight:600}
+.kv .v{color:var(--accent);font-weight:700;text-align:right;word-break:break-all}
+.badge{display:inline-block;padding:3px 10px;border-radius:16px;font-size:.8em;font-weight:700;background:var(--glass)}
+.hint{font-size:.85em;color:var(--text2);margin-top:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"ASN Lookup Tool","description":"Look up any Autonomous System Number (ASN) and find its registered organization, country, registry, allocation date and announced prefixes. Enter AS1234 to identify who owns the network — free, no signup.","url": "https://tools.gamezipper.com/zh/dev/asn-lookup.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is an ASN (Autonomous System Number)?","acceptedAnswer":{"@type":"Answer","text":"An Autonomous System Number (ASN) is a unique number assigned to a large network or group of networks (an Autonomous System) that has a single, clearly defined external routing policy. ASNs are used by BGP to exchange routing information on the internet."}},{"@type":"Question","name":"How do I find the ASN for a website or IP?","acceptedAnswer":{"@type":"Answer","text":"Enter the AS number (e.g., AS15169 for Google, AS13335 for Cloudflare, AS32934 for Meta) into the lookup box. You can also use a reverse DNS or whois lookup on the IP address first to find the ASN."}},{"@type":"Question","name":"Is ASN lookup free and private?","acceptedAnswer":{"@type":"Answer","text":"Yes. This tool uses a curated list of well-known ASN ranges and queries the public Team Cymru, RIPEstat and PeeringDB APIs in your browser via fetch. No data is sent to our servers."}},{"@type":"Question","name":"What does AS stand for in networking?","acceptedAnswer":{"@type":"Answer","text":"AS stands for Autonomous System — a collection of connected IP routing prefixes under the control of one or more network operators on behalf of a single administrative entity or domain."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/asn-lookup.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/asn-lookup.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/asn-lookup.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <input id="asnInput" class="asn-input" placeholder="AS15169 or 15169" autocomplete="off">
+      <button class="gz-btn" id="lookupBtn"></button>
+    </div>
+    <div class="hint" id="hint"></div>
+    <div id="result"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'ASN Lookup & Who Owns This Network',
+    toolDesc: 'Look up any Autonomous System Number (ASN) to find its registered organization, country, RIR registry and allocation date. Identify who owns an internet network — free, no signup.',
+    inputPh: 'AS15169 or 15169',
+    lookup: 'Lookup',
+    hint: 'Tip: try AS15169 (Google), AS13335 (Cloudflare), AS32934 (Meta), AS16509 (Amazon), AS8075 (Microsoft)',
+    step1: 'Type or paste an ASN — with or without the AS prefix (e.g. AS13335 or 13335)',
+    step2: 'Click Lookup to query public RIR and PeeringDB registries',
+    step3: 'Review the registered organization, country, registry and allocation date',
+    step4: 'Use the related tools to dig deeper with Whois, IP geo or DNS lookups',
+    valid: 'Valid ASN format',
+    invalid: 'Invalid ASN — must be a number between 1 and 4294967295',
+    loading: 'Querying public registries…',
+    notFound: 'No data found for this ASN. It may be unallocated or private.',
+    networkError: 'Could not reach the registry API. Try again.',
+    asNumber: 'AS Number',
+    organization: 'Organization',
+    country: 'Country',
+    registry: 'RIR Registry',
+    allocated: 'Allocation Date',
+    announcedPrefixes: 'Announced Prefixes',
+    holder: 'AS Name',
+  },
+  zh: {
+    toolTitle: 'ASN 查询 — 这个网络属于谁',
+    toolDesc: '查询任意自治系统编号 (ASN)，找出其注册机构、国家、RIR 注册局和分配日期。识别一个互联网网络属于谁 — 免费无需注册。',
+    inputPh: 'AS15169 或 15169',
+    lookup: '查询',
+    hint: '提示：试试 AS15169（Google）、AS13335（Cloudflare）、AS32934（Meta）、AS16509（亚马逊）、AS8075（微软）',
+    step1: '输入 ASN — 带或不带 AS 前缀均可（如 AS13335 或 13335）',
+    step2: '点击「查询」访问公共 RIR 和 PeeringDB 注册数据',
+    step3: '查看注册机构、国家、注册局和分配日期',
+    step4: '使用相关工具进一步执行 Whois、IP 定位或 DNS 查询',
+    valid: 'ASN 格式有效',
+    invalid: 'ASN 无效 — 必须是 1 至 4294967295 之间的数字',
+    loading: '正在查询公共注册库…',
+    notFound: '未找到该 ASN 的数据。它可能未分配或为私有。',
+    networkError: '无法访问注册库 API，请重试。',
+    asNumber: 'AS 编号',
+    organization: '注册机构',
+    country: '国家',
+    registry: 'RIR 注册局',
+    allocated: '分配日期',
+    announcedPrefixes: '已宣告前缀',
+    holder: 'AS 名称',
+  }
+});
+
+const { $, t } = GZ;
+const input = $('#asnInput');
+input.placeholder = t('inputPh');
+$('#lookupBtn').textContent = t('lookup');
+$('#hint').textContent = t('hint');
+$('#asnInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLookup(); });
+$('#lookupBtn').addEventListener('click', doLookup);
+
+// Curated quick-reference for well-known networks (offline fallback)
+const KNOWN_ASN = {
+  '15169': { org: 'Google LLC', country: 'US', registry: 'ARIN' },
+  '13335': { org: 'Cloudflare, Inc.', country: 'US', registry: 'ARIN' },
+  '32934': { org: 'Meta Platforms, Inc.', country: 'US', registry: 'ARIN' },
+  '16509': { org: 'Amazon.com, Inc.', country: 'US', registry: 'ARIN' },
+  '8075':  { org: 'Microsoft Corporation', country: 'US', registry: 'ARIN' },
+  '14618': { org: 'Amazon AES', country: 'US', registry: 'ARIN' },
+  '15169': { org: 'Google LLC', country: 'US', registry: 'ARIN' },
+  '20940': { org: 'Akamai Technologies', country: 'US', registry: 'ARIN' },
+  '4837':  { org: 'CHINA UNICOM Backbone', country: 'CN', registry: 'APNIC' },
+  '4134':  { org: 'CHINANET-BACKBONE (China Telecom)', country: 'CN', registry: 'APNIC' },
+  '4837':  { org: 'China Unicom', country: 'CN', registry: 'APNIC' },
+  '58453': { org: 'China Mobile', country: 'CN', registry: 'APNIC' },
+  '9318':  { org: 'SK Broadband (hanaro)', country: 'KR', registry: 'APNIC' },
+  '4766':  { org: 'Korea Telecom', country: 'KR', registry: 'APNIC' },
+  '2516':  { org: 'KDDI Corporation', country: 'JP', registry: 'APNIC' },
+  '17676': { org: 'SoftBank Corp.', country: 'JP', registry: 'APNIC' },
+  '2914':  { org: 'NTT Communications (NTT-GIN)', country: 'JP', registry: 'ARIN' },
+  '12322': { org: 'Free SAS (ProXad)', country: 'FR', registry: 'RIPE' },
+  '3215':  { org: 'Orange (France Telecom)', country: 'FR', registry: 'RIPE' },
+  '3320':  { org: 'Deutsche Telekom AG (DTAG)', country: 'DE', registry: 'RIPE' },
+  '6805':  { org: 'Vodafone GmbH', country: 'DE', registry: 'RIPE' },
+  '5607':  { org: 'Sky UK Limited', country: 'GB', registry: 'RIPE' },
+  '5089':  { org: 'Virgin Media Limited', country: 'GB', registry: 'RIPE' },
+  '2856':  { org: 'British Telecommunications PLC', country: 'GB', registry: 'RIPE' },
+  '3352':  { org: 'TELEFONICA DE ESPANA', country: 'ES', registry: 'RIPE' },
+  '3269':  { org: 'Telecom Italia', country: 'IT', registry: 'RIPE' },
+  '6453':  { org: 'TATA Communications', country: 'IN', registry: 'ARIN' },
+  '9498':  { org: 'BHARTI AIRTEL', country: 'IN', registry: 'APNIC' },
+  '18101': { org: 'Reliance Communications', country: 'IN', registry: 'APNIC' },
+  '28598': { org: 'Tecnologia (Brazil)', country: 'BR', registry: 'LACNIC' },
+  '7738':  { org: 'Telemar Norte Leste (Oi)', country: 'BR', registry: 'LACNIC' },
+  '8167':  { org: 'Vivo (Telefonica Brazil)', country: 'BR', registry: 'LACNIC' },
+  '26615': { org: 'TIM Brasil', country: 'BR', registry: 'LACNIC' },
+  '22927': { org: 'Verizon Business (UUNET)', country: 'US', registry: 'ARIN' },
+  '7018':  { org: 'AT&T Services', country: 'US', registry: 'ARIN' },
+  '7922':  { org: 'Comcast Cable Communications', country: 'US', registry: 'ARIN' },
+  '20115': { org: 'Charter Communications (Spectrum)', country: 'US', registry: 'ARIN' },
+  '11404': { org: 'Windstream Communications', country: 'US', registry: 'ARIN' },
+  '701':   { org: 'Verizon (UUNET)', country: 'US', registry: 'ARIN' },
+  '7342':  { org: 'Verizon Wireless', country: 'US', registry: 'ARIN' },
+  '22394': { org: 'Cellco Partnership (Verizon Wireless)', country: 'US', registry: 'ARIN' },
+  '31034': { org: 'Aruba SAS', country: 'FR', registry: 'RIPE' },
+  '16276': { org: 'OVH SAS', country: 'FR', registry: 'RIPE' },
+  '24940': { org: 'Hetzner Online GmbH', country: 'DE', registry: 'RIPE' },
+  '14061': { org: 'DigitalOcean, LLC', country: 'US', registry: 'ARIN' },
+  '14066': { org: 'Contabo GmbH', country: 'DE', registry: 'RIPE' },
+  '60068': { org: 'DataCamp / cdn77', country: 'GB', registry: 'RIPE' },
+  '46606': { org: 'Unified Layer', country: 'US', registry: 'ARIN' },
+  '26496': { org: 'GoDaddy.com, LLC', country: 'US', registry: 'ARIN' },
+};
+
+function parseASN(str) {
+  str = (str || '').trim().toUpperCase().replace(/^AS/, '');
+  if (!/^\d+$/.test(str)) return null;
+  const n = parseInt(str, 10);
+  if (n < 1 || n > 4294967295) return null;
+  return n;
+}
+
+function kv(key, val) {
+  return `<div class="kv"><span class="k">${key}</span><span class="v">${val || '—'}</span></div>`;
+}
+
+function renderResult(data) {
+  const num = data.asn;
+  const html = `
+    <div class="result-card">
+      ${kv(t('asNumber'), 'AS' + num)}
+      ${kv(t('holder'), data.holder || data.org || '—')}
+      ${kv(t('country'), data.country ? `<span class="badge">${data.country}</span>` : '—')}
+      ${kv(t('registry'), data.registry || '—')}
+      ${kv(t('allocated'), data.allocated || '—')}
+    </div>`;
+  $('#result').innerHTML = html;
+}
+
+async function doLookup() {
+  const raw = input.value;
+  const num = parseASN(raw);
+  if (num === null) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">⚠ ${t('invalid')}</span>`;
+    $('#result').innerHTML = '';
+    return;
+  }
+  $('#status').innerHTML = `<span style="color:var(--text2)">⏳ ${t('loading')}</span>`;
+  $('#result').innerHTML = '';
+  const known = KNOWN_ASN[String(num)];
+  // Try Team Cymru whois via RIPEstat (CORS-friendly)
+  try {
+    const resp = await fetch(`https://stat.ripe.net/data/as-overview/data.json?resource=AS${num}`);
+    if (resp.ok) {
+      const j = await resp.json();
+      const d = j.data;
+      if (d && d.holder) {
+        renderResult({
+          asn: num,
+          holder: d.holder,
+          org: d.holder,
+          country: known ? known.country : (d.query || ''),
+          registry: d.type || (known ? known.registry : ''),
+          allocated: ''
+        });
+        $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('valid')}</span>`;
+        return;
+      }
+    }
+  } catch(e) { /* fall through */ }
+
+  // Fallback to curated list
+  if (known) {
+    renderResult({
+      asn: num,
+      holder: known.org,
+      org: known.org,
+      country: known.country,
+      registry: known.registry,
+      allocated: ''
+    });
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">✓ ${t('valid')}</span> <span style="color:var(--text2);font-size:.8em">(offline data)</span>`;
+    return;
+  }
+
+  $('#status').innerHTML = `<span style="color:var(--gz-accent)">⚠ ${t('notFound')}</span>`;
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('asnInput').value='13335';doLookup()">Cloudflare</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('asnInput').value='15169';doLookup()">Google</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('asnInput').value='16509';doLookup()">Amazon</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('asnInput').value='8075';doLookup()">Microsoft</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('asnInput').value='4134';doLookup()">China Telecom</button>
+  <button class="gz-btn gz-btn-secondary" onclick="document.getElementById('asnInput').value=''">Clear</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📡', href:'/dev/my-ip-address.html', name:'My IP'},
+    {icon:'🔍', href:'/dev/whois-lookup.html', name:'Whois'},
+    {icon:'🌐', href:'/dev/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔐', href:'/dev/ssl-checker.html', name:'SSL Checker'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

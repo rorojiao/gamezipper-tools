@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>XML 差异对比工具 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="对比两个 XML 文档并高亮差异。规范化格式和属性顺序，显示新增、删除和修改的行 — 免费，浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/xml-diff.html">
+  <meta property="og:title" content="XML 差异对比工具">
+  <meta property="og:description" content="对比两个 XML 文档并高亮差异。规范化格式和属性顺序，显示新增、删除和修改的行 — 免费，浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/xml-diff.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="XML 差异对比工具">
+<meta name="twitter:description" content="对比两个 XML 文档并高亮差异。规范化格式和属性顺序，显示新增、删除和修改的行 — 免费，浏览器本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.diff-col{display:flex;flex-direction:column}
+.diff-col textarea{flex:1;min-height:220px;font-family:monospace;font-size:.83rem;resize:vertical}
+.diff-out{margin-top:12px;font-family:monospace;font-size:.83rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:200px}
+.diff-add{background:rgba(0,214,114,.15);color:#00d672;display:block}
+.diff-del{background:rgba(233,69,96,.15);color:#e94560;display:block;text-decoration:line-through}
+.diff-same{display:block;opacity:.6}
+.diff-info{opacity:.7;font-size:.85rem}
+.err{color:var(--gz-accent)}
+@media(max-width:700px){.diff-grid{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"XML Diff Checker","description":"Compare two XML documents side by side and highlight the differences. Paste old and new XML to see added, removed and changed elements instantly. Free online XML diff — runs entirely in your browser.","url": "https://tools.gamezipper.com/zh/dev/xml-diff.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I compare two XML files?", "acceptedAnswer": {"@type": "Answer", "text": "Paste the original XML into the left textarea and the modified XML into the right textarea, then click Compare. The tool highlights added, removed and changed lines."}}, {"@type": "Question", "name": "Does it normalize XML before comparing?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Both XML inputs are parsed and re-serialized with consistent indentation and attribute ordering before the line-by-line comparison, so formatting differences are ignored."}}, {"@type": "Question", "name": "Can I ignore attribute order?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The normalization step sorts attributes alphabetically on every element, so the same XML with attributes in different order will not show as a difference."}}, {"@type": "Question", "name": "Is my XML data safe?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. All comparison happens entirely in your browser using JavaScript. No XML is ever sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/xml-diff.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/xml-diff.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/xml-diff.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="diff-grid">
+      <div class="diff-col"><label id="lbl-left"></label><textarea id="left" spellcheck="false"></textarea></div>
+      <div class="diff-col"><label id="lbl-right"></label><textarea id="right" spellcheck="false"></textarea></div>
+    </div>
+    <label id="lbl-out"></label>
+    <div class="gz-output diff-out" id="output"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'XML Diff Checker',
+    toolDesc: 'Compare two XML documents and highlight differences. Normalizes formatting and attribute order, then shows added, removed and changed lines — free, browser-only.',
+    leftLabel: 'Original XML',
+    rightLabel: 'Modified XML',
+    outputLabel: 'Diff Result',
+    compare: 'Compare',
+    swap: 'Swap',
+    example: 'Example',
+    clear: 'Clear',
+    added: 'added',
+    removed: 'removed',
+    unchanged: 'unchanged',
+    lines: 'lines',
+    step1: 'Paste the original XML into the left textarea',
+    step2: 'Paste the modified XML into the right textarea',
+    step3: 'Click Compare to see highlighted differences',
+    step4: 'Green lines are added, red lines are removed',
+  },
+  zh: {
+    toolTitle: 'XML 差异对比工具',
+    toolDesc: '对比两个 XML 文档并高亮差异。规范化格式和属性顺序，显示新增、删除和修改的行 — 免费，浏览器本地运行。',
+    leftLabel: '原始 XML',
+    rightLabel: '修改后 XML',
+    outputLabel: '差异结果',
+    compare: '对比',
+    swap: '交换',
+    example: '示例',
+    clear: '清除',
+    added: '新增',
+    removed: '删除',
+    unchanged: '未变',
+    lines: '行',
+    step1: '将原始 XML 粘贴到左侧文本框',
+    step2: '将修改后的 XML 粘贴到右侧文本框',
+    step3: '点击对比查看高亮差异',
+    step4: '绿色为新增行，红色为删除行',
+  }
+});
+
+const { $, t } = GZ;
+
+function normalizeXml(xmlStr) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlStr, 'text/xml');
+  const err = doc.querySelector('parsererror');
+  if (err) throw new Error(err.textContent.split('\n')[0]);
+  sortAttributes(doc.documentElement);
+  const serializer = new XMLSerializer();
+  let out = serializer.serializeToString(doc);
+  // pretty print with indentation
+  let formatted = '';
+  let indent = 0;
+  out = out.replace(/>\s*</g, '><').trim();
+  out.split('><').forEach(part => {
+    if (!part) return;
+    if (part.startsWith('/') || part.startsWith('?')) {
+      indent = Math.max(0, indent - 1);
+    }
+    formatted += '  '.repeat(indent) + '<' + part + '>\n';
+    if (!part.startsWith('/') && !part.startsWith('?') && !part.endsWith('/') && !part.startsWith('!')) {
+      indent++;
+    }
+    if (part.startsWith('/')) {
+      // closing tag already decremented
+    }
+  });
+  // Simplify: use the raw serialized normalized output, 2-space indented
+  return vkbeautifyXml(serializer.serializeToString(doc));
+}
+
+function sortAttributes(el) {
+  if (!el.attributes || el.attributes.length < 2) {
+    [...el.children].forEach(sortAttributes);
+    return;
+  }
+  const attrs = [...el.attributes].sort((a, b) => a.name.localeCompare(b.name));
+  attrs.forEach(a => {
+    el.removeAttribute(a.name);
+  });
+  attrs.forEach(a => {
+    el.setAttribute(a.name, a.value);
+  });
+  [...el.children].forEach(sortAttributes);
+}
+
+function vkbeautifyXml(xml) {
+  let formatted = '';
+  let indent = 0;
+  const reg = /(>)(<)(\/*)/g;
+  xml = xml.replace(reg, '$1\n$2$3');
+  xml.split('\n').forEach(line => {
+    line = line.trim();
+    if (!line) return;
+    let pad;
+    if (line.match(/^<\/\w/)) {
+      indent = Math.max(0, indent - 1);
+      pad = '  '.repeat(indent);
+    } else if (line.match(/^<\w[^>]*[^/]>.*$/) && !line.match(/<\/\w/) && !line.endsWith('/>')) {
+      pad = '  '.repeat(indent);
+      indent++;
+    } else {
+      pad = '  '.repeat(indent);
+    }
+    formatted += pad + line + '\n';
+  });
+  return formatted.trim();
+}
+
+// LCS-based line diff
+function lineDiff(a, b) {
+  const n = a.length, m = b.length;
+  const dp = Array.from({length: n + 1}, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+    }
+  }
+  const result = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) {
+      result.push({type: 'same', text: a[i]});
+      i++; j++;
+    } else if (dp[i+1][j] >= dp[i][j+1]) {
+      result.push({type: 'del', text: a[i]});
+      i++;
+    } else {
+      result.push({type: 'add', text: b[j]});
+      j++;
+    }
+  }
+  while (i < n) { result.push({type: 'del', text: a[i]}); i++; }
+  while (j < m) { result.push({type: 'add', text: b[j]}); j++; }
+  return result;
+}
+
+function compare() {
+  const leftRaw = $('#left').value.trim();
+  const rightRaw = $('#right').value.trim();
+  if (!leftRaw && !rightRaw) { $('#output').innerHTML = ''; $('#status').textContent = ''; return; }
+  let leftNorm, rightNorm;
+  try {
+    leftNorm = leftRaw ? normalizeXml(leftRaw) : '';
+    rightNorm = rightRaw ? normalizeXml(rightRaw) : '';
+  } catch(e) {
+    $('#output').innerHTML = `<span class="err">XML Error: ${e.message}</span>`;
+    $('#status').textContent = '';
+    return;
+  }
+  const leftLines = leftNorm.split('\n');
+  const rightLines = rightNorm.split('\n');
+  const diff = lineDiff(leftLines, rightLines);
+  let html = '';
+  let added = 0, removed = 0, same = 0;
+  diff.forEach(d => {
+    const escaped = d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (d.type === 'add') { html += `<span class="diff-add">+ ${escaped}</span>`; added++; }
+    else if (d.type === 'del') { html += `<span class="diff-del">- ${escaped}</span>`; removed++; }
+    else { html += `<span class="diff-same">  ${escaped}</span>`; same++; }
+  });
+  $('#output').innerHTML = html;
+  $('#status').innerHTML = `<span class="diff-info">${added} ${t('added')}, ${removed} ${t('removed')}, ${same} ${t('unchanged')} (${diff.length} ${t('lines')})</span>`;
+}
+
+function swap() {
+  const l = $('#left').value;
+  $('#left').value = $('#right').value;
+  $('#right').value = l;
+  compare();
+}
+
+function loadExample() {
+  $('#left').value = `<?xml version="1.0"?>
+<bookstore>
+  <book id="1" lang="en">
+    <title>XML for Beginners</title>
+    <author>Jane Doe</author>
+    <price>29.99</price>
+  </book>
+  <book id="2" lang="en">
+    <title>Advanced CSS</title>
+    <author>John Smith</author>
+    <price>39.99</price>
+  </book>
+</bookstore>`;
+  $('#right').value = `<?xml version="1.0"?>
+<bookstore>
+  <book id="1" lang="en">
+    <title>XML for Beginners</title>
+    <author>Jane Doe</author>
+    <price>34.99</price>
+    <year>2025</year>
+  </book>
+  <book id="2" lang="fr">
+    <title>Advanced CSS</title>
+    <author>John Smith</author>
+    <price>39.99</price>
+  </book>
+</bookstore>`;
+  compare();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="compare()">${t('compare')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="swap()">${t('swap')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#left').value='';$('#right').value='';$('#output').innerHTML='';$('#status').textContent=''">${t('clear')}</button>`;
+
+$('#left').addEventListener('input', compare);
+$('#right').addEventListener('input', compare);
+
+loadExample();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/text/diff.html', name:'Text Diff'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name:'XML Formatter'},
+    {icon:'✅', href:'/dev/xml-validator.html', name:'XML Validator'},
+    {icon:'🔄', href:'/convert/xml-to-json.html', name:'XML to JSON'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
