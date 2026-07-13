@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>坏点检测工具 - 检测屏幕亮点和坏点 | GameZipper 工具箱</title>
+  <meta name="description" content="免费屏幕坏点检测工具。在全屏纯色间切换，找出显示器、笔记本、手机或电视上的亮点、坏点或热像素。免安装，完全在浏览器中运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/dead-pixel-test.html">
+  <meta property="og:title" content="坏点检测工具 - 检测屏幕亮点和坏点 | GameZipper 工具箱">
+  <meta property="og:description" content="免费屏幕坏点检测工具。在全屏纯色间切换，找出显示器、笔记本、手机或电视上的亮点、坏点或热像素。免安装，完全在浏览器中运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/dead-pixel-test.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="坏点检测工具 - 检测屏幕亮点和坏点 | GameZipper 工具箱">
+  <meta name="twitter:description" content="免费屏幕坏点检测工具。在全屏纯色间切换，找出显示器、笔记本、手机或电视上的亮点、坏点或热像素。免安装，完全在浏览器中运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.dp-overlay{position:fixed;inset:0;z-index:99999;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dp-hint{color:rgba(255,255,255,.35);font-size:.85em;user-select:none;text-align:center}
+.dp-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.dp-swatch{width:34px;height:34px;border-radius:6px;cursor:pointer;border:2px solid var(--gz-border,#444)}
+.dp-swatch.active{border-color:#fff;outline:2px solid var(--gz-accent,#e94560)}
+.dp-card{background:var(--gz-glass,rgba(255,255,255,.05));border:1px solid var(--gz-border,#444);border-radius:12px;padding:14px;margin-bottom:10px;font-size:.9em}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Dead Pixel Test","description":"Free dead pixel test. Cycle through full-screen solid colors to spot stuck, dead or hot pixels on your monitor, laptop, phone or TV. No software install — 100% in your browser.","url":"https://tools.gamezipper.com/zh/dev/dead-pixel-test.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a dead pixel?", "acceptedAnswer": {"@type": "Answer", "text": "A dead pixel is a pixel that stays permanently black because its subpixels no longer light up. A stuck pixel is colored (usually red, green or blue) because one subpixel is locked on. A hot pixel is bright white and shows up on dark backgrounds. All three are visible as tiny spots that do not match the surrounding color."}}, {"@type": "Question", "name": "How does this dead pixel test work?", "acceptedAnswer": {"@type": "Answer", "text": "The tool fills your entire screen with solid colors — pure white, black, red, green, blue, cyan, magenta and yellow. Dead or stuck pixels appear as contrasting dots against the solid background. Click any color swatch or use the arrow keys to cycle through colors, then press Escape or click to exit."}}, {"@type": "Question", "name": "Can dead pixels be fixed?", "acceptedAnswer": {"@type": "Answer", "text": "Stuck pixels can sometimes be revived with software methods (flashing colors, gentle pressure, or a JScreenFix-style pixel massager). Truly dead pixels (permanently black) usually cannot be fixed and require a panel replacement. Many manufacturers cover dead pixels under warranty if there are more than a threshold number."}}, {"@type": "Question", "name": "Should I test a new TV or monitor for dead pixels?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Test new displays right after unboxing so you can return or exchange them within the return window. Run the test on the largest screen at full brightness in a dim room, and inspect every solid color closely. Even one stuck pixel near the center can be annoying for daily use."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/dead-pixel-test.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/dead-pixel-test.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/dead-pixel-test.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="dp-controls" id="swatches"></div>
+    <button class="gz-btn" id="fullscreen-btn"></button>
+    <button class="gz-btn gz-btn-secondary" id="exit-btn" style="display:none"></button>
+    <div id="info"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Dead Pixel Test',
+    toolDesc: 'Check your screen for dead, stuck or hot pixels. Cycle through full-screen solid colors — works on monitors, laptops, phones and TVs. 100% in your browser.',
+    fullscreen: 'Launch Fullscreen',
+    exit: 'Exit Test',
+    nextColor: 'Click anywhere or press Space / → to cycle colors',
+    escExit: 'Press Esc to exit',
+    step1: 'Dim the room and turn your screen brightness up',
+    step2: 'Click Launch Fullscreen to start the test',
+    step3: 'Click the screen or press Space / arrow keys to cycle colors',
+    step4: 'Look for any dots that do not match the background color',
+    tipTitle: 'Tips for an accurate test',
+    tip1: 'Use the highest screen brightness',
+    tip2: 'Test in a dimly lit room',
+    tip3: 'Inspect each color for 10-20 seconds',
+    tip4: 'Stuck pixels glow one color; dead pixels stay black',
+  },
+  zh: {
+    toolTitle: '坏点检测工具',
+    toolDesc: '检测屏幕上的坏点、亮点或热像素。在全屏纯色间切换 — 适用于显示器、笔记本、手机和电视。完全在浏览器中运行。',
+    fullscreen: '全屏开始',
+    exit: '退出测试',
+    nextColor: '点击任意位置或按空格 / → 键切换颜色',
+    escExit: '按 Esc 退出',
+    step1: '调暗房间并提高屏幕亮度',
+    step2: '点击全屏开始启动测试',
+    step3: '点击屏幕或按空格 / 方向键切换颜色',
+    step4: '观察是否有与背景色不同的亮点',
+    tipTitle: '准确测试的小提示',
+    tip1: '使用最高屏幕亮度',
+    tip2: '在较暗的房间中测试',
+    tip3: '每种颜色观察 10-20 秒',
+    tip4: '亮点常亮一个颜色；坏点常黑',
+  }
+});
+
+const { $, t } = GZ;
+
+const COLORS = [
+  { name: 'White', hex: '#ffffff', text: '#000' },
+  { name: 'Black', hex: '#000000', text: '#fff' },
+  { name: 'Red', hex: '#ff0000', text: '#fff' },
+  { name: 'Green', hex: '#00ff00', text: '#000' },
+  { name: 'Blue', hex: '#0000ff', text: '#fff' },
+  { name: 'Cyan', hex: '#00ffff', text: '#000' },
+  { name: 'Magenta', hex: '#ff00ff', text: '#fff' },
+  { name: 'Yellow', hex: '#ffff00', text: '#000' },
+  { name: 'Gray', hex: '#808080', text: '#fff' },
+];
+
+let colorIndex = 0;
+let overlay = null;
+let isFull = false;
+
+function buildSwatches() {
+  $('#swatches').innerHTML = COLORS.map((c, i) =>
+    `<div class="dp-swatch ${i === colorIndex ? 'active' : ''}" data-i="${i}" style="background:${c.hex}" title="${c.name}"></div>`
+  ).join('');
+  $('#swatches').querySelectorAll('.dp-swatch').forEach(el => {
+    el.addEventListener('click', () => {
+      colorIndex = +el.dataset.i;
+      buildSwatches();
+      if (isFull) paintOverlay();
+    });
+  });
+}
+
+function paintOverlay() {
+  const c = COLORS[colorIndex];
+  overlay.style.background = c.hex;
+  overlay.innerHTML = `<div class="dp-hint" style="color:${c.text};mix-blend-mode:difference">${t('nextColor')} — ${c.name} · ${t('escExit')}</div>`;
+}
+
+function showOverlay() {
+  overlay = document.createElement('div');
+  overlay.className = 'dp-overlay';
+  document.body.appendChild(overlay);
+  paintOverlay();
+  overlay.addEventListener('click', (e) => {
+    // exit on clicking? No, click cycles. Esc exits.
+    colorIndex = (colorIndex + 1) % COLORS.length;
+    buildSwatches();
+    paintOverlay();
+  });
+  isFull = true;
+  $('#exit-btn').style.display = '';
+  $('#fullscreen-btn').style.display = 'none';
+}
+
+function exitOverlay() {
+  if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  overlay = null;
+  isFull = false;
+  $('#exit-btn').style.display = 'none';
+  $('#fullscreen-btn').style.display = '';
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+}
+
+function launch() {
+  // Try real fullscreen API, fall back to overlay only
+  const el = document.documentElement;
+  if (el.requestFullscreen) {
+    el.requestFullscreen().then(showOverlay).catch(showOverlay);
+  } else {
+    showOverlay();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!isFull) return;
+  if (e.key === 'Escape') { e.preventDefault(); exitOverlay(); }
+  else if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    colorIndex = (colorIndex + 1) % COLORS.length;
+    buildSwatches(); paintOverlay();
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    colorIndex = (colorIndex - 1 + COLORS.length) % COLORS.length;
+    buildSwatches(); paintOverlay();
+  } else if (/^[1-9]$/.test(e.key)) {
+    colorIndex = Math.min(COLORS.length - 1, +e.key - 1);
+    buildSwatches(); paintOverlay();
+  }
+});
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && isFull) {
+    // user pressed browser's Esc; keep overlay but exit fullscreen gracefully
+  }
+});
+
+function buildInfo() {
+  $('#info').innerHTML = `<div class="dp-card">
+    <b>${t('tipTitle')}</b>
+    <ul style="margin:8px 0 0 18px;line-height:1.7">
+      <li>${t('tip1')}</li>
+      <li>${t('tip2')}</li>
+      <li>${t('tip3')}</li>
+      <li>${t('tip4')}</li>
+    </ul>
+  </div>`;
+}
+
+$('#fullscreen-btn').textContent = t('fullscreen');
+$('#exit-btn').textContent = t('exit');
+$('#fullscreen-btn').addEventListener('click', launch);
+$('#exit-btn').addEventListener('click', exitOverlay);
+buildSwatches();
+buildInfo();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🖥️', href:'/dev/monitor-test.html', name:'Monitor Test'},
+    {icon:'🎨', href:'/dev/screen-resolution-tester.html', name:'Resolution Tester'},
+    {icon:'🔄', href:'/dev/refresh-rate-test.html', name:'Refresh Rate'},
+    {icon:'🌐', href:'/dev/browser-info-tool.html', name:'Browser Info'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
