@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Percentile Rank Calculator - Find Rank in Any Dataset | GameZipper Tools</title>
+  <meta name="description" content="Find the percentile rank of any score in a dataset, or find the value at a given percentile (P25, P50, P90…). Supports 6 interpolation methods. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/calc/percentile-rank-calculator.html">
+  <meta property="og:title" content="Percentile Rank Calculator - Find Rank in Any Dataset | GameZipper Tools">
+  <meta property="og:description" content="Find the percentile rank of any score in a dataset, or find the value at a given percentile (P25, P50, P90…). Supports 6 interpolation methods. Free, browser-only, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/calc/percentile-rank-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Percentile Rank Calculator - Find Rank in Any Dataset | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.gz-control{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.gz-control label{font-size:.85em;color:var(--text2);font-weight:600}
+.gz-control input,.gz-control select{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.95em}
+textarea{width:100%;min-height:120px;font-family:monospace;font-size:.9em;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);box-sizing:border-box}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px}
+.result-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.result-card .value{font-size:2em;font-weight:900;color:var(--accent)}
+.result-card .label{font-size:.85em;color:var(--text2);margin-top:4px}
+.quartile-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.9em}
+.quartile-table th,.quartile-table td{border:1px solid var(--border);padding:8px;text-align:center}
+.quartile-table th{background:var(--glass);font-weight:700}
+.mode-toggle{display:flex;gap:8px;margin-bottom:16px}
+.mode-toggle button{flex:1;min-width:120px}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Percentile Rank Calculator","description":"Find the percentile rank of any score in a dataset, or find the value at a given percentile (P25, P50, P90…). Supports 6 interpolation methods. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/calc/percentile-rank-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a percentile rank?","acceptedAnswer":{"@type":"Answer","text":"A percentile rank tells you what percentage of scores in a dataset fall below a given value. For example, a score at the 90th percentile means it is higher than 90% of all other scores."}},{"@type":"Question","name":"What is the difference between percentile rank and percentile value?","acceptedAnswer":{"@type":"Answer","text":"Percentile rank takes a score and returns a percentage (how many values are below it). Percentile value does the reverse — you give a percentage (e.g. P90) and the tool returns the score at that position in the sorted dataset."}},{"@type":"Question","name":"Which interpolation methods are supported?","acceptedAnswer":{"@type":"Answer","text":"The tool supports six methods: exclusive, inclusive (default, used by Excel PERCENTILE.INC), lower, higher, nearest rank, and linear (NIST). Pick the one that matches your textbook or software."}},{"@type":"Question","name":"How do I enter my dataset?","acceptedAnswer":{"@type":"Answer","text":"Type or paste numbers separated by commas, spaces or newlines. The tool automatically parses them, sorts the dataset and shows the count, mean, median and standard deviation."}},{"@type":"Question","name":"Is my data private?","acceptedAnswer":{"@type":"Answer","text":"Yes. All calculations run entirely in your browser. No numbers are ever uploaded to a server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/calc/percentile-rank-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/calc/percentile-rank-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/calc/percentile-rank-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-toggle">
+      <button class="gz-btn" id="modeRank"></button>
+      <button class="gz-btn gz-btn-secondary" id="modeValue"></button>
+    </div>
+    <div class="gz-control">
+      <label id="lbl-data"></label>
+      <textarea id="dataInput" spellcheck="false">85, 90, 78, 92, 88, 76, 95, 89, 82, 91, 73, 84, 96, 79, 87</textarea>
+    </div>
+    <div class="gz-control">
+      <label id="lbl-score"></label>
+      <input id="scoreInput" type="number" step="any" value="90">
+    </div>
+    <div class="gz-control">
+      <label id="lbl-method"></label>
+      <select id="method">
+        <option value="inclusive">Inclusive (Excel PERCENTILE.INC)</option>
+        <option value="exclusive">Exclusive (Excel PERCENTILE.EXC)</option>
+        <option value="lower">Lower (nearest rank below)</option>
+        <option value="higher">Higher (nearest rank above)</option>
+        <option value="nearest">Nearest rank</option>
+        <option value="linear">Linear (NIST / NumPy default)</option>
+      </select>
+    </div>
+    <div id="result"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Percentile Rank Calculator',
+    toolDesc: 'Find the percentile rank of any score, or the value at a given percentile (P10, P25, P50, P90…). Six interpolation methods. Free, browser-only.',
+    modeRank: 'Find rank of a score',
+    modeValue: 'Find value at a percentile',
+    lblData: 'Dataset (comma, space or newline separated)',
+    lblScore: 'Your score',
+    lblPercentile: 'Percentile (0–100)',
+    lblMethod: 'Interpolation method',
+    compute: 'Calculate',
+    example: 'Example',
+    clear: 'Clear',
+    step1: 'Enter your dataset as comma-, space- or newline-separated numbers',
+    step2: 'Pick a mode — find a rank from a score, or a value from a percentile',
+    step3: 'Choose the interpolation method that matches your software (Excel, NumPy…)',
+    step4: 'Click Calculate to see the result, plus summary stats and quartile table',
+  },
+  zh: {
+    toolTitle: '百分位数计算器',
+    toolDesc: '查找任意分数在数据集中的百分位排名，或查找指定百分位（P10、P25、P50、P90…）对应的数值。支持 6 种插值方法。免费、浏览器本地运行。',
+    modeRank: '查找分数的百分位',
+    modeValue: '查找百分位对应的值',
+    lblData: '数据集（逗号、空格或换行分隔）',
+    lblScore: '你的分数',
+    lblPercentile: '百分位（0–100）',
+    lblMethod: '插值方法',
+    compute: '计算',
+    example: '示例',
+    clear: '清空',
+    step1: '输入数据集，支持逗号、空格或换行分隔的数字',
+    step2: '选择模式 — 由分数求百分位，或由百分位求数值',
+    step3: '选择与你所用软件（Excel、NumPy…）匹配的插值方法',
+    step4: '点击「计算」查看结果，以及汇总统计和四分位表',
+  }
+});
+
+const { $, t } = GZ;
+let mode = 'rank';
+
+function parseNumbers(text) {
+  return text.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean).map(Number).filter(n => !isNaN(n));
+}
+
+// percentile VALUE for a given p (0..1) — returns the score at that percentile
+function percentileValue(sorted, p, method) {
+  const n = sorted.length;
+  if (n === 0) return NaN;
+  if (n === 1) return sorted[0];
+  let rank; // 1-indexed rank
+  switch (method) {
+    case 'inclusive': rank = p * (n - 1) + 1; break;            // Excel PERCENTILE.INC
+    case 'exclusive': rank = p * (n + 1); break;                  // Excel PERCENTILE.EXC
+    case 'lower':     rank = Math.floor(p * n) + 1; break;
+    case 'higher':    rank = Math.ceil(p * n) + 1; break;
+    case 'nearest':   rank = Math.round(p * n + 0.0001) + 1; break;
+    case 'linear':
+    default:          rank = p * (n - 1) + 1; break;              // NIST linear = inclusive
+  }
+  if (rank < 1) rank = 1;
+  if (rank > n) {
+    if (method === 'exclusive') return NaN; // out of range for exclusive
+    rank = n;
+  }
+  const lo = Math.floor(rank);
+  const hi = Math.ceil(rank);
+  if (lo === hi) return sorted[lo - 1];
+  const frac = rank - lo;
+  return sorted[lo - 1] + (sorted[hi - 1] - sorted[lo - 1]) * frac;
+}
+
+// percentile RANK of a score — percentage of values strictly below + half the ties
+function percentileRank(sorted, score, method) {
+  const n = sorted.length;
+  if (n === 0) return NaN;
+  if (method === 'exclusive') {
+    let below = 0, equal = 0;
+    for (const v of sorted) { if (v < score) below++; else if (v === score) equal++; }
+    return (below + 0.5 * equal) / n * 100;
+  }
+  // inclusive / default: count values below + half ties, divided by n
+  let below = 0, equal = 0;
+  for (const v of sorted) { if (v < score) below++; else if (v === score) equal++; }
+  return (below + 0.5 * equal) / n * 100;
+}
+
+function mean(a) { return a.reduce((x, y) => x + y, 0) / a.length; }
+function median(a) {
+  const s = [...a].sort((x, y) => x - y);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+function stdev(a) {
+  const m = mean(a);
+  return Math.sqrt(a.reduce((s, v) => s + (v - m) ** 2, 0) / a.length);
+}
+
+function compute() {
+  const data = parseNumbers($('#dataInput').value);
+  const out = $('#result');
+  if (data.length === 0) { out.innerHTML = ''; return; }
+  const sorted = [...data].sort((a, b) => a - b);
+  const method = $('#method').value;
+
+  let mainValue;
+  if (mode === 'rank') {
+    const score = parseFloat($('#scoreInput').value);
+    if (isNaN(score)) { out.innerHTML = ''; return; }
+    const rank = percentileRank(sorted, score, method);
+    mainValue = { value: rank.toFixed(2) + '%', label: `Percentile rank of ${score}` };
+  } else {
+    const p = parseFloat($('#scoreInput').value);
+    if (isNaN(p) || p < 0 || p > 100) { out.innerHTML = ''; return; }
+    const val = percentileValue(sorted, p / 100, method);
+    mainValue = isNaN(val) ? { value: 'N/A', label: `Value at P${p} (out of range for ${method})` } : { value: fmtNum(val), label: `Value at the P${p} percentile` };
+  }
+
+  const quartiles = [10, 25, 50, 75, 90, 95, 99].map(p => {
+    const v = percentileValue(sorted, p / 100, method);
+    return `<tr><td>P${p}</td><td>${isNaN(v) ? 'N/A' : fmtNum(v)}</td></tr>`;
+  }).join('');
+
+  out.innerHTML = `
+    <div class="result-grid">
+      <div class="result-card"><div class="value">${mainValue.value}</div><div class="label">${mainValue.label}</div></div>
+      <div class="result-card"><div class="value">${data.length}</div><div class="label">Count</div></div>
+      <div class="result-card"><div class="value">${fmtNum(mean(data))}</div><div class="label">Mean</div></div>
+      <div class="result-card"><div class="value">${fmtNum(median(data))}</div><div class="label">Median (P50)</div></div>
+      <div class="result-card"><div class="value">${fmtNum(stdev(data))}</div><div class="label">Std Dev</div></div>
+      <div class="result-card"><div class="value">${fmtNum(sorted[0])}</div><div class="label">Min</div></div>
+      <div class="result-card"><div class="value">${fmtNum(sorted[sorted.length - 1])}</div><div class="label">Max</div></div>
+    </div>
+    <table class="quartile-table">
+      <thead><tr><th>Percentile</th><th>Value</th></tr></thead>
+      <tbody>${quartiles}</tbody>
+    </table>`;
+}
+
+function fmtNum(v) {
+  if (Number.isInteger(v)) return v.toLocaleString();
+  return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
+function setMode(m) {
+  mode = m;
+  $('#modeRank').classList.toggle('gz-btn-secondary', m !== 'rank');
+  $('#modeValue').classList.toggle('gz-btn-secondary', m !== 'value');
+  const scoreCtrl = document.querySelector('label[for="scoreInput"]') || $('#lbl-score');
+  scoreCtrl.textContent = m === 'rank' ? t('lblScore') : t('lblPercentile');
+  if (m === 'value' && parseFloat($('#scoreInput').value) > 100) $('#scoreInput').value = 90;
+  if (m === 'rank' && parseFloat($('#scoreInput').value) <= 100 && $('#scoreInput').value !== '90') $('#scoreInput').value = 90;
+  compute();
+}
+
+function loadExample() {
+  $('#dataInput').value = '65, 72, 78, 81, 83, 85, 87, 88, 90, 92, 94, 96, 98';
+  $('#scoreInput').value = mode === 'rank' ? '88' : '90';
+  compute();
+}
+
+function doClear() {
+  $('#dataInput').value = '';
+  $('#scoreInput').value = '';
+  $('#result').innerHTML = '';
+}
+
+$('#modeRank').addEventListener('click', () => setMode('rank'));
+$('#modeValue').addEventListener('click', () => setMode('value'));
+$('#dataInput').addEventListener('input', compute);
+$('#scoreInput').addEventListener('input', compute);
+$('#method').addEventListener('change', compute);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="compute()">${t('compute')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-data').textContent = t('lblData');
+$('#lbl-score').textContent = t('lblScore');
+$('#lbl-method').textContent = t('lblMethod');
+$('#modeRank').textContent = t('modeRank');
+$('#modeValue').textContent = t('modeValue');
+
+GZ.renderToolPage({
+  category: 'calc',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📊', href:'/calc/statistics-calculator.html', name:'Statistics Calculator'},
+    {icon:'🎯', href:'/calc/z-score-calculator.html', name:'Z-Score'},
+    {icon:'📐', href:'/calc/mean-median-mode-calculator.html', name:'Mean/Median/Mode'},
+    {icon:'🧮', href:'/calc/percentile-calculator.html', name:'Percentile Calculator'},
+  ]
+});
+
+compute();
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CSV Pivot Table Generator - Pivot Any CSV Online Free | GameZipper Tools</title>
+  <meta name="description" content="Turn any CSV into a pivot table online — group rows, aggregate columns (sum, average, count, min, max) and export results. 100% browser-based, no upload, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/csv-pivot-table.html">
+  <meta property="og:title" content="CSV Pivot Table Generator - Pivot Any CSV Online Free | GameZipper Tools">
+  <meta property="og:description" content="Turn any CSV into a pivot table online — group rows, aggregate columns (sum, average, count, min, max) and export results. 100% browser-based, no upload, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/csv-pivot-table.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV Pivot Table Generator - Pivot Any CSV Online Free | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.csv-pivot-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.csv-pivot-controls label{font-size:.8em;color:var(--text2);font-weight:600;display:block;margin-bottom:4px}
+.csv-pivot-controls select{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-size:.9em}
+textarea{width:100%;min-height:140px;font-family:monospace;font-size:.85em;resize:vertical}
+#pivotOutput{overflow-x:auto;max-height:480px;border:1px solid var(--border);border-radius:8px}
+.pivot-table{border-collapse:collapse;width:100%;font-size:.85em;white-space:nowrap}
+.pivot-table th,.pivot-table td{border:1px solid var(--border);padding:6px 10px;text-align:right}
+.pivot-table thead th{background:var(--glass);position:sticky;top:0;z-index:1;font-weight:700}
+.pivot-table tbody tr:nth-child(even){background:var(--glass)}
+.pivot-table td.label-cell{text-align:left;font-weight:600}
+.pivot-empty{padding:32px;text-align:center;color:var(--text2)}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"CSV Pivot Table Generator","description":"Turn any CSV into a pivot table online — group rows, aggregate columns (sum, average, count, min, max) and export results. 100% browser-based, no upload, no signup.","url":"https://tools.gamezipper.com/dev/csv-pivot-table.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I create a pivot table from a CSV online?","acceptedAnswer":{"@type":"Answer","text":"Paste your CSV data into the input area, then pick a Row column (what to group by), an optional Column column (to cross-tabulate), a Value column, and an aggregation function (sum, average, count, min, max). Click Build Pivot and your table renders instantly in the browser."}},{"@type":"Question","name":"Is my CSV data private?","acceptedAnswer":{"@type":"Answer","text":"Yes. All parsing and aggregation happens entirely in your browser. No file or row of data is ever uploaded to any server."}},{"@type":"Question","name":"What aggregations are supported?","acceptedAnswer":{"@type":"Answer","text":"You can aggregate values with sum, average (arithmetic mean), count, count distinct, minimum, maximum and median. Numbers are auto-detected from the value column."}},{"@type":"Question","name":"Can I download the pivot table?","acceptedAnswer":{"@type":"Answer","text":"Yes. After building the pivot table you can copy it to clipboard or download it as a CSV file that opens directly in Excel, Google Sheets or Numbers."}},{"@type":"Question","name":"Does it handle quoted CSV fields and commas inside values?","acceptedAnswer":{"@type":"Answer","text":"Yes. The parser follows RFC 4180 — quoted fields, embedded commas, double-quote escapes and newlines inside quotes are all handled correctly."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/csv-pivot-table.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/csv-pivot-table.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/csv-pivot-table.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="csv-pivot-controls">
+      <div>
+        <label id="lbl-rows"></label>
+        <select id="rowField"><option>—</option></select>
+      </div>
+      <div>
+        <label id="lbl-cols"></label>
+        <select id="colField"><option value="">—</option></select>
+      </div>
+      <div>
+        <label id="lbl-val"></label>
+        <select id="valField"><option>—</option></select>
+      </div>
+      <div>
+        <label id="lbl-agg"></label>
+        <select id="aggField">
+          <option value="sum">Sum</option>
+          <option value="avg">Average</option>
+          <option value="count">Count</option>
+          <option value="countDistinct">Count Distinct</option>
+          <option value="min">Min</option>
+          <option value="max">Max</option>
+          <option value="median">Median</option>
+        </select>
+      </div>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="Region,Product,Quarter,Sales
+North,Widget,Q1,1200
+North,Widget,Q2,1500
+South,Widget,Q1,980
+South,Gadget,Q1,450
+North,Gadget,Q2,720"></textarea></div>
+      <div><label id="lbl-out"></label><div id="pivotOutput"><div class="pivot-empty" id="pivotEmpty"></div></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV Pivot Table Generator',
+    toolDesc: 'Turn any CSV into a pivot table — group rows, cross-tabulate columns and aggregate values (sum, average, count, min, max). 100% in your browser.',
+    rowField: 'Rows (group by)',
+    colField: 'Columns (cross-tab, optional)',
+    valField: 'Values',
+    aggField: 'Aggregation',
+    inputLbl: 'CSV Input',
+    outputLbl: 'Pivot Table',
+    build: 'Build Pivot',
+    example: 'Load Example',
+    clear: 'Clear',
+    copy: 'Copy CSV',
+    download: 'Download CSV',
+    grandTotal: 'Grand Total',
+    empty: 'Paste CSV above and choose fields to build a pivot table.',
+    step1: 'Paste your CSV data (with a header row) into the input area',
+    step2: 'Select a Row column to group rows by',
+    step3: 'Optionally pick a Column field to cross-tabulate across the top',
+    step4: 'Pick the Value column and aggregation (sum, average, count…)',
+    step5: 'Click Build Pivot — then copy or download the result',
+  },
+  zh: {
+    toolTitle: 'CSV 数据透视表生成器',
+    toolDesc: '将任意 CSV 生成数据透视表 — 按行分组、按列交叉透视并聚合数值（求和、平均值、计数、最小值、最大值）。100% 浏览器本地运行。',
+    rowField: '行（按此分组）',
+    colField: '列（交叉透视，可选）',
+    valField: '值',
+    aggField: '聚合方式',
+    inputLbl: 'CSV 输入',
+    outputLbl: '透视表结果',
+    build: '生成透视表',
+    example: '加载示例',
+    clear: '清空',
+    copy: '复制 CSV',
+    download: '下载 CSV',
+    grandTotal: '总计',
+    empty: '在上方粘贴 CSV 并选择字段以生成数据透视表。',
+    step1: '在输入区粘贴 CSV 数据（需包含表头行）',
+    step2: '选择一个行字段进行分组',
+    step3: '（可选）选择列字段在顶部交叉透视',
+    step4: '选择值字段和聚合方式（求和、平均值、计数…）',
+    step5: '点击「生成透视表」— 之后可复制或下载结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+let parsedData = [];
+let parsedHeader = [];
+
+// RFC 4180 CSV parser
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || (r.length === 1 && r[0].trim() !== ''));
+}
+
+function isNumeric(v) {
+  if (v === null || v === undefined || v === '') return false;
+  const n = Number(String(v).replace(/[, ]/g, ''));
+  return !isNaN(n) && isFinite(n);
+}
+
+function toNum(v) {
+  return Number(String(v).replace(/[, ]/g, ''));
+}
+
+function aggregate(values, agg) {
+  const nums = values.filter(isNumeric).map(toNum);
+  if (agg === 'count') return values.length;
+  if (agg === 'countDistinct') return new Set(values.map(v => String(v))).size;
+  if (agg === 'sum') return nums.reduce((a, b) => a + b, 0);
+  if (nums.length === 0) return 0;
+  if (agg === 'avg') return nums.reduce((a, b) => a + b, 0) / nums.length;
+  if (agg === 'min') return Math.min(...nums);
+  if (agg === 'max') return Math.max(...nums);
+  if (agg === 'median') {
+    const s = [...nums].sort((a, b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  }
+  return 0;
+}
+
+function fmt(v) {
+  if (typeof v === 'number') {
+    if (Number.isInteger(v)) return v.toLocaleString();
+    return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+  return String(v);
+}
+
+function buildPivot() {
+  const out = $('#pivotOutput');
+  if (!parsedData.length) {
+    out.innerHTML = `<div class="pivot-empty">${t('empty')}</div>`;
+    $('#status').textContent = '';
+    return;
+  }
+  const rowIdx = parseInt($('#rowField').value);
+  const colIdxRaw = $('#colField').value;
+  const colIdx = colIdxRaw === '' ? -1 : parseInt(colIdxRaw);
+  const valIdx = parseInt($('#valField').value);
+  const agg = $('#aggField').value;
+
+  if (isNaN(rowIdx) || isNaN(valIdx)) {
+    out.innerHTML = `<div class="pivot-empty">${t('empty')}</div>`;
+    return;
+  }
+
+  // group: map[rowLabel][map[colLabel]] = [values...]
+  const rowLabels = new Set();
+  const colLabels = new Set();
+  const groups = new Map();
+
+  for (const rec of parsedData) {
+    const rl = rec[rowIdx] ?? '';
+    const cl = colIdx >= 0 ? (rec[colIdx] ?? '') : '(All)';
+    const vl = rec[valIdx] ?? '';
+    rowLabels.add(rl);
+    colLabels.add(cl);
+    if (!groups.has(rl)) groups.set(rl, new Map());
+    const inner = groups.get(rl);
+    if (!inner.has(cl)) inner.set(cl, []);
+    inner.get(cl).push(vl);
+  }
+
+  const sortedRows = [...rowLabels].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const sortedCols = [...colLabels].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+  let html = '<table class="pivot-table"><thead><tr>';
+  html += `<th>${parsedHeader[rowIdx] || ''}${colIdx >= 0 ? ' \\ ' + (parsedHeader[colIdx] || '') : ''}</th>`;
+  for (const cl of sortedCols) html += `<th>${escapeHtml(cl)}</th>`;
+  if (sortedRows.length > 1) html += `<th>${t('grandTotal')}</th>`;
+  html += '</tr></thead><tbody>';
+
+  const grandTotals = {};
+  for (const rl of sortedRows) {
+    html += `<tr><td class="label-cell">${escapeHtml(rl)}</td>`;
+    const inner = groups.get(rl);
+    for (const cl of sortedCols) {
+      const vals = (inner && inner.get(cl)) || [];
+      const result = aggregate(vals, agg);
+      grandTotals[cl] = (grandTotals[cl] || 0) + (agg === 'count' || agg === 'countDistinct' ? result : (isNumeric(result) ? result : 0));
+      html += `<td>${fmt(result)}</td>`;
+    }
+    if (sortedRows.length > 1) {
+      // row total
+      const allVals = [];
+      inner.forEach(arr => allVals.push(...arr));
+      html += `<td style="font-weight:700">${fmt(aggregate(allVals, agg))}</td>`;
+    }
+    html += '</tr>';
+  }
+
+  if (sortedRows.length > 1) {
+    html += `<tr style="font-weight:700;background:var(--glass)"><td class="label-cell">${t('grandTotal')}</td>`;
+    for (const cl of sortedCols) {
+      const allVals = [];
+      groups.forEach(inner => { if (inner.has(cl)) allVals.push(...inner.get(cl)); });
+      html += `<td>${fmt(aggregate(allVals, agg))}</td>`;
+    }
+    const totalAll = [];
+    groups.forEach(inner => inner.forEach(arr => totalAll.push(...arr)));
+    html += `<td>${fmt(aggregate(totalAll, agg))}</td>`;
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  out.innerHTML = html;
+  $('#status').innerHTML = `<span style="color:var(--accent)">✓ ${sortedRows.length} × ${sortedCols.length} pivot built from ${parsedData.length} rows</span>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function populateFields() {
+  const rowSel = $('#rowField'), colSel = $('#colField'), valSel = $('#valField');
+  rowSel.innerHTML = colSel.innerHTML = valSel.innerHTML = '';
+  const noneOpt = document.createElement('option');
+  noneOpt.value = ''; noneOpt.textContent = '—'; colSel.appendChild(noneOpt.cloneNode(true));
+  parsedHeader.forEach((h, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = h || `Col ${i + 1}`;
+    rowSel.appendChild(o.cloneNode(true));
+    colSel.appendChild(o.cloneNode(true));
+    valSel.appendChild(o.cloneNode(true));
+  });
+  // sensible defaults
+  if (parsedHeader.length >= 1) rowSel.value = 0;
+  if (parsedHeader.length >= 3) valSel.value = parsedHeader.length - 1;
+}
+
+function parseInput() {
+  const txt = $('#input').value.trim();
+  if (!txt) { parsedData = []; parsedHeader = []; return; }
+  const rows = parseCSV(txt);
+  if (rows.length < 2) { parsedData = []; parsedHeader = []; return; }
+  parsedHeader = rows[0].map(h => h.trim());
+  parsedData = rows.slice(1).filter(r => r.length === parsedHeader.length || r.length === parsedHeader.length + 1);
+}
+
+function onInput() {
+  parseInput();
+  populateFields();
+}
+
+function loadExample() {
+  $('#input').value = `Region,Product,Quarter,Sales
+North,Widget,Q1,1200
+North,Widget,Q2,1500
+North,Gadget,Q1,450
+North,Gadget,Q2,720
+South,Widget,Q1,980
+South,Widget,Q2,1100
+South,Gadget,Q1,520
+South,Gadget,Q2,610
+East,Widget,Q1,1340
+East,Widget,Q2,1620
+East,Gadget,Q1,400
+East,Gadget,Q2,580`;
+  onInput();
+  $('#rowField').value = 0;
+  $('#colField').value = String(1);
+  $('#valField').value = 3;
+  buildPivot();
+}
+
+function doClear() {
+  $('#input').value = '';
+  parsedData = []; parsedHeader = [];
+  populateFields();
+  $('#pivotOutput').innerHTML = `<div class="pivot-empty">${t('empty')}</div>`;
+  $('#status').textContent = '';
+}
+
+function copyCsv() {
+  const table = document.querySelector('#pivotOutput table');
+  if (!table) return;
+  const lines = [];
+  table.querySelectorAll('tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('th,td')].map(c => {
+      const v = c.textContent.replace(/"/g, '""');
+      return /[",\n]/.test(v) ? `"${v}"` : v;
+    });
+    lines.push(cells.join(','));
+  });
+  copyText(lines.join('\n'));
+}
+
+function downloadCsv() {
+  const table = document.querySelector('#pivotOutput table');
+  if (!table) return;
+  const lines = [];
+  table.querySelectorAll('tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('th,td')].map(c => {
+      const v = c.textContent.replace(/"/g, '""');
+      return /[",\n]/.test(v) ? `"${v}"` : v;
+    });
+    lines.push(cells.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'pivot-table.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+$('#input').addEventListener('input', onInput);
+$('#rowField').addEventListener('change', buildPivot);
+$('#colField').addEventListener('change', buildPivot);
+$('#valField').addEventListener('change', buildPivot);
+$('#aggField').addEventListener('change', buildPivot);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="buildPivot()">${t('build')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyCsv()">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="downloadCsv()">${t('download')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+// i18n labels
+$('#lbl-rows').textContent = t('rowField');
+$('#lbl-cols').textContent = t('colField');
+$('#lbl-val').textContent = t('valField');
+$('#lbl-agg').textContent = t('aggField');
+$('#lbl-in').textContent = t('inputLbl');
+$('#lbl-out').textContent = t('outputLbl');
+$('#pivotEmpty').textContent = t('empty');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4','step5'],
+  related: [
+    {icon:'📊', href:'/convert/csv-viewer.html', name:'CSV Viewer'},
+    {icon:'📈', href:'/convert/csv-statistics.html', name:'CSV Statistics'},
+    {icon:'🔗', href:'/convert/csv-joiner.html', name:'CSV Joiner'},
+    {icon:'✏️', href:'/convert/csv-editor.html', name:'CSV Editor'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

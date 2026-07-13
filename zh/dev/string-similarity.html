@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>字符串相似度计算器 - Levenshtein Jaro-Winkler 在线 | GameZipper 工具箱</title>
+  <meta name="description" content="比较两个字符串并计算 Levenshtein、Jaro-Winkler、Hamming、Sørensen-Dice、余弦和 Jaccard 相似度 — 免费、即时、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/string-similarity.html">
+  <meta property="og:title" content="String Similarity Calculator - Levenshtein Jaro-Winkler Online | GameZipper Tools">
+  <meta property="og:description" content="Compare two strings and calculate Levenshtein, Jaro-Winkler, Hamming, Sørensen-Dice, cosine and Jaccard similarity instantly. Free, browser-based, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/string-similarity.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="String Similarity Calculator - Levenshtein Jaro-Winkler Online | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.sim-input{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text);font-family:monospace;font-size:.95em;box-sizing:border-box}
+.sim-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media (max-width:640px){.sim-pair{grid-template-columns:1fr}}
+.sim-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.sim-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px}
+.sim-card .name{font-size:.85em;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.sim-card .value{font-size:1.8em;font-weight:900;color:var(--accent);margin-top:6px}
+.sim-card .raw{font-size:.85em;color:var(--text2);margin-top:4px;font-family:monospace}
+.sim-card .bar{height:6px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden}
+.sim-card .bar > span{display:block;height:100%;background:linear-gradient(90deg,#00d672,#61afef);border-radius:3px}
+.sim-meta{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.sim-meta .chip{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.85em}
+.mode-toggle{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.mode-toggle button{flex:1;min-width:120px}
+.gz-select{padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text)}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"String Similarity Calculator","description":"Compare two strings and calculate Levenshtein, Jaro-Winkler, Hamming, Sorensen-Dice, cosine and Jaccard similarity instantly. Free, browser-based, no signup.","url":"https://tools.gamezipper.com/zh/dev/string-similarity.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Levenshtein distance?","acceptedAnswer":{"@type":"Answer","text":"Levenshtein distance is the minimum number of single-character edits (insertions, deletions or substitutions) needed to turn one string into another. A distance of 0 means the strings are identical."}},{"@type":"Question","name":"Which similarity algorithms does this tool support?","acceptedAnswer":{"@type":"Answer","text":"It computes Levenshtein distance and normalized similarity, Jaro-Winkler similarity (great for short strings and typos), Hamming distance (equal-length strings), Sørensen-Dice coefficient, cosine similarity on character bigrams, and the Jaccard index."}},{"@type":"Question","name":"What is a good similarity score?","acceptedAnswer":{"@type":"Answer","text":"Similarity scores are normalized to 0–1. 1.0 means identical, 0 means completely different. For fuzzy matching, scores above 0.85 (Levenshtein) or 0.90 (Jaro-Winkler) usually indicate a near-exact match."}},{"@type":"Question","name":"Is my text sent to a server?","acceptedAnswer":{"@type":"Answer","text":"No. All string comparison runs entirely in your browser. Nothing you type is uploaded or stored."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/zh/dev/string-similarity.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/string-similarity.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/zh/dev/string-similarity.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="mode-toggle">
+      <button class="gz-btn gz-btn-secondary" id="modeChar">🔤 Characters</button>
+      <button class="gz-btn gz-btn-secondary" id="modeWord">📝 Words</button>
+    </div>
+    <div class="sim-pair">
+      <div>
+        <label style="display:block;font-size:.85em;color:var(--text2);margin-bottom:4px;font-weight:600" id="lbl-a"></label>
+        <textarea id="strA" class="sim-input" rows="4" spellcheck="false">kitten</textarea>
+      </div>
+      <div>
+        <label style="display:block;font-size:.85em;color:var(--text2);margin-bottom:4px;font-weight:600" id="lbl-b"></label>
+        <textarea id="strB" class="sim-input" rows="4" spellcheck="false">sitting</textarea>
+      </div>
+    </div>
+    <div class="sim-meta" id="meta"></div>
+    <div class="sim-results" id="results"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'String Similarity Calculator',
+    toolDesc: 'Compare two strings and compute Levenshtein, Jaro-Winkler, Hamming, Sørensen-Dice, cosine and Jaccard similarity — free, instant, browser-only.',
+    labelA: 'String A',
+    labelB: 'String B',
+    compute: 'Compute Similarity',
+    example: 'Example',
+    clear: 'Clear',
+    swap: 'Swap ⇄',
+    modeChar: '🔤 Compare by character',
+    modeWord: '📝 Compare by word',
+    metaLenA: 'Length A',
+    metaLenB: 'Length B',
+    metaSame: 'Identical?',
+    step1: 'Type or paste two strings into String A and String B',
+    step2: 'Choose whether to compare by characters or by words',
+    step3: 'Click Compute Similarity to see all metrics at once',
+    step4: 'Use the result to power fuzzy matching, deduplication or typo detection',
+  },
+  zh: {
+    toolTitle: '字符串相似度计算器',
+    toolDesc: '比较两个字符串并计算 Levenshtein、Jaro-Winkler、Hamming、Sørensen-Dice、余弦和 Jaccard 相似度 — 免费、即时、浏览器本地运行。',
+    labelA: '字符串 A',
+    labelB: '字符串 B',
+    compute: '计算相似度',
+    example: '示例',
+    clear: '清空',
+    swap: '交换 ⇄',
+    modeChar: '🔤 按字符比较',
+    modeWord: '📝 按词比较',
+    metaLenA: 'A 长度',
+    metaLenB: 'B 长度',
+    metaSame: '完全相同？',
+    step1: '在字符串 A 和字符串 B 中输入或粘贴两段文本',
+    step2: '选择按字符还是按词进行比较',
+    step3: '点击「计算相似度」一次性查看所有指标',
+    step4: '利用结果进行模糊匹配、去重或拼写纠错',
+  }
+});
+
+const { $, t } = GZ;
+let mode = 'char';
+
+// ── algorithms (operate on token arrays; a string is just char-token array) ──
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+function hamming(a, b) {
+  if (a.length !== b.length) return null;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+  return d;
+}
+
+function jaro(s1, s2) {
+  if (s1.length === 0 && s2.length === 0) return 1;
+  if (s1.length === 0 || s2.length === 0) return 0;
+  const matchDist = Math.max(Math.floor(Math.max(s1.length, s2.length) / 2) - 1, 0);
+  const s1Matches = new Array(s1.length).fill(false);
+  const s2Matches = new Array(s2.length).fill(false);
+  let matches = 0;
+  for (let i = 0; i < s1.length; i++) {
+    const start = Math.max(0, i - matchDist);
+    const end = Math.min(i + matchDist + 1, s2.length);
+    for (let j = start; j < end; j++) {
+      if (s2Matches[j]) continue;
+      if (s1[i] !== s2[j]) continue;
+      s1Matches[i] = true; s2Matches[j] = true; matches++; break;
+    }
+  }
+  if (matches === 0) return 0;
+  let t = 0, k = 0;
+  for (let i = 0; i < s1.length; i++) {
+    if (!s1Matches[i]) continue;
+    while (!s2Matches[k]) k++;
+    if (s1[i] !== s2[k]) t++;
+    k++;
+  }
+  t /= 2;
+  return (matches / s1.length + matches / s2.length + (matches - t) / matches) / 3;
+}
+
+function jaroWinkler(a, b) {
+  const j = jaro(a, b);
+  let prefix = 0;
+  for (let i = 0; i < Math.min(4, a.length, b.length); i++) {
+    if (a[i] === b[i]) prefix++; else break;
+  }
+  return j + prefix * 0.1 * (1 - j);
+}
+
+function bigrams(tokens) {
+  if (tokens.length < 2) return new Set(tokens);
+  const s = new Set();
+  for (let i = 0; i < tokens.length - 1; i++) s.add(tokens[i] + '\u0001' + tokens[i + 1]);
+  return s;
+}
+
+function sorensenDice(a, b) {
+  const A = bigrams(a), B = bigrams(b);
+  if (A.size === 0 && B.size === 0) return 1;
+  let inter = 0;
+  for (const g of A) if (B.has(g)) inter++;
+  return (2 * inter) / (A.size + B.size);
+}
+
+function jaccard(a, b) {
+  const A = new Set(a), B = new Set(b);
+  if (A.size === 0 && B.size === 0) return 1;
+  let inter = 0;
+  for (const x of A) if (B.has(x)) inter++;
+  return inter / (A.size + B.size - inter);
+}
+
+function cosineSim(a, b) {
+  const A = bigrams(a), B = bigrams(b);
+  if (A.size === 0 && B.size === 0) return 1;
+  if (A.size === 0 || B.size === 0) return 0;
+  let inter = 0;
+  for (const g of A) if (B.has(g)) inter++;
+  return inter / Math.sqrt(A.size * B.size);
+}
+
+function pct(v) { return (v * 100).toFixed(1) + '%'; }
+
+function compute() {
+  const aRaw = $('#strA').value;
+  const bRaw = $('#strB').value;
+  const a = mode === 'char' ? [...aRaw] : aRaw.split(/\s+/).filter(Boolean);
+  const b = mode === 'char' ? [...bRaw] : bRaw.split(/\s+/).filter(Boolean);
+
+  $('#meta').innerHTML = `
+    <div class="chip">${t('metaLenA')}: ${a.length}</div>
+    <div class="chip">${t('metaLenB')}: ${b.length}</div>
+    <div class="chip">${t('metaSame')}: ${aRaw === bRaw ? '✓' : '✗'}</div>`;
+
+  const lev = levenshtein(a, b);
+  const levSim = a.length + b.length === 0 ? 1 : 1 - lev / Math.max(a.length, b.length);
+  const jw = jaroWinkler(a, b);
+  const ham = hamming(a, b);
+  const sd = sorensenDice(a, b);
+  const cos = cosineSim(a, b);
+  const jac = jaccard(a, b);
+
+  const cards = [
+    { name: 'Levenshtein', value: pct(levSim), raw: `distance = ${lev}` },
+    { name: 'Jaro-Winkler', value: pct(jw), raw: `similarity = ${jw.toFixed(4)}` },
+    { name: ham === null ? 'Hamming (N/A — unequal length)' : 'Hamming', value: ham === null ? 'N/A' : pct(1 - ham / a.length), raw: ham === null ? 'requires equal length' : `distance = ${ham}` },
+    { name: 'Sørensen-Dice', value: pct(sd), raw: `coefficient = ${sd.toFixed(4)}` },
+    { name: 'Cosine', value: pct(cos), raw: `bigram cosine = ${cos.toFixed(4)}` },
+    { name: 'Jaccard', value: pct(jac), raw: `index = ${jac.toFixed(4)}` },
+  ];
+
+  $('#results').innerHTML = cards.map(c => {
+    const ratio = parseFloat(c.value) / 100 || 0;
+    return `<div class="sim-card">
+      <div class="name">${c.name}</div>
+      <div class="value">${c.value}</div>
+      <div class="raw">${c.raw}</div>
+      <div class="bar"><span style="width:${Math.max(0, Math.min(100, ratio * 100))}%"></span></div>
+    </div>`;
+  }).join('');
+}
+
+function loadExample() {
+  $('#strA').value = 'GameZipper Tools';
+  $('#strB').value = 'GameZipper Tool';
+  compute();
+}
+
+function doClear() {
+  $('#strA').value = '';
+  $('#strB').value = '';
+  $('#meta').innerHTML = '';
+  $('#results').innerHTML = '';
+}
+
+function doSwap() {
+  const a = $('#strA').value;
+  $('#strA').value = $('#strB').value;
+  $('#strB').value = a;
+  compute();
+}
+
+function setMode(m) {
+  mode = m;
+  $('#modeChar').classList.toggle('gz-btn-secondary', m !== 'char');
+  $('#modeWord').classList.toggle('gz-btn-secondary', m !== 'word');
+  compute();
+}
+
+$('#modeChar').addEventListener('click', () => setMode('char'));
+$('#modeWord').addEventListener('click', () => setMode('word'));
+$('#strA').addEventListener('input', compute);
+$('#strB').addEventListener('input', compute);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="compute()">${t('compute')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doSwap()">${t('swap')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+$('#lbl-a').textContent = t('labelA');
+$('#lbl-b').textContent = t('labelB');
+$('#modeChar').textContent = t('modeChar');
+$('#modeWord').textContent = t('modeWord');
+$('#modeChar').classList.remove('gz-btn-secondary'); // char active by default
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔄', href:'/text/diff.html', name:'Text Diff'},
+    {icon:'🔤', href:'/dev/regex-tester.html', name:'Regex Tester'},
+    {icon:'📊', href:'/text/character-counter.html', name:'Character Counter'},
+    {icon:'🔍', href:'/dev/json-diff.html', name:'JSON Diff'},
+  ]
+});
+
+compute();
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
