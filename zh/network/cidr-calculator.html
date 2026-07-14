@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>CIDR 子网计算器 - 免费在线 IP 子网计算工具 | GameZipper 工具箱</title>
+  <meta name="description" content="即时计算 IPv4 CIDR 子网信息。获取网络地址、广播地址、通配符掩码、可用主机范围、总数/可用主机数及二进制分解。免费、浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/network/cidr-calculator.html">
+  <meta property="og:title" content="CIDR 子网计算器 - 免费在线 IP 子网计算工具 | GameZipper 工具箱">
+  <meta property="og:description" content="即时计算 IPv4 CIDR 子网信息。获取网络地址、广播地址、通配符掩码、可用主机范围、总数/可用主机数及二进制分解。免费、浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/network/cidr-calculator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CIDR 子网计算器 - 免费在线 IP 子网计算工具 | GameZipper 工具箱">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.cidr-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;padding:10px 14px;background:var(--gz-card-bg,#1a1a2e);border-radius:8px;border:1px solid rgba(255,255,255,.08)}
+.cidr-row label{font-weight:600;font-size:.85em;color:var(--gz-accent,#00d672);min-width:140px}
+.cidr-row .val{flex:1;font-family:monospace;font-size:.85em;word-break:break-all;text-align:right;color:var(--gz-text,#e0e0e0)}
+.cidr-row.binary .val{font-size:.7em;opacity:.85}
+#ipInput{font-family:monospace;font-size:1em;text-align:center;letter-spacing:1px}
+.example-link{display:inline-block;margin:4px 6px 4px 0;padding:4px 10px;font-size:.75em;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:16px;color:var(--gz-text);cursor:pointer;transition:all .15s}
+.example-link:hover{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"CIDR Calculator","description":"即时计算 IPv4 CIDR 子网信息：网络地址、广播地址、通配符掩码、主机范围和总数/可用主机数。免费、浏览器本地运行。","url":"https://tools.gamezipper.com/network/cidr-calculator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is CIDR notation?", "acceptedAnswer": {"@type": "Answer", "text": "CIDR (Classless Inter-Domain Routing) notation is a compact way to specify an IP address and its associated network prefix. For example, 192.168.1.0/24 means the first 24 bits identify the network and the remaining 8 bits identify hosts. It replaced the older classful A/B/C network system."}}, {"@type": "Question", "name": "How do I calculate usable hosts from CIDR?", "acceptedAnswer": {"@type": "Answer", "text": "Total addresses = 2^(32-prefix). Usable hosts = 2^(32-prefix) - 2 because the first address is the network address and the last is the broadcast address. For /30 networks there are 2 usable hosts, /31 has 2 (RFC 3021), and /32 has 1."}}, {"@type": "Question", "name": "What is a wildcard mask?", "acceptedAnswer": {"@type": "Answer", "text": "A wildcard mask is the bitwise inverse of the subnet mask. It is used in Cisco ACLs and OSPF network statements. For example, /24 subnet mask 255.255.255.0 has a wildcard mask of 0.0.0.255."}}, {"@type": "Question", "name": "Can I calculate IPv6 subnets with this tool?", "acceptedAnswer": {"@type": "Answer", "text": "This calculator focuses on IPv4 addresses. For IPv6 you can use any prefix length from /0 to /128 — but the host range concept doesn't apply directly because IPv6 subnets are typically /64."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/network/cidr-calculator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/network/cidr-calculator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/network/cidr-calculator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="text-align:center;padding:20px;background:var(--gz-surface);border-radius:12px;border:1px solid var(--gz-border);margin-bottom:16px">
+      <input type="text" id="ipInput" placeholder="192.168.1.0/24" style="width:100%;max-width:340px;padding:12px;font-size:1.1em;border:2px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--gz-text);text-align:center" autocomplete="off" spellcheck="false">
+      <div style="margin-top:14px" id="examples"></div>
+    </div>
+    <div id="results"></div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CIDR Calculator',
+    toolDesc: 'Calculate IPv4 subnet details from any CIDR notation (e.g. 192.168.1.0/24). Get network, broadcast, wildcard mask, host range and binary breakdown instantly.',
+    inputLabel: 'CIDR Notation',
+    inputPh: '192.168.1.0/24',
+    step1: 'Enter an IPv4 address with prefix length, e.g. 10.0.0.0/8',
+    step2: 'The tool instantly computes network, broadcast, mask and hosts',
+    step3: 'View binary breakdown of each octet',
+    step4: 'Use Copy to copy results for sharing or documentation',
+    copy: 'Copy Results',
+    clear: 'Clear',
+    examples: 'Examples',
+  },
+  zh: {
+    toolTitle: 'CIDR 子网计算器',
+    toolDesc: '从任意 CIDR 表示法（例如 192.168.1.0/24）计算 IPv4 子网详情。即时获取网络地址、广播地址、通配符掩码、可用主机范围和二进制分解。',
+    inputLabel: 'CIDR 表示法',
+    inputPh: '192.168.1.0/24',
+    step1: '输入 IPv4 地址和前缀长度，例如 10.0.0.0/8',
+    step2: '工具即时计算网络、广播、掩码和主机数',
+    step3: '查看每个八位字节的二进制分解',
+    step4: '点击「复制结果」用于分享或文档记录',
+    copy: '复制结果',
+    clear: '清空',
+    examples: '示例',
+  }
+});
+
+const { $, copyText, t } = GZ;
+const EXAMPLES = [
+  ['192.168.1.0/24', '/24 (LAN)'],
+  ['10.0.0.0/8', '/8 (Private A)'],
+  ['172.16.0.0/12', '/12 (Private B)'],
+  ['192.168.0.0/22', '/22 (4× /24)'],
+  ['0.0.0.0/0', '/0 (Default)'],
+  ['203.0.113.0/30', '/30 (P2P link)'],
+];
+
+function ipToInt(ip) {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    const v = +p;
+    if (isNaN(v) || v < 0 || v > 255 || !/^\d+$/.test(p)) return null;
+    n = (n * 256) + v;
+  }
+  return n >>> 0;
+}
+
+function intToIp(n) {
+  return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+}
+
+function toBinary(n, bits) {
+  return n.toString(2).padStart(bits, '0');
+}
+
+function calculate(cidr) {
+  cidr = (cidr || '').trim();
+  const m = cidr.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
+  if (!m) return { error: 'Invalid format. Use e.g. 192.168.1.0/24' };
+  const ipStr = `${m[1]}.${m[2]}.${m[3]}.${m[4]}`;
+  const prefix = +m[5];
+  const ip = ipToInt(ipStr);
+  if (ip === null) return { error: 'Invalid IP address octet(s) — must be 0-255.' };
+  if (prefix < 0 || prefix > 32) return { error: 'Prefix must be 0-32.' };
+
+  const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+  const wildcard = (~mask) >>> 0;
+  const network = (ip & mask) >>> 0;
+  const broadcast = (network | wildcard) >>> 0;
+  const totalHosts = prefix >= 32 ? 1 : Math.pow(2, 32 - prefix);
+  const usableHosts = prefix >= 31 ? (prefix === 32 ? 1 : 2) : Math.max(0, totalHosts - 2);
+  const firstHost = prefix >= 31 ? network : (network + 1) >>> 0;
+  const lastHost = prefix >= 31 ? broadcast : (broadcast - 1) >>> 0;
+
+  const binOctets = (n) => [3,2,1,0].map(i => (n >>> (i*8)) & 255)
+    .map(v => v.toString(2).padStart(8, '0').match(/.{1,4}/g).join(' '))
+    .join(' . ');
+
+  return {
+    input: cidr,
+    ip: ipStr,
+    prefix,
+    network: intToIp(network),
+    broadcast: intToIp(broadcast),
+    mask: intToIp(mask),
+    maskBin: toBinary(mask >>> 0, 32).match(/.{1,8}/g).join('.'),
+    wildcard: intToIp(wildcard),
+    wildcardBin: toBinary(wildcard >>> 0, 32).match(/.{1,8}/g).join('.'),
+    totalHosts,
+    usableHosts,
+    firstHost: intToIp(firstHost),
+    lastHost: intToIp(lastHost),
+    ipType: (ip >= 0x0A000000 && ip <= 0x0AFFFFFF) || (ip >= 0xAC100000 && ip <= 0xAC1FFFFF) || (ip >= 0xC0A80000 && ip <= 0xC0A8FFFF) ? 'Private' : 'Public',
+    ipBin: binOctets(ip),
+    networkBin: binOctets(network),
+  };
+}
+
+function render(result) {
+  const container = $('#results');
+  const status = $('#status');
+  if (result.error) {
+    container.innerHTML = '';
+    status.innerHTML = `<span style="color:var(--gz-accent)">✗ ${result.error}</span>`;
+    return;
+  }
+  status.innerHTML = `<span style="color:var(--gz-success)">✓ ${result.input}</span>`;
+  const rows = [
+    ['Network Address', result.network + '/' + result.prefix],
+    ['Broadcast Address', result.broadcast],
+    ['Subnet Mask', result.mask + ' = ' + result.maskBin],
+    ['Wildcard Mask', result.wildcard + ' = ' + result.wildcardBin],
+    ['First Usable Host', result.firstHost],
+    ['Last Usable Host', result.lastHost],
+    ['Total Addresses', result.totalHosts.toLocaleString()],
+    ['Usable Hosts', result.usableHosts.toLocaleString()],
+    ['IP Type', result.ipType],
+    ['IP Binary', result.ipBin],
+    ['Network Binary', result.networkBin],
+  ];
+  container.innerHTML = rows.map(([label, val]) =>
+    `<div class="cidr-row${label.includes('Binary') ? ' binary' : ''}"><label>${label}</label><span class="val">${val}</span></div>`
+  ).join('');
+}
+
+function process() { render(calculate($('#ipInput').value)); }
+
+$('#examples').innerHTML = EXAMPLES.map(([cidr, label]) =>
+  `<span class="example-link" data-cidr="${cidr}">${label}</span>`
+).join('');
+
+$('#examples').addEventListener('click', e => {
+  const t = e.target.closest('.example-link');
+  if (t) { $('#ipInput').value = t.dataset.cidr; process(); }
+});
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="process()">${t('calculate') || 'Calculate'}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="copyText($('#results').innerText)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#ipInput').value='';$('#results').innerHTML='';$('#status').innerHTML=''">${t('clear')}</button>`;
+
+$('#ipInput').addEventListener('input', process);
+
+GZ.renderToolPage({
+  category: 'network',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🌐', href:'/network/dns-lookup.html', name:'DNS Lookup'},
+    {icon:'🔌', href:'/network/port-checker.html', name:'Port Checker'},
+    {icon:'⚡', href:'/network/ping-test.html', name:'Ping Test'},
+    {icon:'🛡️', href:'/network/ssl-certificate-checker.html', name:'SSL Check'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

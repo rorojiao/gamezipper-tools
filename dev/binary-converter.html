@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Number Base Converter - Binary, Hex, Octal, Decimal | GameZipper Tools</title>
+  <meta name="description" content="Convert between binary, octal, decimal, hexadecimal and ASCII text instantly. Live conversion as you type with bit-length display and two's complement. Free, browser-only.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/binary-converter.html">
+  <meta property="og:title" content="Number Base Converter - Binary, Hex, Octal, Decimal | GameZipper Tools">
+  <meta property="og:description" content="Convert between binary, octal, decimal, hexadecimal and ASCII text instantly. Live conversion as you type with bit-length display and two's complement. Free, browser-only.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/binary-converter.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Number Base Converter - Binary, Hex, Octal, Decimal | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+.bc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px}
+.bc-field{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;padding:12px}
+.bc-field label{display:block;font-size:.85em;color:var(--gz-accent);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.bc-field input,.bc-field textarea{width:100%;background:var(--gz-bg);border:1px solid var(--gz-border);border-radius:6px;padding:10px 12px;color:var(--gz-text);font-family:'Courier New',monospace;font-size:.95em;resize:vertical}
+.bc-field input:focus,.bc-field textarea:focus{outline:none;border-color:var(--gz-accent)}
+.bc-meta{font-size:.7em;color:var(--gz-text-muted);margin-top:4px;font-family:monospace}
+.bc-status{margin-top:8px;padding:8px 12px;border-radius:6px;background:var(--gz-surface);font-size:.85em}
+.bc-status.ok{color:var(--gz-success);border-left:3px solid var(--gz-success)}
+.bc-status.err{color:var(--gz-accent);border-left:3px solid var(--gz-accent)}
+.bc-options{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:14px;padding:10px 14px;background:var(--gz-surface);border-radius:8px;font-size:.85em}
+.bc-options label{display:flex;align-items:center;gap:6px;cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Number Base Converter","description":"Convert between binary, octal, decimal, hexadecimal and ASCII text instantly with live conversion. Includes bit length, two's complement and signed/unsigned modes. Free, browser-only.","url":"https://tools.gamezipper.com/dev/binary-converter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What's the difference between binary, octal, decimal and hex?", "acceptedAnswer": {"@type": "Answer", "text": "These are different numeral systems (bases). Binary (base-2) uses digits 0-1, octal (base-8) uses 0-7, decimal (base-10) uses 0-9, and hexadecimal (base-16) uses 0-9 and A-F. Hex is widely used in programming because each hex digit represents exactly 4 binary bits."}}, {"@type": "Question", "name": "What is two's complement?", "acceptedAnswer": {"@type": "Answer", "text": "Two's complement is a way to represent negative numbers in binary. The most significant bit indicates the sign — 0 for positive, 1 for negative. For an 8-bit signed integer, values range from -128 to 127. This tool shows the two's complement interpretation when you enable signed mode."}}, {"@type": "Question", "name": "How do I convert text to binary?", "acceptedAnswer": {"@type": "Answer", "text": "Type or paste ASCII text into the Text field. Each character's code point is converted to binary, hex, octal and decimal in real time. The tool uses UTF-8 encoding so emoji and non-ASCII characters also work correctly."}}, {"@type": "Question", "name": "Is there a limit on number size?", "acceptedAnswer": {"@type": "Answer", "text": "Numbers are handled with JavaScript's BigInt internally, so you can convert values up to 2^53 - 1 losslessly in regular mode. For larger values the tool still works but rounds to JavaScript's safe integer limit unless you use the BigInt mode toggle."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/binary-converter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/binary-converter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/binary-converter.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="bc-options">
+      <label><input type="checkbox" id="signedMode"> Signed (two's complement)</label>
+      <label>Bit width:
+        <select id="bitWidth" class="gz-select">
+          <option value="8">8-bit</option>
+          <option value="16">16-bit</option>
+          <option value="32" selected>32-bit</option>
+          <option value="64">64-bit</option>
+        </select>
+      </label>
+      <label>Binary separator:
+        <select id="binSep" class="gz-select">
+          <option value="">none</option>
+          <option value=" ">space</option>
+          <option value="," value=",">comma</option>
+        </select>
+      </label>
+    </div>
+    <div class="bc-grid">
+      <div class="bc-field"><label>ASCII / Text</label><textarea id="fText" rows="3" placeholder="Type text..."></textarea><div class="bc-meta" id="mText"></div></div>
+      <div class="bc-field"><label>Decimal (base 10)</label><textarea id="fDec" rows="2" placeholder="0"></textarea><div class="bc-meta" id="mDec"></div></div>
+      <div class="bc-field"><label>Hexadecimal (base 16)</label><textarea id="fHex" rows="2" placeholder="0xFF or FF"></textarea><div class="bc-meta" id="mHex"></div></div>
+      <div class="bc-field"><label>Octal (base 8)</label><textarea id="fOct" rows="2" placeholder="0o77 or 77"></textarea><div class="bc-meta" id="mOct"></div></div>
+      <div class="bc-field"><label>Binary (base 2)</label><textarea id="fBin" rows="3" placeholder="0b1010 or 1010"></textarea><div class="bc-meta" id="mBin"></div></div>
+    </div>
+    <div class="bc-status" id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Number Base Converter',
+    toolDesc: 'Convert between binary, octal, decimal, hexadecimal and ASCII text. Live conversion as you type — perfect for programmers, students, and digital electronics.',
+    step1: 'Type in any field (text, decimal, hex, octal or binary)',
+    step2: 'All other fields update instantly with the equivalent value',
+    step3: 'Toggle Signed mode to see two\'s complement interpretation',
+    step4: 'Click Copy on any field to copy the result',
+    copyAll: 'Copy All',
+    clear: 'Clear',
+    ok: '✓ Live conversion',
+    bits: 'bits',
+    chars: 'characters',
+    example: 'Load Example',
+  },
+  zh: {
+    toolTitle: '进制转换器',
+    toolDesc: '在二进制、八进制、十进制、十六进制和 ASCII 文本之间转换。实时转换 — 非常适合程序员、学生和数字电子学习。',
+    step1: '在任意字段输入（文本、十进制、十六进制、八进制或二进制）',
+    step2: '其他字段即时更新为等价值',
+    step3: '切换「有符号」模式查看二进制补码解释',
+    step4: '点击任意字段的「复制」按钮复制结果',
+    copyAll: '全部复制',
+    clear: '清空',
+    ok: '✓ 实时转换',
+    bits: '位',
+    chars: '字符',
+    example: '加载示例',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseInput(value, base) {
+  if (!value) return null;
+  let s = value.trim().replace(/\s+/g, '').replace(/0x$/i, '').replace(/^0b/i, '').replace(/^0o/i, '');
+  // Allow comma-separated binary
+  if (base === 2 && s.includes(',')) s = s.replace(/,/g, '');
+  if (!s) return null;
+  if (!/^-?[0-9a-fA-F]+$/.test(s)) return { error: 'Invalid characters for base ' + base };
+  try {
+    const n = BigInt(s);
+    return { value: n };
+  } catch(e) {
+    return { error: 'Number too large' };
+  }
+}
+
+function bigIntToString(n, base, signed, bitWidth) {
+  if (signed && base !== 10) {
+    // For non-decimal bases, interpret as signed using bitWidth
+    const max = (1n << BigInt(bitWidth)) - 1n;
+    const signBit = 1n << BigInt(bitWidth - 1);
+    if ((n & signBit) !== 0n) {
+      // Negative
+      return (n - (1n << BigInt(bitWidth))).toString(base);
+    }
+    return n.toString(base);
+  }
+  return n.toString(base);
+}
+
+function getTextCodes(text) {
+  const codes = [];
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(text);
+  for (const b of bytes) codes.push(BigInt(b));
+  return { codes, bytes };
+}
+
+function updateFromText() {
+  const text = $('#fText').value;
+  if (!text) {
+    $('#fDec').value = $('#fHex').value = $('#fOct').value = $('#fBin').value = '';
+    $('#mText').textContent = '';
+    return;
+  }
+  const { codes, bytes } = getTextCodes(text);
+  $('#fDec').value = codes.join(' ');
+  $('#fHex').value = codes.map(c => c.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+  $('#fOct').value = codes.map(c => c.toString(8).padStart(3, '0')).join(' ');
+  $('#fBin').value = codes.map(c => c.toString(2).padStart(8, '0')).join(' ');
+  $('#mText').textContent = `${text.length} ${t('chars')} → ${bytes.length} bytes`;
+}
+
+function updateFromNumber(source, base) {
+  const raw = $(source).value;
+  if (!raw) {
+    ['#fDec','#fHex','#fOct','#fBin','#fText'].forEach(s => { if (s !== source) $(s).value = ''; });
+    return;
+  }
+  const parsed = parseInput(raw, base);
+  if (parsed && parsed.error) {
+    $('#status').className = 'bc-status err';
+    $('#status').textContent = '✗ ' + parsed.error;
+    return;
+  }
+  if (!parsed) return;
+  const n = parsed.value;
+  const sep = $('#binSep').value;
+  const bitWidth = +$('#bitWidth').value;
+  const signed = $('#signedMode').checked;
+
+  if (source !== '#fDec') $('#fDec').value = bigIntToString(n, 10, false, bitWidth);
+  if (source !== '#fHex') $('#fHex').value = bigIntToString(n, 16, signed, bitWidth).toUpperCase();
+  if (source !== '#fOct') $('#fOct').value = bigIntToString(n, 8, signed, bitWidth);
+  if (source !== '#fBin') {
+    const bin = bigIntToString(n, 2, signed, bitWidth);
+    $('#fBin').value = bin.length > 8 && sep ? bin.match(/.{1,8}/g).join(sep) : bin;
+  }
+
+  // Try to decode text from bytes
+  try {
+    const dec = bigIntToString(n, 10, false, bitWidth);
+    if (source !== '#fText') {
+      // Single value → single byte → character
+      const num = parseInt(dec);
+      if (num >= 0 && num <= 0x10FFFF) {
+        $('#fText').value = String.fromCodePoint(num);
+      }
+    }
+  } catch(_) {}
+
+  const bitLen = n.toString(2).replace(/^-/, '').length;
+  $('#mDec').textContent = `${bitLen} ${t('bits')}`;
+  $('#mHex').textContent = `${Math.ceil(bitLen / 4)} hex digits`;
+  $('#mOct').textContent = `${Math.ceil(bitLen / 3)} octal digits`;
+  $('#mBin').textContent = `${bitLen} ${t('bits')}`;
+
+  $('#status').className = 'bc-status ok';
+  $('#status').textContent = t('ok');
+}
+
+$('#fText').addEventListener('input', updateFromText);
+['#fDec','#fHex','#fOct','#fBin'].forEach((sel, i) => {
+  $(sel).addEventListener('input', () => updateFromNumber(sel, [10,16,8,2][i]));
+});
+
+$('#signedMode').addEventListener('change', () => {
+  if ($('#fBin').value) updateFromNumber('#fBin', 2);
+});
+$('#binSep').addEventListener('change', () => {
+  if ($('#fBin').value) updateFromNumber('#fBin', 2);
+});
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText($('#fDec').value+' | '+$('#fHex').value+' | '+$('#fOct').value+' | '+$('#fBin').value)">${t('copyAll')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#fText').value='Hello, World! 🌍';updateFromText()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#fText').value='';$('#fDec').value='';$('#fHex').value='';$('#fOct').value='';$('#fBin').value=''">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🪙', href:'/dev/binary-calculator.html', name:'Binary Calculator'},
+    {icon:'🔢', href:'/dev/ascii85.html', name:'ASCII85'},
+    {icon:'🧮', href:'/dev/hex-to-rgb.html', name:'Hex to RGB'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
