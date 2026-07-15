@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Cron 表达式生成器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="可视化构建 cron 定时任务，查看人类可读描述、下次运行时间和可直接粘贴的 crontab 行。5 字段标准 cron，完全本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/crontab-generator.html">
+  <meta property="og:title" content="Cron 表达式生成器">
+  <meta property="og:description" content="可视化构建 cron 定时任务，查看人类可读描述、下次运行时间和可直接粘贴的 crontab 行。5 字段标准 cron，完全本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/crontab-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Cron 表达式生成器">
+<meta name="twitter:description" content="可视化构建 cron 定时任务，查看人类可读描述、下次运行时间和可直接粘贴的 crontab 行。5 字段标准 cron，完全本地运行。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+.cron-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.cron-field{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:10px}
+.cron-field label{display:block;font-size:.78em;opacity:.75;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.cron-field select,.cron-field input[type=number]{width:100%;padding:6px 8px;background:var(--glass);border:1px solid var(--border);border-radius:6px;color:inherit;font-size:.9em}
+.cron-preview{font-family:monospace;font-size:1.4em;text-align:center;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0;word-break:break-all}
+.cron-desc{text-align:center;font-size:.95em;margin:6px 0;opacity:.9}
+.cron-next{margin:10px 0;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.85em;line-height:1.7}
+.cron-next li{margin:2px 0}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.presets button{padding:5px 10px;font-size:.82em;background:var(--glass);border:1px solid var(--border);border-radius:16px;cursor:pointer;color:inherit}
+.presets button:hover{border-color:var(--gz-accent);color:var(--gz-accent)}
+.command-row{display:flex;gap:10px;align-items:center;margin:10px 0}
+.command-row input{flex:1;padding:8px 10px;background:var(--glass);border:1px solid var(--border);border-radius:8px;color:inherit;font-family:monospace}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"Crontab Generator & Cron Expression Builder","description":"Build cron expressions visually. Pick minute, hour, day, month and weekday with a friendly UI, get the cron schedule, next run times, human-readable description and crontab line. Free, browser-only, no signup.","url": "https://tools.gamezipper.com/zh/dev/crontab-generator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a cron expression?", "acceptedAnswer": {"@type": "Answer", "text": "A cron expression is a string of five fields (minute hour day-of-month month day-of-week) that defines a recurring schedule on Unix-like systems. For example, '0 9 * * 1-5' runs at 09:00 on weekdays."}}, {"@type": "Question", "name": "How many fields does a cron expression have?", "acceptedAnswer": {"@type": "Answer", "text": "Standard cron has 5 fields. Many systems (Quartz, Spring, AWS EventBridge) add a 6th seconds field or a 7th year field. This tool focuses on the standard 5-field format used by crontab on Linux and macOS."}}, {"@type": "Question", "name": "What does '* * * * *' mean?", "acceptedAnswer": {"@type": "Answer", "text": "An asterisk in every field means the job runs every minute, 24/7. Each asterisk is a wildcard meaning 'every value' for that field."}}, {"@type": "Question", "name": "Does this tool send my cron jobs to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All schedule parsing and next-run computation happen entirely in your browser. Nothing is uploaded or stored anywhere."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/crontab-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/crontab-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/crontab-generator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="presets" id="presets"></div>
+    <div class="cron-fields" id="fields"></div>
+    <div class="cron-preview" id="expr">* * * * *</div>
+    <div class="cron-desc" id="descOut"></div>
+    <div class="command-row">
+      <input id="command" type="text" placeholder="/usr/bin/php /var/www/myscript.php" spellcheck="false">
+    </div>
+    <div id="status"></div>
+    <div class="cron-next"><strong id="lbl-next"></strong><ol id="nextRuns"></ol></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Crontab Generator & Cron Expression Builder',
+    toolDesc: 'Build cron schedules visually, see the human-readable description, next run times and ready-to-paste crontab line. 5-field standard cron, fully private.',
+    minute: 'Minute',
+    hour: 'Hour',
+    day: 'Day of Month',
+    month: 'Month',
+    dow: 'Day of Week',
+    command: 'Command to run',
+    every: 'every',
+    nextRuns: 'Next 5 run times (UTC)',
+    descEveryMin: 'Every minute',
+    descEveryHour: 'Every hour at minute {m}',
+    descDaily: 'Every day at {h}:{m}',
+    descWeekly: 'Every {dow} at {h}:{m}',
+    descMonthly: 'On day {d} of every month at {h}:{m}',
+    descYearly: 'On {mon} {d} at {h}:{m}',
+    descCustom: 'Custom schedule',
+    step1: 'Pick a preset or set each field individually',
+    step2: 'The cron expression builds automatically as you choose',
+    step3: 'Read the human-readable description to verify the schedule',
+    step4: 'Enter your command and copy the crontab line',
+  },
+  zh: {
+    toolTitle: 'Cron 表达式生成器',
+    toolDesc: '可视化构建 cron 定时任务，查看人类可读描述、下次运行时间和可直接粘贴的 crontab 行。5 字段标准 cron，完全本地运行。',
+    minute: '分钟',
+    hour: '小时',
+    day: '日',
+    month: '月',
+    dow: '星期',
+    command: '要执行的命令',
+    every: '每',
+    nextRuns: '未来 5 次运行时间（UTC）',
+    descEveryMin: '每分钟运行',
+    descEveryHour: '每小时的第 {m} 分钟运行',
+    descDaily: '每天 {h}:{m} 运行',
+    descWeekly: '每周{dow} {h}:{m} 运行',
+    descMonthly: '每月 {d} 日 {h}:{m} 运行',
+    descYearly: '每年 {mon} {d} 日 {h}:{m} 运行',
+    descCustom: '自定义计划',
+    step1: '选择预设或单独设置每个字段',
+    step2: 'Cron 表达式会随选择自动生成',
+    step3: '阅读人类可读描述以确认计划',
+    step4: '输入命令并复制 crontab 行',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOWS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const state = { minute:'0', hour:'*', day:'*', month:'*', dow:'*' };
+
+function buildExpression() {
+  return [state.minute, state.hour, state.day, state.month, state.dow].join(' ');
+}
+
+function describe() {
+  const m = state.minute, h = state.hour, d = state.day, mo = state.month, dow = state.dow;
+  if (m === '*' && h === '*' && d === '*' && mo === '*' && dow === '*') return t('descEveryMin');
+  if (m !== '*' && h === '*' && d === '*' && mo === '*' && dow === '*') return t('descEveryHour').replace('{m}', m);
+  const hh = h === '*' ? '0' : h;
+  const mm = m === '*' ? '0' : m;
+  const time = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  if (m !== '*' && h !== '*' && d === '*' && mo === '*' && dow === '*') return t('descDaily').replace('{h}',hh).replace('{m}',mm);
+  if (m !== '*' && h !== '*' && d === '*' && mo === '*' && dow !== '*') {
+    const dn = DOWS[(+dow) % 7] || dow;
+    return t('descWeekly').replace('{dow}',dn).replace('{h}',hh).replace('{m}',mm);
+  }
+  if (m !== '*' && h !== '*' && d !== '*' && mo === '*' && dow === '*') return t('descMonthly').replace('{d}',d).replace('{h}',hh).replace('{m}',mm);
+  if (m !== '*' && h !== '*' && d !== '*' && mo !== '*' && dow === '*') return t('descYearly').replace('{mon}',MONTHS[(+mo-1)%12]||mo).replace('{d}',d).replace('{h}',hh).replace('{m}',mm);
+  return t('descCustom') + ': ' + buildExpression();
+}
+
+// Compute next run times via brute-force search
+function nextRuns(expr, count = 5) {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length < 5) return [];
+  const [mF, hF, dF, moF, wF] = parts;
+  const matchField = (field, value, min, max) => {
+    if (field === '*') return true;
+    return field.split(',').some(part => {
+      let step = 1, range = part;
+      const si = part.indexOf('/');
+      if (si >= 0) { step = +part.slice(si+1); range = part.slice(0,si); }
+      if (range === '*') range = `${min}-${max}`;
+      const [lo, hi = lo] = range.split('-').map(Number);
+      if (value < lo || value > hi) return false;
+      return ((value - lo) % step) === 0;
+    });
+  };
+  const out = [];
+  let dt = new Date();
+  dt.setUTCSeconds(0, 0);
+  dt.setUTCMinutes(dt.getUTCMinutes() + 1);
+  const limit = new Date(dt.getTime() + 365 * 24 * 3600 * 1000);
+  let guard = 0;
+  while (out.length < count && dt < limit && guard < 200000) {
+    guard++;
+    const mo = dt.getUTCMonth() + 1;
+    const d = dt.getUTCDate();
+    const h = dt.getUTCHours();
+    const mi = dt.getUTCMinutes();
+    const wd = dt.getUTCDay();
+    if (matchField(moF, mo, 1, 12) &&
+        matchField(dF, d, 1, 31) &&
+        (wF === '*' || matchField(wF, wd, 0, 6) || matchField(dF, d, 1, 31) && false) &&
+        matchField(wF === '*' ? '*' : wF, wd, 0, 6) &&
+        matchField(hF, h, 0, 23) &&
+        matchField(mF, mi, 0, 59)) {
+      // For day-of-month and day-of-week: standard cron ORs them when both restricted
+      const dmOk = matchField(dF, d, 1, 31);
+      const dwOk = matchField(wF, wd, 0, 6);
+      const bothRestricted = dF !== '*' && wF !== '*';
+      if ((bothRestricted && (dmOk || dwOk)) || (!bothRestricted && dmOk && dwOk)) {
+        out.push(dt.toISOString().replace('T',' ').slice(0,16) + ' UTC');
+      }
+    }
+    dt.setUTCMinutes(dt.getUTCMinutes() + 1);
+  }
+  return out;
+}
+
+function update() {
+  const expr = buildExpression();
+  $('#expr').textContent = expr + ' ' + ($('#command').value || '<command>');
+  $('#descOut').textContent = describe();
+  const runs = nextRuns(expr, 5);
+  $('#nextRuns').innerHTML = runs.length ? runs.map(r => `<li>${r}</li>`).join('') : `<li style="opacity:.6">—</li>`;
+}
+
+function renderFields() {
+  const fields = [
+    {key:'minute', label:t('minute'), max:59, opts:['*','0','15','30','45','*/5','*/10','*/15','*/30']},
+    {key:'hour', label:t('hour'), max:23, opts:['*','0','6','9','12','18','23','*/2','*/6']},
+    {key:'day', label:t('day'), max:31, opts:['*','1','15','*/2','*/7','L']},
+    {key:'month', label:t('month'), max:12, opts:['*','1','*/3','*/6','1,4,7,10']},
+    {key:'dow', label:t('dow'), max:6, opts:['*','0','1','1-5','6','0,6','1,3,5']},
+  ];
+  $('#fields').innerHTML = fields.map(f => `
+    <div class="cron-field">
+      <label>${f.label}</label>
+      <select id="sel-${f.key}" onchange="state['${f.key}']=this.value;update()">
+        ${f.opts.map(o => `<option value="${o}" ${state[f.key]===o?'selected':''}>${o}</option>`).join('')}
+      </select>
+      <input type="text" value="${state[f.key]}" oninput="state['${f.key}']=this.value;update()" style="margin-top:6px;font-family:monospace">
+    </div>`).join('');
+}
+
+const PRESETS = [
+  {label:'Every minute', vals:['*','*','*','*','*']},
+  {label:'Every 5 min', vals:['*/5','*','*','*','*']},
+  {label:'Every 15 min', vals:['*/15','*','*','*','*']},
+  {label:'Hourly', vals:['0','*','*','*','*']},
+  {label:'Daily 9am', vals:['0','9','*','*','*']},
+  {label:'Daily midnight', vals:['0','0','*','*','*']},
+  {label:'Weekdays 9am', vals:['0','9','*','*','1-5']},
+  {label:'Weekly Sun', vals:['0','0','*','*','0']},
+  {label:'Monthly 1st', vals:['0','0','1','*','*']},
+  {label:'Quarterly', vals:['0','0','1','*/3','*']},
+];
+
+function renderPresets() {
+  $('#presets').innerHTML = PRESETS.map((p,i) =>
+    `<button onclick="applyPreset(${i})">${p.label}</button>`).join('');
+}
+
+function applyPreset(i) {
+  const p = PRESETS[i];
+  ['minute','hour','day','month','dow'].forEach((k,j) => state[k] = p.vals[j]);
+  renderFields();
+  update();
+}
+
+$('#command').addEventListener('input', update);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText($('#expr').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="applyPreset(0)">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#command').value='';update()">${t('clear')}</button>`;
+
+$('#lbl-next').textContent = t('nextRuns');
+
+renderPresets();
+renderFields();
+applyPreset(6); // Weekdays 9am — useful default
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'⏰', href:'/dev/timestamp.html', name:'Unix Timestamp'},
+    {icon:'📅', href:'/calc/date-calculator.html', name:'Date Calculator'},
+    {icon:'🔤', href:'/dev/regex-tester.html', name:'Regex Tester'},
+    {icon:'🔐', href:'/dev/api-key-generator.html', name:'API Key Gen'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
