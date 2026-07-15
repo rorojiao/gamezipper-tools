@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>SQL to Python Converter - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="Convert SQL CREATE TABLE and INSERT statements to Python dataclasses or dicts. Map MySQL, PostgreSQL and SQLite column types to Python types. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/sql-to-python.html">
+  <meta property="og:title" content="SQL to Python Converter - 免费在线工具 | GameZipper 工具箱">
+  <meta property="og:description" content="Convert SQL CREATE TABLE and INSERT statements to Python dataclasses or dicts. Map MySQL, PostgreSQL, SQLite types to Python. Free, browser-only, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/sql-to-python.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SQL to Python Converter - 免费在线工具 | GameZipper 工具箱">
+<meta name="twitter:description" content="Convert SQL CREATE TABLE and INSERT to Python dataclasses or dicts. Type mapping for MySQL, PostgreSQL, SQLite. Free, browser-based, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.55;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:600px;overflow:auto}
+.py-key{color:#e94560}.py-str{color:#00d672}.py-num{color:#61afef}.py-bool{color:#d19a66}.py-none{color:#888}.py-kw{color:#c678dd}.py-com{color:#6a9955;font-style:italic}
+.options{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.85em}
+.options label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.options select,.options input[type=text]{padding:4px 8px;background:var(--glass);border:1px solid var(--border);border-radius:6px;color:inherit}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"SQL to Python Converter","description":"Convert SQL CREATE TABLE and INSERT statements to Python dataclasses or dicts. Map MySQL, PostgreSQL and SQLite column types to Python types. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/dev/sql-to-python.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert SQL to Python?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CREATE TABLE and/or INSERT statements into the input. The tool parses columns and values, maps each SQL type to a Python type, and emits a @dataclass definition plus a list of instances (or plain dicts)."}}, {"@type": "Question", "name": "Which SQL types are supported?", "acceptedAnswer": {"@type": "Answer", "text": "INT, BIGINT, SMALLINT, TINYINT, SERIAL become int; DECIMAL, NUMERIC, FLOAT, DOUBLE, REAL become float; BOOLEAN, BOOL, BIT become bool; DATE, DATETIME, TIMESTAMP, TIME become str (datetime); CHAR, VARCHAR, TEXT, JSON, UUID, ENUM, BLOB become str (or bytes for BLOB)."}}, {"@type": "Question", "name": "Does it convert INSERT data too?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. INSERT INTO ... VALUES rows are turned into dataclass instances or dict literals, with NULL mapped to None, numbers parsed, booleans parsed, and strings/quoted values preserved."}}, {"@type": "Question", "name": "Is my SQL uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing and code generation run entirely in your browser. Your SQL never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/zh/dev/sql-to-python.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/sql-to-python.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/zh/dev/sql-to-python.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="options">
+      <label><span id="lbl-style"></span>
+        <select id="styleSel" onchange="convert()">
+          <option value="dataclass">@dataclass</option>
+          <option value="dict">list[dict]</option>
+          <option value="typed">TypedDict</option>
+        </select>
+      </label>
+      <label><span id="lbl-name"></span>
+        <input type="text" id="className" value="User" style="width:120px" oninput="convert()">
+      </label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="CREATE TABLE users (&#10;  id SERIAL PRIMARY KEY,&#10;  email VARCHAR(255) NOT NULL,&#10;  age INT,&#10;  active BOOLEAN DEFAULT TRUE,&#10;  created_at TIMESTAMP&#10;);&#10;&#10;INSERT INTO users (id, email, age, active, created_at) VALUES&#10;  (1, 'alice@example.com', 30, TRUE, '2024-01-15 10:30:00'),&#10;  (2, 'bob@example.com', 25, FALSE, '2024-02-20 09:00:00');"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'SQL to Python Converter',
+    toolDesc: 'Convert SQL CREATE TABLE and INSERT statements into Python @dataclass, TypedDict or list of dicts. Maps MySQL, PostgreSQL and SQLite column types to Python types.',
+    convert: 'Convert',
+    example: 'Example',
+    copy: 'Copy',
+    clear: 'Clear',
+    style: 'style',
+    className: 'class name',
+    ok: (cols, rows) => `✓ Parsed ${cols} column${cols===1?'':'s'}${rows?` and ${rows} INSERT row${rows===1?'':'s'}`:''}`,
+    noSql: 'No CREATE TABLE or INSERT statements found.',
+    step1: 'Paste your SQL (CREATE TABLE and/or INSERT)',
+    step2: 'Choose an output style: dataclass, TypedDict or dicts',
+    step3: 'Optionally rename the generated class',
+    step4: 'Click Copy and paste the Python code into your project',
+  },
+  zh: {
+    toolTitle: 'SQL 转 Python 转换器',
+    toolDesc: '将 SQL CREATE TABLE 和 INSERT 语句转换为 Python @dataclass、TypedDict 或字典列表。映射 MySQL、PostgreSQL 和 SQLite 列类型到 Python 类型。',
+    convert: '转换',
+    example: '示例',
+    copy: '复制',
+    clear: '清空',
+    style: '风格',
+    className: '类名',
+    ok: (cols, rows) => `✓ 解析到 ${cols} 个列${rows?`和 ${rows} 行 INSERT 数据`:''}`,
+    noSql: '未找到 CREATE TABLE 或 INSERT 语句。',
+    step1: '粘贴你的 SQL（CREATE TABLE 和/或 INSERT）',
+    step2: '选择输出风格：dataclass、TypedDict 或字典',
+    step3: '可选：重命名生成的类',
+    step4: '点击「复制」将 Python 代码粘贴到你的项目中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+// SQL type -> python type
+function sqlTypeToPy(sqlType){
+  const s = String(sqlType).toUpperCase();
+  if (/^(BIG)?INT|SMALLINT|TINYINT|SERIAL|INTEGER$/i.test(s)) return 'int';
+  if (/^(DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|MONEY)/i.test(s)) return 'float';
+  if (/^(BOOL|BIT)/i.test(s)) return 'bool';
+  if (/^(BLOB|BYTEA|BINARY|VARBINARY)/i.test(s)) return 'bytes';
+  if (/^(DATE|DATETIME|TIMESTAMP|TIME|INTERVAL)/i.test(s)) return 'str';
+  return 'str'; // CHAR, VARCHAR, TEXT, JSON, UUID, ENUM
+}
+
+function pascalCase(s){
+  return String(s).replace(/[^a-zA-Z0-9]+/g, ' ').trim()
+    .split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')
+    .replace(/^([0-9])/, '_$1') || 'Field';
+}
+
+function safeIdent(name, fallback){
+  let s = String(name).replace(/"/g, '').trim();
+  s = s.replace(/[^a-zA-Z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
+  if (!s) s = fallback;
+  if (/^[0-9]/.test(s)) s = '_' + s;
+  return s;
+}
+
+// Parse CREATE TABLE: returns { columns: [{name, type, nullable}], tableName }
+function parseCreateTable(sql){
+  const m = sql.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:"[^"]+"|`[^`]+`|\[ [^\]]+ \]|\[[^\]]+\]|[.\w]+)\s*\(([\s\S]*?)\)\s*;/i);
+  if (!m) return null;
+  const body = m[1];
+  // split on commas not inside parentheses
+  const parts = [];
+  let depth = 0, cur = '';
+  for (const ch of body){
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    if (ch === ',' && depth === 0){ parts.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  if (cur.trim()) parts.push(cur);
+  const columns = [];
+  for (const raw of parts){
+    const def = raw.trim();
+    if (!def) continue;
+    // skip table-level constraints
+    if (/^(PRIMARY|FOREIGN|UNIQUE|CHECK|CONSTRAINT|KEY|INDEX)\b/i.test(def)) continue;
+    const tokens = def.match(/^("(?:[^"]|"")+"|`[^`]+`|\[[^\]]+\]|[.\w]+)\s+([A-Za-z]+(?:\s*\([^)]*\))?)/);
+    if (!tokens) continue;
+    let colName = tokens[1].replace(/^"(.*)"$/, '$1').replace(/""/g,'"').replace(/^`(.*)`$/, '$1').replace(/^\[(.*)\]$/, '$1');
+    const colType = tokens[2].replace(/\s*\([^)]*\)/, '').trim();
+    const nullable = !/NOT\s+NULL/i.test(def);
+    columns.push({ name: colName, type: colType, nullable });
+  }
+  const nameMatch = sql.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:"([^"]+)"|`([^`]+)`|\[([^\]]+)\]|([.\w]+))/i);
+  const tableName = (nameMatch && (nameMatch[1]||nameMatch[2]||nameMatch[3]||nameMatch[4])) || 'row';
+  return { columns, tableName };
+}
+
+// Parse INSERT INTO ... VALUES; returns { columns: [names], rows: [[rawValue, ...], ...] }
+function parseInserts(sql){
+  const result = { columns: null, rows: [] };
+  const re = /INSERT\s+INTO\s+(?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[.\w]+)\s*(?:\(([^)]*)\))?\s*VALUES\s*([\s\S]*?);/gi;
+  let m;
+  while ((m = re.exec(sql)) !== null){
+    let cols = null;
+    if (m[1] && m[1].trim()){
+      cols = m[1].split(',').map(s => s.trim().replace(/^"(.*)"$/, '$1').replace(/^`(.*)`$/, '$1'));
+    }
+    if (cols && !result.columns) result.columns = cols;
+    // parse value tuples
+    const valuesBlob = m[2];
+    const tuples = [];
+    let depth = 0, inStr = false, strCh = null, cur = '';
+    for (let i = 0; i < valuesBlob.length; i++){
+      const ch = valuesBlob[i];
+      if (inStr){
+        if (ch === strCh){
+          if (valuesBlob[i+1] === strCh){ cur += ch + ch; i++; }
+          else { inStr = false; cur += ch; }
+        } else cur += ch;
+      } else {
+        if (ch === "'" || ch === '"'){ inStr = true; strCh = ch; cur += ch; }
+        else if (ch === '('){ if (depth === 0){ cur = ''; } else cur += ch; depth++; }
+        else if (ch === ')'){ depth--; if (depth === 0){ tuples.push(cur); cur = ''; } else cur += ch; }
+        else if (depth > 0) cur += ch;
+      }
+    }
+    tuples.forEach(tup => {
+      const vals = splitTopLevel(tup, ',');
+      result.rows.push(vals.map(v => v.trim()));
+    });
+  }
+  return result;
+}
+
+function splitTopLevel(s, delim){
+  const out = [];
+  let depth = 0, inStr = false, strCh = null, cur = '';
+  for (let i = 0; i < s.length; i++){
+    const ch = s[i];
+    if (inStr){
+      if (ch === strCh){
+        if (s[i+1] === strCh){ cur += ch + ch; i++; }
+        else { inStr = false; cur += ch; }
+      } else cur += ch;
+    } else {
+      if (ch === "'" || ch === '"'){ inStr = true; strCh = ch; cur += ch; }
+      else if (ch === '('){ depth++; cur += ch; }
+      else if (ch === ')'){ depth--; cur += ch; }
+      else if (ch === delim && depth === 0){ out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+  }
+  if (cur !== '' || out.length) out.push(cur);
+  return out;
+}
+
+// Coerce a raw SQL literal into a Python literal given a target type
+function coerceLiteral(raw, pyType){
+  const v = raw.trim();
+  if (v === '' ) return 'None';
+  if (/^NULL$/i.test(v)) return 'None';
+  if (v === 'DEFAULT') return 'None';
+  if (pyType === 'int'){
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? String(n) : 'None';
+  }
+  if (pyType === 'float'){
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? String(n) : 'None';
+  }
+  if (pyType === 'bool'){
+    if (/^TRUE|T|1|YES|Y$/i.test(v)) return 'True';
+    if (/^FALSE|F|0|NO|N$/i.test(v)) return 'False';
+    return 'None';
+  }
+  if (pyType === 'bytes'){
+    return 'b' + JSON.stringify(v);
+  }
+  // string-ish: strip SQL quoting
+  if (/^'([\s\S]*)'$/.test(v) || /^"([\s\S]*)"$/.test(v)){
+    const inner = v.slice(1, -1).replace(/''/g, "'").replace(/""/g, '"');
+    return JSON.stringify(inner);
+  }
+  return JSON.stringify(v);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function highlight(code){
+  const tokenRe = /('(?:\\.|[^'\\])*')|(#.*$)|(@?\w[\w.]*)|(\s+)|([^\s'"\w#@]+)/gm;
+  let out = '', m;
+  while ((m = tokenRe.exec(code)) !== null){
+    const [full, str, com, word, ws, punct] = m;
+    if (str) out += `<span class="py-str">${esc(str)}</span>`;
+    else if (com) out += `<span class="py-com">${esc(com)}</span>`;
+    else if (word){
+      let cls = null;
+      if (word === 'True' || word === 'False') cls = 'py-bool';
+      else if (word === 'None') cls = 'py-none';
+      else if (/^(class|from|import|def|return)$/.test(word) || word === '@dataclass') cls = 'py-kw';
+      else if (/^-?\d/.test(word) && !isNaN(parseFloat(word))) cls = 'py-num';
+      if (cls) out += `<span class="${cls}">${esc(word)}</span>`;
+      else out += esc(word);
+    } else out += esc(full);
+  }
+  return out;
+}
+
+function convert(){
+  const raw = $('#input').value;
+  if (!raw.trim()){ $('#output').textContent=''; $('#status').innerHTML=''; return; }
+
+  const tableInfo = parseCreateTable(raw);
+  const inserts = parseInserts(raw);
+
+  if (!tableInfo && !inserts.rows.length){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noSql')}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${t('noSql')}</span>`;
+    return;
+  }
+
+  // Build column list + python types
+  let columns, pyTypes, colNames;
+  if (tableInfo){
+    columns = tableInfo.columns;
+    colNames = columns.map(c => c.name);
+    pyTypes = columns.map(c => sqlTypeToPy(c.type));
+  } else if (inserts.columns){
+    colNames = inserts.columns;
+    pyTypes = colNames.map(() => 'str');
+  } else {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('noSql')}</span>`;
+    $('#output').textContent = '';
+    return;
+  }
+
+  const style = $('#styleSel').value;
+  const classNameRaw = $('#className').value || (tableInfo ? tableInfo.tableName : 'Row');
+  const className = pascalCase(classNameRaw);
+
+  // Map insert rows onto our columns
+  const dataRows = inserts.rows.map(r => {
+    const colsForThis = inserts.columns || colNames;
+    const obj = {};
+    colsForThis.forEach((c, i) => {
+      const idx = colNames.findIndex(n => n.toLowerCase() === c.toLowerCase());
+      obj[idx >= 0 ? idx : i] = r[i];
+    });
+    return obj;
+  });
+
+  let code = '';
+  const needOptional = columns && columns.some(c => c.nullable);
+  const typingImports = new Set();
+  pyTypes.forEach(tp => { /* keep simple */ });
+  if (style === 'dataclass' || style === 'typed') typingImports.add('Optional');
+  if (needOptional) typingImports.add('Optional');
+
+  if (style === 'dataclass'){
+    code += 'from dataclasses import dataclass\n';
+    if (typingImports.size) code += `from typing import ${[...typingImports].join(', ')}\n`;
+    code += '\n\n';
+    code += `@dataclass\nclass ${className}:\n`;
+    colNames.forEach((n, i) => {
+      const ident = safeIdent(n, 'field_' + (i+1));
+      const tp = pyTypes[i];
+      const nullable = columns ? columns[i].nullable : false;
+      code += `    ${ident}: ${nullable ? 'Optional[' + tp + ']' : tp} = None\n`;
+    });
+    if (dataRows.length){
+      code += '\n\n# INSERT data\nrows = [\n';
+      dataRows.forEach(row => {
+        const args = colNames.map((n, i) => coerceLiteral(row[i] != null ? row[i] : 'NULL', pyTypes[i]));
+        code += `    ${className}(${args.join(', ')}),\n`;
+      });
+      code += ']\n';
+    }
+  } else if (style === 'typed'){
+    code += 'from typing import TypedDict';
+    if (typingImports.size && !typingImports.has('TypedDict')) code += ', ' + [...typingImports].join(', ');
+    code += '\n\n\n';
+    code += `class ${className}(TypedDict):\n`;
+    colNames.forEach((n, i) => {
+      const ident = safeIdent(n, 'field_' + (i+1));
+      const tp = pyTypes[i];
+      const nullable = columns ? columns[i].nullable : false;
+      code += `    ${ident}: ${nullable ? 'Optional[' + tp + ']' : tp}\n`;
+    });
+    if (dataRows.length){
+      code += '\n\n# INSERT data\nrows = [\n';
+      dataRows.forEach(row => {
+        const pairs = colNames.map((n, i) => `${JSON.stringify(safeIdent(n, 'field_' + (i+1)))}: ${coerceLiteral(row[i] != null ? row[i] : 'NULL', pyTypes[i])}`);
+        code += '    {' + pairs.join(', ') + '},\n';
+      });
+      code += ']\n';
+    }
+  } else { // dict
+    code += '# list of dicts\nrows = [\n';
+    if (dataRows.length){
+      dataRows.forEach(row => {
+        const pairs = colNames.map((n, i) => `${JSON.stringify(n)}: ${coerceLiteral(row[i] != null ? row[i] : 'NULL', pyTypes[i])}`);
+        code += '    {' + pairs.join(', ') + '},\n';
+      });
+    } else {
+      // template from columns
+      const pairs = colNames.map((n, i) => `${JSON.stringify(n)}: None  # ${pyTypes[i]}`);
+      code += '    {' + pairs.join(', ') + '},\n';
+    }
+    code += ']\n';
+  }
+
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('ok')(colNames.length, dataRows.length)}</span>`;
+  $('#output').innerHTML = highlight(code);
+}
+
+function loadExample(){
+  $('#input').value =
+    "CREATE TABLE users (\n" +
+    "  id SERIAL PRIMARY KEY,\n" +
+    "  email VARCHAR(255) NOT NULL,\n" +
+    "  age INT,\n" +
+    "  active BOOLEAN DEFAULT TRUE,\n" +
+    "  balance DECIMAL(10,2),\n" +
+    "  created_at TIMESTAMP\n" +
+    ");\n\n" +
+    "INSERT INTO users (id, email, age, active, balance, created_at) VALUES\n" +
+    "  (1, 'alice@example.com', 30, TRUE, 99.50, '2024-01-15 10:30:00'),\n" +
+    "  (2, 'bob@example.com', 25, FALSE, NULL, '2024-02-20 09:00:00');";
+  convert();
+}
+
+$('#input').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';convert()">${t('clear')}</button>`;
+
+$('#lbl-style').textContent = t('style');
+$('#lbl-name').textContent = t('className');
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🗄️', href:'/dev/sql-beautifier.html', name:'SQL Beautifier'},
+    {icon:'🗂️', href:'/dev/sql-to-typescript.html', name:'SQL to TS'},
+    {icon:'🐍', href:'/dev/json-to-python.html', name:'JSON to Python'},
+    {icon:'🗃️', href:'/dev/sql-to-csv.html', name:'SQL to CSV'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

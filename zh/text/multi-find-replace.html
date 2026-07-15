@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>Multi Find & Replace Tool - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="Find and replace multiple text patterns at once. Paste your find/replace pairs (one per line), choose plain text or regex, case-sensitive options. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/multi-find-replace.html">
+  <meta property="og:title" content="Multi Find & Replace Tool - 免费在线工具 | GameZipper 工具箱">
+  <meta property="og:description" content="Batch find and replace many text patterns in one pass. Plain text or regex, case-sensitive, whole-word options. Free, browser-only, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/multi-find-replace.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Multi Find & Replace Tool - 免费在线工具 | GameZipper 工具箱">
+<meta name="twitter:description" content="Batch find and replace many text patterns in one pass. Plain text or regex. Free, browser-based, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.55;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:600px;overflow:auto}
+.options{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.85em}
+.options label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.options select{padding:4px 8px;background:var(--glass);border:1px solid var(--border);border-radius:6px;color:inherit}
+#rulesArea{min-height:160px}
+.split-3{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:780px){.split-3{grid-template-columns:1fr}}
+.gz-output mark{background:rgba(255,235,59,.35);border-radius:3px;padding:0 1px}
+.stat{font-size:.85em;margin-top:8px}
+.stat b{color:var(--gz-success)}
+.err{color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Multi Find & Replace Tool","description":"Find and replace multiple text patterns at once. Paste find/replace pairs, choose plain text or regex, case-sensitive options. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/text/multi-find-replace.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I replace multiple words at once?", "acceptedAnswer": {"@type": "Answer", "text": "Type one find/replace pair per line in the rules box, using your chosen separator (default is comma). Paste the text to transform in the input box, and every rule is applied in order. The preview on the right shows the result with replacements highlighted."}}, {"@type": "Question", "name": "What separator should I use between find and replace?", "acceptedAnswer": {"@type": "Answer", "text": "The default is a comma (,), but you can switch to a tab, pipe (|), equals (=) or arrow (=>). Pick whichever does not collide with the text you are searching for."}}, {"@type": "Question", "name": "Can I use regular expressions?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Switch the mode to Regex and each find pattern is treated as a JavaScript regular expression. Use $1, $2 in the replacement for capture groups. Invalid regex patterns are skipped and reported."}}, {"@type": "Question", "name": "Is my text uploaded anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every search and replace runs entirely in your browser. Your text never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/zh/text/multi-find-replace.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/multi-find-replace.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/zh/text/multi-find-replace.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="options">
+      <label><span id="lbl-mode"></span>
+        <select id="modeSel" onchange="convert()">
+          <option value="text">plain text</option>
+          <option value="regex">regex</option>
+        </select>
+      </label>
+      <label><span id="lbl-sep"></span>
+        <select id="sepSel" onchange="convert()">
+          <option value=",">comma (,)</option>
+          <option value="\t">tab</option>
+          <option value="|">pipe (|)</option>
+          <option value="=">equals (=)</option>
+          <option value="=>">arrow (=>)</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="optCase" onchange="convert()"> <span id="lbl-case"></span></label>
+      <label><input type="checkbox" id="optWord" onchange="convert()"> <span id="lbl-word"></span></label>
+      <label><input type="checkbox" id="optHighlight" checked onchange="convert()"> <span id="lbl-hl"></span></label>
+    </div>
+    <div class="split-3">
+      <div>
+        <label id="lbl-rules"></label>
+        <textarea id="rulesArea" spellcheck="false" placeholder="old_word,new_word&#10;colour,color&#10;centre,center"></textarea>
+      </div>
+      <div>
+        <label id="lbl-in"></label>
+        <textarea id="input" spellcheck="false" placeholder="Paste the text you want to transform here..."></textarea>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <label id="lbl-out"></label>
+      <div class="gz-output" id="output"></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Multi Find & Replace',
+    toolDesc: 'Batch find and replace many text patterns in a single pass. List your find→replace pairs, choose plain text or regex, toggle case-sensitivity and whole-word matching. 100% in your browser.',
+    replace: 'Replace',
+    example: 'Example',
+    copy: 'Copy',
+    clear: 'Clear',
+    mode: 'mode',
+    separator: 'separator',
+    caseSensitive: 'case-sensitive',
+    wholeWord: 'whole word',
+    highlight: 'highlight changes',
+    rulesLabel: 'Find/Replace rules (one per line)',
+    ok: (n, r) => `✓ Applied ${n} rule${n===1?'':'s'} — ${r} replacement${r===1?'':'s'} made`,
+    noRules: 'Add at least one find/replace rule (one per line).',
+    badRegex: (n, msg) => `⚠ Rule ${n}: invalid regex — ${msg} (skipped)`,
+    step1: 'List your find/replace pairs in the rules box — one per line',
+    step2: 'Pick the separator (comma, tab, pipe, = or =>) and mode (text or regex)',
+    step3: 'Paste the text to transform into the input box',
+    step4: 'Copy the highlighted result from the output area',
+  },
+  zh: {
+    toolTitle: '批量查找替换工具',
+    toolDesc: '一次性批量查找并替换多个文本模式。列出查找→替换规则对，可选纯文本或正则、区分大小写和整词匹配。100% 浏览器本地运行。',
+    replace: '替换',
+    example: '示例',
+    copy: '复制',
+    clear: '清空',
+    mode: '模式',
+    separator: '分隔符',
+    caseSensitive: '区分大小写',
+    wholeWord: '整词匹配',
+    highlight: '高亮改动',
+    rulesLabel: '查找/替换规则（每行一条）',
+    ok: (n, r) => `✓ 已应用 ${n} 条规则 — 共替换 ${r} 处`,
+    noRules: '请至少添加一条查找/替换规则（每行一条）。',
+    badRegex: (n, msg) => `⚠ 第 ${n} 条：正则无效 — ${msg}（已跳过）`,
+    step1: '在规则框中列出查找/替换对 — 每行一条',
+    step2: '选择分隔符（逗号、Tab、竖线、= 或 =>）和模式（文本或正则）',
+    step3: '在输入框中粘贴要处理的文本',
+    step4: '从输出区复制高亮后的结果',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function parseRules(raw, sep){
+  const rules = [];
+  raw.split('\n').forEach(line => {
+    if (!line.trim() || line.trim().startsWith('#')) return;
+    const idx = line.indexOf(sep);
+    if (idx < 0){
+      // no separator -> treat whole line as find, empty replacement
+      rules.push({ find: line, replace: '' });
+    } else {
+      rules.push({ find: line.slice(0, idx), replace: line.slice(idx + sep.length) });
+    }
+  });
+  return rules.filter(r => r.find !== '');
+}
+
+function buildRegex(find, opts){
+  let pattern;
+  try {
+    const flags = opts.caseSensitive ? 'g' : 'gi';
+    if (opts.mode === 'regex'){
+      pattern = new RegExp(find, flags);
+    } else {
+      let body = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (opts.wholeWord){
+        body = '\\b' + body + '\\b';
+      }
+      pattern = new RegExp(body, flags);
+    }
+    return { ok: true, pattern };
+  } catch (e){
+    return { ok: false, error: e.message };
+  }
+}
+
+function convert(){
+  const text = $('#input').value;
+  const rulesRaw = $('#rulesArea').value;
+  if (!rulesRaw.trim()){
+    $('#output').innerHTML = `<span class="err">${t('noRules')}</span>`;
+    $('#status').innerHTML = '';
+    return;
+  }
+  const sepStr = $('#sepSel').value;
+  const sep = sepStr === '\\t' ? '\t' : sepStr;
+  const rules = parseRules(rulesRaw, sep);
+  if (!rules.length){
+    $('#output').innerHTML = `<span class="err">${t('noRules')}</span>`;
+    $('#status').innerHTML = '';
+    return;
+  }
+  const opts = {
+    mode: $('#modeSel').value,
+    caseSensitive: $('#optCase').checked,
+    wholeWord: $('#optWord').checked,
+    highlight: $('#optHighlight').checked,
+  };
+
+  // Build a combined list of compiled patterns, recording the replacement for each.
+  const compiled = [];
+  const errors = [];
+  rules.forEach((r, i) => {
+    const built = buildRegex(r.find, opts);
+    if (!built.ok){ errors.push(t('badRegex')(i + 1, built.error)); return; }
+    compiled.push({ pattern: built.pattern, replace: r.replace });
+  });
+
+  // Apply each rule sequentially. Count total replacements and track spans to highlight.
+  // We collect highlight spans by doing a single pass with a marked token approach.
+  let working = text;
+  let totalReplacements = 0;
+
+  // We will tag replaced segments with a sentinel to highlight later, only when highlight is on.
+  const OPEN = '\u0001', CLOSE = '\u0002';
+
+  compiled.forEach(({ pattern, replace }) => {
+    // reset lastIndex because /g regex carries state
+    pattern.lastIndex = 0;
+    if (opts.highlight){
+      working = working.replace(pattern, function(){
+        totalReplacements++;
+        const rep = replace.replace(/\$(&|\d+|{[^}]+})/g, (m, g) => {
+          if (g === '&') return arguments[0];
+          if (/^\d+$/.test(g)) return arguments[+g] || '';
+          return arguments[0];
+        });
+        return OPEN + rep + CLOSE;
+      });
+    } else {
+      working = working.replace(pattern, function(){
+        totalReplacements++;
+        const rep = replace.replace(/\$(&|\d+|{[^}]+})/g, (m, g) => {
+          if (g === '&') return arguments[0];
+          if (/^\d+$/.test(g)) return arguments[+g] || '';
+          return arguments[0];
+        });
+        return rep;
+      });
+    }
+  });
+
+  // Render
+  let html;
+  if (opts.highlight){
+    // Escape then convert sentinels to <mark>
+    let escaped = esc(working);
+    escaped = escaped.replace(/\u0001/g, '<mark>').replace(/\u0002/g, '</mark>');
+    html = escaped;
+  } else {
+    html = esc(working);
+  }
+  $('#output').innerHTML = html || '&nbsp;';
+  $('#status').innerHTML = `<span class="stat"><b>${t('ok')(compiled.length, totalReplacements)}</b></span>` +
+    (errors.length ? '<br>' + errors.map(e => `<span class="err">${e}</span>`).join('<br>') : '');
+}
+
+function loadExample(){
+  $('#rulesArea').value = 'colour,color\ncentre,center\norganisation,organization\nfaq,FAQ';
+  $('#input').value = 'The colour of the centre sign matches our organisation branding.\nSee the faq page for more colour options.';
+  convert();
+}
+
+$('#input').addEventListener('input', convert);
+$('#rulesArea').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('replace')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#rulesArea').value='';convert()">${t('clear')}</button>`;
+
+$('#lbl-mode').textContent = t('mode');
+$('#lbl-sep').textContent = t('separator');
+$('#lbl-case').textContent = t('caseSensitive');
+$('#lbl-word').textContent = t('wholeWord');
+$('#lbl-hl').textContent = t('highlight');
+$('#lbl-rules').textContent = t('rulesLabel');
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔁', href:'/text/regex-replace.html', name:'Regex Replace'},
+    {icon:'➕', href:'/text/add-prefix-suffix.html', name:'Add Prefix/Suffix'},
+    {icon:'🔍', href:'/dev/regex.html', name:'Regex Tester'},
+    {icon:'🔀', href:'/text/text-shuffler.html', name:'Text Shuffler'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

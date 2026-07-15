@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>CSV to Go Struct Converter - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="Convert CSV data to Go structs instantly. Infer int, float64, bool and string types from sample rows, generate struct slices with json tags. Free, browser-only, no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/convert/csv-to-go.html">
+  <meta property="og:title" content="CSV to Go Struct Converter - 免费在线工具 | GameZipper 工具箱">
+  <meta property="og:description" content="Convert CSV to Go struct slices with type inference (int, float64, bool, string) and json tags. Free, browser-only, no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/convert/csv-to-go.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="CSV to Go Struct Converter - 免费在线工具 | GameZipper 工具箱">
+<meta name="twitter:description" content="Convert CSV to Go struct slices with type inference and json tags. Free, browser-based, no signup.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.85em;line-height:1.55;background:var(--glass2);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:600px;overflow:auto}
+.go-kw{color:#c792ea}.go-type{color:#61afef}.go-str{color:#00d672}.go-num{color:#d19a66}.go-com{color:#6a9955;font-style:italic}.go-fn{color:#e5c07b}
+.options{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0;padding:10px 14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;font-size:.85em}
+.options label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.options select,.options input[type=text]{padding:4px 8px;background:var(--glass);border:1px solid var(--border);border-radius:6px;color:inherit}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"CSV to Go Struct Converter","description":"Convert CSV data to Go struct slices instantly. Infer int, float64, bool and string types from sample rows, generate json tags. Free, browser-only, no signup.","url":"https://tools.gamezipper.com/convert/csv-to-go.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert CSV to a Go struct?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your CSV (with a header row) into the input. The tool infers a Go type for every column, generates a struct definition with json tags, and emits a []Struct slice literal containing every row."}}, {"@type": "Question", "name": "Which Go types are inferred?", "acceptedAnswer": {"@type": "Answer", "text": "Integers become int, decimals become float64, true/false/yes/no become bool, and everything else becomes string. Empty cells become the zero value for the column type (0, 0.0, false, or empty string)."}}, {"@type": "Question", "name": "Does it generate json and csv struct tags?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Each field gets a json tag matching the original CSV header (useful for marshalling) and an optional csv tag for the encoding/csv package. You can toggle which tags appear."}}, {"@type": "Question", "name": "Is my CSV uploaded to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. All parsing and code generation happen entirely in your browser. Your CSV data never leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/zh/convert/csv-to-go.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/csv-to-go.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/zh/convert/csv-to-go.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="options">
+      <label><span id="lbl-name"></span>
+        <input type="text" id="structName" value="Row" style="width:120px" oninput="convert()">
+      </label>
+      <label><span id="lbl-delim"></span>
+        <select id="delim" onchange="convert()">
+          <option value=",">comma (,)</option>
+          <option value=";">semicolon (;)</option>
+          <option value="\t">tab</option>
+          <option value="|">pipe (|)</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="optJson" checked onchange="convert()"> <span id="lbl-json"></span></label>
+      <label><input type="checkbox" id="optCsv" onchange="convert()"> <span id="lbl-csvtag"></span></label>
+    </div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="id,name,price,active&#10;1,Alice,9.99,true&#10;2,Bob,,false&#10;3,Carol,19.50,true"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'CSV to Go Struct Converter',
+    toolDesc: 'Turn any CSV (with headers) into a Go struct definition plus a slice literal. Auto type inference for int, float64, bool and string, with json/csv tags.',
+    convert: 'Convert',
+    example: 'Example',
+    copy: 'Copy',
+    clear: 'Clear',
+    structName: 'struct name',
+    delimiter: 'delimiter',
+    jsonTags: 'json tags',
+    csvTags: 'csv tags',
+    ok: n => `✓ Generated struct with ${n} row${n===1?'':'s'}`,
+    needHeader: 'Please include a header row with column names.',
+    empty: 'No CSV data to convert.',
+    step1: 'Paste CSV data that includes a header row',
+    step2: 'Set the struct name and pick delimiter / tags',
+    step3: 'Review the inferred types on the right',
+    step4: 'Click Copy and paste the Go code into your project',
+  },
+  zh: {
+    toolTitle: 'CSV 转 Go Struct 转换器',
+    toolDesc: '将任意 CSV（含表头）转换为 Go struct 定义和切片字面量。自动推断 int、float64、bool、string 类型，附带 json/csv 标签。',
+    convert: '转换',
+    example: '示例',
+    copy: '复制',
+    clear: '清空',
+    structName: '结构体名',
+    delimiter: '分隔符',
+    jsonTags: 'json 标签',
+    csvTags: 'csv 标签',
+    ok: n => `✓ 已生成含 ${n} 行的结构体`,
+    needHeader: '请包含带列名的表头行。',
+    empty: '没有可转换的 CSV 数据。',
+    step1: '粘贴包含表头的 CSV 数据',
+    step2: '设置结构体名，选择分隔符和标签',
+    step3: '在右侧查看推断出的类型',
+    step4: '点击「复制」将 Go 代码粘贴到你的项目中',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+function parseCSV(text, delim){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i], next = text[i+1];
+    if (inQuotes){
+      if (ch === '"' && next === '"'){ field += '"'; i++; }
+      else if (ch === '"'){ inQuotes = false; }
+      else field += ch;
+    } else {
+      if (ch === '"'){ inQuotes = true; }
+      else if (ch === delim){ row.push(field); field = ''; }
+      else if (ch === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else if (ch === '\r'){ /* ignore */ }
+      else field += ch;
+    }
+  }
+  if (field !== '' || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+
+function isNumber(v){ return v !== '' && !isNaN(Number(v)) && isFinite(Number(v)); }
+function isInt(v){ return isNumber(v) && /^-?\d+$/.test(v.trim()); }
+const BOOL_TRUE = /^(true|yes|y|t)$/i, BOOL_FALSE = /^(false|no|n|f)$/i;
+function isBool(v){ return BOOL_TRUE.test(v) || BOOL_FALSE.test(v); }
+
+function inferColumn(values){
+  const nonEmpty = values.filter(v => v !== '');
+  if (!nonEmpty.length) return { type: 'string' };
+  let allInt = true, allNum = true, allBool = true;
+  for (const v of nonEmpty){
+    if (!isInt(v)) allInt = false;
+    if (!isNumber(v)) allNum = false;
+    if (!isBool(v)) allBool = false;
+  }
+  if (allInt) return { type: 'int' };
+  if (allNum) return { type: 'float64' };
+  if (allBool) return { type: 'bool' };
+  return { type: 'string' };
+}
+
+function zeroValue(type){ return ({ int: '0', float64: '0', bool: 'false', string: '""' })[type] || '""'; }
+
+function cellLit(v, type){
+  if (v === '') return zeroValue(type);
+  if (type === 'int'){ const n = parseInt(v, 10); return Number.isFinite(n) ? String(n) : '0'; }
+  if (type === 'float64'){ const n = parseFloat(v); return Number.isFinite(n) ? String(n) : '0'; }
+  if (type === 'bool') return BOOL_TRUE.test(v) ? 'true' : 'false';
+  return JSON.stringify(v);
+}
+
+function pascalCase(s){
+  return String(s).replace(/[^a-zA-Z0-9]+/g, ' ').trim()
+    .split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')
+    .replace(/^([0-9])/, '_$1') || 'Field';
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function highlight(code){
+  const tokenRe = /("(?:\\.|[^"\\])*")|(\/\/.*$)|(\b(?:package|import|func|type|struct|var|const|return|map|range|for|if|else|nil|make|append|fmt|true|false)\b)|(\b[A-Z][a-zA-Z0-9]*\b)|(\b\d+(?:\.\d+)?\b)|(\s+)|([^\s"\w/]+)/gm;
+  let out = '', m;
+  while ((m = tokenRe.exec(code)) !== null){
+    const [full, str, com, kw, ty, num, ws, punct] = m;
+    if (str) out += `<span class="go-str">${esc(str)}</span>`;
+    else if (com) out += `<span class="go-com">${esc(com)}</span>`;
+    else if (kw) out += `<span class="go-kw">${esc(kw)}</span>`;
+    else if (ty) out += `<span class="go-type">${esc(ty)}</span>`;
+    else if (num) out += `<span class="go-num">${esc(num)}</span>`;
+    else out += esc(full);
+  }
+  return out;
+}
+
+function convert(){
+  const raw = $('#input').value;
+  if (!raw.trim()){ $('#output').textContent=''; $('#status').innerHTML=''; return; }
+  const delimStr = $('#delim').value;
+  const delim = delimStr === '\\t' ? '\t' : delimStr;
+  const rows = parseCSV(raw, delim);
+  if (rows.length < 1){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`;
+    $('#output').innerHTML = `<span style="color:var(--gz-accent)">${t('empty')}</span>`;
+    return;
+  }
+  const headers = rows[0];
+  if (!headers.some(h => h.trim() !== '')){
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('needHeader')}</span>`;
+    $('#output').textContent = '';
+    return;
+  }
+  const dataRows = rows.slice(1);
+  const types = headers.map((_, i) => inferColumn(dataRows.map(r => r[i] ?? '')));
+  const wantJson = $('#optJson').checked;
+  const wantCsv = $('#optCsv').checked;
+  let structName = pascalCase($('#structName').value || 'Row');
+  if (!structName) structName = 'Row';
+
+  let tags = '';
+  const tagParts = [];
+  if (wantJson) tagParts.push('json:"$h$"');
+  if (wantCsv) tagParts.push('csv:"$h$"');
+
+  let code = 'package main\n\n';
+  if (dataRows.length) code += 'import "fmt"\n\n';
+  code += '// ' + structName + ' is generated from your CSV headers.\n';
+  code += 'type ' + structName + ' struct {\n';
+  headers.forEach((h, i) => {
+    const fieldName = pascalCase(h);
+    const tp = types[i].type;
+    let line = '\t' + fieldName + '\t' + tp;
+    if (tagParts.length){
+      const tag = tagParts.map(p => p.replace('$h$', h.replace(/"/g, '\\"'))).join(' ');
+      line += '\t`' + tag + '`';
+    }
+    code += line + '\n';
+  });
+  code += '}\n\n';
+
+  if (dataRows.length){
+    code += 'var rows = []' + structName + '{\n';
+    dataRows.forEach(r => {
+      const vals = headers.map((h, i) => cellLit(r[i] ?? '', types[i].type));
+      code += '\t{' + vals.join(', ') + '},\n';
+    });
+    code += '}\n\n';
+    code += 'func main() {\n';
+    code += '\tfor _, r := range rows {\n';
+    code += '\t\tfmt.Printf("%+v\\n", r)\n';
+    code += '\t}\n';
+    code += '}\n';
+  }
+
+  $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('ok')(dataRows.length)}</span>`;
+  $('#output').innerHTML = highlight(code);
+}
+
+function loadExample(){
+  $('#input').value = 'id,name,price,active\n' +
+    '1,Alice,9.99,true\n' +
+    '2,Bob,,false\n' +
+    '3,Carol,19.50,true\n' +
+    '4,Dave,0,true';
+  convert();
+}
+
+$('#input').addEventListener('input', convert);
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="convert()">${t('convert')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';convert()">${t('clear')}</button>`;
+
+$('#lbl-name').textContent = t('structName');
+$('#lbl-delim').textContent = t('delimiter');
+$('#lbl-json').textContent = t('jsonTags');
+$('#lbl-csvtag').textContent = t('csvTags');
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🐹', href:'/dev/json-to-go.html', name:'JSON to Go'},
+    {icon:'📊', href:'/convert/csv-to-typescript.html', name:'CSV to TS'},
+    {icon:'🐍', href:'/convert/csv-to-python.html', name:'CSV to Python'},
+    {icon:'🗃️', href:'/convert/csv-to-sql.html', name:'CSV to SQL'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
