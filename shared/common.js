@@ -159,7 +159,7 @@
   // current deploy). Old v=20260618P0fix was 14 days stale; though Cloudflare CDN serves
   // current source, the pinned cache suffix prevents a stale-browser window if the JS file
   // is rolled back or hot-reloaded during debugging.
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=2026070501a3c9f1040377";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=20260715bi4978";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
