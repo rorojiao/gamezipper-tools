@@ -78,10 +78,13 @@
     // Non-fatal: tools pages without document.head (very rare) just lose the hints.
   }
 
-  // 2026-06-10: BI server collect endpoint for tools.site ad events.
-  // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
-  // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://sail-surrounding-icon-bathrooms.trycloudflare.com/api/collect';
+  // 2026-07-15 (kanban t_401d13d9): PERMANENT BI endpoint at bi.gamezipper.com
+  // (Cloudflare-fronted, no tunnel rotation). Previous trycloudflare.com tunnels
+  // (gale-algorithms-conf-total 7-12, sail-surrounding-icon-bathrooms 7-15)
+  // both died within hours of deployment. tools.gamezipper.com had 0 events
+  // 2026-07-12..2026-07-15 (~96h) due to dead tunnel EP. HTTP 204 verified on
+  // bi.gamezipper.com/api/collect. Pairs with commit 8039a276d (cache buster bump).
+  window.GZ_COLLECT_ENDPOINT = 'https://bi.gamezipper.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
