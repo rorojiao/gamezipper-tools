@@ -81,7 +81,7 @@
   // 2026-06-10: BI server collect endpoint for tools.site ad events.
   // Set BEFORE monetag-manager.js loads so trackAdEvent() can find it (sendBeacon fallback).
   // URL kept in sync with watchdog (gamezipper.com/gz-analytics.js); tunnel rotates ~every few hours.
-  window.GZ_COLLECT_ENDPOINT = 'https://gale-algorithms-conf-total.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://sail-surrounding-icon-bathrooms.trycloudflare.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
@@ -137,7 +137,10 @@
   //   common.js was still loading v525 → users never got the fix, tools 11012002
   //   amplification stayed at 1.45x. Cache buster v526backoffreset forces fresh fetch.
   //   v525 file kept for forensic compare (v526 = v525 + firstMissAt logic).
-  var s1=document.createElement('script');s1.src='/monetag-manager.v526.js?v=v526backoffreset';s1.defer=true;document.head.appendChild(s1);
+  // v5.27 (2026-07-15, t_ed9d6e6f): bump to monetag-manager.v527.js
+  //   11012002 hub-only fix (BI 7d: tools 11012002 fill=0/no_fill=27 vs gz.com 42.1%).
+  //   Cache buster v527hubonly11012002 forces fresh fetch.
+  var s1=document.createElement('script');s1.src='/monetag-manager.v527.js?v=v527hubonly11012002';s1.defer=true;document.head.appendChild(s1);
   // v5.18 (2026-07-07, t_bad16c5c): load game-footer.js for cross-site game links
   // + commercialBreak click trigger. Mirrors gz.com game-footer.js pattern.
   // Graceful: if monetag-manager.js hasn't exported GZAds yet, footer links still
