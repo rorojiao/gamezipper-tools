@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>摩斯密码解码器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线免费将摩斯密码（点和划）翻译回可读文字。支持字母、数字、标点和自定义分隔符。浏览器本地运行，无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/text/morse-decoder.html">
+  <meta property="og:title" content="摩斯密码解码器">
+  <meta property="og:description" content="在线免费将摩斯密码（点和划）翻译回可读文字。支持字母、数字、标点和自定义分隔符。浏览器本地运行，无需注册。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/text/morse-decoder.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="摩斯密码解码器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260711v525adsenseslotfix"></script>
+<style>
+#output{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:1.05em;line-height:1.6;min-height:120px;letter-spacing:1px}
+.gz-opt{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:.85em}
+.gz-opt label{display:flex;align-items:center;gap:4px}
+.gz-opt input[type=text]{width:60px}
+.unk{color:var(--gz-accent);background:rgba(255,217,61,.15);padding:0 3px;border-radius:3px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Morse Code Decoder","description":"Decode Morse code to text online for free. Paste dots and dashes, get readable letters, numbers and punctuation instantly. Supports / and custom word separators. Browser-only, no signup.","url":"https://tools.gamezipper.com/text/morse-decoder.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I decode Morse code?", "acceptedAnswer": {"@type": "Answer", "text": "Paste your Morse code into the input box using dots (.) and dashes (-). Separate letters with a space and words with a slash (/). The decoded text appears instantly on the right."}}, {"@type": "Question", "name": "What separators does the decoder support?", "acceptedAnswer": {"@type": "Answer", "text": "By default letters are separated by spaces and words by a slash (/). You can change the letter separator (e.g. pipe |) and word separator (e.g. double space) in the options."}}, {"@type": "Question", "name": "What happens to invalid Morse sequences?", "acceptedAnswer": {"@type": "Answer", "text": "Sequences that do not match a known Morse code are shown as highlighted question marks so you can spot typos easily."}}, {"@type": "Question", "name": "Can it decode numbers and punctuation?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The decoder recognizes Morse codes for 0-9 and common punctuation marks including period, comma, question mark, apostrophe and at-sign."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/morse-decoder.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/morse-decoder.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/zh/text/morse-decoder.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-opt" id="opts"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="... --- ... / .... . .-.. .-.. ---"></textarea></div>
+      <div><label id="lbl-out"></label><div class="gz-output" id="output"></div></div>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Morse Code Decoder',
+    toolDesc: 'Translate Morse code (dots and dashes) back into readable text. Supports letters, numbers, punctuation and custom separators. Free, browser-only, no signup.',
+    lsep: 'Letter separator',
+    wsep: 'Word separator',
+    highlight: 'Highlight unknown',
+    step1: 'Paste Morse code into the input area (dots and dashes)',
+    step2: 'Separate letters with spaces and words with /',
+    step3: 'Adjust separators and toggle unknown highlighting if needed',
+    step4: 'Click Copy to copy the decoded text',
+  },
+  zh: {
+    toolTitle: '摩斯密码解码器',
+    toolDesc: '将摩斯密码（点和划）翻译回可读文字。支持字母、数字、标点和自定义分隔符。免费、浏览器本地运行、无需注册。',
+    lsep: '字母分隔符',
+    wsep: '单词分隔符',
+    highlight: '高亮未知符号',
+    step1: '在输入区粘贴摩斯密码（点和划）',
+    step2: '字母之间用空格分隔，单词之间用 / 分隔',
+    step3: '如有需要，调整分隔符并切换未知符号高亮',
+    step4: '点击「复制」复制解码后的文字',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const MORSE = {
+  'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....',
+  'I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.',
+  'Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-',
+  'Y':'-.--','Z':'--..',
+  '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....',
+  '6':'-....','7':'--...','8':'---..','9':'----.',
+  '.':'.-.-.-',',':'--..--','?':'..--..',"'":'.----.','!':'-.-.--','/':'-..-.',
+  '(':'-.--.',')':'-.--.-','&':'.-...',':':'---...',';':'-.-.-.','=':'-...-',
+  '+':'.-.-.','-':'-....-','_':'..--.-','"':'.-..-.','@':'.--.-.'
+};
+const REVERSE = {};
+for (const [k, v] of Object.entries(MORSE)) REVERSE[v] = k;
+
+function decode() {
+  const raw = $('#input').value.trim();
+  const lsep = $('#lsep').value || ' ';
+  const wsep = ($('#wsep').value || '/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const highlight = $('#hl').checked;
+  const out = $('#output');
+
+  if (!raw) { out.textContent = ''; return; }
+
+  // Normalize: accept • and — as well
+  let text = raw.replace(/[•・]/g, '.').replace(/[—–]/g, '-');
+  const words = text.split(new RegExp('\\s*' + wsep + '\\s*'));
+  const decodedWords = words.map(w => {
+    return w.trim().split(new RegExp('\\s*' + lsep + '\\s*|\\s+')).map(code => {
+      if (!code) return '';
+      const ch = REVERSE[code];
+      if (ch) return ch;
+      return highlight ? `<span class="unk">?</span>` : '?';
+    }).join('');
+  });
+  out.innerHTML = decodedWords.join(' ');
+}
+
+function loadExample() {
+  $('#input').value = '... --- ... / .... . .-.. .-.. --- / .-- --- .-. .-.. -..';
+  decode();
+}
+
+function doClear() { $('#input').value = ''; $('#output').textContent = ''; }
+
+$('#input').addEventListener('input', decode);
+$('#lsep').addEventListener('input', decode);
+$('#wsep').addEventListener('input', decode);
+$('#hl').addEventListener('change', decode);
+
+$('#opts').innerHTML = `
+  <label>${t('lsep')}: <input type="text" id="lsep" value=" " maxlength="3" style="width:50px"></label>
+  <label>${t('wsep')}: <input type="text" id="wsep" value="/" maxlength="3" style="width:50px"></label>
+  <label><input type="checkbox" id="hl" checked> ${t('highlight')}</label>`;
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${t('example')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="doClear()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📡', href:'/text/text-to-morse.html', name:'Text to Morse'},
+    {icon:'🔐', href:'/dev/caesar-cipher.html', name:'Caesar Cipher'},
+    {icon:'🇦', href:'/text/nato-phonetic.html', name:'NATO Phonetic'},
+    {icon:'🔢', href:'/text/binary-translator.html', name:'Binary Translator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
