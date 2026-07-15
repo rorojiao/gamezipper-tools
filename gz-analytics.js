@@ -25,14 +25,16 @@
 (function() {
   var SITE = location.hostname;   // use real hostname so tools.gamezipper.com works too
   // PERMANENT BI endpoint (behind Cloudflare, stable URL).
-  // Verified alive 2026-07-05: GET → 405 (Method Not Allowed — live); POST → 204 (event accepted).
-  // 2026-07-05 01:30 re-verify (t_72ff2419): bi.gamezipper.com POST returns 204 in ~0.4-0.9s, 3/3 checks.
-  //   The parent run saw a transient 500 around 01:30 (likely CF propagation lag after A
-  //   record add) and reverted to oriental-begin trycloudflare — that tunnel will die
-  //   in hours, forcing another revert cycle. Permanent endpoint IS alive.
+  // Verified alive 2026-07-15 22:36 CST (kanban t_de988703 round 2):
+  //   POST → 204 in 1.09s (bi.gamezipper.com → Cloudflare → BI server 10.10.29.67:8090)
+  //   Test event landed in DB ✓ (vid=verify-t_de988703-1)
+  // 2026-07-15 22:36 EVIDENCE: tools.gamezipper.com had ZERO gz_ad_event since
+  //   2026-07-12 22:00 because trycloudflare.com tunnel EP was kept failing (5+ dead
+  //   tunnels in 7d: garden-cricket, gale-algorithms, sail-surrounding, etc).
+  //   bi.gamezipper.com was alive throughout — trycloudflare tunnels always die.
   // DO NOT rotate this URL again. If bi.gamezipper.com goes down, fix the Cloudflare
   //   zone, do not introduce a new trycloudflare.com tunnel.
-  var EP = 'https://sail-surrounding-icon-bathrooms.trycloudflare.com/api/collect';
+  var EP = 'https://bi.gamezipper.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
