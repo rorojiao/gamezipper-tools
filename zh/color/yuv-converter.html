@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>YUV 颜色转换器 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="使用 BT.601（标清）、BT.709（高清）或 BT.2020（4K 超高清）标准在 RGB 和 YUV 色彩空间之间转换，适用于视频工程、图像处理与色彩计算。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/color/yuv-converter.html">
+<meta property="og:title" content="YUV 颜色转换器">
+<meta property="og:description" content="使用 BT.601（标清）、BT.709（高清）或 BT.2020（4K 超高清）标准在 RGB 和 YUV 色彩空间之间转换，适用于视频工程、图像处理与色彩计算。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/color/yuv-converter.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="YUV 颜色转换器">
+<meta name="twitter:description" content="使用 BT.601（标清）、BT.709（高清）或 BT.2020（4K 超高清）标准在 RGB 和 YUV 色彩空间之间转换，适用于视频工程、图像处理与色彩计算。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+.swatch-row{display:flex;gap:16px;align-items:center;margin-bottom:12px}
+.swatch{width:60px;height:60px;border-radius:8px;border:1px solid var(--border)}
+.color-grid{display:grid;gap:10px}
+.field{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:8px}
+.field label{font-size:.85em;color:var(--text2)}
+.field input{background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:monospace}
+.field input:focus{outline:none;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"YUV Color Converter","description":"Convert YUV to RGB and RGB to YUV (BT.601, BT.709, BT.2020) online for free.","url": "https://tools.gamezipper.com/zh/color/yuv-converter.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is YUV color space?","acceptedAnswer":{"@type":"Answer","text":"YUV is a color encoding used in video and broadcasting, separating luma (Y) from chroma (U and V). It saves bandwidth compared to RGB by encoding brightness at full resolution and color at lower resolution."}},{"@type":"Question","name":"What's the difference between BT.601, BT.709 and BT.2020?","acceptedAnswer":{"@type":"Answer","text":"BT.601 is for standard-definition TV (SD), BT.709 is for HDTV, and BT.2020 is for 4K/UHD. Each defines different coefficients for converting between RGB and YUV based on the target gamut."}},{"@type":"Question","name":"Is this converter private?","acceptedAnswer":{"@type":"Answer","text":"Yes. All conversion runs in your browser. No pixel data, no values are uploaded to any server."}},{"@type":"Question","name":"Can I use this for FFmpeg or ffmpeg-python?","acceptedAnswer":{"@type":"Answer","text":"Yes. This tool uses the same BT.601/BT.709 conversion matrices that FFmpeg uses internally, so you can verify your pipeline values or sanity-check pixel math."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/color/yuv-converter.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/color/yuv-converter.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/color/yuv-converter.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area">
+<div style="margin-bottom:12px">
+<label id="lbl-mode"></label>
+<select id="mode" class="gz-select" onchange="resetInputs()">
+<option value="rgb-to-yuv-bt601">RGB → YUV (BT.601 / SDTV)</option>
+<option value="rgb-to-yuv-bt709">RGB → YUV (BT.709 / HDTV)</option>
+<option value="rgb-to-yuv-bt2020">RGB → YUV (BT.2020 / UHDTV)</option>
+<option value="yuv-to-rgb-bt601">YUV → RGB (BT.601)</option>
+<option value="yuv-to-rgb-bt709">YUV → RGB (BT.709)</option>
+<option value="yuv-to-rgb-bt2020">YUV → RGB (BT.2020)</option>
+</select>
+</div>
+<div id="grids"></div>
+<div class="swatch-row" style="margin-top:16px">
+<div id="swatch-in" class="swatch" style="background:#888"></div>
+<div id="arrow">→</div>
+<div id="swatch-out" class="swatch" style="background:#888"></div>
+</div>
+<div id="status" style="margin-top:10px;font-size:.85em;color:var(--text2)"></div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'YUV Color Converter',
+toolDesc:'Convert between RGB and YUV color spaces using BT.601 (SD), BT.709 (HD) or BT.2020 (4K UHD) standards. Useful for video engineering, image processing and color science.',
+lblMode:'Conversion Standard',
+inR:'R (0-255)',inG:'G (0-255)',inB:'B (0-255)',
+inY:'Y (0-255)',inU:'U (-128-127)',inV:'V (-128-127)',
+step1:'Pick the conversion direction and standard (BT.601 / BT.709 / BT.2020)',
+step2:'Enter the source color values in the input fields',
+step3:'Read the converted color values instantly — preview swatch updates live',
+step4:'Use Copy to grab the exact values for your code or pipeline'
+},
+zh:{
+toolTitle:'YUV 颜色转换器',
+toolDesc:'使用 BT.601（标清）、BT.709（高清）或 BT.2020（4K 超高清）标准在 RGB 和 YUV 色彩空间之间转换，适用于视频工程、图像处理与色彩计算。',
+lblMode:'转换标准',
+inR:'R (0-255)',inG:'G (0-255)',inB:'B (0-255)',
+inY:'Y (0-255)',inU:'U (-128-127)',inV:'V (-128-127)',
+step1:'选择转换方向和标准（BT.601 / BT.709 / BT.2020）',
+step2:'在输入框中输入源颜色值',
+step3:'即时查看转换后的颜色值 — 色块预览同步刷新',
+step4:'点击「复制」即可获得可直接用于代码的数值'
+}
+});
+
+const { $, t } = GZ;
+
+const MODES = {
+'rgb-to-yuv-bt601':{in:['inR','inG','inB'],out:['inY','inU','inV'],toYuv:true,mat:[0.299,0.587,0.114,-0.168736,-0.331264,0.5,0.5,-0.418688,-0.081312]},
+'rgb-to-yuv-bt709':{in:['inR','inG','inB'],out:['inY','inU','inV'],toYuv:true,mat:[0.2126,0.7152,0.0722,-0.114572,-0.385428,0.5,0.5,-0.454153,-0.045847]},
+'rgb-to-yuv-bt2020':{in:['inR','inG','inB'],out:['inY','inU','inV'],toYuv:true,mat:[0.2627,0.6780,0.0593,-0.13963,-0.36037,0.5,0.5,-0.45978,-0.04022]},
+'yuv-to-rgb-bt601':{in:['inY','inU','inV'],out:['inR','inG','inB'],toYuv:false,mat:[1,0,1.402,1,-0.344136,-0.714136,1,1.772,0]},
+'yuv-to-rgb-bt709':{in:['inY','inU','inV'],out:['inR','inG','inB'],toYuv:false,mat:[1,0,1.5748,1,-0.1873,-0.4681,1,1.8556,0]},
+'yuv-to-rgb-bt2020':{in:['inY','inU','inV'],out:['inR','inG','inB'],toYuv:false,mat:[1,0,1.4746,1,-0.16455,-0.57135,1,1.8814,0]}
+};
+
+function buildGrids(){
+const mode = MODES[$('#mode').value];
+$('#grids').innerHTML = `
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div>
+<h3 style="font-size:.9em;margin:0 0 8px">${mode.toYuv?'RGB':'YUV'}</h3>
+<div class="color-grid" id="in-grid"></div>
+</div>
+<div>
+<h3 style="font-size:.9em;margin:0 0 8px">${mode.toYuv?'YUV':'RGB'}</h3>
+<div class="color-grid" id="out-grid"></div>
+</div>
+</div>`;
+const inGrid = $('#in-grid'); inGrid.innerHTML = '';
+mode.in.forEach(k => { inGrid.insertAdjacentHTML('beforeend', `<div class="field"><label>${t(k)}</label><input type="number" id="i-${k}" oninput="convert()"></div>`); });
+const outGrid = $('#out-grid'); outGrid.innerHTML = '';
+mode.out.forEach(k => { outGrid.insertAdjacentHTML('beforeend', `<div class="field"><label>${t(k)}</label><input type="number" id="o-${k}" readonly style="opacity:.85"></div>`); });
+if (mode.toYuv) { $('#i-inR').value = 200; $('#i-inG').value = 100; $('#i-inB').value = 50; }
+else { $('#i-inY').value = 100; $('#i-inU').value = 0; $('#i-inV').value = 0; }
+convert();
+}
+
+function convert(){
+const mode = MODES[$('#mode').value];
+let vals;
+if (mode.toYuv) vals = [+$('#i-inR').value, +$('#i-inG').value, +$('#i-inB').value];
+else vals = [+$('#i-inY').value, +$('#i-inU').value, +$('#i-inV').value];
+if (vals.some(v => isNaN(v))) return;
+const m = mode.mat;
+let r, g, b, y, u, v;
+if (mode.toYuv) {
+y  = m[0]*vals[0] + m[1]*vals[1] + m[2]*vals[2];
+u  = m[3]*vals[0] + m[4]*vals[1] + m[5]*vals[2];
+v  = m[6]*vals[0] + m[7]*vals[1] + m[8]*vals[2];
+r = Math.round(y); g = Math.round(u); b = Math.round(v);
+$('#o-inY').value = y.toFixed(2);
+$('#o-inU').value = u.toFixed(2);
+$('#o-inV').value = v.toFixed(2);
+const cr = clamp255(vals[0]), cg = clamp255(vals[1]), cb = clamp255(vals[2]);
+$('#swatch-in').style.background = `rgb(${cr},${cg},${cb})`;
+// Approximate preview: y as grayscale + u/v hint
+const py = clamp255(y);
+const pu = 128 + u|0, pv = 128 + v|0;
+$('#swatch-out').style.background = `rgb(${py},${clamp255(py + (pu-128)*0.5)},${clamp255(py + (pv-128)*0.5)})`;
+} else {
+r = m[0]*vals[0] + m[1]*vals[1] + m[2]*vals[2];
+g = m[3]*vals[0] + m[4]*vals[1] + m[5]*vals[2];
+b = m[6]*vals[0] + m[7]*vals[1] + m[8]*vals[2];
+$('#o-inR').value = r.toFixed(2);
+$('#o-inG').value = g.toFixed(2);
+$('#o-inB').value = b.toFixed(2);
+const py = clamp255(vals[0]);
+const pu = 128 + vals[1]|0, pv = 128 + vals[2]|0;
+$('#swatch-in').style.background = `rgb(${py},${clamp255(py + (pu-128)*0.5)},${clamp255(py + (pv-128)*0.5)})`;
+$('#swatch-out').style.background = `rgb(${clamp255(r)},${clamp255(g)},${clamp255(b)})`;
+}
+$('#status').innerHTML = mode.toYuv ? `Y = ${y.toFixed(2)}, U = ${u.toFixed(2)}, V = ${v.toFixed(2)}` : `R = ${r.toFixed(2)}, G = ${g.toFixed(2)}, B = ${b.toFixed(2)}`;
+}
+
+function clamp255(v){ return Math.max(0, Math.min(255, Math.round(v))); }
+
+function resetInputs(){ buildGrids(); }
+
+buildGrids();
+
+GZ.renderToolPage({
+category:'color',
+titleKey:'toolTitle',
+descKey:'toolDesc',
+howToSteps:['step1','step2','step3','step4'],
+related:[
+{icon:'🎨', href:'/color/hsv-to-rgb.html', name:'HSV → RGB'},
+{icon:'🌈', href:'/color/hsl-to-rgb.html', name:'HSL → RGB'},
+{icon:'🖨️', href:'/color/cmyk-to-rgb.html', name:'CMYK → RGB'},
+{icon:'🔬', href:'/color/lab-color-converter.html', name:'LAB Converter'}
+]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

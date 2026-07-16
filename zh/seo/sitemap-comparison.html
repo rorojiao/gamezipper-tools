@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>站点地图对比工具 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="对比两个 XML 站点地图,找出新增、删除、修改和未变更的 URL。适用于 SEO 发布、内容迁移和 staging-vs-prod 审计。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/seo/sitemap-comparison.html">
+<meta property="og:title" content="站点地图对比工具">
+<meta property="og:description" content="对比两个 XML 站点地图,找出新增、删除、修改和未变更的 URL。适用于 SEO 发布、内容迁移和 staging-vs-prod 审计。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/seo/sitemap-comparison.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="站点地图对比工具">
+<meta name="twitter:description" content="对比两个 XML 站点地图,找出新增、删除、修改和未变更的 URL。适用于 SEO 发布、内容迁移和 staging-vs-prod 审计。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+.diff-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.stat-card{padding:12px;border-radius:10px;background:var(--glass2);border:1px solid var(--border);text-align:center}
+.stat-card .n{font-size:1.6em;font-weight:700}
+.stat-card .label{font-size:.78em;color:var(--text2);margin-top:4px}
+.stat-card.added .n{color:#00d672}
+.stat-card.removed .n{color:#e94560}
+.stat-card.common .n{color:var(--accent)}
+.diff-list{margin-top:14px;display:flex;flex-direction:column;gap:4px;max-height:380px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--glass2)}
+.diff-item{padding:8px 10px;border-radius:6px;display:flex;justify-content:space-between;font-family:monospace;font-size:.82em;gap:10px}
+.diff-item.added{background:rgba(0,214,114,0.1);border-left:3px solid #00d672}
+.diff-item.removed{background:rgba(233,69,96,0.1);border-left:3px solid #e94560}
+.diff-item .url{flex:1;word-break:break-all}
+.diff-item .meta{color:var(--text3);font-size:.85em}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:6px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.85em;background:var(--glass2)}
+.tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Sitemap Comparison Tool","description":"Compare two XML sitemaps to find new, removed or modified URLs.","url": "https://tools.gamezipper.com/zh/seo/sitemap-comparison.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a sitemap comparison tool?","acceptedAnswer":{"@type":"Answer","text":"It compares two XML sitemaps and tells you exactly which URLs were added, removed or kept. Useful for SEO launches, staging-vs-prod audits and content migrations."}},{"@type":"Question","name":"Does it check sitemap priority or lastmod?","acceptedAnswer":{"@type":"Answer","text":"Yes. The tool flags URLs whose priority or lastmod changed between the two sitemaps, in addition to detecting URL additions and removals."}},{"@type":"Question","name":"Can it read gzip sitemaps?","acceptedAnswer":{"@type":"Answer","text":"If your browser supports the decompression, yes. For largest sitemaps, paste the URL list directly from the decompressed XML."}},{"@type":"Question","name":"Is my sitemap data uploaded?","acceptedAnswer":{"@type":"Answer","text":"No. Everything parses and compares locally in your browser. Sitemap contents never leave your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/seo/sitemap-comparison.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/seo/sitemap-comparison.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/seo/sitemap-comparison.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area">
+<div class="gz-split">
+<div>
+<label id="lbl-a"></label>
+<textarea id="sitemap-a" spellcheck="false" placeholder="Paste sitemap XML #1 here, or just a list of URLs"></textarea>
+</div>
+<div>
+<label id="lbl-b"></label>
+<textarea id="sitemap-b" spellcheck="false" placeholder="Paste sitemap XML #2 here, or just a list of URLs"></textarea>
+</div>
+</div>
+<div class="gz-toolbar" id="toolbar" style="margin-top:12px"></div>
+<div class="diff-stats" id="stats" style="display:none">
+<div class="stat-card added"><div class="n" id="stat-added">0</div><div class="label" id="lbl-added"></div></div>
+<div class="stat-card removed"><div class="n" id="stat-removed">0</div><div class="label" id="lbl-removed"></div></div>
+<div class="stat-card common"><div class="n" id="stat-common">0</div><div class="label" id="lbl-common"></div></div>
+<div class="stat-card"><div class="n" id="stat-changed">0</div><div class="label" id="lbl-changed"></div></div>
+</div>
+<div id="results" style="display:none">
+<div class="tabs" id="tabs">
+<button class="tab active" data-tab="added" id="tab-added"></button>
+<button class="tab" data-tab="removed" id="tab-removed"></button>
+<button class="tab" data-tab="changed" id="tab-changed"></button>
+<button class="tab" data-tab="common" id="tab-common"></button>
+</div>
+<div class="diff-list" id="diff-list"></div>
+</div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Sitemap Comparison Tool',
+toolDesc:'Diff two XML sitemaps and surface added, removed, modified and unchanged URLs. Use for SEO launches, content migrations and staging-vs-prod audits. 100% browser-local.',
+lblA:'Sitemap A (old)',
+lblB:'Sitemap B (new)',
+lblAdded:'Added URLs',
+lblRemoved:'Removed URLs',
+lblCommon:'Unchanged',
+lblChanged:'Modified',
+tabAdded:'Added',
+tabRemoved:'Removed',
+tabChanged:'Modified',
+tabCommon:'Unchanged',
+step1:'Paste the old sitemap XML into the left textarea and the new sitemap XML into the right',
+step2:'Click Compare to compute the diff (added, removed, changed and unchanged URLs)',
+step3:'Switch tabs to focus on a single category — added / removed / modified / unchanged',
+step4:'Copy or export the diff list for your release notes or SEO audit'
+},
+zh:{
+toolTitle:'站点地图对比工具',
+toolDesc:'对比两个 XML 站点地图,找出新增、删除、修改和未变更的 URL。适用于 SEO 发布、内容迁移和 staging-vs-prod 审计。',
+lblA:'站点地图 A(旧)',
+lblB:'站点地图 B(新)',
+lblAdded:'新增',
+lblRemoved:'删除',
+lblCommon:'未变更',
+lblChanged:'已修改',
+tabAdded:'新增',
+tabRemoved:'删除',
+tabChanged:'已修改',
+tabCommon:'未变更',
+step1:'将旧站点地图 XML 粘贴到左侧文本框,将新站点地图 XML 粘贴到右侧',
+step2:'点击「对比」开始计算差异(新增、删除、修改和未变更的 URL)',
+step3:'切换标签查看不同分类的 URL',
+step4:'复制或导出差异列表用于发布说明或 SEO 审计'
+}
+});
+
+const { $, t } = GZ;
+
+function parseSitemap(xml){
+// Detect if it's pure URL list or XML sitemap
+const urls = new Map(); // url -> {priority, lastmod}
+const trimmed = xml.trim();
+if (!trimmed) return urls;
+// Try URL-list mode (one URL per line)
+if (!trimmed.startsWith('<')) {
+trimmed.split(/\r?\n/).forEach(line => {
+  const u = line.trim();
+  if (u && /^https?:\/\//.test(u)) urls.set(u, {priority:null, lastmod:null});
+});
+return urls;
+}
+// XML mode
+try {
+const parser = new DOMParser();
+const doc = parser.parseFromString(xml, 'application/xml');
+const parseErr = doc.querySelector('parsererror');
+if (parseErr) return urls;
+doc.querySelectorAll('url').forEach(u => {
+  const loc = u.querySelector('loc')?.textContent?.trim();
+  if (!loc) return;
+  const pri = u.querySelector('priority')?.textContent?.trim();
+  const lm = u.querySelector('lastmod')?.textContent?.trim();
+  urls.set(loc, {priority:pri||null, lastmod:lm||null});
+});
+// Also handle sitemapindex
+if (urls.size === 0) {
+  doc.querySelectorAll('sitemap').forEach(s => {
+    const loc = s.querySelector('loc')?.textContent?.trim();
+    if (loc) urls.set(loc, {priority:null, lastmod:s.querySelector('lastmod')?.textContent?.trim()||null});
+  });
+}
+} catch(e) { /* ignore */ }
+return urls;
+}
+
+function diff(a, b){
+const added = [], removed = [], common = [], changed = [];
+a.forEach((meta, url) => {
+  if (!b.has(url)) { removed.push({url, ...meta}); return; }
+  const bMeta = b.get(url);
+  if ((meta.priority||null) !== (bMeta.priority||null) || (meta.lastmod||null) !== (bMeta.lastmod||null)) {
+    changed.push({url, before:meta, after:bMeta});
+  } else {
+    common.push({url, ...meta});
+  }
+});
+b.forEach((meta, url) => {
+  if (!a.has(url)) added.push({url, ...meta});
+});
+return {added, removed, common, changed};
+}
+
+let lastDiff = null;
+let activeTab = 'added';
+
+function renderTab(){
+const list = $('#diff-list');
+list.innerHTML = '';
+const arr = lastDiff ? lastDiff[activeTab] : [];
+if (!arr.length) { list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:24px">No URLs in this category.</div>'; return; }
+arr.forEach(item => {
+  const row = document.createElement('div');
+  row.className = 'diff-item ' + activeTab;
+  if (activeTab === 'changed') {
+    row.innerHTML = '<span class="url">' + item.url + '</span><span class="meta">pri: ' + (item.before.priority||'-') + ' → ' + (item.after.priority||'-') + ' | lastmod: ' + (item.before.lastmod||'-') + ' → ' + (item.after.lastmod||'-') + '</span>';
+  } else {
+    const metaTxt = [item.priority?'pri:'+item.priority:'', item.lastmod?'lm:'+item.lastmod:''].filter(Boolean).join(' · ');
+    row.innerHTML = '<span class="url">' + item.url + '</span>' + (metaTxt?'<span class="meta">'+metaTxt+'</span>':'');
+  }
+  list.appendChild(row);
+});
+}
+
+function showDiff(d){
+lastDiff = d;
+$('#stats').style.display = 'grid';
+$('#results').style.display = 'block';
+$('#stat-added').textContent = d.added.length;
+$('#stat-removed').textContent = d.removed.length;
+$('#stat-common').textContent = d.common.length;
+$('#stat-changed').textContent = d.changed.length;
+renderTab();
+}
+
+function doCompare(){
+const a = parseSitemap($('#sitemap-a').value);
+const b = parseSitemap($('#sitemap-b').value);
+if (!a.size && !b.size) { $('#stats').style.display='none'; $('#results').style.display='none'; return; }
+showDiff(diff(a, b));
+}
+
+function loadExample(){
+$('#sitemap-a').value = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://example.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://example.com/about</loc><priority>0.8</priority></url>
+  <url><loc>https://example.com/legacy</loc><priority>0.5</priority></url>
+</urlset>`;
+$('#sitemap-b').value = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://example.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://example.com/about</loc><priority>0.9</priority></url>
+  <url><loc>https://example.com/blog</loc><priority>0.7</priority></url>
+</urlset>`;
+doCompare();
+}
+
+document.querySelectorAll('.gz-split label').forEach((l,i)=>{ l.id = i===0?'lbl-a':'lbl-b'; });
+$('#lbl-a').textContent = t('lblA');
+$('#lbl-b').textContent = t('lblB');
+$('#lbl-added').textContent = t('lblAdded');
+$('#lbl-removed').textContent = t('lblRemoved');
+$('#lbl-common').textContent = t('lblCommon');
+$('#lbl-changed').textContent = t('lblChanged');
+$('#tab-added').textContent = t('tabAdded');
+$('#tab-removed').textContent = t('tabRemoved');
+$('#tab-changed').textContent = t('tabChanged');
+$('#tab-common').textContent = t('tabCommon');
+
+document.querySelectorAll('.tab').forEach(btn => btn.onclick = () => {
+activeTab = btn.dataset.tab;
+document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab===activeTab));
+renderTab();
+});
+
+$('#toolbar').innerHTML = '<button class="gz-btn" onclick="doCompare()">' + t('compare') + '</button><button class="gz-btn gz-btn-secondary" onclick="loadExample()">' + t('example') + '</button><button class="gz-btn gz-btn-secondary" onclick="GZ.copyText($(\'#sitemap-a\').value+\'\\n\\n---\\n\\n\'+$(\'#sitemap-b\').value)">' + t('copy') + '</button>';
+
+loadExample();
+
+GZ.renderToolPage({
+category:'seo',
+titleKey:'toolTitle',
+descKey:'toolDesc',
+howToSteps:['step1','step2','step3','step4'],
+related:[
+{icon:'🗺️', href:'/seo/sitemap-generator.html', name:'Sitemap Generator'},
+{icon:'✅', href:'/seo/sitemap-validator.html', name:'Sitemap Validator'},
+{icon:'🤖', href:'/seo/robots-txt-generator.html', name:'Robots.txt Generator'},
+{icon:'📡', href:'/seo/rss-generator.html', name:'RSS Generator'}
+]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

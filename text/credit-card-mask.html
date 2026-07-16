@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Credit Card Masker - Mask & Tokenize Card Numbers | GameZipper Tools</title>
+<meta name="description" content="Free online credit card masker. Mask credit card numbers, CVV, SSN, and phone numbers in text — perfect for screenshots, demos and QA logs. PCI-friendly, browser-only, no upload.">
+<link rel="canonical" href="https://tools.gamezipper.com/text/credit-card-mask.html">
+<meta property="og:title" content="Credit Card Masker - Mask & Tokenize Card Numbers | GameZipper Tools">
+<meta property="og:description" content="Free online credit card masker. Mask credit card numbers, CVV, SSN, and phone numbers in text — perfect for screenshots, demos and QA logs. PCI-friendly, browser-only.">
+<meta property="og:url" content="https://tools.gamezipper.com/text/credit-card-mask.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Credit Card Masker - Mask & Tokenize Card Numbers | GameZipper Tools">
+<meta name="twitter:description" content="Mask credit card numbers, CVV, SSN and phone numbers in text for screenshots, demos and QA logs.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+.match-list{margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto}
+.match-row{display:flex;justify-content:space-between;padding:6px 10px;background:var(--glass2);border-radius:6px;font-size:.8em}
+.match-row .label{color:var(--text2)}
+.match-row .val{font-family:monospace}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.controls label{display:flex;align-items:center;gap:6px;font-size:.85em;color:var(--text2);cursor:pointer}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Credit Card Masker","description":"Mask credit card numbers, CVV, SSN, and phone numbers in text for screenshots, demos and QA logs.","url":"https://tools.gamezipper.com/text/credit-card-mask.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What does this tool detect?","acceptedAnswer":{"@type":"Answer","text":"It detects credit card numbers (Visa, MasterCard, Amex, Discover, JCB, Diners), CVV codes, US Social Security Numbers, and phone numbers in arbitrary text."}},{"@type":"Question","name":"Is my data uploaded anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. All masking runs locally in your browser. The tool never sends your input to any server, log service or analytics endpoint."}},{"@type":"Question","name":"What does the masked output look like?","acceptedAnswer":{"@type":"Answer","text":"By default, all but the last 4 digits are replaced with • characters (e.g. 4111 1111 1111 1234 → •••• •••• •••• 1234). You can fully redact, keep last 4, or hash the value via the options."}},{"@type":"Question","name":"Is this safe for PCI compliance?","acceptedAnswer":{"@type":"Answer","text":"This tool helps you redact sensitive info from screenshots, demos and logs so you don't accidentally share card numbers. It is NOT a substitute for full PCI-DSS controls."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/credit-card-mask.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/credit-card-mask.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/credit-card-mask.html">
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area">
+<div class="controls">
+<label><input type="checkbox" id="opt-card" checked onchange="mask()"> <span id="lbl-card"></span></label>
+<label><input type="checkbox" id="opt-ssn" checked onchange="mask()"> <span id="lbl-ssn"></span></label>
+<label><input type="checkbox" id="opt-phone" checked onchange="mask()"> <span id="lbl-phone"></span></label>
+<label><input type="checkbox" id="opt-cvv" onchange="mask()"> <span id="lbl-cvv"></span></label>
+<label><input type="checkbox" id="opt-email" onchange="mask()"> <span id="lbl-email"></span></label>
+<span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+<select id="style" class="gz-select" onchange="mask()">
+<option value="last4">Keep last 4</option>
+<option value="all">Fully redact</option>
+<option value="first6">Keep first 6</option>
+</select>
+</span>
+</div>
+<div class="gz-toolbar" id="toolbar"></div>
+<div class="gz-split">
+<div>
+<label id="lbl-in"></label>
+<textarea id="input" spellcheck="false" placeholder="Paste log lines, support emails, QA output…"></textarea>
+</div>
+<div>
+<label id="lbl-out"></label>
+<div class="gz-output" id="output"></div>
+</div>
+</div>
+<div id="summary" style="margin-top:10px;font-size:.85em;color:var(--text2)"></div>
+<div id="matches"></div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Credit Card Masker / Redactor',
+toolDesc:'Detect and mask credit card numbers, SSNs, CVVs, phone numbers and emails in text. Useful for screenshots, demos, logs and customer support QA. 100% browser-local.',
+lblCards:'Credit cards',
+lblSSN:'US SSN',
+lblPhone:'Phone numbers',
+lblCVV:'CVV codes',
+lblEmail:'Email addresses',
+step1:'Paste logs, screenshots OCR text, email excerpts or chat transcripts into the input',
+step2:'Toggle detectors on/off — credit cards, SSN, phone, CVV, email',
+step3:'Pick redaction style: keep-last-4, first-6, or full blackout',
+step4:'Copy the masked output or download it as .txt'
+},
+zh:{
+toolTitle:'信用卡号遮罩工具',
+toolDesc:'在文本中检测并遮罩信用卡号、SSN、CVV、电话号码和邮箱。适用于截图、演示、日志和客服 QA。100% 浏览器本地运行。',
+lblCards:'信用卡',
+lblSSN:'美国 SSN',
+lblPhone:'电话号码',
+lblCVV:'CVV 安全码',
+lblEmail:'邮箱地址',
+step1:'将日志、截图 OCR 文本、邮件摘录或聊天记录粘贴到输入框',
+step2:'按需勾选/取消检测器 — 信用卡、SSN、电话、CVV、邮箱',
+step3:'选择脱敏方式：保留后 4 位、保留前 6 位或完全遮罩',
+step4:'复制或下载脱敏后的结果'
+}
+});
+
+const { $, copyText, t } = GZ;
+
+// Card IIN ranges (compact). Major brands.
+const CARDS = [
+{brand:'Visa',       re:/\b4\d{3}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g},
+{brand:'MasterCard', re:/\b5[1-5]\d{2}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b|2[2-7]\d{2}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g},
+{brand:'Amex',       re:/\b3[47]\d{2}[\s-]?\d{6}[\s-]?\d{5}\b/g},
+{brand:'Discover',   re:/\b6(?:011|5\d{2})[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g},
+{brand:'JCB',        re:/\b35\d{3}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g},
+{brand:'Diners',     re:/\b3(?:0[0-5]|[68]\d)\d[\s-]?\d{6}[\s-]?\d{4}\b/g}
+];
+const SSN_RE  = /\b\d{3}-\d{2}-\d{4}\b/g;
+const PHONE_RE = /\b\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g;
+const CVV_RE  = /\b(?:cvv|cvc|cvv2)[:\s]*\d{3,4}\b/gi;
+const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\b/g;
+
+function digitsOf(s){ return (s.match(/\d/g)||[]).join(''); }
+
+function maskCard(m, style){
+const d = digitsOf(m[0]);
+if (style === 'all')    return '•••• •••• •••• ••••';
+if (style === 'first6') return d.slice(0,6).replace(/(.{4})(.{2})/, '$1 $2') + ' ••••••';
+// keep last 4
+const padded = d.padEnd(16, '0').slice(0,16);
+return '•••• •••• •••• ' + padded.slice(-4);
+}
+
+function maskEmail(m){ const [u, dom] = m[0].split('@'); return (u[0]||'*') + '•••@' + dom; }
+function maskSsn(m){ return '•••-••-' + m[0].slice(-4); }
+function maskPhone(m){ return '••• ••• ' + m[0].replace(/\\D/g,'').slice(-4); }
+function maskCvv(m){ return m[0].replace(/\d/g, '•'); }
+
+function mask(){
+const inp = $('#input').value;
+const style = $('#style').value;
+const useCards = $('#opt-card').checked;
+const useSsn = $('#opt-ssn').checked;
+const usePhone = $('#opt-phone').checked;
+const useCvv = $('#opt-cvv').checked;
+const useEmail = $('#opt-email').checked;
+let out = inp;
+const hits = [];
+
+if (useCards) {
+for (const c of CARDS) {
+out = out.replace(c.re, x => { hits.push({label:c.brand+' card', before:x, after:maskCard([x],style)}); return maskCard([x],style); });
+}
+}
+if (useSsn)   out = out.replace(SSN_RE,   x => { hits.push({label:'SSN',    before:x, after:maskSsn([x])});  return maskSsn([x]); });
+if (usePhone) out = out.replace(PHONE_RE, x => { hits.push({label:'Phone',  before:x, after:maskPhone([x])}); return maskPhone([x]); });
+if (useCvv)   out = out.replace(CVV_RE,   x => { hits.push({label:'CVV',    before:x, after:maskCvv(x)});     return maskCvv(x); });
+if (useEmail) out = out.replace(EMAIL_RE,  x => { hits.push({label:'Email',  before:x, after:maskEmail([x])}); return maskEmail([x]); });
+
+$('#output').textContent = out;
+$('#summary').innerHTML = hits.length === 0
+? '<span style="color:var(--text3)">No sensitive patterns detected.</span>'
+: `<span style="color:var(--gz-success)">✓ Masked ${hits.length} pattern${hits.length===1?'':'s'}</span>`;
+
+const list = hits.length ? hits.map(h => `
+<div class="match-row">
+  <span class="label">${h.label}</span>
+  <span class="val"><s style="opacity:.4">${h.before}</s> → <strong style="color:var(--accent)">${h.after}</strong></span>
+</div>`).join('') : '';
+$('#matches').innerHTML = `<div class="match-list">${list}</div>`;
+}
+
+$('#input').addEventListener('input', mask);
+$('#toolbar').innerHTML = `
+<button class="gz-btn" onclick="copyText($('#output').textContent)">${t('copy')}</button>
+<button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';mask()">${t('clear')}</button>
+<button class="gz-btn gz-btn-secondary" onclick="$('#input').value='Customer called from 415-555-0132 about her Visa 4111 1111 1111 1234 exp 12/26 cvv: 123. Email me at jane.doe@example.com or ssn 123-45-6789';mask()">${t('example')}</button>`;
+
+document.querySelectorAll('.controls label span').forEach(s => {
+const map = {'Credit cards':'lblCards','US SSN':'lblSSN','Phone numbers':'lblPhone','CVV codes':'lblCVV','Email addresses':'lblEmail'};
+const k = s.textContent; const key = map[k]; if (key) s.id = key;
+});
+document.querySelectorAll('.gz-split label').forEach((l,i)=>{ l.id = i===0?'lbl-in':'lbl-out'; });
+$('#lbl-in').textContent = t('input') || 'Input';
+$('#lbl-out').textContent = t('output') || 'Masked output';
+
+mask();
+
+GZ.renderToolPage({
+category:'text',
+titleKey:'toolTitle',
+descKey:'toolDesc',
+howToSteps:['step1','step2','step3','step4'],
+related:[
+{icon:'📧', href:'/text/email-extractor.html', name:'Email Extractor'},
+{icon:'🔍', href:'/text/find-replace.html', name:'Find & Replace'},
+{icon:'🆔', href:'/text/credit-card-extractor.html', name:'Card Extractor'},
+{icon:'🧹', href:'/text/remove-duplicates.html', name:'Remove Duplicates'}
+]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>文字转 Emoji 工具 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="将文字和短语转换为 emoji,适合社交动态、聊天消息和个性化文案。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/text/text-to-emoji.html">
+<meta property="og:title" content="文字转 Emoji 工具">
+<meta property="og:description" content="将文字和短语转换为 emoji,适合社交动态、聊天消息和个性化文案。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/text/text-to-emoji.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="文字转 Emoji 工具">
+<meta name="twitter:description" content="将文字和短语转换为 emoji,适合社交动态、聊天消息和个性化文案。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+.emoji-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:12px;max-height:300px;overflow:auto;padding:8px;background:var(--glass2);border-radius:8px}
+.emoji-row{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--glass);border-radius:6px;font-size:.78em}
+.emoji-row .ch{font-size:1.4em}
+.emoji-row .word{color:var(--text2)}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag-row .tag{padding:4px 10px;background:var(--glass2);border-radius:14px;font-size:.78em;cursor:pointer;border:1px solid var(--border)}
+.tag-row .tag:hover{border-color:var(--accent)}
+.stats{font-size:.85em;color:var(--text2);margin-top:8px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Text to Emoji Converter","description":"Translate words and phrases to emoji — perfect for social captions, messengers and texting.","url": "https://tools.gamezipper.com/zh/text/text-to-emoji.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How does the text-to-emoji converter work?","acceptedAnswer":{"@type":"Answer","text":"It scans your text for keyword matches (love, happy, fire, etc.) and replaces them with the matching emoji. Unrecognized words pass through unchanged."}},{"@type":"Question","name":"Can I customize which emojis get used?","acceptedAnswer":{"@type":"Answer","text":"Yes. Toggle individual keywords on/off and choose from alternative emoji mappings using the picker grid below the input."}},{"@type":"Question","name":"Does it work in any language?","acceptedAnswer":{"@type":"Answer","text":"It works best for English keywords today. Spanish, French, German and Italian common words also map thanks to shared roots."}},{"@type":"Question","name":"Is my text stored anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. Translation runs entirely in your browser. No copy of your message leaves your device."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/text-to-emoji.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/text-to-emoji.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/text-to-emoji.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+<div class="gz-tool-header">
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+</div>
+<div class="gz-tool-area">
+<div class="gz-toolbar" id="toolbar-top"></div>
+<div class="gz-split">
+<div>
+<label id="lbl-in"></label>
+<textarea id="input" spellcheck="false"></textarea>
+</div>
+<div>
+<label id="lbl-out"></label>
+<div class="gz-output" id="output"></div>
+<div id="stats" class="stats"></div>
+</div>
+</div>
+<div style="margin-top:14px">
+<h3 style="font-size:.9em;margin:0 0 4px" id="lbl-words"></h3>
+<div class="emoji-grid" id="picker"></div>
+</div>
+</div>
+<div class="gz-howto"><h2></h2><ol></ol></div>
+<div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+en:{
+toolTitle:'Text → Emoji Converter',
+toolDesc:'Translate words and phrases to emoji for fun captions, social posts and chat messages. Customize keywords and emojis in the picker below.',
+lblIn:'Plain text',
+lblOut:'Emojified',
+lblWords:'Keyword → emoji map (click to toggle)',
+step1:'Type or paste a paragraph of text in the input area',
+step2:'Watch the emoji output update live — keywords get replaced with matching emojis',
+step3:'Click any keyword in the picker grid below to enable or disable it',
+step4:'Use Copy to grab the emojified output for any social or chat app'
+},
+zh:{
+toolTitle:'文字转 Emoji 工具',
+toolDesc:'将文字和短语转换为 emoji,适合社交动态、聊天消息和个性化文案。',
+lblIn:'原始文字',
+lblOut:'Emoji 输出',
+lblWords:'关键词 → Emoji 映射(点击切换)',
+step1:'在输入框中输入或粘贴一段文字',
+step2:'Emoji 输出实时更新 — 关键词自动替换为对应 emoji',
+step3:'点击下方网格中的任意关键词即可启用或禁用',
+step4:'点击复制按钮即可粘贴到任何聊天或社交 App'
+}
+});
+
+// Master dictionary: keywords → emoji alternatives
+const DICT = {
+'love':'❤️','heart':'❤️','kiss':'💋','hug':'🤗',
+'happy':'😊','joy':'😂','lol':'😂','laugh':'😂','smile':'😊',
+'fire':'🔥','lit':'🔥','hot':'🔥',
+'cool':'😎','awesome':'🤩','amazing':'🤩','wow':'🤩',
+'star':'⭐','stars':'✨','sparkle':'✨','shine':'✨',
+'sun':'☀️','sunny':'☀️','rain':'🌧️','snow':'❄️','cloud':'☁️',
+'moon':'🌙','night':'🌙','space':'🚀','rocket':'🚀',
+'cat':'🐱','cats':'🐱','kitten':'🐱','dog':'🐶','dogs':'🐶','puppy':'🐶',
+'fish':'🐟','bird':'🐦','bear':'🐻','lion':'🦁','tiger':'🐯',
+'food':'🍽️','pizza':'🍕','burger':'🍔','fries':'🍟','taco':'🌮','sushi':'🍣','coffee':'☕','tea':'🍵','beer':'🍺','wine':'🍷','cake':'🍰','cookie':'🍪','apple':'🍎','banana':'🍌','cherry':'🍒',
+'party':'🎉','celebrate':'🎉','birthday':'🎂','gift':'🎁','present':'🎁',
+'music':'🎵','song':'🎵','sing':'🎤','guitar':'🎸','piano':'🎹','drum':'🥁',
+'book':'📖','books':'📚','read':'📖','write':'✍️','pen':'🖊️',
+'money':'💰','cash':'💵','rich':'💸','poor':'📉','dollar':'💵','bitcoin':'₿',
+'work':'💼','office':'🏢','computer':'💻','laptop':'💻','phone':'📱','mobile':'📱',
+'home':'🏠','house':'🏠','car':'🚗','plane':'✈️','train':'🚆','ship':'🚢',
+'tree':'🌳','flower':'🌸','rose':'🌹','leaf':'🍃','grass':'🌿',
+'happy new year':'🎆','merry christmas':'🎄','halloween':'🎃','easter':'🐰',
+'sick':'🤒','sad':'😢','cry':'😭','angry':'😡','tired':'😴','sleep':'😴',
+'wow':'🤩','yes':'✅','no':'❌','ok':'👌','stop':'🛑','go':'🟢',
+'idea':'💡','brain':'🧠','think':'🤔','question':'❓','answer':'💬',
+'world':'🌍','earth':'🌍','globe':'🌐','flag':'🏁',
+'hundred':'💯','100':'💯','one':'1️⃣','two':'2️⃣','three':'3️⃣'
+};
+
+// Build runtime map with case-insensitive lookups
+const MAP = {}; // lowercase keyword -> emoji
+Object.keys(DICT).forEach(k => { MAP[k.toLowerCase()] = DICT[k]; });
+
+// Track active keywords
+let active = new Set(Object.keys(MAP));
+
+function translate(text, opts){
+const preserve = opts && opts.preserve;
+let out = text;
+// Sort keywords longest first so multi-word phrases match before single words
+const keys = Array.from(active).sort((a,b)=>b.length-a.length);
+keys.forEach(k => {
+  const m = MAP[k];
+  // Word-boundary regex
+  const re = new RegExp('\\b' + k.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&') + '\\b','gi');
+  out = out.replace(re, m);
+});
+return out;
+}
+
+function countEmoji(text){
+const matches = text.match(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/gu);
+return matches ? matches.length : 0;
+}
+
+function buildPicker(){
+const picker = $('#picker');
+picker.innerHTML = '';
+Array.from(active).sort().forEach(k => {
+  const row = document.createElement('div');
+  row.className = 'emoji-row';
+  row.dataset.kw = k;
+  row.innerHTML = '<span class="ch">' + MAP[k] + '</span><span class="word">' + k + '</span>';
+  row.style.opacity = '1';
+  row.onclick = () => {
+    if (active.has(k)) { active.delete(k); row.style.opacity='0.35'; } else { active.add(k); row.style.opacity='1'; }
+    render();
+  };
+  picker.appendChild(row);
+});
+}
+
+function render(){
+const inp = $('#input').value;
+const out = translate(inp);
+$('#output').textContent = out;
+const ec = countEmoji(out);
+$('#stats').innerHTML = ec ? '✓ Inserted ' + ec + ' emoji' + (ec===1?'':'s') : '';
+}
+
+function loadExample(){
+$('#input').value = 'Just had amazing coffee with my cat by the fire! Happy Sunday world!';
+}
+
+$('#input').addEventListener('input', render);
+
+document.querySelectorAll('.gz-split label').forEach((l,i)=>{ l.id = i===0?'lbl-in':'lbl-out'; });
+$('#lbl-in').textContent = t('lblIn');
+$('#lbl-out').textContent = t('lblOut');
+$('#lbl-words').textContent = t('lblWords');
+
+$('#toolbar-top').innerHTML = '<button class="gz-btn" onclick="GZ.copyText($(\'#output\').textContent)">' + t('copy') + '</button><button class="gz-btn gz-btn-secondary" onclick="loadExample();render()">' + t('example') + '</button><button class="gz-btn gz-btn-secondary" onclick="$(\'#input\').value=\'\';render()">' + t('clear') + '</button>';
+
+loadExample();
+buildPicker();
+render();
+
+GZ.renderToolPage({
+category:'text',
+titleKey:'toolTitle',
+descKey:'toolDesc',
+howToSteps:['step1','step2','step3','step4'],
+related:[
+{icon:'✨', href:'/text/fancy-text-generator.html', name:'Fancy Text'},
+{icon:'🌀', href:'/text/upside-down-text.html', name:'Upside Down'},
+{icon:'🔥', href:'/text/fire-text.html', name:'Fire Text'},
+{icon:'📱', href:'/social/tiktok-font.html', name:'TikTok Font'}
+]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
