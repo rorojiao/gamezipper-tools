@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+
+<title>RSS 订阅源验证器 - 免费在线工具 | GameZipper 工具箱</title>
+  <meta name="description" content="在线验证任意 RSS 或 Atom 订阅源。检测源类型、检查格式、显示错误并预览条目 — 100% 浏览器本地运行。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/rss-feed-validator.html">
+  <meta property="og:title" content="RSS 订阅源验证器">
+  <meta property="og:description" content="在线验证任意 RSS 或 Atom 订阅源。检测源类型、检查格式、显示错误并预览条目 — 100% 浏览器本地运行。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/rss-feed-validator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="RSS 订阅源验证器">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+.rv-result{border-radius:10px;padding:14px;margin-bottom:12px;font-size:.92em}
+.rv-result.ok{background:rgba(0,214,114,.12);border:1px solid #00d672;color:var(--text)}
+.rv-result.err{background:rgba(233,69,96,.12);border:1px solid #e94560;color:var(--text)}
+.rv-result.warn{background:rgba(255,184,0,.12);border:1px solid #ffb800;color:var(--text)}
+.rv-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:10px 0}
+.rv-meta div{background:var(--bg2);padding:8px 12px;border-radius:6px;font-size:.85em}
+.rv-meta strong{color:var(--accent)}
+.rv-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:.88em}
+.rv-item h4{margin:0 0 4px;font-size:1em}
+.rv-item .pub{font-size:.78em;color:var(--text3);margin-top:4px}
+.rv-item a{color:var(--accent);text-decoration:none}
+.rv-item a:hover{text-decoration:underline}
+textarea{min-height:140px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"RSS Feed Validator","description":"Validate any RSS or Atom feed online. Free RSS validator — paste feed URL or XML to check well-formedness, detect errors and preview channel info, items and pubDates.","url": "https://tools.gamezipper.com/zh/dev/rss-feed-validator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity": [{"@type":"Question","name":"What is an RSS feed?","acceptedAnswer":{"@type":"Answer","text":"RSS (Really Simple Syndication) is an XML format used to publish frequently updated content — blog posts, news, podcasts. Readers like Feedly, Inoreader and NetNewsWire subscribe to RSS feeds to get automatic updates."}}, {"@type":"Question","name":"What does this validator check?","acceptedAnswer":{"@type":"Answer","text":"The validator parses the XML, detects RSS 2.0, RSS 1.0 (RDF) or Atom 1.0 format, validates required fields (title, link, description), counts items, parses pubDates and surfaces any malformed XML or missing fields."}}, {"@type":"Question","name":"Can I validate feeds from any URL?","acceptedAnswer":{"@type":"Answer","text":"Yes — paste the feed URL (https://example.com/feed.xml) or paste the raw XML. The validator runs entirely in your browser using DOMParser; nothing is sent to any server."}}, {"@type":"Question","name":"What's the difference between RSS and Atom?","acceptedAnswer":{"@type":"Answer","text":"RSS 2.0 (most common) uses <rss><channel><item>. Atom 1.0 uses <feed><entry>. Both serve the same purpose. Atom has stricter spec compliance and is used by GitHub, WordPress and many modern platforms."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/rss-feed-validator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/rss-feed-validator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/rss-feed-validator.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <label id="lbl-url" style="font-size:.85em;font-weight:600;display:block;margin-bottom:4px">Or paste feed URL:</label>
+        <input type="url" id="feed-url" placeholder="https://example.com/feed.xml" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:inherit">
+      </div>
+      <button class="gz-btn" id="fetch-btn">Fetch & Validate</button>
+    </div>
+    <label id="lbl-input" style="font-weight:600;display:block;margin:10px 0 4px">Or paste raw feed XML here:</label>
+    <textarea id="feed-xml" spellcheck="false" placeholder='<?xml version="1.0" encoding="UTF-8"?>&#10;<rss version="2.0">&#10;<channel>&#10;<title>My Blog</title>&#10;<link>https://example.com</link>&#10;<description>News and updates</description>&#10;<item>&#10;<title>Hello World</title>&#10;<link>https://example.com/hello</link>&#10;<description>First post</description>&#10;</item>&#10;</channel>&#10;</rss>'></textarea>
+    <div id="rv-output" style="margin-top:14px"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'RSS Feed Validator',
+    toolDesc: 'Validate any RSS or Atom feed online. Detects feed type, checks well-formedness, surfaces errors and previews items — 100% in your browser.',
+    url: 'Or paste feed URL:',
+    input: 'Or paste raw feed XML here:',
+    step1: 'Paste a feed URL or raw XML above',
+    step2: 'Click Validate to parse and check the feed',
+    step3: 'Review channel info, items and any errors',
+    step4: 'Fix any validation issues in your feed source',
+  },
+  zh: {
+    toolTitle: 'RSS 订阅源验证器',
+    toolDesc: '在线验证任意 RSS 或 Atom 订阅源。检测源类型、检查格式、显示错误并预览条目 — 100% 浏览器本地运行。',
+    url: '或粘贴订阅源网址：',
+    input: '或粘贴原始订阅源 XML：',
+    step1: '在上方粘贴订阅源网址或原始 XML',
+    step2: '点击「验证」解析并检查订阅源',
+    step3: '查看频道信息、条目和错误',
+    step4: '在订阅源源文件中修复验证问题',
+  }
+});
+
+const { t, $ } = GZ;
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getText(elem, tag) {
+  const e = elem.getElementsByTagName(tag)[0];
+  return e ? (e.textContent || '').trim() : '';
+}
+
+function validate(xmlText) {
+  const out = $('#rv-output');
+  if (!xmlText.trim()) {
+    out.innerHTML = '';
+    return;
+  }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'application/xml');
+  const parserError = doc.querySelector('parsererror');
+  if (parserError) {
+    out.innerHTML = `<div class="rv-result err"><strong>✗ Invalid XML</strong><br>${escHtml(parserError.textContent.split('\n')[0] || 'Could not parse XML')}</div>`;
+    return;
+  }
+
+  const root = doc.documentElement;
+  if (!root) {
+    out.innerHTML = `<div class="rv-result err"><strong>✗ Empty document</strong></div>`;
+    return;
+  }
+
+  const tag = root.tagName.toLowerCase();
+  let feedType = '', channelTitle = '', channelLink = '', channelDesc = '', items = [];
+
+  if (tag === 'rss') {
+    const ver = root.getAttribute('version') || '2.0';
+    feedType = `RSS ${ver}`;
+    const channel = root.getElementsByTagName('channel')[0];
+    if (channel) {
+      channelTitle = getText(channel, 'title');
+      channelLink = getText(channel, 'link');
+      channelDesc = getText(channel, 'description');
+      const itemNodes = channel.getElementsByTagName('item');
+      for (let i = 0; i < itemNodes.length; i++) {
+        const it = itemNodes[i];
+        items.push({
+          title: getText(it, 'title'),
+          link: getText(it, 'link'),
+          desc: getText(it, 'description'),
+          pubDate: getText(it, 'pubDate') || getText(it, 'date'),
+          guid: getText(it, 'guid'),
+        });
+      }
+    }
+  } else if (tag === 'feed') {
+    feedType = 'Atom 1.0';
+    channelTitle = getText(root, 'title');
+    // Atom: <link href="..."/>
+    const linkNode = root.getElementsByTagName('link')[0];
+    if (linkNode) channelLink = linkNode.getAttribute('href') || '';
+    channelDesc = getText(root, 'subtitle');
+    const entries = root.getElementsByTagName('entry');
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const eLink = e.getElementsByTagName('link')[0];
+      items.push({
+        title: getText(e, 'title'),
+        link: eLink ? (eLink.getAttribute('href') || '') : '',
+        desc: getText(e, 'summary') || getText(e, 'content'),
+        pubDate: getText(e, 'published') || getText(e, 'updated'),
+        guid: getText(e, 'id'),
+      });
+    }
+  } else if (tag === 'rdf') {
+    feedType = 'RSS 1.0 (RDF)';
+    channelTitle = getText(root, 'channel') || '';
+    const items1 = root.getElementsByTagName('item');
+    for (let i = 0; i < items1.length; i++) {
+      const it = items1[i];
+      const linkNode = it.getElementsByTagName('link')[0];
+      items.push({
+        title: getText(it, 'title'),
+        link: linkNode ? linkNode.textContent.trim() : '',
+        desc: getText(it, 'description'),
+        pubDate: '',
+        guid: '',
+      });
+    }
+  } else {
+    out.innerHTML = `<div class="rv-result err"><strong>✗ Unknown feed format</strong><br>Root element is <code>&lt;${escHtml(tag)}&gt;</code>. Expected <code>&lt;rss&gt;</code>, <code>&lt;feed&gt;</code> or <code>&lt;rdf&gt;</code>.</div>`;
+    return;
+  }
+
+  // Validate required fields
+  const issues = [];
+  if (!channelTitle) issues.push('Missing channel/feed <title>');
+  if (!channelLink) issues.push('Missing channel/feed <link>');
+  if (!channelDesc) issues.push('Missing channel/feed <description>');
+
+  let html = '';
+  if (issues.length === 0) {
+    html += `<div class="rv-result ok"><strong>✓ Valid ${feedType} feed</strong> — ${items.length} item${items.length !== 1 ? 's' : ''}</div>`;
+  } else {
+    html += `<div class="rv-result warn"><strong>⚠ Feed has issues</strong><ul style="margin:6px 0 0 18px;padding:0">`;
+    issues.forEach(i => { html += `<li>${i}</li>`; });
+    html += `</ul></div>`;
+  }
+
+  html += `<div class="rv-meta">
+    <div><strong>Feed Type:</strong><br>${escHtml(feedType)}</div>
+    <div><strong>Title:</strong><br>${escHtml(channelTitle || '(missing)')}</div>
+    <div><strong>Link:</strong><br>${channelLink ? `<a href="${escHtml(channelLink)}" target="_blank" rel="noopener" style="color:var(--accent)">${escHtml(channelLink)}</a>` : '(missing)'}</div>
+    <div><strong>Description:</strong><br>${escHtml((channelDesc || '').substring(0, 120))}${(channelDesc||'').length > 120 ? '...' : ''}</div>
+    <div><strong>Items:</strong><br>${items.length}</div>
+  </div>`;
+
+  if (items.length > 0) {
+    html += `<h3 style="margin:14px 0 8px;font-size:1em">Items (showing up to 10)</h3>`;
+    const shown = items.slice(0, 10);
+    shown.forEach((it, i) => {
+      html += `<div class="rv-item">
+        <h4>${i+1}. ${escHtml(it.title || '(no title)')}</h4>
+        ${it.link ? `<a href="${escHtml(it.link)}" target="_blank" rel="noopener">${escHtml(it.link.length > 70 ? it.link.substring(0, 70) + '...' : it.link)}</a>` : '<em>(no link)</em>'}
+        ${it.desc ? `<div style="margin-top:4px;color:var(--text2)">${escHtml(it.desc.substring(0, 200))}${it.desc.length > 200 ? '...' : ''}</div>` : ''}
+        ${it.pubDate ? `<div class="pub">📅 ${escHtml(it.pubDate)}</div>` : ''}
+      </div>`;
+    });
+    if (items.length > 10) {
+      html += `<p style="color:var(--text3);font-size:.85em">... and ${items.length - 10} more items</p>`;
+    }
+  }
+
+  out.innerHTML = html;
+}
+
+async function fetchFeed() {
+  const url = $('#feed-url').value.trim();
+  if (!url) return;
+  const out = $('#rv-output');
+  out.innerHTML = '<div class="rv-result warn">Fetching feed...</div>';
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      out.innerHTML = `<div class="rv-result err"><strong>✗ HTTP ${res.status}</strong> — Could not fetch feed from URL</div>`;
+      return;
+    }
+    const text = await res.text();
+    $('#feed-xml').value = text;
+    validate(text);
+  } catch (e) {
+    out.innerHTML = `<div class="rv-result err"><strong>✗ Fetch error</strong> — ${escHtml(e.message || String(e))}<br><span style="font-size:.85em;color:var(--text3)">Note: CORS may block direct fetches from some sites. Try pasting the raw XML instead.</span></div>`;
+  }
+}
+
+$('#feed-xml').addEventListener('input', () => validate($('#feed-xml').value));
+$('#fetch-btn').addEventListener('click', fetchFeed);
+$('#feed-url').addEventListener('keydown', e => { if (e.key === 'Enter') fetchFeed(); });
+
+$('#lbl-url').textContent = t('url');
+$('#lbl-input').textContent = t('input');
+$('#fetch-btn').textContent = 'Fetch & Validate';
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="$('#feed-xml').value='';$('#feed-url').value='';$('#rv-output').innerHTML=''">${t('clear')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#feed-xml').value='<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n<rss version=\"2.0\">\\n<channel>\\n<title>Example Blog</title>\\n<link>https://example.com</link>\\n<description>A blog about technology</description>\\n<language>en-us</language>\\n<item>\\n<title>Hello World</title>\\n<link>https://example.com/hello</link>\\n<description>Our first post</description>\\n<pubDate>Mon, 14 Jul 2026 10:00:00 GMT</pubDate>\\n<guid>https://example.com/hello</guid>\\n</item>\\n<item>\\n<title>Second Post</title>\\n<link>https://example.com/second</link>\\n<description>Another update</description>\\n<pubDate>Tue, 15 Jul 2026 12:00:00 GMT</pubDate>\\n<guid>https://example.com/second</guid>\\n</item>\\n</channel>\\n</rss>';validate($('#feed-xml').value)">${t('example')}</button>`;
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📰', href:'/seo/rss-generator.html', name: 'RSS Generator'},
+    {icon:'🌐', href:'/seo/sitemap-generator.html', name: 'Sitemap Generator'},
+    {icon:'📋', href:'/dev/json.html', name: 'JSON Formatter'},
+    {icon:'📄', href:'/dev/xml-formatter.html', name: 'XML Formatter'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+</body>
+</html>
