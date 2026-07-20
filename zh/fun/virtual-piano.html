@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>虚拟钢琴 - 免费在线工具 | GameZipper 工具箱</title>
+<meta name="description" content="在浏览器中演奏的两八度钢琴。使用键盘（A 到 ; 弹白键，W 到 M 弹黑键），点击屏幕琴键，切换音色（正弦、三角、方波、锯齿、柔和钢琴），开启延音踏板，并可录制回放你的旋律。无需下载、无需注册。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/fun/virtual-piano.html">
+<meta property="og:title" content="虚拟钢琴">
+<meta property="og:description" content="在浏览器中演奏的两八度钢琴。使用键盘（A 到 ; 弹白键，W 到 M 弹黑键），点击屏幕琴键，切换音色（正弦、三角、方波、锯齿、柔和钢琴），开启延音踏板，并可录制回放你的旋律。无需下载、无需注册。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/fun/virtual-piano.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:image:alt" content="Virtual Piano - Free Online Piano Keyboard">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="虚拟钢琴">
+<meta name="twitter:description" content="在浏览器中演奏的两八度钢琴。使用键盘（A 到 ; 弹白键，W 到 M 弹黑键），点击屏幕琴键，切换音色（正弦、三角、方波、锯齿、柔和钢琴），开启延音踏板，并可录制回放你的旋律。无需下载、无需注册。">
+<meta name="twitter:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta name="twitter:image:alt" content="Virtual Piano - Free Online Piano Keyboard">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260715222516bi4978"></script>
+<style>
+.pno-wrap{display:grid;gap:18px}
+.pno-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;background:var(--gz-glass2);border:1px solid var(--gz-border);border-radius:14px;padding:14px}
+.pno-controls .group{display:flex;gap:6px;align-items:center}
+.pno-controls label{font-size:.85em;color:var(--gz-text2);font-weight:600}
+.pno-controls select,.pno-controls button{padding:8px 14px;border-radius:10px;border:1px solid var(--gz-border);background:var(--gz-glass);color:var(--gz-text);cursor:pointer;font-weight:600;font-size:.9em}
+.pno-controls button.active{background:var(--gz-accent);color:#fff;border-color:var(--gz-accent)}
+.pno-controls button:hover{opacity:.9}
+.piano-stage{position:relative;background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);border-radius:18px;padding:30px 24px 40px;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none}
+.piano-stage::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#e94560,#4ecdc4,#f9d56e,#9b5de5)}
+.piano-board{display:flex;position:relative;height:220px;background:#f5f5f7;border-radius:8px;overflow:hidden;box-shadow:inset 0 -8px 16px rgba(0,0,0,.15)}
+.key{position:relative;cursor:pointer;transition:background .08s,transform .05s;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:0 0 12px;font-size:.78em;color:#555;border-right:1px solid #d0d0d6;font-weight:600;flex:1 1 0;min-width:0}
+.key.white{background:#fefefe;color:#222}
+.key.white:hover{background:#e8e8ec}
+.key.white.active,.key.white.pressed{background:var(--gz-accent,#e94560);color:#fff;transform:translateY(1px)}
+.key.white .keybind{position:absolute;bottom:8px;font-size:.7em;color:#888}
+.key.white.active .keybind,.key.white.pressed .keybind{color:rgba(255,255,255,.7)}
+.key.black{position:absolute;height:62%;width:7%;background:#1a1a2e;color:#fff;border:1px solid #000;border-radius:0 0 6px 6px;z-index:2;box-shadow:inset 0 -3px 0 rgba(255,255,255,.08)}
+.key.black:hover{background:#2a2a3e}
+.key.black.active,.key.black.pressed{background:linear-gradient(180deg,#9b5de5,#e94560);color:#fff;transform:translateY(1px);box-shadow:inset 0 -3px 0 rgba(255,255,255,.18)}
+.key.black .keybind{position:absolute;bottom:4px;font-size:.62em;color:rgba(255,255,255,.55);text-align:center;width:100%}
+.piano-info{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:.85em;color:var(--gz-text2)}
+.piano-info .note{font-weight:700;color:var(--gz-accent);font-size:1.2em}
+.piano-info .recording{display:flex;align-items:center;gap:6px;color:#e94560;font-weight:700}
+.piano-info .recording .dot{width:10px;height:10px;background:#e94560;border-radius:50%;animation:recPulse 1s infinite}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:.3}}
+.song-strip{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.song-strip button{padding:8px 14px;border-radius:20px;border:1px solid var(--gz-border);background:var(--gz-glass);color:var(--gz-text);cursor:pointer;font-size:.85em;font-weight:600}
+.song-strip button:hover{background:var(--gz-glass2);border-color:var(--gz-accent)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Virtual Piano","description":"Play a free virtual piano right in your browser. Two full octaves with Web Audio synthesis, computer key input, sustain pedal, record and replay. No download, no signup.","url": "https://tools.gamezipper.com/zh/fun/virtual-piano.html","applicationCategory":"MusicApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a virtual piano?","acceptedAnswer":{"@type":"Answer","text":"A virtual piano is a browser-based piano keyboard you play with your computer keys, mouse or touch. It uses the Web Audio API to synthesize the actual sound in your browser — no plugin, no download, no audio file streamed in. You can practice chords, scales and simple melodies without installing any software."}},{"@type":"Question","name":"Which computer keys play the piano?","acceptedAnswer":{"@type":"Answer","text":"The first row of letters (A through ;) maps to the white keys of C major across two octaves. The second row (W through M) maps to the black keys. The keys are labelled on each piano key for reference. Use Z and X to shift the keyboard down or up by an octave."}},{"@type":"Question","name":"How does the record and replay work?","acceptedAnswer":{"@type":"Answer","text":"Hit the record button, play a melody, then stop. Your timing and key presses are stored locally in the browser — nothing is uploaded. Press play to hear the playback at the same speed you recorded. Use it to capture a phrase you want to remember or share the timing with a student."}},{"@type":"Question","name":"Do I need a MIDI controller?","acceptedAnswer":{"@type":"Answer","text":"No. This virtual piano works entirely with computer keys, mouse clicks or touch — no hardware required. If you do have a MIDI controller, the Web MIDI API is broadly supported but not wired into this minimal tool; for serious practice, install a dedicated piano VST."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/fun/virtual-piano.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/fun/virtual-piano.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/fun/virtual-piano.html">
+<script>localStorage.setItem('gz-lang','zh');</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+    <div class="gz-ad-slot gz-ad-slot-top" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true">
+  <div class="gz-tool-area">
+    <div class="pno-controls">
+      <div class="group">
+        <label id="lbl-wave"></label>
+        <select id="wave">
+          <option value="sine">Sine (soft)</option>
+          <option value="triangle" selected>Triangle (warm)</option>
+          <option value="square">Square (8-bit)</option>
+          <option value="sawtooth">Sawtooth (bright)</option>
+          <option value="piano">Piano (additive)</option>
+        </select>
+      </div>
+      <div class="group">
+        <label id="lbl-oct"></label>
+        <button id="octDown">−</button>
+        <span id="octLabel" style="min-width:42px;text-align:center;font-weight:700">C4–B5</span>
+        <button id="octUp">+</button>
+      </div>
+      <div class="group">
+        <button id="sustain" data-on="0">Sustain: Off</button>
+        <button id="rec">● Record</button>
+        <button id="play">▶ Play</button>
+        <button id="stop">■ Stop</button>
+      </div>
+    </div>
+    <div class="piano-stage">
+      <div class="piano-board" id="board"></div>
+      <div class="piano-info">
+        <div id="noteBox">—</div>
+        <div id="recBox"></div>
+        <div id="kbdHint"></div>
+      </div>
+      <div class="song-strip" id="songStrip"></div>
+    </div>
+      <aside class="gz-monetag-slot" aria-label="Managed advertising fallback" data-ad-provider="monetag" data-zone-policy="managed-by-shared-common-js" data-zone-status="hub-only-fallback">
+      <!-- Managed fallback marker. shared/common.js applies the tools-subpage authorization and backoff policy. -->
+      <ins data-zoneid="11012002" data-ad-format="in-page-push">
+
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Virtual Piano',
+    toolDesc: 'A two-octave piano you play in your browser. Use the computer keyboard (A–; for white keys, W–M for black), click the on-screen keys, switch waveforms (sine, triangle, square, sawtooth, soft piano), add sustain, and record your melody to replay. No download, no signup.',
+    lblWave: 'Sound:',
+    lblOct: 'Octave:',
+    recOn: '● Recording',
+    playOn: '▶ Playing',
+    sustainOn: 'Sustain: On',
+    sustainOff: 'Sustain: Off',
+    lblNow: 'Now playing:',
+    lblRec: '',
+    lblHint: 'Tip: Z/X shift octave, hold Shift for sustain while typing',
+    songsLabel: 'Try these:',
+    step1: 'Use your computer keyboard (A through ;) for white keys, W through M for black keys',
+    step2: 'Click any on-screen key with your mouse — works on touch too',
+    step3: 'Toggle Sustain to let notes ring, change waveforms for different timbres',
+    step4: 'Hit Record, play a short melody, then Play to hear it back',
+  },
+  zh: {
+    toolTitle: '虚拟钢琴',
+    toolDesc: '在浏览器中演奏的两八度钢琴。使用键盘（A 到 ; 弹白键，W 到 M 弹黑键），点击屏幕琴键，切换音色（正弦、三角、方波、锯齿、柔和钢琴），开启延音踏板，并可录制回放你的旋律。无需下载、无需注册。',
+    lblWave: '音色：',
+    lblOct: '八度：',
+    recOn: '● 录制中',
+    playOn: '▶ 播放中',
+    sustainOn: '延音：开',
+    sustainOff: '延音：关',
+    lblNow: '正在演奏：',
+    lblRec: '',
+    lblHint: '提示：Z/X 切换八度，Shift 长按延音',
+    songsLabel: '试试这些：',
+    step1: '使用键盘（A 到 ; 弹白键，W 到 M 弹黑键）',
+    step2: '也可用鼠标点击屏幕琴键 — 触屏同样支持',
+    step3: '切换延音让音符延绵，或切换音色获得不同质感',
+    step4: '点击录制，演奏一小段旋律，再点击播放即可回放',
+  }
+});
+
+const { $ } = GZ;
+const t = (k) => (GZI18n.t ? GZI18n.t(k) : (GZI18n.data && GZI18n.data['en'][k]) || k);
+
+const WHITE_KEYS = [
+  ['a','C'], ['s','D'], ['d','E'], ['f','F'], ['g','G'], ['h','A'], ['j','B'], ['k','C5'], ['l','D5'], [';','E5'],
+];
+const BLACK_KEYS = [
+  ['w','C#'], ['e','D#'], ['t','F#'], ['y','G#'], ['u','A#'],
+  ['o','C#5'], ['p','D#5'],
+];
+
+let baseOct = 4; // starts at C4
+let currentWave = 'triangle';
+let sustainOn = false;
+let heldKeys = new Set();
+let audioCtx = null;
+let sustainTail = 0;
+let recording = [];
+let recordStart = 0;
+let isRecording = false;
+let isPlaying = false;
+let playbackEvents = [];
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+const NOTE_FREQ = (n) => {
+  // n is integer offset from A4 (MIDI-style). A4=440Hz. We give semitone offset.
+  return 440 * Math.pow(2, (n - 69) / 12);
+};
+
+function noteToFreq(note, octave) {
+  // Convert note name + octave to MIDI number then freq
+  const map = {C:0, 'C#':1, D:2, 'D#':3, E:4, F:5, 'F#':6, G:7, 'G#':8, A:9, 'A#':10, B:11};
+  const semi = map[note];
+  const midi = (octave + 1) * 12 + semi; // C4 = 60
+  return NOTE_FREQ(midi);
+}
+
+function playNote(note, octave, dur) {
+  if (!note) return;
+  const ctx = getCtx();
+  const startTime = ctx.currentTime;
+  const freq = noteToFreq(note, octave);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(0.32, startTime + 0.015);
+  const release = sustainOn ? 1.5 : 0.35;
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + (dur || 0.6) + release);
+  gain.connect(ctx.destination);
+
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const osc3 = ctx.createOscillator();
+  let type1 = currentWave, type2 = 'sine', type3 = 'sine';
+  let level1 = 1, level2 = 0.3, level3 = 0.15;
+  if (currentWave === 'piano') {
+    type1 = 'sine'; type2 = 'triangle'; type3 = 'sine';
+    level1 = 0.65; level2 = 0.22; level3 = 0.1;
+    osc2.frequency.value = freq * 2;
+    osc3.frequency.value = freq * 3;
+  } else if (currentWave === 'sine') {
+    osc2.frequency.value = freq * 2;
+    osc3.frequency.value = freq * 3;
+  } else if (currentWave === 'triangle') {
+    osc2.frequency.value = freq * 2;
+  } else if (currentWave === 'square') {
+    osc2.frequency.value = freq * 2;
+  } else if (currentWave === 'sawtooth') {
+    osc2.frequency.value = freq * 0.5;
+  }
+  osc1.type = type1;
+  osc1.frequency.value = freq;
+  if (type2 !== 'sine' || currentWave === 'piano') {
+    osc2.type = type2;
+  }
+  if (osc3.frequency.value) {
+    osc3.type = type3;
+  }
+  const g1 = ctx.createGain(); g1.gain.value = level1;
+  const g2 = ctx.createGain(); g2.gain.value = level2;
+  const g3 = ctx.createGain(); g3.gain.value = level3;
+  osc1.connect(g1).connect(gain);
+  if (osc2.frequency.value && currentWave !== 'sine') osc2.connect(g2).connect(gain);
+  if (osc3.frequency.value && currentWave === 'piano') osc3.connect(g3).connect(gain);
+  osc1.start(startTime);
+  osc2.start(startTime);
+  osc3.start(startTime);
+  const stopAt = startTime + (dur || 0.6) + release + 0.1;
+  osc1.stop(stopAt);
+  osc2.stop(stopAt);
+  if (osc3.frequency.value && currentWave === 'piano') osc3.stop(stopAt);
+}
+
+function buildBoard() {
+  const board = $('#board');
+  board.innerHTML = '';
+  const totalWhite = WHITE_KEYS.length; // 10
+  for (let i = 0; i < totalWhite; i++) {
+    const k = document.createElement('div');
+    k.className = 'key white';
+    const [kb, noteName] = WHITE_KEYS[i];
+    k.dataset.key = kb;
+    k.dataset.note = noteName;
+    k.dataset.octave = noteName === 'C5' || noteName === 'D5' || noteName === 'E5' ? 5 : 4;
+    k.innerHTML = '<span class="keybind">' + kb.toUpperCase() + '</span>';
+    k.addEventListener('mousedown', () => press(k));
+    k.addEventListener('mouseup', () => release(k));
+    k.addEventListener('mouseleave', () => release(k));
+    k.addEventListener('touchstart', (e) => { e.preventDefault(); press(k); }, {passive:false});
+    k.addEventListener('touchend', (e) => { e.preventDefault(); release(k); }, {passive:false});
+    board.appendChild(k);
+  }
+  // add black keys positioned absolutely
+  for (let i = 0; i < BLACK_KEYS.length; i++) {
+    const [kb, noteName] = BLACK_KEYS[i];
+    // figure out which white-key index this black key sits between
+    const whiteIdx = noteName.startsWith('C#') ? 0 :
+                     noteName.startsWith('D#') ? 1 :
+                     noteName.startsWith('F#') ? 3 :
+                     noteName.startsWith('G#') ? 4 :
+                     noteName.startsWith('A#') ? 5 :
+                     noteName.startsWith('C#5') ? 7 :
+                     noteName.startsWith('D#5') ? 8 : 0;
+    const oct5 = noteName.endsWith('5') ? 5 : 4;
+    const k = document.createElement('div');
+    k.className = 'key black';
+    k.dataset.key = kb;
+    k.dataset.note = noteName.replace('5','');
+    k.dataset.octave = oct5;
+    k.style.left = 'calc(' + ((whiteIdx + 1) / totalWhite * 100) + '% - ' + (4 / totalWhite) + '%)';
+    k.style.width = (8 / totalWhite) + '%';
+    k.innerHTML = '<span class="keybind">' + kb.toUpperCase() + '</span>';
+    k.addEventListener('mousedown', () => press(k));
+    k.addEventListener('mouseup', () => release(k));
+    k.addEventListener('mouseleave', () => release(k));
+    k.addEventListener('touchstart', (e) => { e.preventDefault(); press(k); }, {passive:false});
+    k.addEventListener('touchend', (e) => { e.preventDefault(); release(k); }, {passive:false});
+    board.appendChild(k);
+  }
+}
+
+function findKeyEl(keyNote, keyOctave) {
+  return document.querySelectorAll('.key').forEach ? null : null;
+}
+function press(el) {
+  if (el.classList.contains('active')) return;
+  el.classList.add('active');
+  heldKeys.add(el.dataset.key);
+  playNote(el.dataset.note, parseInt(el.dataset.octave));
+  $('#noteBox').innerHTML = t('lblNow') + ' <span class="note">' + el.dataset.note + el.dataset.octave + '</span>';
+  if (isRecording) {
+    recording.push({type:'on', note:el.dataset.note, octave:el.dataset.octave, t:Date.now() - recordStart});
+  }
+}
+function release(el) {
+  if (!el.classList.contains('active')) return;
+  el.classList.remove('active');
+  heldKeys.delete(el.dataset.key);
+  if (isRecording) {
+    recording.push({type:'off', note:el.dataset.note, octave:el.dataset.octave, t:Date.now() - recordStart});
+  }
+}
+
+// Listen for computer keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  const target = e.target;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) return;
+  const key = e.key.toLowerCase();
+  let el = [...document.querySelectorAll('.key')].find(k => k.dataset.key === key);
+  if (el) {
+    if (e.shiftKey) sustainOn = true;
+    e.preventDefault();
+    press(el);
+    return;
+  }
+  if (key === 'z') { shiftOct(-1); e.preventDefault(); }
+  if (key === 'x') { shiftOct(1); e.preventDefault(); }
+});
+document.addEventListener('keyup', (e) => {
+  const key = e.key.toLowerCase();
+  let el = [...document.querySelectorAll('.key')].find(k => k.dataset.key === key);
+  if (el) { e.preventDefault(); release(el); return; }
+  // release shift sustain
+  if (key === 'shift' && sustainTail) {
+    // already on
+  }
+});
+
+function shiftOct(delta) {
+  baseOct = Math.max(2, Math.min(6, baseOct + delta));
+  $('#octLabel').textContent = 'C' + baseOct + '–B' + (baseOct + 1);
+  // rebuild board
+  buildBoard();
+}
+
+$('#octDown').onclick = () => shiftOct(-1);
+$('#octUp').onclick = () => shiftOct(1);
+
+$('#sustain').onclick = () => {
+  sustainOn = !sustainOn;
+  const btn = $('#sustain');
+  btn.dataset.on = sustainOn ? '1' : '0';
+  btn.textContent = t(sustainOn ? 'sustainOn' : 'sustainOff');
+  btn.classList.toggle('active', sustainOn);
+};
+
+$('#rec').onclick = () => {
+  if (isPlaying) return;
+  isRecording = !isRecording;
+  recording = [];
+  recordStart = Date.now();
+  $('#rec').classList.toggle('active', isRecording);
+  $('#recBox').innerHTML = isRecording ? '<span class="recording"><span class="dot"></span> ' + t('recOn') + '</span>' : '';
+  if (!isRecording && recording.length) {
+    playbackEvents = recording;
+  }
+};
+
+$('#play').onclick = () => {
+  if (!playbackEvents.length) return;
+  if (isRecording) return;
+  isPlaying = true;
+  $('#play').classList.add('active');
+  $('#recBox').innerHTML = '<span class="recording" style="color:#4ecdc4"><span class="dot"></span> ' + t('playOn') + '</span>';
+  playbackEvents.forEach(ev => {
+    setTimeout(() => {
+      if (ev.type === 'on') {
+        playNote(ev.note, ev.octave);
+        const el = [...document.querySelectorAll('.key')].find(k => k.dataset.note === ev.note && parseInt(k.dataset.octave) === ev.octave);
+        if (el) el.classList.add('active');
+      } else {
+        const el = [...document.querySelectorAll('.key')].find(k => k.dataset.note === ev.note && parseInt(k.dataset.octave) === ev.octave);
+        if (el) el.classList.remove('active');
+      }
+    }, ev.t);
+  });
+  setTimeout(() => {
+    isPlaying = false;
+    $('#play').classList.remove('active');
+    $('#recBox').innerHTML = '';
+    document.querySelectorAll('.key.active').forEach(k => k.classList.remove('active'));
+  }, playbackEvents[playbackEvents.length-1].t + 600);
+};
+
+$('#stop').onclick = () => {
+  isRecording = false; isPlaying = false;
+  recording = []; playbackEvents = [];
+  $('#rec').classList.remove('active');
+  $('#play').classList.remove('active');
+  $('#recBox').innerHTML = '';
+  document.querySelectorAll('.key.active').forEach(k => k.classList.remove('active'));
+};
+
+$('#wave').onchange = (e) => { currentWave = e.target.value; };
+
+// Demo songs (simple melodies)
+const SONGS = [
+  {label:'Twinkle Twinkle', notes:[
+    ['C',4,0.4],['C',4,0.4],['G',4,0.4],['G',4,0.4],['A',4,0.4],['A',4,0.4],['G',4,0.8],
+    ['F',4,0.4],['F',4,0.4],['E',4,0.4],['E',4,0.4],['D',4,0.4],['D',4,0.4],['C',4,0.8]
+  ]},
+  {label:'Happy Bday', notes:[
+    ['C',4,0.3],['C',4,0.15],['D',4,0.45],['C',4,0.45],['F',4,0.45],['E',4,0.9],
+    ['C',4,0.3],['C',4,0.15],['D',4,0.45],['C',4,0.45],['G',4,0.45],['F',4,0.9]
+  ]},
+  {label:'C Scale (asc)', notes:[['C',4,0.3],['D',4,0.3],['E',4,0.3],['F',4,0.3],['G',4,0.3],['A',4,0.3],['B',4,0.3],['C5',4,0.6]]},
+];
+
+function playSong(song) {
+  if (isRecording || isPlaying) return;
+  isPlaying = true;
+  $('#play').classList.add('active');
+  $('#recBox').innerHTML = '<span class="recording" style="color:#4ecdc4"><span class="dot"></span> ' + song.label + '</span>';
+  let t0 = Date.now();
+  song.notes.forEach(([n, oct, dur]) => {
+    setTimeout(() => {
+      playNote(n, oct);
+      const el = [...document.querySelectorAll('.key')].find(k => k.dataset.note === n && parseInt(k.dataset.octave) === oct);
+      if (el) { el.classList.add('active'); setTimeout(()=>el.classList.remove('active'), dur * 1000 * 0.95); }
+    }, t0 - Date.now() + song.notes.slice(0, song.notes.indexOf([n,oct,dur])).reduce((acc,[,,d])=>acc + d*1000, 0));
+  });
+  const total = song.notes.reduce((acc,[,,d])=>acc + d, 0);
+  setTimeout(() => {
+    isPlaying = false;
+    $('#play').classList.remove('active');
+    $('#recBox').innerHTML = '';
+  }, total * 1000 + 400);
+}
+
+const strip = $('#songStrip');
+SONGS.forEach(s => {
+  const b = document.createElement('button');
+  b.textContent = s.label;
+  b.onclick = () => playSong(s);
+  strip.appendChild(b);
+});
+
+$('#lbl-wave').textContent = t('lblWave');
+$('#lbl-oct').textContent = t('lblOct');
+$('#kbdHint').textContent = t('lblHint');
+
+buildBoard();
+
+GZ.renderToolPage({
+  category: 'fun',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🎵', href:'/fun/ambient-sound-mixer.html', name:'Ambient Sound Mixer'},
+    {icon:'🎤', href:'/fun/drum-machine.html', name:'Drum Machine'},
+    {icon:'🎹', href:'/dev/tuner.html', name:'Instrument Tuner'},
+    {icon:'🥁', href:'/fun/metronome.html', name:'Metronome'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=20260707v520" defer></script>
+  <div class="gz-ad-slot gz-ad-slot-bottom" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true">
+</body>
+</html>
