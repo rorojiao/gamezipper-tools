@@ -84,7 +84,7 @@
   // both died within hours of deployment. tools.gamezipper.com had 0 events
   // 2026-07-12..2026-07-15 (~96h) due to dead tunnel EP. HTTP 204 verified on
   // bi.gamezipper.com/api/collect. Pairs with commit 8039a276d (cache buster bump).
-  window.GZ_COLLECT_ENDPOINT = 'https://vitamins-consequence-handbook-maria.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://metropolitan-strip-chapter-homepage.trycloudflare.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
