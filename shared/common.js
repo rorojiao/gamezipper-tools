@@ -84,7 +84,7 @@
   // both died within hours of deployment. tools.gamezipper.com had 0 events
   // 2026-07-12..2026-07-15 (~96h) due to dead tunnel EP. HTTP 204 verified on
   // bi.gamezipper.com/api/collect. Pairs with commit 8039a276d (cache buster bump).
-  window.GZ_COLLECT_ENDPOINT = 'https://fields-descriptions-book-blanket.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://ears-oem-zen-weddings.trycloudflare.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
@@ -477,6 +477,177 @@ const GZ = (function(){
   }
   setTimeout(tryInjectAfterRelated, 800);
   setTimeout(tryInjectAfterRelated, 2500);
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // v5.6.0-tools-static-ins-fill-observer (2026-08-07, R409 📈 Ads cron)
+  //   BI 7d (2026-08-07): tools.gamezipper.com has 1,184 REAL page_view events
+  //   but ZERO `static_banner_fill` events. gamezipper.com same window = 787
+  //   fills. Root cause: tools/shared/common.js was missing v5.31's
+  //   initStaticInsFillObserver — when AdSense fills a static <ins> on a tool
+  //   page (top slot / bottom slot / after_related slot), there's no BI event.
+  //   Revenue loss estimate: tools PV 1,184/7d vs gz.com PV 1,571/7d = 75%
+  //   similar volume. At gz.com's observed 50% static fill rate, that's ~600
+  //   missed fill events/week = ~$0.15-0.50/day visibility loss.
+  //   v5.6.0 fix: port the v5.32a observer from gz.com monetag-manager.js
+  //   (lines 2210-2399). Adapts to tools' trackAfterRelated pattern via
+  //   window.gzAnalytics.sendAd fallback (same as gz_after_related_* events).
+  //   Idempotent: data-static-tracked attribute prevents double-emit.
+  function initStaticInsFillObserver() {
+    if (window.__gzStaticInsObserverActive) return;
+    window.__gzStaticInsObserverActive = true;
+
+    var POLL_MS = 1500;
+    var MAX_MS = 30000;
+    var pollStart = Date.now();
+
+    function isClaimedByInjectedContainer(ins) {
+      // Skip ins elements that tools-result-rec.js or game-footer.js already
+      // manage (their fill events would be emitted by their own code paths).
+      // Tools has no fillInGameBanner, so the only claimed containers are
+      // gz-tools-after-related-slot (this file) and game-footer.js slots.
+      var p = ins.parentElement;
+      while (p) {
+        var pid = p.id || '';
+        if (pid === 'gz-tools-after-related-slot') return true;
+        if (pid.indexOf('game-footer') !== -1) return true;
+        if (p.getAttribute && p.getAttribute('data-gz-tracked')) return true;
+        p = p.parentElement;
+      }
+      return false;
+    }
+
+    function emitStaticFill(ins) {
+      if (!ins || ins.getAttribute('data-static-tracked')) return;
+      var adsbyStatus = ins.getAttribute('data-adsbygoogle-status') || '';
+      var adStatus = ins.getAttribute('data-ad-status') || '';
+      var hasIframe = !!ins.querySelector('iframe');
+      var hasSize = ins.offsetHeight > 30;
+      // v5.32a rules (ported verbatim from gz.com monetag-manager.js):
+      //   1) adStatus === 'unfilled' → never a fill (AdSense explicit no-ad).
+      //   2) adStatus === 'filled' → real fill.
+      //   3) hasIframe + hasSize → rendered ad with iframe.
+      //   4) hasSize alone → visual fill (some fills skip adStatus update).
+      // Pure adsbyStatus='done' or 'unfilled' without visual = SDK processed, no ad.
+      var isUnfilled = adStatus === 'unfilled';
+      var filled = !isUnfilled && (
+        adStatus === 'filled' ||
+        (hasIframe && hasSize) ||
+        hasSize
+      );
+      if (!filled) return;
+      if (isClaimedByInjectedContainer(ins)) {
+        ins.setAttribute('data-static-tracked', '1');
+        return;
+      }
+      ins.setAttribute('data-static-tracked', '1');
+      var slot = ins.getAttribute('data-ad-slot') || 'unknown';
+      var client = ins.getAttribute('data-ad-client') || 'unknown';
+      var source = (client !== 'unknown') ? 'manual' : 'auto_ads';
+      var payload = {
+        network: 'adsense',
+        position: source,
+        slot: slot,
+        client: client,
+        height: ins.offsetHeight,
+        adStatus: adStatus,
+        adsbyStatus: adsbyStatus,
+        path: location.pathname
+      };
+      // Use same trackAdEvent pattern as gz_after_related_* (gzAnalytics.sendAd
+      // or GZ_COLLECT_ENDPOINT sendBeacon fallback).
+      try {
+        if (window.gzAnalytics && typeof window.gzAnalytics.sendAd === 'function') {
+          window.gzAnalytics.sendAd('static_banner_fill', payload);
+        } else if (window.GZ_COLLECT_ENDPOINT && navigator.sendBeacon) {
+          var vid = '', sid = '';
+          try { vid = localStorage.getItem('gz_vid') || ''; } catch(ev) {}
+          try { sid = sessionStorage.getItem('gz_sid') || ''; } catch(es) {}
+          var beaconPayload = JSON.stringify([{
+            site: location.hostname,
+            path: location.pathname,
+            vid: vid, sid: sid,
+            e: 'gz_ad_event',
+            d: Object.assign({ t: 'static_banner_fill', ts: Date.now() }, payload),
+            t: Date.now()
+          }]);
+          navigator.sendBeacon(window.GZ_COLLECT_ENDPOINT, beaconPayload);
+        }
+      } catch(e) {}
+    }
+
+    function scanAllIns() {
+      try {
+        var insList = document.querySelectorAll('ins.adsbygoogle');
+        for (var i = 0; i < insList.length; i++) {
+          var ins = insList[i];
+          if (ins.getAttribute('data-static-tracked')) continue;
+          if (isClaimedByInjectedContainer(ins)) {
+            ins.setAttribute('data-static-tracked', '1');
+            continue;
+          }
+          emitStaticFill(ins);
+        }
+      } catch(e) {}
+    }
+
+    // Poll schedule (ported from gz.com monetag-manager.js v5.32a lines 2339-2350):
+    //   - 4.5s: initial scan after AdSense auction has started
+    //   - 6.5s / 9s: catch late-filling ins
+    //   - 11s / 14s: re-validate parent walk + catch auto-ads late injects
+    //   - 1.5s periodic until 30s (AdSense usually fills by 8s, but auto-ads
+    //     can be slower on tool pages)
+    setTimeout(scanAllIns, 4500);
+    setTimeout(scanAllIns, 6500);
+    setTimeout(scanAllIns, 9000);
+    setTimeout(scanAllIns, 11000);
+    setTimeout(scanAllIns, 14000);
+    var pollTimer = setInterval(function() {
+      if (Date.now() - pollStart > MAX_MS) {
+        clearInterval(pollTimer);
+        return;
+      }
+      scanAllIns();
+    }, POLL_MS);
+
+    // MutationObserver for dynamic iframe insertion (insurance against poll miss).
+    // Mirror the attribute filter used by gz.com observer.
+    try {
+      var mo = new MutationObserver(function(mutations) {
+        var pending = [];
+        for (var m = 0; m < mutations.length; m++) {
+          var mut = mutations[m];
+          if (mut.type === 'childList') {
+            for (var n = 0; n < mut.addedNodes.length; n++) {
+              var node = mut.addedNodes[n];
+              if (node && node.nodeType === 1) {
+                if (node.tagName === 'INS' && node.classList && node.classList.contains('adsbygoogle')) {
+                  pending.push(node);
+                } else if (node.querySelectorAll) {
+                  var nested = node.querySelectorAll('ins.adsbygoogle');
+                  for (var k = 0; k < nested.length; k++) pending.push(nested[k]);
+                }
+              }
+            }
+          } else if (mut.type === 'attributes' && mut.target && mut.target.tagName === 'INS' &&
+                     mut.target.classList && mut.target.classList.contains('adsbygoogle')) {
+            emitStaticFill(mut.target);
+          }
+        }
+        for (var j = 0; j < pending.length; j++) emitStaticFill(pending[j]);
+      });
+      mo.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-ad-status', 'data-adsbygoogle-status']
+      });
+    } catch(e) {
+      // MutationObserver unsupported (very old browsers) — fall back to polling
+    }
+  }
+  // Activate the observer. tools pages don't have fillInGameBanner races so a
+  // single early call is safe; mirrors gz.com's pattern (called from IIFE init).
+  setTimeout(initStaticInsFillObserver, 100);
   // ────────────────────────────────────────────────────────────────────────────
 
   return { $, $$, showToast, copyText, renderHeader, renderFooter, renderToolPage, toggleLang, CATEGORIES, t };
