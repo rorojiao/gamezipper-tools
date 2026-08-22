@@ -1,4 +1,5 @@
 /* gz-analytics.js — lightweight behavioral tracking, no deps, <5KB
+   R448 2026-08-22 23:09 CST: cron detected 6h gz_ad_event stall (NXDOMAIN). EP rotated → clients-cant-approve-catalogs.trycloudflare.com.
   2026-07-15 fix (kanban t_401d13d9): tools BI ingestion dead since 2026-07-12
                   because EP was still pointing at trycloudflare.com tunnel despite
                   2026-07-05 comment saying "PERMANENT BI endpoint at bi.gamezipper.com".
@@ -38,7 +39,7 @@
   //   var EP after each restart by running:
   //     journalctl -u cloudflared-bi -n 30 --no-pager | grep trycloudflare.com
   // DO NOT switch back to bi.gamezipper.com — that's a 204-stub, not the BI server.
-  var EP = 'https://corners-johnston-sail-dennis.trycloudflare.com/api/collect';
+  var EP = 'https://clients-cant-approve-catalogs.trycloudflare.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
