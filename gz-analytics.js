@@ -1,5 +1,5 @@
 /* gz-analytics.js — lightweight behavioral tracking, no deps, <5KB
-   R448b 2026-08-22 23:15 CST re-rotate -> website-jesus-pike-villas.trycloudflare.com (R448 URL died; orphan cleanup)
+   R450 2026-08-22 23:30 CST: cron + watchdog fix (sort -u removed). EP -> vegetable-newspaper-allergy-iii.trycloudflare.com
   2026-07-15 fix (kanban t_401d13d9): tools BI ingestion dead since 2026-07-12
                   because EP was still pointing at trycloudflare.com tunnel despite
                   2026-07-05 comment saying "PERMANENT BI endpoint at bi.gamezipper.com".
@@ -39,7 +39,7 @@
   //   var EP after each restart by running:
   //     journalctl -u cloudflared-bi -n 30 --no-pager | grep trycloudflare.com
   // DO NOT switch back to bi.gamezipper.com — that's a 204-stub, not the BI server.
-  var EP = 'https://nissan-hull-geology-dist.trycloudflare.com/api/collect';
+  var EP = 'https://vegetable-newspaper-allergy-iii.trycloudflare.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
