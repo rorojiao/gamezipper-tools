@@ -1,6 +1,21 @@
 /**
- * GameZipper Adsterra Ad Manager v5.17.2 (2026-07-18)
+ * GameZipper Adsterra Ad Manager v5.17.3 (2026-08-25)
  * ─────────────────────────────────────────────────
+ * v5.17.3 (2026-08-25 — BI path attribution fix):
+ *   - 🐛 Fix: Channel 2 (trycloudflare direct sendBeacon) was missing `site` and
+ *     `path` in the top-level payload, so BI stored NULL for path on every
+ *     adsterra fill event. Result: 100% ad attribution data loss since
+ *     v5.17.2 deployed 2026-07-18 (38 days). Identified by cron job ed71dd38
+ *     via SQL `event='gz_ad_event' AND network='adsterra' AND path IS NULL` →
+ *     100% match. Channel 4 already had `path: location.pathname`, so the
+ *     fix is symmetric: align Channel 2 with Channel 4 schema (add site+path).
+ *   - 📊 Expected impact (BI 24h post-deploy):
+ *       - gz_ad_event.path NULL rate: 100% → <5% (Channel 1 batches via ps()
+ *         which auto-injects path; Channel 4 already has path; only legacy
+ *         tools.* sites without gzAnalytics still NULL)
+ *       - Per-page Monetag/adsterra fill rate dashboards now return data
+ *         instead of empty queries
+ *
  * v5.17.2 Changes (cron-resilient — guarantees events reach BI on init):
  *   - 🐛 Fix: v5.17.1 used gzAnalytics.sendAd → 30s batch → setInterval flush.
  *     On headless browsers / quick page close, flush never fires → events lost.
@@ -115,6 +130,7 @@
     try {
       if (navigator.sendBeacon && BI_DIRECT_EP) {
         var env = {
+          site: location.hostname, path: location.pathname,
           e: 'gz_ad_event',
           d: payload,
           t: Date.now()
