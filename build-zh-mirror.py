@@ -2,7 +2,7 @@
 """Create /zh/ mirror for dual-URL bilingual SEO."""
 import os, re, shutil
 
-BASE = '/home/msdn/gamezipper-tools'
+BASE = '/home/junze/gamezipper-tools'
 DOMAIN = 'https://tools.gamezipper.com'
 DIRS = ['text','dev','color','image','css-tools','convert','fortune','calc','seo','social','fun']
 
