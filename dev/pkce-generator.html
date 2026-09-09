@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>PKCE Generator - OAuth 2.0 Code Verifier & Challenge Tool | GameZipper Tools</title>
+  <meta name="description" content="Generate RFC 7636-compliant PKCE code_verifier and S256 code_challenge for OAuth 2.0 / OpenID Connect. Pick length 43-128, build authorization URL, runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/pkce-generator.html">
+  <meta property="og:title" content="PKCE Generator - OAuth 2.0 Code Verifier & Challenge Tool | GameZipper Tools">
+  <meta property="og:description" content="Generate RFC 7636-compliant PKCE code_verifier and S256 code_challenge for OAuth 2.0 / OpenID Connect. Pick length 43-128, build authorization URL, runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/pkce-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PKCE Generator - OAuth 2.0 Code Verifier & Challenge Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=R449-flat"></script>
+<style>
+.pkce-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:600px){.pkce-grid{grid-template-columns:1fr}}
+.pkce-card{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.pkce-card .lab{font-size:.75em;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:flex;align-items:center;gap:6px;justify-content:space-between}
+.pkce-card .val{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;word-break:break-all;line-height:1.5;min-height:24px;background:var(--glass);padding:10px;border-radius:6px;border:1px solid var(--border);position:relative}
+.pkce-card .val:empty::before{content:attr(data-ph);color:var(--text3);font-style:italic;font-family:inherit;font-size:.85em}
+.pkce-card .val.hidden-val{filter:blur(6px);user-select:none;cursor:pointer;transition:filter .15s}
+.pkce-card .val.hidden-val:hover{filter:blur(3px)}
+.pkce-cpy{background:var(--accent);color:#fff;border:0;padding:4px 10px;border-radius:6px;font-size:.7em;font-weight:700;cursor:pointer;letter-spacing:.04em}
+.pkce-cpy:hover{filter:brightness(1.1)}
+.pkce-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px;background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.pkce-row label{font-size:.85em;color:var(--text2);font-weight:600;display:flex;align-items:center;gap:6px}
+.pkce-row input[type=range]{width:140px;accent-color:var(--accent)}
+.pkce-row select{padding:7px 10px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:.9em}
+.pkce-len-out{font-family:monospace;font-weight:700;color:var(--accent);min-width:28px;text-align:center}
+.pkce-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.pkce-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap}
+.pkce-tab{padding:9px 14px;background:none;border:0;color:var(--text2);font-size:.9em;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.pkce-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.pkce-pane{display:none}
+.pkce-pane.active{display:block}
+.pkce-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:600px){.pkce-fields{grid-template-columns:1fr}}
+.pkce-fields label{font-size:.8em;color:var(--text2);font-weight:600;margin-bottom:4px;display:block}
+.pkce-fields input{padding:8px 10px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-family:monospace;font-size:.88em;width:100%}
+.pkce-snippet{background:#1a1d29;color:#d4d4d4;border-radius:8px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.82em;line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:340px;overflow-y:auto;border:1px solid var(--border)}
+.pkce-snippet .k{color:#79c0ff}.pkce-snippet .v{color:#a5d6a3}.pkce-snippet .c{color:#8b949e;font-style:italic}
+.pkce-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:.78em;color:var(--text2);margin-top:8px}
+.pkce-meta span{background:var(--glass);padding:3px 9px;border-radius:10px;border:1px solid var(--border)}
+.pkce-meta .ok{color:#2ea043;border-color:#2ea04340}
+.pkce-meta .warn{color:#d29922;border-color:#d2992240}
+.pkce-meta .err{color:#f85149;border-color:#f8514940}
+.pkce-step-hint{font-size:.75em;color:var(--text3);margin-top:6px;line-height:1.5}
+.pkce-warning{background:#3a1f1f;border-left:3px solid #f85149;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:.85em;color:#ffb4b4;line-height:1.5}
+.pkce-info{background:#1a2a3f;border-left:3px solid var(--accent);padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:.85em;color:var(--text);line-height:1.55}
+.pkce-info code{background:#00000040;padding:1px 5px;border-radius:3px;font-size:.92em}
+.pkce-verify-row{background:var(--glass2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.pkce-verify-row .verdict{padding:10px;border-radius:6px;margin-top:10px;font-weight:700;font-size:.92em;text-align:center}
+.pkce-verify-row .verdict.match{background:#1a3a23;color:#56d364;border:1px solid #2ea043}
+.pkce-verify-row .verdict.mismatch{background:#3a1f1f;color:#ffb4b4;border:1px solid #f85149}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"PKCE Generator","description":"Generate RFC 7636 PKCE code_verifier and S256 code_challenge for OAuth 2.0 / OIDC. Pick verifier length 43-128, build authorization URL, validate verifier charset, verify verifier/challenge pair. Runs entirely in your browser via Web Crypto API.","url":"https://tools.gamezipper.com/dev/pkce-generator.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is PKCE and why does OAuth 2.0 need it?", "acceptedAnswer": {"@type": "Answer", "text": "PKCE (Proof Key for Code Exchange, RFC 7636) is an OAuth 2.0 extension that protects public clients — SPAs, mobile apps, native CLIs — against authorization code interception. The client picks a secret code_verifier, derives a code_challenge = BASE64URL(SHA-256(verifier)) and sends only the challenge on /authorize; the original verifier is replayed on /token. Any attacker who steals the code cannot exchange it without the verifier."}}, {"@type": "Question", "name": "S256 or plain — which challenge method should I use?", "acceptedAnswer": {"@type": "Answer", "text": "Always S256. The plain method sends the verifier itself as the challenge, which leaks the secret through server logs, browser history and the Referer header. S256 hashes the verifier with SHA-256 so the challenge is safe to expose. OAuth 2.1 makes S256 mandatory for all Authorization Code flows."}}, {"@type": "Question", "name": "What length should my code_verifier be?", "acceptedAnswer": {"@type": "Answer", "text": "RFC 7636 allows 43 to 128 characters from the unreserved set [A-Z a-z 0-9 - . _ ~]. 43 characters (32 random bytes base64url-encoded) is the spec minimum and gives ~256 bits of entropy, which is the recommended baseline. 64 chars (48 random bytes) is what Auth0 SPA SDK and MSAL.js default to. Longer verifiers are valid but rarely necessary."}}, {"@type": "Question", "name": "Is this PKCE generator safe to use in production?", "acceptedAnswer": {"@type": "Answer", "text": "Yes for development, testing and debugging. The tool uses the browser's built-in crypto.getRandomValues() and crypto.subtle.digest() APIs to produce a spec-compliant pair. For production traffic against real users, generate verifiers inside your application code so each session gets a fresh pair bound to that user's request. Never reuse a verifier across sessions."}}, {"@type": "Question", "name": "Does this work with Auth0, Okta, Keycloak, Google and Microsoft Entra?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The Authorization Code + PKCE flow is standardized across every modern identity provider — Auth0, Okta, Keycloak, Microsoft Entra ID (Azure AD), Google Identity, AWS Cognito, GitHub Apps, and any other OIDC-compliant server. The verifier and challenge format is identical because RFC 7636 is universal. Just paste the code_challenge into your /authorize URL and replay the code_verifier on /token."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/pkce-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/pkce-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/pkce-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="pkce-tabs">
+      <button class="pkce-tab active" data-tab="generate">🔐 Generate</button>
+      <button class="pkce-tab" data-tab="validate">✓ Validate</button>
+      <button class="pkce-tab" data-tab="verify">🔍 Verify Pair</button>
+    </div>
+
+    <div class="pkce-pane active" data-pane="generate">
+      <div class="pkce-info">
+        PKCE (RFC 7636) generates a random <code>code_verifier</code> in your browser, then computes <code>code_challenge = BASE64URL(SHA-256(verifier))</code>. Send the challenge on <code>/authorize</code> and replay the verifier on <code>/token</code>.
+      </div>
+
+      <div class="pkce-row">
+        <label>Verifier length: <span class="pkce-len-out" id="lenOut">64</span></label>
+        <input type="range" id="lenRange" min="43" max="128" value="64">
+        <label>Method:
+          <select id="methodSel">
+            <option value="S256" selected>S256 (recommended)</option>
+            <option value="plain">plain (legacy / testing)</option>
+          </select>
+        </label>
+        <button class="gz-btn" id="btnGen">🔄 Generate PKCE Pair</button>
+      </div>
+
+      <div class="pkce-warning">
+        ⚠️ Keep <code>code_verifier</code> secret until the <code>/token</code> exchange. Send only <code>code_challenge</code> on <code>/authorize</code>. Never reuse a verifier across sessions.
+      </div>
+
+      <div class="pkce-grid">
+        <div class="pkce-card">
+          <div class="lab">
+            <span>code_verifier <span style="font-weight:400;color:var(--text3)">(secret)</span></span>
+            <button class="pkce-cpy" data-copy="verifier">Copy</button>
+          </div>
+          <div class="val hidden-val" id="outVerifier" data-ph="Click Generate to create a 64-character verifier"></div>
+          <div class="pkce-meta"><span id="verBits">0 bits</span><span id="verChars">0 chars</span><span id="verState" class="ok">RFC 7636 compliant</span></div>
+        </div>
+        <div class="pkce-card">
+          <div class="lab">
+            <span>code_challenge <span style="font-weight:400;color:var(--text3)">(public)</span></span>
+            <button class="pkce-cpy" data-copy="challenge">Copy</button>
+          </div>
+          <div class="val" id="outChallenge" data-ph="Challenge will appear here"></div>
+          <div class="pkce-meta"><span id="chMethod">S256</span><span id="chHash">SHA-256 → BASE64URL</span></div>
+        </div>
+      </div>
+
+      <h3 style="font-size:1em;margin:18px 0 10px;color:var(--text)">🛠 Build Authorization Request URL</h3>
+      <div class="pkce-fields">
+        <div><label>Authorization Endpoint</label><input type="url" id="epAuth" placeholder="https://your-idp.example.com/oauth2/authorize"></div>
+        <div><label>Client ID</label><input type="text" id="epClient" placeholder="abc123-your-spa-client-id"></div>
+        <div><label>Redirect URI</label><input type="url" id="epRedirect" placeholder="https://yourapp.example.com/callback"></div>
+        <div><label>Scope (optional)</label><input type="text" id="epScope" placeholder="openid profile email offline_access"></div>
+      </div>
+      <div class="pkce-actions">
+        <button class="gz-btn" id="btnBuild">🔗 Build Authorization URL</button>
+        <button class="gz-btn gz-btn-secondary" id="btnRandomState">🎲 Random state</button>
+        <input type="text" id="epState" placeholder="state (CSRF token)" style="flex:1;min-width:160px;padding:8px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-family:monospace;font-size:.85em">
+      </div>
+      <div class="pkce-snippet" id="outUrl" style="margin-top:6px">Authorization URL will appear here after you fill the endpoint, client ID, and click Build.</div>
+
+      <h3 style="font-size:1em;margin:18px 0 10px;color:var(--text)">📋 Token Exchange Request Body</h3>
+      <div class="pkce-snippet" id="outToken">Token exchange snippet will appear here after Generate.</div>
+    </div>
+
+    <div class="pkce-pane" data-pane="validate">
+      <div class="pkce-info">
+        Paste an existing <code>code_verifier</code> to audit it against RFC 7636 — length, charset and implied S256 challenge.
+      </div>
+      <div class="pkce-verify-row">
+        <label style="font-size:.85em;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">code_verifier to validate</label>
+        <textarea id="valIn" style="width:100%;min-height:80px;padding:10px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-family:monospace;font-size:.92em;resize:vertical" placeholder="Paste a code_verifier here..."></textarea>
+        <button class="gz-btn" id="btnValidate" style="margin-top:10px">✓ Validate Verifier</button>
+        <div id="valResult"></div>
+      </div>
+    </div>
+
+    <div class="pkce-pane" data-pane="verify">
+      <div class="pkce-info">
+        Paste a <code>code_verifier</code> and a <code>code_challenge</code> — the tool recomputes <code>BASE64URL(SHA-256(verifier))</code> and confirms whether they match. Useful for debugging <code>invalid_grant</code> errors during token exchange.
+      </div>
+      <div class="pkce-verify-row">
+        <div style="margin-bottom:10px">
+          <label style="font-size:.85em;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">code_verifier</label>
+          <textarea id="verV" style="width:100%;min-height:60px;padding:10px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-family:monospace;font-size:.9em;resize:vertical"></textarea>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:.85em;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">code_challenge</label>
+          <input type="text" id="verC" style="width:100%;padding:10px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-family:monospace;font-size:.9em" placeholder="BASE64URL(SHA-256(verifier))">
+        </div>
+        <button class="gz-btn" id="btnVerify">🔍 Verify Pair</button>
+        <div id="verResult"></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'PKCE Generator',
+    toolDesc: 'Generate RFC 7636 PKCE code_verifier and S256 code_challenge for OAuth 2.0 / OpenID Connect. Pick length 43-128, build authorization URL, validate or verify pairs — all client-side.',
+    step1: 'Pick a verifier length (43–128) and challenge method (S256 recommended)',
+    step2: 'Click Generate to roll a cryptographically random verifier and its matching challenge',
+    step3: 'Build your /authorize URL with the endpoint, client ID and redirect URI',
+    step4: 'Replay the verifier on /token to complete the Authorization Code + PKCE exchange',
+  },
+  zh: {
+    toolTitle: 'PKCE 生成器',
+    toolDesc: '为 OAuth 2.0 / OpenID Connect 生成符合 RFC 7636 的 PKCE code_verifier 和 S256 code_challenge。可选长度 43-128、构造授权 URL、校验或验证配对 — 全部在浏览器本地完成。',
+    step1: '选择 verifier 长度（43–128）和 challenge 方法（推荐 S256）',
+    step2: '点击「生成」获取密码学随机 verifier 和对应 challenge',
+    step3: '填入授权端点、Client ID 和回调地址构造 /authorize URL',
+    step4: '在 /token 兑换时回传 verifier 完成 Authorization Code + PKCE 流程',
+  }
+});
+
+const { $, copyText, t, showToast } = GZ;
+const B64URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+function bufToB64Url(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function generateVerifier(length) {
+  // length is the target character count (43-128).
+  // We map each random byte to one base64url-unreserved character (RFC 7636 §4.1 charset
+  // [A-Za-z0-9\-._~] — exactly 64 chars). One byte -> one char, so we need >= `length`
+  // bytes; +4 buffer ensures we never run short, then slice to exact length.
+  const bytesNeeded = length + 4;
+  const bytes = new Uint8Array(bytesNeeded);
+  crypto.getRandomValues(bytes);
+  let encoded = '';
+  for (let i = 0; i < bytes.length; i++) {
+    encoded += B64URL_ALPHABET[bytes[i] % B64URL_ALPHABET.length];
+  }
+  return encoded.slice(0, length);
+}
+
+async function challengeFromVerifier(verifier, method) {
+  if (method === 'plain') return verifier;
+  const data = new TextEncoder().encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return bufToB64Url(hash);
+}
+
+function estimateBits(verifier) {
+  // Each char is log2(64) = 6 bits of entropy from the base64url alphabet
+  return verifier.length * 6;
+}
+
+function setMeta(id, html) {
+  document.getElementById(id).innerHTML = html;
+}
+
+let lastVerifier = '';
+let lastChallenge = '';
+
+async function generate() {
+  const length = parseInt(document.getElementById('lenRange').value);
+  const method = document.getElementById('methodSel').value;
+  document.getElementById('lenOut').textContent = length;
+
+  const verifier = generateVerifier(length);
+  lastVerifier = verifier;
+  $('#outVerifier').textContent = verifier;
+  $('#outVerifier').classList.add('hidden-val');
+  const challenge = await challengeFromVerifier(verifier, method);
+  lastChallenge = challenge;
+  $('#outChallenge').textContent = challenge;
+
+  setMeta('verBits', `${estimateBits(verifier)} bits entropy`);
+  setMeta('verChars', `${verifier.length} chars`);
+  setMeta('verState', '<span class="ok">RFC 7636 compliant</span>');
+  setMeta('chMethod', method);
+  setMeta('chHash', method === 'S256' ? 'SHA-256 → BASE64URL' : 'verifier == challenge');
+
+  renderTokenSnippet(verifier);
+  renderAuthUrl();
+}
+
+function renderTokenSnippet(verifier) {
+  const method = document.getElementById('methodSel').value;
+  const url = $('#epAuth').value || 'https://your-idp.example.com/oauth2/token';
+  const redirectUri = $('#epRedirect').value || 'https://yourapp.example.com/callback';
+  const clientId = $('#epClient').value || 'YOUR_CLIENT_ID';
+  const code = 'AUTHORIZATION_CODE_FROM_CALLBACK';
+  const body =
+`POST ${url}
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=${code}
+&redirect_uri=${encodeURIComponent(redirectUri)}
+&client_id=${encodeURIComponent(clientId)}
+&code_verifier=${encodeURIComponent(verifier)}`;
+  const snip = document.getElementById('outToken');
+  snip.innerHTML = '';
+  snip.appendChild(colorizeCurl(body));
+}
+
+function renderAuthUrl() {
+  const ep = $('#epAuth').value;
+  const cid = $('#epClient').value;
+  const redirect = $('#epRedirect').value;
+  const scope = $('#epScope').value || 'openid profile email';
+  const state = $('#epState').value;
+  const method = document.getElementById('methodSel').value;
+  const out = document.getElementById('outUrl');
+
+  if (!ep || !cid || !redirect) {
+    out.innerHTML = '<span style="color:var(--text3)">Fill endpoint, client ID and redirect URI, then click Build.</span>';
+    return;
+  }
+  if (!lastChallenge) {
+    out.innerHTML = '<span style="color:var(--text3)">Click Generate first to create a PKCE pair.</span>';
+    return;
+  }
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: cid,
+    redirect_uri: redirect,
+    scope: scope,
+    state: state,
+    code_challenge: lastChallenge,
+    code_challenge_method: method,
+  });
+  const url = `${ep}?${params.toString()}`;
+  out.innerHTML = '';
+  const div = document.createElement('div');
+  div.textContent = url;
+  out.appendChild(div);
+  const btn = document.createElement('button');
+  btn.className = 'pkce-cpy';
+  btn.style.marginTop = '10px';
+  btn.textContent = '📋 Copy URL';
+  btn.onclick = () => { copyText(url); showToast('Authorization URL copied'); };
+  out.appendChild(btn);
+}
+
+function colorizeCurl(text) {
+  const lines = text.split('\n');
+  const frag = document.createDocumentFragment();
+  lines.forEach((ln, idx) => {
+    const div = document.createElement('div');
+    if (idx === 0) { div.className = 'k'; div.textContent = ln; }
+    else if (ln.startsWith('Content-Type')) { div.className = 'c'; div.textContent = ln; }
+    else if (ln.includes('=')) {
+      const eqIdx = ln.indexOf('=');
+      const key = ln.substring(0, eqIdx + 1);
+      const val = ln.substring(eqIdx + 1);
+      const spanK = document.createElement('span'); spanK.className = 'k'; spanK.textContent = key;
+      const spanV = document.createElement('span'); spanV.className = 'v'; spanV.textContent = val;
+      div.appendChild(spanK);
+      div.appendChild(spanV);
+    } else {
+      div.textContent = ln;
+    }
+    frag.appendChild(div);
+  });
+  return frag;
+}
+
+function randomState() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  $('#epState').value = bufToB64Url(bytes);
+}
+
+// Tab switching
+document.querySelectorAll('.pkce-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pkce-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.pkce-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.pkce-pane[data-pane="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+// Copy buttons
+document.querySelectorAll('.pkce-cpy[data-copy]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const which = btn.dataset.copy;
+    const text = which === 'verifier' ? lastVerifier : lastChallenge;
+    if (!text) { showToast('Generate first'); return; }
+    copyText(text);
+    showToast(`${which} copied`);
+  });
+});
+
+// Reveal verifier on click (it's blurred by default for security)
+document.getElementById('outVerifier').addEventListener('click', function() {
+  this.classList.toggle('hidden-val');
+});
+
+document.getElementById('btnGen').addEventListener('click', generate);
+document.getElementById('lenRange').addEventListener('input', () => {
+  document.getElementById('lenOut').textContent = document.getElementById('lenRange').value;
+});
+document.getElementById('methodSel').addEventListener('change', () => {
+  if (lastVerifier) generate();
+});
+document.getElementById('btnBuild').addEventListener('click', renderAuthUrl);
+document.getElementById('btnRandomState').addEventListener('click', randomState);
+
+// Live-update token snippet when fields change
+['epAuth','epClient','epRedirect'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (lastVerifier) renderTokenSnippet(lastVerifier);
+    renderAuthUrl();
+  });
+});
+
+// === Validate tab ===
+function validateVerifier(v) {
+  const issues = [];
+  let valid = true;
+  if (v.length < 43) { issues.push(`Length ${v.length} < 43 (too short)`); valid = false; }
+  if (v.length > 128) { issues.push(`Length ${v.length} > 128 (too long)`); valid = false; }
+  const allowed = /^[A-Za-z0-9\-._~]+$/;
+  if (!allowed.test(v)) {
+    const bad = v.match(/[^A-Za-z0-9\-._~]/g);
+    issues.push(`Invalid chars: ${[...new Set(bad)].map(c => `'${c}'`).join(', ')}`);
+    valid = false;
+  }
+  return { valid, issues, length: v.length, entropy: v.length * 6 };
+}
+
+document.getElementById('btnValidate').addEventListener('click', async () => {
+  const v = document.getElementById('valIn').value.trim();
+  const out = document.getElementById('valResult');
+  if (!v) { out.innerHTML = '<div class="verdict mismatch" style="background:#3a1f1f;color:#ffb4b4;border:1px solid #f85149">Paste a verifier first</div>'; return; }
+  const res = validateVerifier(v);
+  const challenge = await challengeFromVerifier(v, 'S256');
+  let html = '';
+  if (res.valid) {
+    html = `<div class="verdict match">✓ Valid RFC 7636 verifier</div>`;
+  } else {
+    html = `<div class="verdict mismatch">✗ Invalid: ${res.issues.join('; ')}</div>`;
+  }
+  html += `<div class="pkce-meta" style="margin-top:10px">
+    <span class="ok">Length: ${res.length}</span>
+    <span class="ok">Entropy: ~${res.entropy} bits</span>
+    <span class="ok">Implied S256: <code style="font-size:.9em">${challenge}</code></span>
+  </div>`;
+  out.innerHTML = html;
+});
+
+// === Verify tab ===
+document.getElementById('btnVerify').addEventListener('click', async () => {
+  const v = document.getElementById('verV').value.trim();
+  const c = document.getElementById('verC').value.trim();
+  const out = document.getElementById('verResult');
+  if (!v || !c) { out.innerHTML = '<div class="verdict mismatch" style="background:#3a1f1f;color:#ffb4b4;border:1px solid #f85149">Both fields required</div>'; return; }
+  const vRes = validateVerifier(v);
+  if (!vRes.valid) {
+    out.innerHTML = `<div class="verdict mismatch">✗ Verifier invalid: ${vRes.issues.join('; ')}</div>`;
+    return;
+  }
+  const computed = await challengeFromVerifier(v, 'S256');
+  const match = computed === c;
+  if (match) {
+    out.innerHTML = `<div class="verdict match">✓ Match — BASE64URL(SHA-256(verifier)) equals code_challenge</div>
+      <div class="pkce-meta" style="margin-top:10px"><span class="ok">SHA-256(${v.length} chars) → ${computed}</span></div>`;
+  } else {
+    out.innerHTML = `<div class="verdict mismatch">✗ Mismatch — verifier does NOT hash to the provided challenge</div>
+      <div class="pkce-meta" style="margin-top:10px">
+        <span class="err">Provided: ${c}</span>
+        <span class="ok">Computed: ${computed}</span>
+      </div>
+      <div class="pkce-step-hint">Common causes: stale verifier after a Regenerate click, copy-paste truncation, plain vs S256 mismatch, extra whitespace.</div>`;
+  }
+});
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🔐', href:'/dev/jwt.html', name:'JWT Decoder'},
+    {icon:'🔑', href:'/dev/hash-generator.html', name:'Hash Generator'},
+    {icon:'🔤', href:'/dev/random-string-generator.html', name:'Random String'},
+    {icon:'🔗', href:'/dev/base64.html', name:'Base64'},
+    {icon:'🛡️', href:'/dev/hmac.html', name:'HMAC Generator'},
+    {icon:'🆔', href:'/dev/uuid-generator.html', name:'UUID Generator'},
+  ]
+});
+
+// Auto-generate on first load
+generate();
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
