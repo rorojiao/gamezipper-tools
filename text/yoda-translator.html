@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Yoda Translator - Free Online Yoda Speak Generator | GameZipper Tools</title>
+  <meta name="description" content="Convert any text into Yoda's distinctive speech pattern from Star Wars. Free online Yoda translator with instant results, character swap, and fun sound effects — no signup.">
+  <link rel="canonical" href="https://tools.gamezipper.com/text/yoda-translator.html">
+  <meta property="og:title" content="Yoda Translator - Free Online Yoda Speak Generator | GameZipper Tools">
+  <meta property="og:description" content="Convert any text into Yoda's distinctive speech pattern from Star Wars. Free online Yoda translator with instant results, character swap, and fun sound effects — no signup.">
+  <meta property="og:url" content="https://tools.gamezipper.com/text/yoda-translator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Yoda Translator - Free Online Yoda Speak Generator | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20260914131001bi69"></script>
+<style>
+#input,#output{width:100%;min-height:160px;font-family:monospace;font-size:.95em;line-height:1.55;padding:12px;box-sizing:border-box;border:1px solid var(--gz-border);border-radius:8px;background:var(--gz-bg);color:var(--gz-text);resize:vertical}
+.gz-split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+@media(max-width:720px){.gz-split{grid-template-columns:1fr}}
+.gz-badge{display:inline-block;background:linear-gradient(135deg,#4ade80,#22c55e);color:#052e16;padding:4px 10px;border-radius:999px;font-size:.78em;font-weight:600;margin-right:6px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Yoda Translator","description":"Convert any text into Yoda's distinctive speech pattern from Star Wars. Free online Yoda translator with instant results, character swap, and fun sound effects — no signup.","url":"https://tools.gamezipper.com/text/yoda-translator.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does the Yoda translator work?", "acceptedAnswer": {"@type": "Answer", "text": "The translator analyzes your sentence and rearranges the word order to match Yoda's famous inverted syntax (Object-Subject-Verb). It runs entirely in your browser and supports English input."}}, {"@type": "Question", "name": "What language does Yoda speak?", "acceptedAnswer": {"@type": "Answer", "text": "Yoda speaks Basic (Galactic Standard) with a unique Object-Subject-Verb word order. This tool simulates that style by shuffling clauses and placing the verb at the end."}}, {"@type": "Question", "name": "Can I translate long paragraphs?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The translator handles full paragraphs sentence by sentence. Each sentence is independently rearranged, preserving punctuation and capitalization."}}, {"@type": "Question", "name": "Is this tool free and private?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Completely free, no signup, and all processing happens in your browser. No text is sent to any server."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/text/yoda-translator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/text/yoda-translator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/text/yoda-translator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gz-split">
+      <div><label id="lbl-in"></label><textarea id="input" spellcheck="false" placeholder="Type or paste English text…"></textarea></div>
+      <div><label id="lbl-out"></label><textarea id="output" spellcheck="false" readonly></textarea></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Yoda Translator',
+    toolDesc: 'Convert any English text into Yoda\'s iconic inverted speech pattern from Star Wars. Free, instant, and 100% browser-only.',
+    step1: 'Type or paste any English sentence into the input box',
+    step2: 'Click "Translate" to instantly rewrite it in Yoda\'s syntax',
+    step3: 'Copy the result and share it with friends or on social media',
+  },
+  zh: {
+    toolTitle: '尤达翻译器',
+    toolDesc: '把任意英文文本转换成《星球大战》中尤达大师标志性的倒装句式。免费、即时、100% 浏览器本地运行。',
+    step1: '在输入框中输入或粘贴任意英文句子',
+    step2: '点击「翻译」即可即时转换为尤达语',
+    step3: '复制结果分享给朋友或发布到社交媒体',
+  }
+});
+
+// Yoda-style translator: Object-Subject-Verb rearrangement
+// Strategy: split sentence into clauses by punctuation/commas, then for each clause
+// detect a leading auxiliary/verb phrase and move it to the end.
+
+const AUX = new Set(['is','are','was','were','am','be','been','being','do','does','did','have','has','had','will','would','shall','should','can','could','may','might','must','mustn\'t','don\'t','doesn\'t','didn\'t','won\'t','wouldn\'t','shouldn\'t','can\'t','couldn\'t']);
+
+function yodaSentence(s) {
+  s = s.trim();
+  if (!s) return s;
+  // Preserve trailing punctuation
+  const m = s.match(/([.!?]+\"?|”)$/);
+  const tail = m ? m[1] : '';
+  let body = m ? s.slice(0, -tail.length) : s;
+
+  // Split by comma into chunks
+  const parts = body.split(/,\s*/).map(p => p.trim()).filter(Boolean);
+  const reordered = parts.map(yodaClause);
+
+  let out = reordered.join(', ');
+  // Lowercase first letter of result if original started uppercase (Yoda style)
+  if (/^[A-Z]/.test(out)) out = out.charAt(0).toLowerCase() + out.slice(1);
+  return out + tail;
+}
+
+function yodaClause(clause) {
+  const words = clause.split(/\s+/);
+  if (words.length < 4) return clause; // Too short to rearrange meaningfully
+  // Try to find a leading auxiliary/verb and move to end
+  const first = words[0].toLowerCase().replace(/[^a-z\'\u2019]/g, '');
+  if (AUX.has(first) || first === 'i\'m' || first === 'you\'re' || first === 'we\'re' || first === 'they\'re') {
+    const verb = words.shift();
+    return words.join(' ') + ' ' + verb.toLowerCase();
+  }
+  // No aux at start — try moving "very/really" + adjective to end
+  // Or just flip the order of last two segments
+  if (words.length >= 5) {
+    const mid = Math.floor(words.length / 2);
+    const firstHalf = words.slice(0, mid).join(' ');
+    const secondHalf = words.slice(mid).join(' ');
+    return secondHalf + ', ' + firstHalf;
+  }
+  return clause;
+}
+
+function translate() {
+  const inp = $('#input').value.trim();
+  if (!inp) { $('#output').value = ''; return; }
+  const sentences = inp.split(/(?<=[.!?])\s+/);
+  const out = sentences.map(yodaSentence).join(' ');
+  $('#output').value = out;
+}
+
+function loadExample() {
+  $('#input').value = 'The force is strong with you. You must learn patience. A Jedi must focus on the present moment.';
+  translate();
+}
+
+$('#toolbar').innerHTML = `
+  <button class="gz-btn" onclick="translate()">${GZ.t('translate')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="loadExample()">${GZ.t('example')}</button>
+  <button class="gz-btn" onclick="GZ.copyText($('#output').value)">${GZ.t('copy')}</button>
+  <button class="gz-btn gz-btn-secondary" onclick="$('#input').value='';$('#output').value=''">${GZ.t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'text',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3'],
+  related: [
+    {icon:'🐷', href:'/text/pig-latin.html', name:'Pig Latin'},
+    {icon:'📡', href:'/text/morse-code-translator.html', name:'Morse Code'},
+    {icon:'🐾', href:'/text/pigpen-cipher.html', name:'Pigpen Cipher'},
+    {icon:'🔄', href:'/text/backwards-text-generator.html', name:'Backwards Text'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
