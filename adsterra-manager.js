@@ -114,7 +114,7 @@
   // (script_loaded + cdn_health) ALWAYS reach BI even on fresh load,
   // not just after 30s batch window. Synchronous sendBeacon is fire-and-forget
   // (no response needed, no callback), reliable across navigations.
-  var BI_DIRECT_EP = 'https://describing-photographers-past-conditioning.trycloudflare.com/api/collect';
+  var BI_DIRECT_EP = 'https://system-copying-made-clearance.trycloudflare.com/api/collect';
 
   function track(type, extra) {
     var payload = Object.assign({ network: 'adsterra', type: type, t: Date.now() }, extra || {});

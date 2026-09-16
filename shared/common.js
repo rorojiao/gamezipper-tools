@@ -84,13 +84,13 @@
   // both died within hours of deployment. tools.gamezipper.com had 0 events
   // 2026-07-12..2026-07-15 (~96h) due to dead tunnel EP. HTTP 204 verified on
   // bi.gamezipper.com/api/collect. Pairs with commit 8039a276d (cache buster bump).
-  window.GZ_COLLECT_ENDPOINT = 'https://jury-holly-compute-headquarters.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://system-copying-made-clearance.trycloudflare.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
   //   zero revenue. Default OFF — opt-in via window.GZ_LOAD_ADSTERRA=true.
   if(window.GZ_LOAD_ADSTERRA===true){
-    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=v521p0fix';sAd.defer=true;document.head.appendChild(sAd);
+    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20260916110838';sAd.defer=true;document.head.appendChild(sAd);
   } else { try { console.log('[gz-tools] adsterra skipped: CDN dead (set GZ_LOAD_ADSTERRA=true to re-enable)'); } catch(e){} }
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
   // v5.10.1 (2026-06-27): Container AdSense Tier 0 + showContainerAd event completeness.
@@ -162,7 +162,9 @@
   // current deploy). Old v=20260618P0fix was 14 days stale; though Cloudflare CDN serves
   // current source, the pinned cache suffix prevents a stale-browser window if the JS file
   // is rolled back or hot-reloaded during debugging.
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=202609142350c3e5df2";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  // 2026-09-16 R696: bumped cache buster to force CDN re-fetch (tools CDN was serving stale
+  //   gz-analytics.js?v=202609142350c3e5df2 with EP=jury-holly, NXDOMAIN).
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=20260916110838";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
