@@ -84,7 +84,7 @@
   // both died within hours of deployment. tools.gamezipper.com had 0 events
   // 2026-07-12..2026-07-15 (~96h) due to dead tunnel EP. HTTP 204 verified on
   // bi.gamezipper.com/api/collect. Pairs with commit 8039a276d (cache buster bump).
-  window.GZ_COLLECT_ENDPOINT = 'https://veteran-coordination-guest-modular.trycloudflare.com/api/collect';
+  window.GZ_COLLECT_ENDPOINT = 'https://thy-charter-stylus-stamps.trycloudflare.com/api/collect';
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
@@ -163,8 +163,8 @@
   // current source, the pinned cache suffix prevents a stale-browser window if the JS file
   // is rolled back or hot-reloaded during debugging.
   // 2026-09-16 R696: bumped cache buster to force CDN re-fetch (tools CDN was serving stale
-  //   gz-analytics.js?v=202609142350c3e5df2 with EP=jury-holly, NXDOMAIN).
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=20260916110838";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  //   gz-analytics.js?v=tunnel202609220712 with EP=jury-holly, NXDOMAIN).
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=tunnel202609220712";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
