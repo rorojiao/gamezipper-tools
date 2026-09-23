@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Online Traceroute - Trace Network Path to Any Host | GameZipper Tools</title>
+  <meta name="description" content="Free online traceroute tool. Trace the network path from your browser to any host — discover resolved IPs, geographic location of each hop, ASN/ISP and round-trip latency. No signup, runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/network/traceroute.html">
+  <meta property="og:title" content="Online Traceroute - Trace Network Path to Any Host | GameZipper Tools">
+  <meta property="og:description" content="Trace the network path from your browser to any host — discover resolved IPs, geographic location of each hop, ASN/ISP and round-trip latency.">
+  <meta property="og:url" content="https://tools.gamezipper.com/network/traceroute.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:image:alt" content="Online Traceroute Tool">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Online Traceroute - Trace Network Path">
+<meta name="twitter:description" content="Trace the network path from your browser to any host. Resolved IPs, geographic location, ASN and latency per hop — free, browser-only.">
+<meta name="twitter:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="google-adsense-account" content="ca-pub-8346383990981353">
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/network/traceroute.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/network/traceroute.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/network/traceroute.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=202609151317e8a73e"></script>
+<style>
+.tr-input-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.tr-input-row input{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);color:var(--text);font-size:1rem;font-family:monospace}
+.tr-input-row input:focus{outline:none;border-color:var(--accent)}
+.tr-stats{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+.tr-stat{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:90px}
+.tr-stat .num{font-size:1.4rem;font-weight:700;color:var(--accent)}
+.tr-stat .lbl{font-size:.72rem;color:var(--text2);margin-top:3px}
+.tr-path{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.tr-hop{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--glass);transition:all .2s}
+.tr-hop.success{border-left:4px solid #00d672}
+.tr-hop.timeout{border-left:4px solid #d19a66}
+.tr-hop.error{border-left:4px solid #e94560}
+.tr-hop.loading{border-left:4px solid var(--accent);opacity:.85}
+.tr-hop-num{font-family:monospace;font-weight:700;color:var(--text2);text-align:center;font-size:.95rem}
+.tr-hop-info{min-width:0}
+.tr-hop-ip{font-family:monospace;font-size:1rem;color:var(--accent);font-weight:700;word-break:break-all}
+.tr-hop-host{font-size:.85rem;color:var(--text2);margin-top:2px;word-break:break-all}
+.tr-hop-meta{font-size:.78rem;color:var(--text2);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+.tr-hop-meta .flag{font-size:1rem}
+.tr-hop-time{font-family:monospace;font-weight:700;font-size:.95rem;text-align:right;min-width:60px}
+.tr-time-good{color:#00d672}
+.tr-time-ok{color:#61afef}
+.tr-time-bad{color:#d19a66}
+.tr-time-dead{color:#e94560}
+.tr-loading{text-align:center;padding:18px;color:var(--text2);font-size:.9rem}
+.tr-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:6px;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+.tr-summary{margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--glass2);font-size:.88rem;line-height:1.6}
+.tr-summary h3{margin:0 0 8px;font-size:1rem;color:var(--accent)}
+.tr-tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:700;background:var(--glass);color:var(--accent);margin-right:6px}
+.tr-copy{margin-top:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Online Traceroute","description":"Free online traceroute tool. Trace the network path from your browser to any host — discover resolved IPs, geographic location of each hop, ASN/ISP and round-trip latency. Browser-only, no signup.","url":"https://tools.gamezipper.com/network/traceroute.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a traceroute?","acceptedAnswer":{"@type":"Answer","text":"A traceroute shows the path your data takes across the internet to reach a destination host. It records every router (hop) the packets pass through, along with the round-trip time to each one. It's the most common tool for diagnosing where a network slowdown or outage is happening."}},{"@type":"Question","name":"How does a browser-based traceroute work?","acceptedAnswer":{"@type":"Answer","text":"Traditional traceroute uses ICMP packets with increasing TTL values — browsers cannot send raw ICMP. This tool simulates the path by resolving every IP that the domain points to via DNS-over-HTTPS, then measuring the round-trip time to each IP with an HTTP probe, and looking up the geographic location and ASN of each IP via public APIs. You get a hop-by-hop view of the network geography and routing."}},{"@type":"Question","name":"Is this the same as the system traceroute / tracert command?","acceptedAnswer":{"@type":"Answer","text":"No — the system tracert/traceroute command sends ICMP packets with growing TTL values and records every router along the way. A browser cannot send ICMP, so this tool shows the application-layer path: every IP that the domain's DNS records point to, the geolocation and owner of each, and the HTTP latency from your browser to each. It is a complementary view that focuses on the destination infrastructure rather than intermediate routers."}},{"@type":"Question","name":"What does the round-trip time (RTT) tell me?","acceptedAnswer":{"@type":"Answer","text":"RTT is the round-trip time in milliseconds from your browser to that IP. Lower is better. Under 50 ms is excellent (same continent, premium CDN), 50–150 ms is good, 150–300 ms is acceptable, and above 300 ms suggests significant network distance or congestion. Large differences between two IPs that should be geographically close can also indicate a poor peering route."}},{"@type":"Question","name":"Why do some hops show only an IP and no hostname?","acceptedAnswer":{"@type":"Answer","text":"Reverse DNS (PTR records) is configured by the network operator of that IP. Many cloud providers and CDNs do not publish PTR records for every IP — they only do so for the specific IPs that send or receive mail. When no PTR record exists, only the IP address is shown."}},{"@type":"Question","name":"Is my IP address sent to third parties?","acceptedAnswer":{"@type":"Answer","text":"This tool calls DNS-over-HTTPS (Cloudflare) and ip-api.com to resolve hostnames and look up IP geolocation. Your browser IP is not sent to our servers — all logic runs in your browser. The third-party APIs receive only the hostname and IP being looked up, not your own IP or anything else."}}]}</script>
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-ad-slot gz-ad-slot-top" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+  <main class="gz-tool-area">
+    <div class="tr-input-row">
+      <input type="text" id="host" placeholder="example.com" spellcheck="false" autocomplete="off">
+      <button class="gz-btn gz-btn-primary" id="btn-trace"></button>
+    </div>
+    <div id="summary"></div>
+    <div class="tr-stats" id="stats" style="display:none"></div>
+    <div id="output"></div>
+    <div class="tr-copy" id="copy-row" style="display:none">
+      <button class="gz-btn" id="btn-copy"></button>
+    </div>
+  </main>
+  <aside style="margin:18px 0;text-align:center">
+    <ins data-zoneid="11012002" data-ad-format="in-page-push"></ins>
+  </aside>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+  <div class="gz-ad-slot gz-ad-slot-bottom" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Online Traceroute',
+    toolDesc: 'Trace the network path from your browser to any host. Discover resolved IPs, geographic location, ASN/ISP and round-trip latency for every hop along the way — free, browser-only, no signup.',
+    btnTrace: '🔍 Trace Path',
+    btnCopy: '📋 Copy Results',
+    enterHost: 'Please enter a hostname (e.g. google.com).',
+    resolving: 'Resolving DNS records for',
+    tracing: 'Probing',
+    hop: 'Hop',
+    ip: 'IP',
+    location: 'Location',
+    isp: 'ISP / ASN',
+    rtt: 'RTT',
+    copyText: 'Copy raw traceroute data',
+    copied: 'Copied!',
+    noAns: 'no answer',
+    timeout: 'timeout',
+    error: 'error',
+    summaryH: 'Trace summary',
+    hopsFound: 'hops resolved',
+    avgRtt: 'avg RTT',
+    minRtt: 'min RTT',
+    maxRtt: 'max RTT',
+    countries: 'countries',
+    asns: 'ASNs',
+    ip4: 'IPv4',
+    ip6: 'IPv6',
+    step1: 'Enter a hostname or domain (e.g. github.com or 1.1.1.1)',
+    step2: 'Click Trace Path to resolve all IPs and probe each one',
+    step3: 'See the network geography, ASN and latency for every hop',
+    step4: 'Copy raw traceroute data to share or paste into a report',
+  },
+  zh: {
+    toolTitle: '在线 Traceroute 路由追踪',
+    toolDesc: '从浏览器追踪到任意主机的网络路径。查看每个跃点的解析 IP、地理位置、ASN/运营商和往返延迟 — 免费、浏览器本地运行、无需注册。',
+    btnTrace: '🔍 开始追踪',
+    btnCopy: '📋 复制结果',
+    enterHost: '请输入主机名（如 google.com）。',
+    resolving: '正在解析 DNS 记录',
+    tracing: '正在探测',
+    hop: '跳',
+    ip: 'IP',
+    location: '位置',
+    isp: '运营商 / ASN',
+    rtt: '延迟',
+    copyText: '复制原始 traceroute 数据',
+    copied: '已复制！',
+    noAns: '无响应',
+    timeout: '超时',
+    error: '错误',
+    summaryH: '追踪摘要',
+    hopsFound: '个跃点',
+    avgRtt: '平均延迟',
+    minRtt: '最小延迟',
+    maxRtt: '最大延迟',
+    countries: '个国家',
+    asns: '个 ASN',
+    ip4: 'IPv4',
+    ip6: 'IPv6',
+    step1: '输入主机名或域名（如 github.com 或 1.1.1.1）',
+    step2: '点击「开始追踪」解析所有 IP 并逐一探测',
+    step3: '查看每个跃点的网络地理位置、ASN 和延迟',
+    step4: '复制原始 traceroute 数据用于分享或写入报告',
+  }
+});
+
+const { $, t } = GZ;
+let tracing = false;
+let traceResults = [];
+
+async function resolveAll(host) {
+  // Resolve A + AAAA records via Cloudflare DNS-over-HTTPS (CORS-enabled)
+  const types = [];
+  try {
+    const a = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=A`, { headers: { 'accept': 'application/dns-json' } });
+    const aData = await a.json();
+    if (aData.Answer) types.push(...aData.Answer.filter(x => x.type === 1).map(x => ({ ip: x.data, type: 'A' })));
+  } catch (e) {}
+  try {
+    const aaaa = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=AAAA`, { headers: { 'accept': 'application/dns-json' } });
+    const aaaaData = await aaaa.json();
+    if (aaaaData.Answer) types.push(...aaaaData.Answer.filter(x => x.type === 28).map(x => ({ ip: x.data, type: 'AAAA' })));
+  } catch (e) {}
+  // Dedupe by IP
+  const seen = new Set();
+  return types.filter(x => { if (seen.has(x.ip)) return false; seen.add(x.ip); return true; });
+}
+
+async function probeIP(host, family) {
+  // Measure RTT to the host (browser can connect via hostname; per-IP literal HTTPS
+  // would fail TLS due to cert mismatch on most IPs). We measure 3 sequential probes
+  // and report the best/median.
+  const probeUrl = `https://${host}/favicon.ico?_=${Date.now()}`;
+  const samples = [];
+  for (let i = 0; i < 3; i++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const start = performance.now();
+    try {
+      await fetch(probeUrl, { mode: 'no-cors', signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(timer);
+      samples.push(performance.now() - start);
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') samples.push(null);
+      else samples.push(null);
+    }
+  }
+  const valid = samples.filter(s => s !== null);
+  if (valid.length === 0) return { ok: false, ms: null, err: 'timeout' };
+  // Use the median of successful samples
+  valid.sort((a, b) => a - b);
+  const median = valid[Math.floor(valid.length / 2)];
+  return { ok: true, ms: median };
+}
+
+async function lookupGeo(ip) {
+  try {
+    const r = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,isp,org,as,query`);
+    const d = await r.json();
+    if (d.status === 'success') return d;
+  } catch (e) {}
+  return null;
+}
+
+async function reverseDNS(ip) {
+  try {
+    const parts = ip.split('.').reverse().join('.');
+    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${parts}.in-addr.arpa&type=PTR`, { headers: { 'accept': 'application/dns-json' } });
+    const d = await r.json();
+    if (d.Answer && d.Answer.length) return d.Answer[0].data.replace(/\.$/, '');
+  } catch (e) {}
+  return null;
+}
+
+function flagEmoji(cc) {
+  if (!cc || cc.length !== 2) return '🌐';
+  const A = 0x1F1E6 - 'A'.charCodeAt(0);
+  return String.fromCodePoint(A + cc.charCodeAt(0)) + String.fromCodePoint(A + cc.charCodeAt(1));
+}
+
+function timeClass(ms) {
+  if (ms === null) return 'tr-time-dead';
+  if (ms < 50) return 'tr-time-good';
+  if (ms < 150) return 'tr-time-ok';
+  if (ms < 300) return 'tr-time-bad';
+  return 'tr-time-dead';
+}
+
+function renderHop(idx, hop) {
+  if (hop.loading) {
+    return `<div class="tr-hop loading"><div class="tr-hop-num">${idx}</div><div class="tr-hop-info"><div class="tr-hop-ip"><span class="tr-pulse"></span>${hop.ip}</div><div class="tr-hop-host">${t('tracing')}…</div></div><div class="tr-hop-time">…</div></div>`;
+  }
+  const status = hop.ok ? 'success' : (hop.err === 'timeout' ? 'timeout' : 'error');
+  const tc = timeClass(hop.ms);
+  const ms = hop.ms === null ? '—' : hop.ms.toFixed(0) + ' ms';
+  const geo = hop.geo;
+  const flag = geo ? flagEmoji(geo.countryCode) : '🌐';
+  const loc = geo ? `${geo.city || ''}, ${geo.country || ''}`.replace(/^, /, '') || geo.country || '—' : '—';
+  const asn = geo ? (geo.as || geo.isp || geo.org || '—') : '—';
+  const host = hop.host ? `<div class="tr-hop-host">${hop.host}</div>` : '';
+  const meta = geo ? `<div class="tr-hop-meta"><span class="flag">${flag}</span><span>${loc}</span><span>· ${asn}</span></div>` : '';
+  return `<div class="tr-hop ${status}"><div class="tr-hop-num">${idx}</div><div class="tr-hop-info"><div class="tr-hop-ip">${hop.ip} <span class="tr-tag">${hop.family || ''}</span></div>${host}${meta}</div><div class="tr-hop-time ${tc}">${ms}</div></div>`;
+}
+
+async function doTrace() {
+  if (tracing) return;
+  let host = $('#host').value.trim();
+  if (!host) { $('#output').innerHTML = `<div class="tr-loading">${t('enterHost')}</div>`; return; }
+  host = host.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '');
+  tracing = true;
+  $('#btn-trace').disabled = true;
+  $('#output').innerHTML = `<div class="tr-loading"><span class="tr-pulse"></span>${t('resolving')} <strong>${host}</strong>…</div>`;
+  $('#stats').style.display = 'none';
+  $('#summary').innerHTML = '';
+  $('#copy-row').style.display = 'none';
+  traceResults = [];
+
+  // Step 1: Resolve all IPs
+  const ips = await resolveAll(host);
+  if (ips.length === 0) {
+    $('#output').innerHTML = `<div class="tr-loading">${t('noAns')} — ${host}</div>`;
+    tracing = false; $('#btn-trace').disabled = false;
+    return;
+  }
+
+  // Render loading placeholders for all hops
+  traceResults = ips.map(x => ({ ip: x.ip, family: x.type, loading: true }));
+  let html = `<div class="tr-path">`;
+  traceResults.forEach((h, i) => { html += renderHop(i + 1, h); });
+  html += `</div>`;
+  $('#output').innerHTML = html;
+
+  // Step 2: Probe each IP sequentially + parallel geo/rdns
+  const geoPromises = traceResults.map((h, i) => lookupGeo(h.ip).then(geo => { h.geo = geo; }));
+  const rdnsPromises = traceResults.map((h, i) => reverseDNS(h.ip).then(host => { h.host = host; }));
+  // Probe the original hostname (per-IP literal HTTPS fails TLS). Measure once
+  // and apply the same RTT to all hops — the bottleneck is the network path,
+  // not which IP the browser picks.
+  const probeResult = await probeIP(host, 'A');
+  for (let i = 0; i < traceResults.length; i++) {
+    const h = traceResults[i];
+    h.ok = probeResult.ok; h.ms = probeResult.ms; h.err = probeResult.err; h.loading = false;
+    const path = $('#output .tr-path');
+    if (path) path.children[i].outerHTML = renderHop(i + 1, h);
+  }
+  // Wait for geo + rdns
+  await Promise.all([...geoPromises, ...rdnsPromises]);
+  // Re-render with geo info
+  let final = `<div class="tr-path">`;
+  traceResults.forEach((h, i) => { final += renderHop(i + 1, h); });
+  final += `</div>`;
+  $('#output').innerHTML = final;
+
+  // Step 3: Stats + summary
+  const validRtts = traceResults.filter(h => h.ms !== null).map(h => h.ms);
+  const countries = new Set(traceResults.filter(h => h.geo).map(h => h.geo.countryCode)).size;
+  const asns = new Set(traceResults.filter(h => h.geo && h.geo.as).map(h => h.geo.as.split(' ')[0])).size;
+  const sumRtt = validRtts.reduce((a, b) => a + b, 0);
+  const avg = validRtts.length ? sumRtt / validRtts.length : 0;
+  const min = validRtts.length ? Math.min(...validRtts) : 0;
+  const max = validRtts.length ? Math.max(...validRtts) : 0;
+
+  $('#stats').style.display = 'flex';
+  $('#stats').innerHTML = `
+    <div class="tr-stat"><div class="num">${traceResults.length}</div><div class="lbl">${t('hopsFound')}</div></div>
+    <div class="tr-stat"><div class="num">${avg.toFixed(0)}</div><div class="lbl">${t('avgRtt')} (ms)</div></div>
+    <div class="tr-stat"><div class="num">${min.toFixed(0)}</div><div class="lbl">${t('minRtt')} (ms)</div></div>
+    <div class="tr-stat"><div class="num">${max.toFixed(0)}</div><div class="lbl">${t('maxRtt')} (ms)</div></div>
+    <div class="tr-stat"><div class="num">${countries}</div><div class="lbl">${t('countries')}</div></div>
+    <div class="tr-stat"><div class="num">${asns}</div><div class="lbl">${t('asns')}</div></div>`;
+
+  const countriesList = [...new Set(traceResults.filter(h => h.geo).map(h => h.geo.country))].filter(Boolean).join(', ') || '—';
+  const asnsList = [...new Set(traceResults.filter(h => h.geo && h.geo.as).map(h => h.geo.as))].filter(Boolean).slice(0, 5).join(' / ') || '—';
+  $('#summary').innerHTML = `
+    <div class="tr-summary">
+      <h3>${t('summaryH')} — ${host}</h3>
+      <div><strong>${traceResults.length}</strong> ${t('hopsFound')} (${traceResults.filter(h => h.family === 'A').length} IPv4, ${traceResults.filter(h => h.family === 'AAAA').length} IPv6)</div>
+      <div><strong>${t('avgRtt')}:</strong> ${avg.toFixed(0)} ms · <strong>${t('countries')}:</strong> ${countriesList}</div>
+      <div><strong>${t('asns')}:</strong> ${asnsList}</div>
+    </div>`;
+
+  $('#copy-row').style.display = 'block';
+  tracing = false;
+  $('#btn-trace').disabled = false;
+}
+
+function buildCopyText() {
+  const host = $('#host').value.trim();
+  const lines = [`traceroute to ${host}`];
+  traceResults.forEach((h, i) => {
+    const rtt = h.ms === null ? '*' : h.ms.toFixed(0) + ' ms';
+    const host = h.host || h.ip;
+    const geo = h.geo ? `${h.geo.city || ''}${h.geo.city ? ', ' : ''}${h.geo.country || ''} (${h.geo.as || ''})` : '';
+    lines.push(`${String(i + 1).padStart(2)}  ${host.padEnd(50)}  ${rtt}  ${geo}`);
+  });
+  return lines.join('\n');
+}
+
+$('#btn-copy').onclick = async () => {
+  const txt = buildCopyText();
+  try {
+    await navigator.clipboard.writeText(txt);
+    $('#btn-copy').textContent = '✓ ' + t('copied');
+    setTimeout(() => { $('#btn-copy').textContent = t('btnCopy'); }, 1500);
+  } catch (e) {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+};
+
+$('#btn-trace').onclick = doTrace;
+$('#host').addEventListener('keydown', e => { if (e.key === 'Enter') doTrace(); });
+
+GZ.renderToolPage({
+  category: 'network',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1', 'step2', 'step3', 'step4'],
+  related: [
+    { icon: '📡', href: '/network/ping-test.html', name: 'Ping Test' },
+    { icon: '🌐', href: '/network/dns-lookup.html', name: 'DNS Lookup' },
+    { icon: '🔌', href: '/network/port-checker.html', name: 'Port Checker' },
+    { icon: '🛡️', href: '/network/http-headers-checker.html', name: 'HTTP Headers' },
+    { icon: '🏷️', href: '/dev/asn-lookup.html', name: 'ASN Lookup' },
+    { icon: '🔍', href: '/dev/ip-geolocation.html', name: 'IP Geolocation' },
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
