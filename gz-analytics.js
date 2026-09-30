@@ -39,7 +39,7 @@
   //   var EP after each restart by running:
   //     journalctl -u cloudflared-bi -n 30 --no-pager | grep trycloudflare.com
   // DO NOT switch back to bi.gamezipper.com — that's a 204-stub, not the BI server.
-  var EP = 'https://cache-index-warranty-emacs.trycloudflare.com/api/collect';
+  var EP = 'https://mortgages-sara-host-companies.trycloudflare.com/api/collect';
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
