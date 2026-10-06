@@ -85,6 +85,58 @@
 
   var AD_CLIENT = 'ca-pub-8346383990981353';
 
+  // ==================== BOT GUARD (v5.16.0-tools-bot-skip, 2026-10-06 R854) =========
+  // Tools saw 218 adsense_load_error events in 2 days (2026-10-05/06) from a SEO
+  // crawler hitting 247 distinct /zh/ tool pages with empty UA, 0 engagement, 1 PV
+  // each. AdSense correctly refuses to serve ads to non-human UAs → every bot visit
+  // wasted 1 pagead2.googlesyndication.com request + fired load_error (inflating
+  // Cloudflare 525 noise + drag the BI fill-rate denominator).
+  //
+  // Skip AdSense entirely if ANY of these are true (conservative — no false positives
+  // for real browsers):
+  //   1. navigator.webdriver === true        → puppeteer/playwright/headless
+  //   2. UA is empty or contains "Headless"  → cURL/headless tools
+  //   3. UA matches a known SEO crawler (AhrefsBot, SemrushBot, DotBot, MJ12bot,
+  //      PetalBot, BLEXBot — these are the ones that sweep /zh/ en masse)
+  //   4. localStorage.gz_skip_ads === '1'    → escape hatch for ops
+  //
+  // Real browsers all have navigator.webdriver === false, a non-empty UA, and never
+  // match a crawler pattern. No false-positive risk.
+  try {
+    var _bgua = (navigator.userAgent || '').toLowerCase();
+    var _bgIsWd = !!navigator.webdriver;
+    var _bgUaEmpty = !_bgua || _bgua.length < 4;
+    var _bgUaHeadless = _bgua.indexOf('headless') !== -1 || _bgua.indexOf('phantom') !== -1;
+    var _bgCrawlerRe = /(ahrefsbot|semrushbot|dotbot|mj12bot|petalbot|blexbot|rogerbot|exabot|seekport|screaming\s?frog|sitebulb|deepcrawl)/i;
+    var _bgIsCrawler = _bgCrawlerRe.test(navigator.userAgent || '');
+    var _bgOpSkip = false;
+    try { _bgOpSkip = localStorage.getItem('gz_skip_ads') === '1'; } catch(_es) {}
+    if (_bgIsWd || _bgUaEmpty || _bgUaHeadless || _bgIsCrawler || _bgOpSkip) {
+      var _bgReason = _bgIsWd ? 'webdriver' :
+                      _bgUaEmpty ? 'ua_empty' :
+                      _bgUaHeadless ? 'ua_headless' :
+                      _bgIsCrawler ? 'crawler_ua' : 'op_skip';
+      // Track skip so BI can confirm the guard fires (R854 verification)
+      try {
+        var _bgEp = (typeof window !== 'undefined' && window.GZ_COLLECT_ENDPOINT) || '';
+        if (_bgEp) {
+          var _bgPayload = JSON.stringify({
+            type: 'adsense_bot_skip', network: 'adsense', reason: _bgReason,
+            ua_len: (navigator.userAgent || '').length,
+            online: navigator.onLine,
+            vis: document.visibilityState
+          });
+          if (navigator.sendBeacon) { navigator.sendBeacon(_bgEp, _bgPayload); }
+        }
+      } catch(_eep) {}
+      console.log('[GZToolsAdSense] Bot guard skip — reason=' + _bgReason);
+      return; // abort entire AdSense IIFE — no script load, no mid-slots, no observer
+    }
+  } catch(_eg) {
+    // Fail-open: on any error, allow ads (never block real users)
+  }
+
+
   // ==================== SELF-CONTAINED VID/SID TRACKING (v5.4.2) ====================
   // tools.gamezipper.com previously depended on bi.gamezipper.com/t.js for visitor
   // tracking, but that endpoint serves Metabase HTML (not JS) so vid/sid was always
