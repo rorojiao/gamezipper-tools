@@ -85,7 +85,7 @@
 
   var AD_CLIENT = 'ca-pub-8346383990981353';
 
-  // ==================== BOT GUARD (v5.16.0-tools-bot-skip, 2026-10-06 R854) =========
+  // ==================== BOT GUARD (v5.16.1-tools-bot-meta-indexer, 2026-10-06 R860) ==
   // Tools saw 218 adsense_load_error events in 2 days (2026-10-05/06) from a SEO
   // crawler hitting 247 distinct /zh/ tool pages with empty UA, 0 engagement, 1 PV
   // each. AdSense correctly refuses to serve ads to non-human UAs → every bot visit
@@ -97,7 +97,8 @@
   //   1. navigator.webdriver === true        → puppeteer/playwright/headless
   //   2. UA is empty or contains "Headless"  → cURL/headless tools
   //   3. UA matches a known SEO crawler (AhrefsBot, SemrushBot, DotBot, MJ12bot,
-  //      PetalBot, BLEXBot — these are the ones that sweep /zh/ en masse)
+  //      PetalBot, BLEXBot, meta-webindexer, facebookexternalhit, facebot —
+  //      meta-webindexer is Meta's official crawler sweeping tools in 1773 PV/24h)
   //   4. localStorage.gz_skip_ads === '1'    → escape hatch for ops
   //
   // Real browsers all have navigator.webdriver === false, a non-empty UA, and never
@@ -107,7 +108,7 @@
     var _bgIsWd = !!navigator.webdriver;
     var _bgUaEmpty = !_bgua || _bgua.length < 4;
     var _bgUaHeadless = _bgua.indexOf('headless') !== -1 || _bgua.indexOf('phantom') !== -1;
-    var _bgCrawlerRe = /(ahrefsbot|semrushbot|dotbot|mj12bot|petalbot|blexbot|rogerbot|exabot|seekport|screaming\s?frog|sitebulb|deepcrawl)/i;
+    var _bgCrawlerRe = /(ahrefsbot|semrushbot|dotbot|mj12bot|petalbot|blexbot|rogerbot|exabot|seekport|screaming\s?frog|sitebulb|deepcrawl|meta-webindexer|facebookexternalhit|facebot)/i;
     var _bgIsCrawler = _bgCrawlerRe.test(navigator.userAgent || '');
     var _bgOpSkip = false;
     try { _bgOpSkip = localStorage.getItem('gz_skip_ads') === '1'; } catch(_es) {}
