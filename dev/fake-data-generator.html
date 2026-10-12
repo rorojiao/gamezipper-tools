@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Fake Data Generator - JSON/CSV/SQL Mock Data Tool | GameZipper Tools</title>
+<meta name="description" content="Generate realistic fake data for testing and development. Schema-driven mock data generator with 18 field types, multi-locale support and export to JSON, CSV or SQL — free, browser-only, no signup.">
+<link rel="canonical" href="https://tools.gamezipper.com/dev/fake-data-generator.html">
+<meta property="og:title" content="Fake Data Generator - JSON/CSV/SQL Mock Data Tool | GameZipper Tools">
+<meta property="og:description" content="Generate realistic fake data for testing and development. Schema-driven mock data generator with 18 field types, multi-locale support and export to JSON, CSV or SQL — free, browser-only, no signup.">
+<meta property="og:url" content="https://tools.gamezipper.com/dev/fake-data-generator.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fake Data Generator - JSON/CSV/SQL Mock Data Tool | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20261001210623R840tools"></script>
+<style>
+.schema-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media(max-width:700px){.schema-grid{grid-template-columns:1fr}}
+.field-row{display:flex;gap:8px;align-items:center;background:var(--glass);padding:8px 12px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;flex-wrap:wrap}
+.field-row input,.field-row select{flex:1;min-width:80px}
+.field-row .field-name{flex:2}
+.field-row .field-type{flex:1.5}
+.field-row .field-actions{display:flex;gap:4px}
+.preview-box{background:#0a0a0f;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:.82em;max-height:420px;overflow:auto;white-space:pre;line-height:1.5}
+.stats-bar{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:.85em}
+.stat-chip{background:var(--glass);padding:4px 10px;border-radius:6px;border:1px solid var(--border)}
+.tab-bar{display:flex;gap:4px;margin:12px 0 8px 0;border-bottom:1px solid var(--border)}
+.tab{padding:6px 14px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);font-size:.9em}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.gz-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Fake Data Generator","description":"Generate realistic fake data for testing and development. Schema-driven mock data generator with 18 field types, multi-locale support and export to JSON, CSV or SQL — free, browser-only.","url":"https://tools.gamezipper.com/dev/fake-data-generator.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is fake data and why do developers need it?", "acceptedAnswer": {"@type": "Answer", "text": "Fake data is realistic but synthetic data used for testing, demos, database seeding and prototypes without exposing real personal information. Developers use it to populate test databases, mock API responses, stress-test queries and create realistic UI demos — all without GDPR/CCPA risk."}}, {"@type": "Question", "name": "Is the generated data sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. Everything runs entirely in your browser. The schema, the generated records and the export — all are processed locally. Your test data never leaves your machine."}}, {"@type": "Question", "name": "What field types are supported?", "acceptedAnswer": {"@type": "Answer", "text": "18 types including name, email, phone, address, city, country, uuid, date, datetime, age, price, company, job, url, username, ip, boolean and integer — plus a custom-format pattern field for any regex-like template."}}, {"@type": "Question", "name": "How many records can I generate?", "acceptedAnswer": {"@type": "Answer", "text": "Anywhere from 1 to 10,000 rows per click. The tool uses an efficient synchronous generator that handles 1,000 rows in under 100ms and 10,000 rows in 3-5 seconds in modern browsers."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/fake-data-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/fake-data-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/fake-data-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+
+    <h2 class="gz-h2" style="font-size:1.05em;margin:14px 0 6px" id="schema-h"></h2>
+    <div id="schema-list"></div>
+    <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
+      <button class="gz-btn gz-btn-secondary" id="add-field">➕ <span id="add-field-lbl"></span></button>
+      <button class="gz-btn gz-btn-secondary" id="preset-user">👤 User</button>
+      <button class="gz-btn gz-btn-secondary" id="preset-product">🛒 Product</button>
+      <button class="gz-btn gz-btn-secondary" id="preset-order">📦 Order</button>
+    </div>
+
+    <div class="gz-toolbar" style="margin-top:12px">
+      <label style="display:flex;align-items:center;gap:6px"><span id="rows-lbl"></span> <input type="number" id="row-count" value="10" min="1" max="10000" class="gz-input" style="width:90px"></label>
+      <label style="display:flex;align-items:center;gap:6px"><span id="locale-lbl"></span>
+        <select id="locale" class="gz-select">
+          <option value="en_US">🇺🇸 en_US</option>
+          <option value="zh_CN">🇨🇳 zh_CN</option>
+          <option value="en_GB">🇬🇧 en_GB</option>
+          <option value="de_DE">🇩🇪 de_DE</option>
+          <option value="fr_FR">🇫🇷 fr_FR</option>
+          <option value="ja_JP">🇯🇵 ja_JP</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="seed-check"> <span id="seed-lbl"></span></label>
+      <input type="number" id="seed-val" value="42" class="gz-input" style="width:80px" disabled>
+      <button class="gz-btn" id="generate">⚡ <span id="gen-lbl"></span></button>
+    </div>
+
+    <div class="tab-bar" id="tabs">
+      <div class="tab active" data-fmt="json">JSON</div>
+      <div class="tab" data-fmt="csv">CSV</div>
+      <div class="tab" data-fmt="sql">SQL</div>
+    </div>
+
+    <div id="status" class="stats-bar"></div>
+    <div class="preview-box" id="output">[]</div>
+
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      <button class="gz-btn" id="copy-btn">📋 <span id="copy-lbl"></span></button>
+      <button class="gz-btn gz-btn-secondary" id="download-btn">⬇️ <span id="dl-lbl"></span></button>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Fake Data Generator',
+    toolDesc: 'Generate realistic mock data for testing, prototypes and database seeding. Schema-driven with 18 field types, multi-locale and JSON / CSV / SQL export.',
+    schemaH: 'Schema (define fields)',
+    addField: 'Add Field',
+    rows: 'Rows',
+    locale: 'Locale',
+    useSeed: 'Deterministic seed:',
+    generate: 'Generate',
+    copy: 'Copy',
+    download: 'Download',
+    fieldName: 'name',
+    fieldType: 'type',
+    noFields: 'Add at least one field to generate data.',
+    generated: (n, ms) => `Generated ${n} rows in ${ms}ms`,
+    selectFieldName: 'Please enter a unique field name.',
+    invalidFieldName: 'Field names must be alphanumeric (letters, digits, underscore; cannot start with a digit).',
+    howto1: 'Define your schema: add fields like "email", "age", "city" with the type selector',
+    howto2: 'Choose row count (1–10000), locale and optional deterministic seed',
+    howto3: 'Click Generate to produce the dataset — switch tabs for JSON, CSV or SQL output',
+    howto4: 'Copy to clipboard or download as a file for use in tests, seeds or fixtures',
+  },
+  zh: {
+    toolTitle: '模拟数据生成器',
+    toolDesc: '为测试、原型设计和数据库填充生成真实的模拟数据。基于 Schema 的 18 种字段类型，支持多语言和 JSON / CSV / SQL 导出。',
+    schemaH: '字段定义（Schema）',
+    addField: '添加字段',
+    rows: '行数',
+    locale: '语言',
+    useSeed: '确定性随机种子：',
+    generate: '生成',
+    copy: '复制',
+    download: '下载',
+    fieldName: '字段名',
+    fieldType: '类型',
+    noFields: '请至少添加一个字段后再生成数据。',
+    generated: (n, ms) => `已生成 ${n} 行，耗时 ${ms} 毫秒`,
+    selectFieldName: '请输入唯一的字段名。',
+    invalidFieldName: '字段名仅允许字母、数字、下划线，且不能以数字开头。',
+    howto1: '定义字段：添加 email、age、city 等字段并选择类型',
+    howto2: '选择行数（1–10000）、语言和可选的确定性随机种子',
+    howto3: '点击「生成」产出数据集 — 切换标签查看 JSON / CSV / SQL 输出',
+    howto4: '复制到剪贴板或下载为文件用于测试、种子数据或 fixture',
+  }
+});
+
+const { $, copyText, t, dl } = GZ;
+
+const FIELD_TYPES = [
+  ['name', 'Name'],
+  ['firstName', 'First Name'],
+  ['lastName', 'Last Name'],
+  ['email', 'Email'],
+  ['phone', 'Phone'],
+  ['username', 'Username'],
+  ['address', 'Address'],
+  ['city', 'City'],
+  ['country', 'Country'],
+  ['zipcode', 'Zip Code'],
+  ['company', 'Company'],
+  ['job', 'Job Title'],
+  ['url', 'URL'],
+  ['ip', 'IP Address'],
+  ['uuid', 'UUID'],
+  ['date', 'Date'],
+  ['datetime', 'DateTime (ISO)'],
+  ['age', 'Age (1-90)'],
+  ['integer', 'Integer (0-200)'],
+  ['price', 'Price (0.00-1000.00)'],
+  ['boolean', 'Boolean'],
+  ['lorem', 'Lorem Sentence'],
+];
+
+let fields = [
+  { name: 'id', type: 'uuid' },
+  { name: 'name', type: 'name' },
+  { name: 'email', type: 'email' },
+  { name: 'age', type: 'age' },
+  { name: 'city', type: 'city' },
+];
+let outputRows = [];
+let currentFormat = 'json';
+
+// Mulberry32 — small fast deterministic PRNG
+function makeRng(seed) {
+  let a = seed >>> 0;
+  return function() {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const POOLS = {
+  en_US: {
+    firstNames: ['James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda','David','Elizabeth','William','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah','Charles','Karen','Christopher','Nancy','Daniel','Lisa','Matthew','Margaret','Anthony','Betty','Mark','Sandra','Donald','Ashley','Steven','Kimberly','Paul','Emily','Andrew','Donna','Joshua','Michelle','Kenneth','Carol','Kevin','Amanda','Brian','Melissa','George','Deborah','Edward','Stephanie','Ronald','Rebecca','Timothy','Laura','Jason','Sharon','Jeffrey','Cynthia','Ryan','Kathleen','Jacob','Helen','Gary','Amy','Nicholas','Shirley','Eric','Angela','Jonathan','Anna','Stephen','Brenda','Larry','Pamela','Justin','Nicole','Scott','Emma','Brandon','Samantha','Benjamin','Katherine','Samuel','Christine','Frank','Debra','Gregory','Rachel','Raymond','Catherine','Alexander','Carolyn','Patrick','Janet','Jack','Ruth','Dennis','Maria','Jerry','Heather','Tyler','Diane','Aaron','Virginia','Jose','Julie','Henry','Joyce','Adam','Victoria','Douglas','Olivia','Nathan','Kelly','Peter','Christina','Zachary','Lauren','Kyle','Joan','Walter','Evelyn','Harold','Judith','Jeremy','Megan','Ethan','Cheryl','Carl','Andrea','Keith','Hannah','Roger','Jacqueline','Gerald','Martha','Christian','Gloria','Terry','Teresa','Sean','Ann','Arthur','Sara','Austin','Madison','Noah','Frances','Lawrence','Kathryn','Jesse','Janice','Joe','Jean','Bryan','Abigail','Billy','Alice','Jordan','Julia','Albert','Judy','Dylan','Sophia','Bruce','Grace','Willie','Denise','Gabriel','Amber','Alan','Doris','Juan','Marilyn','Logan','Danielle','Wayne','Beverly','Roy','Isabella','Ralph','Theresa','Randy','Diana','Eugene','Natalie','Brittany','Vincent','Charlotte','Russell','Marie','Elijah','Kayla','Louis','Alexis','Bobby','Lori'],
+    lastNames: ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Ramirez','Lewis','Robinson','Walker','Young','Allen','King','Wright','Scott','Torres','Nguyen','Hill','Flores','Green','Adams','Nelson','Baker','Hall','Rivera','Campbell','Mitchell','Carter','Roberts','Gomez','Phillips','Evans','Turner','Diaz','Parker','Cruz','Edwards','Collins','Reyes','Stewart','Morris','Morales','Murphy','Cook','Rogers','Gutierrez','Ortiz','Morgan','Cooper','Peterson','Bailey','Reed','Kelly','Howard','Ramos','Kim','Cox','Ward','Richardson','Watson','Brooks','Chavez','Wood','James','Bennett','Gray','Mendoza','Ruiz','Hughes','Price','Alvarez','Castillo','Sanders','Patel','Myers','Long','Ross','Foster','Jimenez'],
+    cities: ['New York','Los Angeles','Chicago','Houston','Phoenix','Philadelphia','San Antonio','San Diego','Dallas','San Jose','Austin','Jacksonville','Fort Worth','Columbus','Indianapolis','Charlotte','San Francisco','Seattle','Denver','Washington','Boston','Nashville','Baltimore','Oklahoma City','Portland','Las Vegas','Detroit','Memphis','Louisville','Milwaukee','Albuquerque','Tucson','Fresno','Sacramento','Kansas City','Mesa','Atlanta','Omaha','Colorado Springs','Raleigh','Long Beach','Virginia Beach','Miami','Oakland','Minneapolis','Tulsa','Arlington','New Orleans','Wichita','Cleveland'],
+    countries: ['United States','Canada','United Kingdom','Germany','France','Australia','Japan','Italy','Spain','Netherlands','Sweden','Norway','Denmark','Finland','Brazil','Mexico','South Korea','Singapore','Ireland','Belgium'],
+    domains: ['example.com','mail.com','test.org','demo.net','sample.io','fake.co','mock.dev','placeholder.app'],
+    streets: ['Main St','Oak Ave','Pine Rd','Maple Dr','Cedar Ln','Elm St','Park Blvd','Lake Rd','Hill St','Spring Way','Sunset Blvd','River Rd','Forest Ave','Mountain Dr','Valley Rd'],
+    companies: ['Acme Inc','Globex','Initech','Umbrella Corp','Stark Industries','Wayne Enterprises','Wonka Industries','Cyberdyne','Tyrell Corp','Soylent','Hooli','Pied Piper','Aperture Labs','Massive Dynamic','Vandelay Industries','Dunder Mifflin','Los Pollos','Sterling Cooper','Bluth Company','Pendant Publishing'],
+    jobs: ['Software Engineer','Product Manager','Designer','Marketing Specialist','Data Analyst','Project Manager','Sales Representative','HR Manager','Operations Lead','Researcher','Account Executive','Customer Success','DevOps Engineer','Content Strategist','UX Researcher','QA Engineer','Solutions Architect','Technical Writer','Business Analyst','Growth Marketer'],
+  },
+  zh_CN: {
+    firstNames: ['伟','芳','娜','敏','静','丽','强','磊','军','洋','勇','艳','杰','娟','涛','明','超','秀英','霞','平','刚','桂英','文','建华','建军','红','建国','鹏','亮','辉','小红','宇航','欣怡','梓涵','浩然','子轩','雨桐','思辰','可馨','一鸣','若曦','嘉宁','紫涵','梓萱','沐辰','奕辰','锦程','安然','语桐'],
+    lastNames: ['李','王','张','刘','陈','杨','黄','赵','周','吴','徐','孙','胡','朱','高','林','何','郭','马','罗','梁','宋','郑','谢','韩','唐','冯','于','董','萧','程','曹','袁','邓','许','傅','沈','曾','彭','吕','苏','卢','蒋','蔡','贾','丁','魏','薛','叶','阎','余','潘','杜','戴','夏','钟','汪','田','任','姜','范','方','石','姚','谭','廖','邹','熊','金','陆','郝','孔','白','崔','康','毛','邱','秦','江','史','顾','侯','邵','孟','龙','万','段','雷','钱','汤','尹','黎','易','常','武','乔','贺','赖','龚','文'],
+    cities: ['北京','上海','广州','深圳','成都','重庆','杭州','武汉','西安','南京','天津','苏州','郑州','长沙','东莞','青岛','沈阳','宁波','昆明','大连','厦门','福州','无锡','合肥','贵阳','佛山','济南','南昌','温州','石家庄','南宁','金华','常州','南通','嘉兴','珠海','惠州','中山','徐州','台州'],
+    countries: ['中国','美国','日本','德国','英国','法国','加拿大','澳大利亚','韩国','意大利','西班牙','荷兰','瑞士','瑞典','新加坡','马来西亚','泰国','越南','印度','俄罗斯'],
+    domains: ['example.com','163.com','qq.com','126.com','sina.com','mail.cn','test.cn','demo.com.cn','sample.cn'],
+    streets: ['人民路','中山路','建国路','解放路','文化街','和平大道','新华路','光明街','胜利路','建设街'],
+    companies: ['华为','阿里巴巴','腾讯','百度','京东','美团','字节跳动','小米','网易','拼多多','中国移动','中国电信','中国联通','招商银行','平安集团','比亚迪','宁德时代','海尔','格力','联想','万科','保利','碧桂园'],
+    jobs: ['软件工程师','产品经理','设计师','市场营销','数据分析师','项目经理','销售代表','人力资源','运营主管','研究员','客户成功','DevOps工程师','内容策划','用户体验','QA工程师','解决方案架构师','技术写作','商业分析','增长营销','财务分析师'],
+  },
+  en_GB: {
+    firstNames: ['Oliver','George','Harry','Jack','Jacob','Noah','Charlie','Muhammad','Thomas','Oscar','William','James','Henry','Leo','Alfie','Joshua','Freddie','Ethan','Isaac','Archie','Joshua','Daniel','Joseph','Samuel','Edward','Lucas','Adam','Dylan','Mohammed','Arthur','Harrison','Theo','Alexander','Logan','Benjamin','Mason','Holly','Lily','Olivia','Amelia','Isabella','Mia','Emily','Grace','Sophia','Charlotte','Ella','Ava','Jessica','Lily'],
+    lastNames: ['Smith','Jones','Taylor','Brown','Wilson','Evans','Walker','Wright','Robinson','Hall','Clarke','Edwards','Johnson','Thomas','Roberts','Harrison','Lewis','Davies','Morgan','Phillips','Hughes','Wood','Mason','Harris','Cooper','Cox','Simpson','Watson','Bell','Ward','Foster','Turner','Bennett','Parker','Kelly','Brooks','Barker','Alexander','Stone','Holmes','Carter'],
+    cities: ['London','Birmingham','Manchester','Leeds','Liverpool','Newcastle','Sheffield','Bristol','Nottingham','Leicester','Coventry','Brighton','Hull','Plymouth','Stoke','Wolverhampton','Reading','Derby','Swansea','Edinburgh','Glasgow','Cardiff','Belfast','Aberdeen','Oxford','Cambridge','York','Bath','Exeter','Norwich'],
+    countries: ['United Kingdom','Ireland','France','Germany','Spain','Portugal','Italy','Netherlands','Belgium','Switzerland','Austria','Sweden','Norway','Denmark','Finland','Iceland','Poland','Czech Republic'],
+    domains: ['example.co.uk','mail.co.uk','test.uk','demo.uk','sample.uk','mock.uk'],
+    streets: ['High St','Church Ln','Station Rd','Park Ave','London Rd','Manor Way','Green Ln','Mill Ln','The Crescent','Queens Rd','Kings Rd','Castle St'],
+    companies: ['Acme Ltd','British Telecom','Barclays','HSBC','Vodafone','Tesco','Sainsbury','BP','Shell','Unilever','Rolls Royce','BAE Systems','GlaxoSmithKline','AstraZeneca','Diageo','Reckitt','Prudential','Lloyds','NatWest','Marks & Spencer'],
+    jobs: ['Software Engineer','Product Manager','Designer','Marketing Specialist','Data Analyst','Project Manager','Sales Rep','HR Manager','Operations Lead','Researcher','Account Executive','Customer Success','DevOps Engineer','Content Strategist','UX Researcher','QA Engineer','Solutions Architect','Technical Writer','Business Analyst','Growth Marketer'],
+  },
+  de_DE: { firstNames: ['Maximilian','Alexander','Paul','Leon','Felix','Ben','Elias','Jonas','Luis','Finn','Emma','Mia','Hannah','Lea','Lina','Anna','Marie','Lena','Sophie','Laura'], lastNames: ['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann','Schäfer','Koch','Klein','Wolf','Schröder','Neumann','Schwarz','Zimmermann','Braun','Krüger'], cities: ['Berlin','Hamburg','München','Köln','Frankfurt','Stuttgart','Düsseldorf','Leipzig','Dortmund','Essen','Bremen','Dresden','Hannover','Nürnberg','Duisburg','Bochum','Wuppertal','Bielefeld','Bonn','Münster'], countries: ['Deutschland','Österreich','Schweiz','Frankreich','Italien','Spanien','Niederlande','Belgien','Polen','Tschechien'], domains: ['example.de','mail.de','test.de','demo.de'], streets: ['Hauptstraße','Schulstraße','Bahnhofstraße','Gartenweg','Kirchgasse','Lindenallee','Bergstraße','Waldweg','Ringstraße','Parkweg'], companies: ['Siemens','Volkswagen','BMW','Mercedes','Bosch','Adidas','Porsche','SAP','Allianz','Deutsche Bank','BASF','Bayer','Henkel','Lufthansa'], jobs: ['Softwareentwickler','Produktmanager','Designer','Marketing-Spezialist','Datenanalyst','Projektleiter','Vertrieb','HR-Manager'] },
+  fr_FR: { firstNames: ['Lucas','Hugo','Léo','Louis','Gabriel','Arthur','Jules','Nathan','Raphaël','Paul','Emma','Jade','Louise','Alice','Chloé','Lina','Léa','Manon','Rose','Anna'], lastNames: ['Martin','Bernard','Dubois','Thomas','Robert','Richard','Petit','Durand','Leroy','Moreau','Simon','Laurent','Lefebvre','Michel','Garcia','David','Bertrand','Roux','Vincent','Fournier'], cities: ['Paris','Marseille','Lyon','Toulouse','Nice','Nantes','Strasbourg','Montpellier','Bordeaux','Lille','Rennes','Reims','Le Havre','Saint-Étienne','Toulon','Grenoble','Dijon','Angers','Nîmes','Villeurbanne'], countries: ['France','Belgique','Suisse','Luxembourg','Canada','Sénégal','Côte d\'Ivoire','Maroc'], domains: ['example.fr','mail.fr','test.fr','demo.fr'], streets: ['Rue de la Paix','Avenue des Champs','Boulevard Saint-Michel','Rue du Commerce','Place de la République','Rue Victor Hugo','Avenue Foch','Rue de Rivoli'], companies: ['L\'Oréal','Renault','Peugeot','Citroën','Airbus','BNP Paribas','Carrefour','Danone','Pernod Ricard','Sanofi','Total','Orange','SNCF'], jobs: ['Ingénieur logiciel','Chef de produit','Designer','Marketing','Analyste de données','Chef de projet','Commercial','RH'] },
+  ja_JP: { firstNames: ['翔太','蓮','陽斗','湊','颯','結愛','陽菜','芽依','葵','凛','陽','樹','大和','奏太','美桜','心春','陽葵','結月','愛莉','美月'], lastNames: ['佐藤','鈴木','高橋','田中','渡辺','伊藤','山本','中村','小林','加藤','吉田','山田','佐々木','山口','松本','井上','木村','林','清水','山崎'], cities: ['東京','横浜','大阪','名古屋','札幌','福岡','神戸','川崎','京都','さいたま','広島','仙台','千葉','北九州','世田谷区','港区','渋谷区','新宿区','中央区','大阪市'], countries: ['日本','アメリカ','イギリス','フランス','ドイツ','イタリア','スペイン','カナダ','オーストラリア','韓国','中国'], domains: ['example.jp','mail.jp','test.jp','demo.jp'], streets: ['中央通り','駅前通り','公園通り','桜通り','緑が丘','本町','学園通り'], companies: ['トヨタ','ソニー','三菱','三井','パナソニック','日立','任天堂','ソフトバンク','KDDI','NTTデータ','野村證券','三井住友銀行'], jobs: ['ソフトウェアエンジニア','プロダクトマネージャー','デザイナー','マーケティング','データアナリスト','プロジェクトマネージャー','営業','人事'] }
+};
+
+function getPool() {
+  const locale = $('#locale').value;
+  return POOLS[locale] || POOLS.en_US;
+}
+
+function pick(arr, rng) { return arr[Math.floor(rng() * arr.length)]; }
+function pickInt(rng, min, max) { return Math.floor(rng() * (max - min + 1)) + min; }
+
+const GENERATORS = {
+  name: (rng, p) => `${pick(p.firstNames, rng)} ${pick(p.lastNames, rng)}`,
+  firstName: (rng, p) => pick(p.firstNames, rng),
+  lastName: (rng, p) => pick(p.lastNames, rng),
+  email: (rng, p) => `${pick(p.firstNames, rng).toLowerCase()}.${pick(p.lastNames, rng).toLowerCase()}@${pick(p.domains, rng)}`,
+  phone: (rng) => `+1-${pickInt(rng,200,999)}-${pickInt(rng,100,999)}-${pickInt(rng,1000,9999)}`,
+  username: (rng, p) => `${pick(p.firstNames, rng).toLowerCase()}${pickInt(rng, 1, 9999)}`,
+  address: (rng, p) => `${pickInt(rng, 100, 9999)} ${pick(p.streets, rng)}`,
+  city: (rng, p) => pick(p.cities, rng),
+  country: (rng, p) => pick(p.countries, rng),
+  zipcode: (rng) => String(pickInt(rng, 10000, 99999)),
+  company: (rng, p) => pick(p.companies, rng),
+  job: (rng, p) => pick(p.jobs, rng),
+  url: (rng, p) => `https://${pick(p.domains, rng)}/${pick(['about','products','blog','docs','api'], rng)}`,
+  ip: (rng) => `${pickInt(rng,1,255)}.${pickInt(rng,0,255)}.${pickInt(rng,0,255)}.${pickInt(rng,0,255)}`,
+  uuid: (rng) => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = rng()*16|0; return (c === 'x' ? r : (r&0x3|0x8)).toString(16); }),
+  date: (rng) => { const d = new Date(Date.now() - pickInt(rng, 1, 365*3) * 86400000); return d.toISOString().split('T')[0]; },
+  datetime: (rng) => { const d = new Date(Date.now() - pickInt(rng, 1, 365*3) * 86400000); return d.toISOString(); },
+  age: (rng) => pickInt(rng, 1, 90),
+  integer: (rng) => pickInt(rng, 0, 200),
+  price: (rng) => (rng() * 1000).toFixed(2),
+  boolean: (rng) => rng() > 0.5,
+  lorem: (rng) => 'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua'.split(' ').sort(() => rng() - 0.5).slice(0, pickInt(rng, 8, 16)).join(' '),
+};
+
+function renderSchema() {
+  const list = $('#schema-list');
+  list.innerHTML = '';
+  fields.forEach((f, i) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `
+      <input class="gz-input field-name" value="${f.name}" data-idx="${i}" data-prop="name">
+      <select class="gz-select field-type" data-idx="${i}" data-prop="type">
+        ${FIELD_TYPES.map(([v, label]) => `<option value="${v}" ${v===f.type?'selected':''}>${label}</option>`).join('')}
+      </select>
+      <div class="field-actions">
+        <button class="gz-btn gz-btn-secondary" data-idx="${i}" data-act="up" style="padding:4px 8px">↑</button>
+        <button class="gz-btn gz-btn-secondary" data-idx="${i}" data-act="dn" style="padding:4px 8px">↓</button>
+        <button class="gz-btn gz-btn-secondary" data-idx="${i}" data-act="rm" style="padding:4px 8px">✕</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  list.querySelectorAll('input,select').forEach(el => {
+    el.addEventListener('input', e => {
+      const i = +e.target.dataset.idx;
+      const prop = e.target.dataset.prop;
+      fields[i][prop] = e.target.value;
+    });
+  });
+  list.querySelectorAll('button[data-act]').forEach(b => {
+    b.addEventListener('click', e => {
+      const i = +e.target.dataset.idx;
+      const act = e.target.dataset.act;
+      if (act === 'rm') fields.splice(i, 1);
+      else if (act === 'up' && i > 0) [fields[i-1], fields[i]] = [fields[i], fields[i-1]];
+      else if (act === 'dn' && i < fields.length-1) [fields[i+1], fields[i]] = [fields[i], fields[i+1]];
+      renderSchema();
+    });
+  });
+}
+
+function loadPreset(kind) {
+  if (kind === 'user') fields = [{name:'id',type:'uuid'},{name:'name',type:'name'},{name:'email',type:'email'},{name:'phone',type:'phone'},{name:'city',type:'city'},{name:'country',type:'country'},{name:'age',type:'age'},{name:'job',type:'job'},{name:'company',type:'company'},{name:'createdAt',type:'datetime'}];
+  else if (kind === 'product') fields = [{name:'sku',type:'uuid'},{name:'name',type:'lorem'},{name:'price',type:'price'},{name:'stock',type:'integer'},{name:'available',type:'boolean'},{name:'category',type:'job'}];
+  else if (kind === 'order') fields = [{name:'orderId',type:'uuid'},{name:'customer',type:'name'},{name:'email',type:'email'},{name:'amount',type:'price'},{name:'paid',type:'boolean'},{name:'placedAt',type:'datetime'}];
+  renderSchema();
+}
+
+function validateFields() {
+  if (!fields.length) return t('noFields');
+  const names = fields.map(f => f.name.trim());
+  const empty = names.some(n => !n);
+  if (empty) return t('selectFieldName');
+  const uniq = new Set(names);
+  if (uniq.size !== names.length) return t('selectFieldName');
+  const bad = names.find(n => !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(n));
+  if (bad) return t('invalidFieldName') + ` (bad: ${bad})`;
+  return null;
+}
+
+function generateData() {
+  const err = validateFields();
+  if (err) { $('#status').innerHTML = `<span style="color:var(--accent)">${err}</span>`; return; }
+
+  const rows = +$('#row-count').value || 10;
+  const useSeed = $('#seed-check').checked;
+  const seed = +$('#seed-val').value || 42;
+  const rng = useSeed ? makeRng(seed) : Math.random;
+  const pool = getPool();
+
+  const t0 = performance.now();
+  const out = [];
+  for (let i = 0; i < rows; i++) {
+    const row = {};
+    for (const f of fields) {
+      const gen = GENERATORS[f.type];
+      row[f.name] = gen ? gen(rng, pool) : null;
+    }
+    out.push(row);
+  }
+  const ms = Math.round(performance.now() - t0);
+  outputRows = out;
+  renderOutput();
+  $('#status').innerHTML = `<span class="stat-chip">📊 ${t('generated')(rows, ms)}</span><span class="stat-chip">📁 ${currentFormat.toUpperCase()}</span><span class="stat-chip">🌐 ${$('#locale').value}</span>`;
+}
+
+function renderOutput() {
+  const data = formatOutput(outputRows, currentFormat);
+  const text = currentFormat === 'json' ? JSON.stringify(JSON.parse(data), null, 2) : data;
+  $('#output').textContent = text || '[]';
+}
+
+function formatOutput(rows, fmt) {
+  if (!rows.length) return '';
+  if (fmt === 'json') return JSON.stringify(rows, null, 2);
+  if (fmt === 'csv') {
+    const headers = fields.map(f => f.name);
+    const escape = v => {
+      if (v === null || v === undefined) return '';
+      const s = String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [headers.join(',')];
+    rows.forEach(r => lines.push(headers.map(h => escape(r[h])).join(',')));
+    return lines.join('\n');
+  }
+  if (fmt === 'sql') {
+    const table = 'mock_data';
+    const cols = fields.map(f => `\`${f.name}\``).join(', ');
+    const lines = [`-- Generated ${rows.length} rows`, `INSERT INTO \`${table}\` (${cols}) VALUES`];
+    rows.forEach((r, i) => {
+      const vals = fields.map(f => {
+        const v = r[f.name];
+        if (v === null) return 'NULL';
+        if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+        return `'${String(v).replace(/'/g, "''")}'`;
+      }).join(', ');
+      lines.push(`(${vals})${i < rows.length - 1 ? ',' : ';'}`);
+    });
+    return lines.join('\n');
+  }
+  return '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderSchema();
+  $('#toolbar').innerHTML = '';
+  $('#add-field').onclick = () => { fields.push({ name: `field${fields.length+1}`, type: 'name' }); renderSchema(); };
+  $('#preset-user').onclick = () => loadPreset('user');
+  $('#preset-product').onclick = () => loadPreset('product');
+  $('#preset-order').onclick = () => loadPreset('order');
+  $('#generate').onclick = generateData;
+  $('#seed-check').addEventListener('change', e => { $('#seed-val').disabled = !e.target.checked; });
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      tab.classList.add('active');
+      currentFormat = tab.dataset.fmt;
+      if (outputRows.length) renderOutput();
+    });
+  });
+  $('#copy-btn').onclick = () => copyText($('#output').textContent);
+  $('#download-btn').onclick = () => {
+    const ext = { json: 'json', csv: 'csv', sql: 'sql' }[currentFormat];
+    dl(`mock-data.${ext}`, $('#output').textContent, 'text/plain');
+  };
+});
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['howto1','howto2','howto3','howto4'],
+  related: [
+    {icon:'🪙', href:'/dev/uuid.html', name:'UUID Generator'},
+    {icon:'🔐', href:'/dev/hash-generator.html', name:'Hash Generator'},
+    {icon:'📊', href:'/dev/json.html', name:'JSON Formatter'},
+    {icon:'🔢', href:'/dev/number-generator.html', name:'Number Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
