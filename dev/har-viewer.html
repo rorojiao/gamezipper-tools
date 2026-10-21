@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>HAR File Viewer & Analyzer - Inspect HTTP Archive Logs Online | GameZipper Tools</title>
+  <meta name="description" content="Free HAR file viewer and analyzer. Open a .har export from Chrome, Firefox or Edge DevTools to inspect requests, status codes, headers, timings and payloads, copy any request as cURL, and download a redacted HAR safe to share. Runs entirely in your browser.">
+  <link rel="canonical" href="https://tools.gamezipper.com/dev/har-viewer.html">
+  <meta property="og:title" content="HAR File Viewer & Analyzer - Inspect HTTP Archive Logs Online | GameZipper Tools">
+  <meta property="og:description" content="Free HAR file viewer and analyzer. Open a .har export from Chrome, Firefox or Edge DevTools to inspect requests, status codes, headers, timings and payloads, copy any request as cURL, and download a redacted HAR safe to share. Runs entirely in your browser.">
+  <meta property="og:url" content="https://tools.gamezipper.com/dev/har-viewer.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HAR File Viewer & Analyzer - Inspect HTTP Archive Logs Online | GameZipper Tools">
+  <meta name="twitter:description" content="Open a .har export from Chrome, Firefox or Edge DevTools: filterable request list, status families, timing phases, per-request detail, cURL export and one-click redaction.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20261001210623R840tools"></script>
+<style>
+.hv-drop{border:2px dashed rgba(0,214,114,.45);border-radius:14px;padding:26px 18px;text-align:center;cursor:pointer;transition:background .15s,border-color .15s;background:rgba(0,214,114,.05)}
+.hv-drop:hover,.hv-drop.over{background:rgba(0,214,114,.12);border-color:#00d672}
+.hv-drop b{display:block;font-size:1.05em;margin-bottom:4px}
+.hv-drop span{font-size:.82em;opacity:.75}
+.hv-stats{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.hv-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px;font-size:.8em;min-width:78px}
+.hv-stat b{display:block;font-size:1.35em;line-height:1.2}
+.hv-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center}
+.hv-filters input,.hv-filters select{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.16);border-radius:8px;color:#e8e8e8;padding:6px 9px;font-size:.82em;font-family:inherit}
+.hv-filters input{flex:1;min-width:150px}
+.hv-tbl{width:100%;border-collapse:collapse;font-size:.78em}
+.hv-tbl th{text-align:left;padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.16);cursor:pointer;white-space:nowrap;font-weight:600}
+.hv-tbl td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0}
+.hv-tbl tr:hover td{background:rgba(255,255,255,.05)}
+.hv-tbl tr.sel td{background:rgba(0,214,114,.14)}
+.hv-url{font-family:monospace;max-width:none;width:55%}
+.hv-m{font-weight:700;font-size:.92em}
+.hv-m.GET{color:#61afef}.hv-m.POST{color:#00d672}.hv-m.PUT,.hv-m.PATCH{color:#ffc107}.hv-m.DELETE,.hv-m.OPTIONS{color:#e94560}
+.hv-s{font-weight:700}
+.hv-s.s2{color:#00d672}.hv-s.s3{color:#61afef}.hv-s.s4{color:#ffc107}.hv-s.s5,.hv-s.s0{color:#e94560}
+.hv-wf{display:inline-flex;height:9px;border-radius:3px;overflow:hidden;width:110px;vertical-align:middle;background:rgba(255,255,255,.08)}
+.hv-wf i{display:block;height:100%}
+.hv-legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.72em;margin:6px 0 2px;opacity:.85}
+.hv-legend span{display:flex;align-items:center;gap:4px}
+.hv-legend b{width:9px;height:9px;border-radius:2px;display:inline-block}
+.hv-detail{margin-top:14px;border-top:1px solid rgba(255,255,255,.12);padding-top:12px}
+.hv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.hv-tabs button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#ddd;padding:5px 11px;font-size:.8em;cursor:pointer;font-family:inherit}
+.hv-tabs button.on{background:#00d672;border-color:#00d672;color:#04160c;font-weight:600}
+.hv-pane{font-family:monospace;font-size:.75em;white-space:pre-wrap;word-break:break-all;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:11px;max-height:340px;overflow:auto;margin:0}
+.hv-find{margin-top:14px;background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.3);border-radius:11px;padding:11px 13px}
+.hv-find h4{margin:0 0 7px;font-size:.86em;color:#ffc107}
+.hv-find ul{margin:0;padding-left:18px;font-size:.8em;line-height:1.75}
+.hv-find li.warn{color:#ff8f8f}
+.hv-find li.ok{color:#7fe0a5}
+.hv-none{opacity:.6;font-size:.85em;padding:14px 0;text-align:center}
+.hv-groups{margin-top:14px;font-size:.8em}
+.hv-groups table{width:100%;border-collapse:collapse;margin-top:5px}
+.hv-groups th,.hv-groups td{text-align:left;padding:4px 7px;border-bottom:1px solid rgba(255,255,255,.07)}
+.hv-groups th{border-bottom:1px solid rgba(255,255,255,.16);font-weight:600}
+.hv-scroll{max-height:520px;overflow:auto}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"HAR File Viewer & Analyzer","description":"Free HAR file viewer and analyzer. Open a .har export from Chrome, Firefox or Edge DevTools to inspect requests, status codes, headers, timings and payloads, copy any request as cURL, and download a redacted HAR safe to share. Runs entirely in your browser.","url":"https://tools.gamezipper.com/dev/har-viewer.html","applicationCategory":"DeveloperApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I open a HAR file?","acceptedAnswer":{"@type":"Answer","text":"In Chrome, Edge or Firefox open DevTools, switch to the Network tab, tick Preserve log, reproduce the page or API flow you want to capture, then right-click the request list and choose Save all as HAR with content. Drop the resulting .har file onto this tool, or use the file picker. Everything is parsed locally in your browser."}},{"@type":"Question","name":"Is it safe to upload a HAR file to an online viewer?","acceptedAnswer":{"@type":"Answer","text":"Usually not. A HAR is a complete record of a browsing session and includes every request header you sent, so Authorization bearer tokens, session cookies and API keys sit inside it in plain text. This viewer never uploads anything - the file is read with the File API and parsed in your browser - and it can also produce a redacted copy with credentials stripped."}},{"@type":"Question","name":"What does the waterfall timing breakdown mean?","acceptedAnswer":{"@type":"Answer","text":"Each bar shows the HAR phases for one request: blocked and DNS are queue and lookup time, connect and SSL are the TCP and TLS handshakes, send is upload, wait is server think time, and receive is download. A long wait usually means slow server processing, while a long receive means a large payload or a slow connection."}},{"@type":"Question","name":"How do I copy a request as cURL?","acceptedAnswer":{"@type":"Answer","text":"Click any row in the request list to open its detail panel, switch to the Raw tab, and press Copy cURL. The command is rebuilt from the captured method, URL, headers and body so you can replay the exact call in a terminal, Postman or curl.exe."}},{"@type":"Question","name":"How do I redact a HAR before sharing it?","acceptedAnswer":{"@type":"Answer","text":"Press Redact and download to get a valid HAR with Authorization and Cookie headers emptied, request and response bodies removed, and sensitive query parameters masked in both the queryString array and the URL. The result still opens in any HAR viewer, so it is safe to attach to a bug report or a support ticket."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/har-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/har-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/har-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-ad-slot gz-ad-slot-top" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+  <main class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+
+    <div class="hv-drop" id="drop" tabindex="0" role="button" aria-label="Drop a HAR file here or click to browse">
+      <b id="dropTitle"></b>
+      <span id="dropSub"></span>
+    </div>
+    <input type="file" id="file" accept=".har,.json,application/json" hidden>
+
+    <div class="hv-stats" id="stats"></div>
+
+    <div class="hv-filters">
+      <input type="text" id="q" spellcheck="false" autocomplete="off">
+      <select id="fMethod"><option value="">all methods</option></select>
+      <select id="fStatus"><option value="">all status</option></select>
+      <select id="sort">
+        <option value="seq">capture order</option>
+        <option value="time">slowest first</option>
+        <option value="status">status code</option>
+        <option value="size">largest first</option>
+      </select>
+    </div>
+
+    <div class="hv-legend" id="legend"></div>
+    <div class="hv-scroll">
+      <table class="hv-tbl">
+        <thead><tr>
+          <th data-k="seq" style="width:34px">#</th>
+          <th data-k="method" style="width:70px" id="thMethod">Method</th>
+          <th data-k="url">URL</th>
+          <th data-k="status" style="width:64px" id="thStatus">Status</th>
+          <th data-k="type" style="width:82px" id="thType">Type</th>
+          <th data-k="size" style="width:74px" id="thSize">Size</th>
+          <th data-k="time" style="width:78px" id="thTime">Time</th>
+          <th data-k="wf" style="width:124px" id="thWf">Timing</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div class="hv-detail" id="detail" hidden>
+      <div class="hv-tabs" id="tabs"></div>
+      <pre class="hv-pane" id="pane"></pre>
+    </div>
+
+    <div class="hv-find" id="findBox" hidden>
+      <h4 id="hFind"></h4>
+      <ul id="find"></ul>
+    </div>
+
+    <div class="hv-groups" id="groupsBox" hidden>
+      <h4 id="hGroups"></h4>
+      <div id="groups"></div>
+    </div>
+  </main>
+  <aside class="gz-monetag-slot" aria-label="Managed advertising fallback" data-ad-provider="monetag" data-zone-policy="managed-by-shared-common-js" data-zone-status="hub-only-fallback">
+    <ins data-zoneid="11012002" data-ad-format="in-page-push"></ins>
+  </aside>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+  <div class="gz-ad-slot gz-ad-slot-bottom" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'HAR File Viewer & Analyzer',
+    toolDesc: 'Open a .har export from Chrome, Firefox or Edge DevTools. Filter the request list, read the timing waterfall, inspect headers and payloads, copy any request as cURL, and download a redacted HAR that is safe to share. Everything runs in your browser.',
+    step1: 'In DevTools open the Network tab, tick Preserve log, reproduce the flow you want to capture, then right-click the request list and choose Save all as HAR with content',
+    step2: 'Drop the .har file onto the box above, or click it to browse. Nothing is uploaded - the file is read locally with the File API',
+    step3: 'Scan the status chips and the findings list, then sort by slowest first to find the request that ate your page load',
+    step4: 'Click a row to inspect its headers, timing phases and body; use Copy cURL to replay it, or Redact and download before attaching the HAR to a ticket',
+    dropTitle: '📂 Drop a .har file here',
+    dropSub: 'or click to browse - nothing is uploaded, parsing happens in your browser',
+    filterPh: 'filter by URL, host or status text...',
+    allMethods: 'all methods',
+    allStatus: 'all status',
+    sortSeq: 'capture order',
+    sortTime: 'slowest first',
+    sortStatus: 'status code',
+    sortSize: 'largest first',
+    thMethod: 'Method',
+    thStatus: 'Status',
+    thType: 'Type',
+    thSize: 'Size',
+    thTime: 'Time',
+    thWf: 'Timing',
+    tabOverview: 'Overview',
+    tabRequest: 'Request',
+    tabResponse: 'Response',
+    tabTiming: 'Timing',
+    tabRaw: 'Raw',
+    tabCurl: 'cURL',
+    findings: 'Findings & privacy check',
+    transferBy: 'Transfer by type and host',
+    colType: 'Type',
+    colCount: 'Requests',
+    colTransfer: 'Transferred',
+    colHost: 'Host',
+    copy: 'Copy',
+    copyCurl: 'Copy cURL',
+    copyBody: 'Copy body',
+    download: 'Download .har',
+    redact: 'Redact & download',
+    sample: 'Load sample',
+    clear: 'Clear',
+    errParse: 'Could not parse this file. A HAR must be JSON with a log.entries array - export one from DevTools with Save all as HAR with content.',
+    errEmpty: 'No entries',
+    stReq: 'Requests',
+    stHosts: 'Hosts',
+    stBytes: 'Transferred',
+    stTime: 'Total time',
+    stFailed: 'Failed',
+    noRows: 'No requests match the current filter.',
+    pick: 'Select a row to inspect its headers, timing phases and body.',
+    redactedNote: 'Redaction emptied Authorization and Cookie headers, removed request and response bodies, and masked sensitive query parameters. The result is still a valid HAR.',
+    phBlocked: 'blocked', phDns: 'DNS', phConnect: 'connect', phSsl: 'SSL', phSend: 'send', phWait: 'wait (TTFB)', phReceive: 'receive',
+    f4xx: '4xx error responses',
+    f5xx: '5xx server errors',
+    fnoresp: 'requests with no response',
+    fhttp: 'plain http:// requests',
+    fslow: 'requests slower than 1s',
+    fbig: 'responses larger than 500 KB',
+    funcomp: 'text served without compression',
+    fdup: 'duplicate GETs of the same URL',
+    fallGood: 'no errors, slow requests or oversized payloads found',
+    fcred: 'this HAR contains credential headers - redact before sharing'
+  },
+  zh: {
+    toolTitle: 'HAR 文件查看器与分析器',
+    toolDesc: '打开 Chrome、Firefox 或 Edge DevTools 导出的 .har 文件。筛选请求列表、查看时间瀑布图、检查响应头和载荷、把任意请求复制为 cURL，并下载可安全分享的脱敏 HAR。全部在浏览器本地运行。',
+    step1: '在 DevTools 打开 Network 面板，勾选 Preserve log，复现要抓取的流程，然后右键请求列表选择 Save all as HAR with content',
+    step2: '把 .har 文件拖到上面的方框，或点击选择文件。文件不会被上传，本地 File API 解析',
+    step3: '先看状态码标记和问题清单，再按最慢排序找出拖慢页面加载的那个请求',
+    step4: '点击任意行查看响应头、耗时阶段和正文；用 Copy cURL 重放，或先 Redact 再下载后附到工单里',
+    dropTitle: '📂 把 .har 文件拖到这里',
+    dropSub: '或点击选择文件 — 不上传任何内容，解析在浏览器内完成',
+    filterPh: '按 URL、主机或状态文本筛选…',
+    allMethods: '全部方法',
+    allStatus: '全部状态',
+    sortSeq: '抓取顺序',
+    sortTime: '最慢优先',
+    sortStatus: '状态码',
+    sortSize: '最大优先',
+    thMethod: '方法',
+    thStatus: '状态',
+    thType: '类型',
+    thSize: '大小',
+    thTime: '耗时',
+    thWf: '耗时分布',
+    tabOverview: '概览',
+    tabRequest: '请求',
+    tabResponse: '响应',
+    tabTiming: '耗时',
+    tabRaw: '原始',
+    tabCurl: 'cURL',
+    findings: '问题检测与隐私检查',
+    transferBy: '按类型和主机统计传输量',
+    colType: '类型',
+    colCount: '请求数',
+    colTransfer: '传输量',
+    colHost: '主机',
+    copy: '复制',
+    copyCurl: '复制 cURL',
+    copyBody: '复制正文',
+    download: '下载 .har',
+    redact: '脱敏并下载',
+    sample: '加载示例',
+    clear: '清空',
+    errParse: '无法解析该文件。HAR 必须是包含 log.entries 数组的 JSON — 请在 DevTools 中用 Save all as HAR with content 导出。',
+    errEmpty: '无条目',
+    stReq: '请求数',
+    stHosts: '主机数',
+    stBytes: '传输量',
+    stTime: '总耗时',
+    stFailed: '失败数',
+    noRows: '没有符合当前筛选条件的请求。',
+    pick: '点击任意行查看响应头、耗时阶段和正文。',
+    redactedNote: '脱敏已清空 Authorization 与 Cookie 响应头、移除请求与响应正文，并遮蔽敏感查询参数。结果仍是合法 HAR 文件。',
+    phBlocked: '阻塞', phDns: 'DNS', phConnect: '连接', phSsl: 'SSL', phSend: '发送', phWait: '等待(TTFB)', phReceive: '接收',
+    f4xx: '4xx 错误响应',
+    f5xx: '5xx 服务器错误',
+    fnoresp: '无响应的请求',
+    fhttp: '明文 http:// 请求',
+    fslow: '耗时超过 1 秒的请求',
+    fbig: '超过 500 KB 的响应',
+    funcomp: '未压缩的文本响应',
+    fdup: '重复的同 URL GET 请求',
+    fallGood: '未发现错误、慢请求或超大响应',
+    fcred: '此 HAR 含凭据响应头 — 分享前请先脱敏'
+  }
+});
+
+var $ = function (s) { return document.querySelector(s); };
+function t(k) { return GZI18n.t ? GZI18n.t(k) : (GZI18n.lang === 'zh' ? GZI18n.zh[k] : GZI18n.en[k]); }
+
+var PHASES = ['blocked', 'dns', 'connect', 'ssl', 'send', 'wait', 'receive'];
+var PHASE_COLOR = ['#5c6bc0', '#7e57c2', '#26a69a', '#66bb6a', '#ffa726', '#e94560', '#42a5f5'];
+
+var ENTRIES = [];   /* normalized */
+var REDACTED = null; /* redacted copy for download */
+var sel = -1;
+var tab = 'overview';
+var sortKey = 'seq';
+var asc = true;
+var errors = [];
+
+/* ---------------- helpers ---------------- */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function fmtBytes(n) {
+  n = Number(n) || 0;
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(2) + ' MB';
+}
+function fmtMs(n) {
+  n = Number(n) || 0;
+  if (n < 1) return n.toFixed(2) + ' ms';
+  if (n < 1000) return n.toFixed(0) + ' ms';
+  return (n / 1000).toFixed(2) + ' s';
+}
+function hostOf(url) {
+  var m = String(url || '').match(/^[a-z][a-z0-9+.-]*:\/\/([^/?#]+)/i);
+  return m ? m[1] : '(relative)';
+}
+function headerLines(list) {
+  if (!Array.isArray(list)) return '';
+  return list.map(function (h) { return (h.name || '') + ': ' + (h.value || ''); }).join('\n');
+}
+function queryLines(list) {
+  if (!Array.isArray(list)) return '';
+  return list.map(function (q) { return (q.name || '') + '=' + (q.value || ''); }).join('\n');
+}
+function copyText(txt) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt);
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  try { if (window.gzAnalytics) gzAnalytics.track('copy_click', { tool: 'har-viewer' }); } catch (e) {}
+}
+
+/* ---------------- parse ---------------- */
+function parseHar(raw, label) {
+  var doc;
+  try { doc = JSON.parse(raw); }
+  catch (e) { errors = [t('errParse')]; return false; }
+  if (!doc || !doc.log || !Array.isArray(doc.log.entries)) {
+    errors = [t('errParse')];
+    return false;
+  }
+  var entries = doc.log.entries;
+  ENTRIES = entries.map(function (e, i) {
+    var tm = e.timings || {};
+    var ph = {};
+    var any = false;
+    PHASES.forEach(function (p) {
+      var v = Number(tm[p]);
+      if (!isFinite(v) || v < 0) v = 0;
+      ph[p] = v; if (v > 0) any = true;
+    });
+    if (!any) ph.wait = Number(e.time) || 0;
+    var content = e.response && e.response.content ? e.response.content : {};
+    return {
+      i: i,
+      method: (e.request && e.request.method) || 'GET',
+      url: (e.request && e.request.url) || '',
+      status: e.response && e.response.status != null ? e.response.status : 0,
+      statusText: (e.response && e.response.statusText) || '',
+      mime: content.mimeType || '',
+      size: Math.max(Number(content.size) || 0, 0),
+      transfer: Number(content.size) || 0,
+      bodySize: Number(content.size) || 0,
+      time: Number(e.time) || 0,
+      started: e.startedDateTime || '',
+      host: hostOf((e.request && e.request.url) || ''),
+      type: guessType(content.mimeType),
+      ph: ph,
+      reqHeaders: (e.request && e.request.headers) || [],
+      reqQuery: (e.request && e.request.queryString) || [],
+      reqCookies: (e.request && e.request.cookies) || [],
+      reqBody: (e.request && e.request.postData && (e.request.postData.text || '')) || '',
+      reqMime: (e.request && e.request.postData && e.request.postData.mimeType) || '',
+      resHeaders: (e.response && e.response.headers) || [],
+      resCookies: (e.response && e.response.cookies) || [],
+      resBody: typeof content.text === 'string' ? content.text : '',
+      resEnc: content.encoding || '',
+      httpVersion: e.response ? e.response.httpVersion : '',
+      raw: e
+    };
+  });
+  errors = [];
+  REDACTED = buildRedacted(doc);
+  if (label) $('#dropSub').textContent = label;
+  populateFilters();
+  render();
+  return true;
+}
+
+function guessType(mime) {
+  var m = String(mime || '').toLowerCase();
+  if (!m) return 'other';
+  if (m.indexOf('html') >= 0) return 'document';
+  if (m.indexOf('css') >= 0) return 'stylesheet';
+  if (m.indexOf('javascript') >= 0 || m.indexOf('ecmascript') >= 0) return 'script';
+  if (m.indexOf('json') >= 0) return 'xhr/fetch';
+  if (m.indexOf('image/') >= 0) return 'image';
+  if (m.indexOf('font') >= 0 || m.indexOf('woff') >= 0) return 'font';
+  if (m.indexOf('video') >= 0 || m.indexOf('audio') >= 0) return 'media';
+  return 'other';
+}
+
+function buildRedacted(doc) {
+  var clone = JSON.parse(JSON.stringify(doc));
+  var SENSITIVE = /^(authorization|cookie|set-cookie|proxy-authorization|x-api-key|x-auth-token|x-csrf-token|x-xsrf-token)$/i;
+  var QKEY = /(token|key|secret|password|passwd|pwd|session|sid|auth|signature|credential)/i;
+  var maskQ = function (val) {
+    if (typeof val !== 'string') return 'REDACTED';
+    return val.replace(/([?&#][^=&#]+)=([^&#]*)/g, function (mm, k) {
+      return QKEY.test(decodeURIComponent(k.replace(/^[?&#]+/, ''))) ? k + '=REDACTED' : mm;
+    });
+  };
+  (clone.log.entries || []).forEach(function (e) {
+    if (e.request) {
+      if (Array.isArray(e.request.headers)) {
+        e.request.headers = e.request.headers.map(function (h) {
+          return SENSITIVE.test(h.name || '') ? { name: h.name, value: 'REDACTED' } : h;
+        });
+      }
+      if (Array.isArray(e.request.cookies)) e.request.cookies = [];
+      if (Array.isArray(e.request.queryString)) {
+        e.request.queryString = e.request.queryString.map(function (q) {
+          return QKEY.test(q.name || '') ? { name: q.name, value: 'REDACTED' } : q;
+        });
+      }
+      if (e.request.url) e.request.url = maskQ(e.request.url);
+      if (e.request.postData) delete e.request.postData.text;
+    }
+    if (e.response) {
+      if (Array.isArray(e.response.headers)) {
+        e.response.headers = e.response.headers.map(function (h) {
+          return SENSITIVE.test(h.name || '') ? { name: h.name, value: 'REDACTED' } : h;
+        });
+      }
+      if (Array.isArray(e.response.cookies)) e.response.cookies = [];
+      if (e.response.content) delete e.response.content.text;
+    }
+  });
+  return clone;
+}
+
+/* ---------------- filters ---------------- */
+function populateFilters() {
+  var methods = {}, statuses = {};
+  ENTRIES.forEach(function (e) {
+    methods[e.method] = (methods[e.method] || 0) + 1;
+    if (e.status) statuses[e.status] = (statuses[e.status] || 0) + 1;
+  });
+  var mSel = $('#fMethod');
+  mSel.options[0].textContent = t('allMethods');
+  Object.keys(methods).sort().forEach(function (m) {
+    var o = document.createElement('option');
+    o.value = m; o.textContent = m + ' (' + methods[m] + ')';
+    mSel.appendChild(o);
+  });
+  var sSel = $('#fStatus');
+  sSel.options[0].textContent = t('allStatus');
+  Object.keys(statuses).sort(function (a, b) { return a - b; }).forEach(function (s) {
+    var o = document.createElement('option');
+    o.value = s; o.textContent = s + ' (' + statuses[s] + ')';
+    sSel.appendChild(o);
+  });
+}
+
+function filtered() {
+  var q = $('#q').value.trim().toLowerCase();
+  var m = $('#fMethod').value;
+  var s = $('#fStatus').value;
+  var out = ENTRIES.filter(function (e) {
+    if (m && e.method !== m) return false;
+    if (s && String(e.status) !== s) return false;
+    if (q && (e.url + ' ' + e.statusText + ' ' + e.mime + ' ' + e.method).toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+  var k = sortKey;
+  out.sort(function (a, b) {
+    var r;
+    if (k === 'time') r = a.time - b.time;
+    else if (k === 'size') r = a.transfer - b.transfer;
+    else if (k === 'status') r = a.status - b.status;
+    else if (k === 'method') return a.method < b.method ? -1 : a.method > b.method ? 1 : 0;
+    else r = a.i - b.i;
+    return asc ? r : -r;
+  });
+  return out;
+}
+
+/* ---------------- render ---------------- */
+function statusClass(code) {
+  if (!code) return 's0';
+  var s = String(code);
+  if (s[0] === '2') return 's2';
+  if (s[0] === '3') return 's3';
+  if (s[0] === '4') return 's4';
+  return 's5';
+}
+
+function renderStats() {
+  if (!ENTRIES.length) { $('#stats').innerHTML = ''; return; }
+  var hosts = {}, bytes = 0, total = 0, failed = 0;
+  ENTRIES.forEach(function (e) {
+    hosts[e.host] = 1;
+    bytes += e.transfer;
+    total += e.time;
+    if (!e.status || e.status >= 400) failed++;
+  });
+  var st = [
+    { k: 'stReq', v: ENTRIES.length },
+    { k: 'stHosts', v: Object.keys(hosts).length },
+    { k: 'stBytes', v: fmtBytes(bytes) },
+    { k: 'stTime', v: fmtMs(total) },
+    { k: 'stFailed', v: failed }
+  ];
+  $('#stats').innerHTML = st.map(function (s) {
+    return '<div class="hv-stat">' + t(s.k) + '<b>' + esc(s.v) + '</b></div>';
+  }).join('');
+}
+
+function renderLegend() {
+  var names = ['phBlocked', 'phDns', 'phConnect', 'phSsl', 'phSend', 'phWait', 'phReceive'];
+  $('#legend').innerHTML = names.map(function (n, i) {
+    return '<span><b style="background:' + PHASE_COLOR[i] + '"></b>' + esc(t(n)) + '</span>';
+  }).join('');
+}
+
+function waterfall(e) {
+  var total = 0;
+  PHASES.forEach(function (p) { total += e.ph[p]; });
+  if (total <= 0) total = e.time || 1;
+  return '<span class="hv-wf" title="' + esc(fmtMs(total)) + '">' +
+    PHASES.map(function (p, i) {
+      if (!e.ph[p]) return '';
+      var w = (e.ph[p] / total) * 100;
+      return '<i style="width:' + w.toFixed(2) + '%;background:' + PHASE_COLOR[i] + '"></i>';
+    }).join('') + '</span>';
+}
+
+function renderRows() {
+  var list = filtered();
+  var tb = $('#rows');
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="8"><div class="hv-none">' + esc(ENTRIES.length ? t('noRows') : t('errEmpty')) + '</div></td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(function (e) {
+    return '<tr data-i="' + e.i + '"' + (e.i === sel ? ' class="sel"' : '') + '>' +
+      '<td>' + (e.i + 1) + '</td>' +
+      '<td><span class="hv-m ' + esc(e.method) + '">' + esc(e.method) + '</span></td>' +
+      '<td class="hv-url" title="' + esc(e.url) + '">' + esc(e.url) + '</td>' +
+      '<td><span class="hv-s ' + statusClass(e.status) + '">' + (e.status || '—') + '</span></td>' +
+      '<td>' + esc(e.type) + '</td>' +
+      '<td>' + esc(fmtBytes(e.transfer)) + '</td>' +
+      '<td>' + esc(fmtMs(e.time)) + '</td>' +
+      '<td>' + waterfall(e) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderFindings() {
+  var items = [];
+  var n4 = 0, n5 = 0, noresp = 0, plain = 0, slow = [], big = 0, uncomp = 0;
+  var seen = {};
+  ENTRIES.forEach(function (e) {
+    if (e.status >= 400 && e.status < 500) n4++;
+    if (e.status >= 500) n5++;
+    if (!e.status) noresp++;
+    if (/^http:\/\//i.test(e.url)) plain++;
+    if (e.time > 1000) slow.push(e);
+    if (e.transfer > 512000) big++;
+    var enc = String(e.raw && e.response && e.response.content && e.response.content.compression
+      ? e.response.content.compression : '').toLowerCase();
+    if (/text|json|javascript|css|xml/.test(e.mime) && !/gzip|deflate|br|brotli/.test(enc)) uncomp++;
+    if (e.method === 'GET') {
+      var k = e.url;
+      seen[k] = (seen[k] || 0) + 1;
+    }
+  });
+  var dups = Object.keys(seen).filter(function (k) { return seen[k] > 1; }).length;
+  if (n4) items.push(['warn', '⚠️ ' + n4 + '× ' + t('f4xx')]);
+  if (n5) items.push(['warn', '🔴 ' + n5 + '× ' + t('f5xx')]);
+  if (noresp) items.push(['warn', '⛔ ' + noresp + '× ' + t('fnoresp')]);
+  if (plain) items.push(['warn', '🔓 ' + plain + '× ' + t('fhttp')]);
+  if (slow.length) items.push(['warn', '🐌 ' + slow.length + '× ' + t('fslow') + ' (' + esc(slow.slice(0, 3).map(function (e) { return fmtMs(e.time); }).join(', ')) + ')']);
+  if (big) items.push(['warn', '🐘 ' + big + '× ' + t('fbig')]);
+  if (uncomp) items.push(['warn', '🗜️ ' + uncomp + '× ' + t('funcomp')]);
+  if (dups) items.push(['warn', '🔁 ' + dups + '× ' + t('fdup')]);
+  var hasCred = ENTRIES.some(function (e) {
+    return e.reqHeaders.concat(e.resHeaders).some(function (h) {
+      return /^(authorization|cookie|set-cookie)$/i.test(h.name || '') && h.value && !/REDACTED/i.test(h.value);
+    });
+  });
+  if (hasCred) items.push(['warn', '🔑 ' + t('fcred')]);
+  if (!items.length) items.push(['ok', '✅ ' + t('fallGood')]);
+
+  $('#hFind').textContent = '🔎 ' + t('findings');
+  $('#find').innerHTML = items.map(function (i) {
+    return '<li class="' + i[0] + '">' + i[1] + '</li>';
+  }).join('') + '<li>' + esc(t('redactedNote')) + '</li>';
+  $('#findBox').hidden = false;
+
+  /* transfer by type + host */
+  var byType = {}, byHost = {};
+  ENTRIES.forEach(function (e) {
+    byType[e.type] = byType[e.type] || { n: 0, b: 0 };
+    byType[e.type].n++; byType[e.type].b += e.transfer;
+    byHost[e.host] = byHost[e.host] || { n: 0, b: 0 };
+    byHost[e.host].n++; byHost[e.host].b += e.transfer;
+  });
+  var topHost = Object.keys(byHost).sort(function (a, b) { return byHost[b].b - byHost[a].b; }).slice(0, 6);
+  $('#hGroups').textContent = '📊 ' + t('transferBy');
+  $('#groups').innerHTML =
+    '<table><thead><tr><th>' + esc(t('colType')) + '</th><th>' + esc(t('colCount')) + '</th><th>' + esc(t('colTransfer')) + '</th></tr></thead><tbody>' +
+    Object.keys(byType).sort(function (a, b) { return byType[b].b - byType[a].b; }).map(function (k) {
+      return '<tr><td>' + esc(k) + '</td><td>' + byType[k].n + '</td><td>' + esc(fmtBytes(byType[k].b)) + '</td></tr>';
+    }).join('') + '</tbody></table>' +
+    '<table><thead><tr><th>' + esc(t('colHost')) + '</th><th>' + esc(t('colCount')) + '</th><th>' + esc(t('colTransfer')) + '</th></tr></thead><tbody>' +
+    topHost.map(function (k) {
+      return '<tr><td>' + esc(k) + '</td><td>' + byHost[k].n + '</td><td>' + esc(fmtBytes(byHost[k].b)) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  $('#groupsBox').hidden = false;
+}
+
+function render() {
+  renderStats();
+  renderRows();
+  renderDetail();
+  if (ENTRIES.length) renderFindings();
+  else { $('#findBox').hidden = true; $('#groupsBox').hidden = true; }
+}
+
+/* ---------------- detail ---------------- */
+function toCurl(e) {
+  var parts = ['curl -X ' + e.method + " '" + e.url + "'"];
+  e.reqHeaders.forEach(function (h) {
+    if (/^(host|content-length|:|:authority)$/i.test(h.name || '')) return;
+    if (h.value === '') return;
+    parts.push("-H '" + String(h.name).replace(/'/g, "'\\''") + ": " + String(h.value).replace(/'/g, "'\\''") + "'");
+  });
+  if (e.reqBody) parts.push("--data-raw '" + String(e.reqBody).replace(/'/g, "'\\''") + "'");
+  return parts.join(' \\\n  ');
+}
+
+function detailText(e) {
+  if (tab === 'curl') return toCurl(e);
+  if (tab === 'overview') {
+    var lines = [
+      'URL        : ' + e.url,
+      'Method     : ' + e.method,
+      'Status     : ' + (e.status || '—') + (e.statusText ? ' ' + e.statusText : ''),
+      'HTTP ver.  : ' + (e.httpVersion || '—'),
+      'Host       : ' + e.host,
+      'Type       : ' + e.type + ' (' + (e.mime || 'unknown') + ')',
+      'Started    : ' + (e.started || '—'),
+      'Total time : ' + fmtMs(e.time),
+      'Body size  : ' + fmtBytes(e.transfer),
+      ''
+    ];
+    if (e.reqQuery.length) lines.push('Query string:', queryLines(e.reqQuery), '');
+    if (e.reqCookies.length) {
+      lines.push('Request cookies:');
+      e.reqCookies.forEach(function (c) { lines.push('  ' + c.name + ' = ' + c.value); });
+      lines.push('');
+    }
+    if (e.resCookies.length) {
+      lines.push('Response cookies:');
+      e.resCookies.forEach(function (c) { lines.push('  ' + c.name + ' = ' + c.value); });
+      lines.push('');
+    }
+    return lines.join('\n');
+  }
+  if (tab === 'request') {
+    return ['— Request headers —', headerLines(e.reqHeaders) || '(none)', ''].concat(
+      e.reqBody ? ['— Request body (' + (e.reqMime || 'unknown') + ') —', e.reqBody] : []
+    ).join('\n');
+  }
+  if (tab === 'response') {
+    return ['— Response headers —', headerLines(e.resHeaders) || '(none)', ''].concat(
+      e.resBody ? ['— Response body (' + (e.resEnc ? e.resEnc + ', ' : '') + fmtBytes(e.resBody.length) + ') —', e.resBody] : ['(no response body captured)']
+    ).join('\n');
+  }
+  if (tab === 'timing') {
+    var total = 0;
+    PHASES.forEach(function (p) { total += e.ph[p]; });
+    if (total <= 0) total = e.time;
+    var lines = ['Total: ' + fmtMs(e.time) + '  (sum of phases: ' + fmtMs(total) + ')', ''];
+    PHASES.forEach(function (p, i) {
+      if (!e.ph[p]) return;
+      var pct = total ? ((e.ph[p] / total) * 100).toFixed(1) : '0.0';
+      lines.push(t(['phBlocked', 'phDns', 'phConnect', 'phSsl', 'phSend', 'phWait', 'phReceive'][i]) +
+        '  ' + fmtMs(e.ph[p]) + '  (' + pct + '%)  ' + PHASE_COLOR[i]);
+    });
+    return lines.join('\n');
+  }
+  return JSON.stringify(e.raw, null, 2);
+}
+
+function renderDetail() {
+  var box = $('#detail');
+  if (sel < 0 || !ENTRIES[sel]) { box.hidden = true; return; }
+  box.hidden = false;
+  var tabs = ['overview', 'request', 'response', 'timing', 'raw', 'curl'];
+  $('#tabs').innerHTML = tabs.map(function (k) {
+    return '<button data-tab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + esc(t('tab' + k.charAt(0).toUpperCase() + k.slice(1))) + '</button>';
+  }).join('') +
+  '<button id="btnCurl">' + esc(t('copyCurl')) + '</button>' +
+  '<button id="btnBody">' + esc(t('copyBody')) + '</button>';
+  $('#pane').textContent = detailText(ENTRIES[sel]);
+
+  $('#btnCurl').addEventListener('click', function () { copyText(toCurl(ENTRIES[sel])); });
+  $('#btnBody').addEventListener('click', function () {
+    var e = ENTRIES[sel];
+    copyText(e.reqBody || e.resBody || '');
+  });
+}
+
+function download(name, text) {
+  var blob = new Blob([text], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+}
+
+/* ---------------- sample ---------------- */
+var SAMPLE = {
+  "log": {
+    "version": "1.2",
+    "creator": { "name": "GameZipper HAR Viewer", "version": "1.0" },
+    "pages": [{ "startedDateTime": "2026-10-21T10:00:00.000Z", "id": "page_1", "title": "https://example.com/", "pageTimings": { "onContentLoad": 842, "onLoad": 1930 } }],
+    "entries": [
+      { "startedDateTime": "2026-10-21T10:00:00.010Z", "time": 245, "request": { "method": "GET", "url": "https://example.com/", "httpVersion": "HTTP/2", "headers": [{ "name": "user-agent", "value": "Mozilla/5.0" }, { "name": "accept", "value": "text/html" }], "queryString": [], "cookies": [] }, "response": { "status": 200, "statusText": "OK", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "text/html; charset=utf-8" }, { "name": "content-encoding", "value": "gzip" }], "cookies": [], "content": { "size": 8421, "mimeType": "text/html", "compression": 2104, "text": "<!DOCTYPE html><html><head><title>Example</title></head><body>Hello</body></html>" } }, "cache": {}, "timings": { "blocked": 1.2, "dns": 8.1, "connect": 22.4, "ssl": 31.5, "send": 0.4, "wait": 158.2, "receive": 23.2 } },
+      { "startedDateTime": "2026-10-21T10:00:00.260Z", "time": 118, "request": { "method": "GET", "url": "https://example.com/assets/app.css", "httpVersion": "HTTP/2", "headers": [{ "name": "accept", "value": "text/css" }], "queryString": [], "cookies": [] }, "response": { "status": 200, "statusText": "OK", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "text/css" }, { "name": "content-encoding", "value": "gzip" }], "cookies": [], "content": { "size": 24010, "mimeType": "text/css", "compression": 6110, "text": "body{margin:0;font-family:system-ui}" } }, "cache": {}, "timings": { "blocked": 0.8, "dns": 4.2, "connect": 12.1, "ssl": 18.3, "send": 0.3, "wait": 70.5, "receive": 11.8 } },
+      { "startedDateTime": "2026-10-21T10:00:00.380Z", "time": 96, "request": { "method": "GET", "url": "https://cdn.example.com/app.js", "httpVersion": "HTTP/2", "headers": [], "queryString": [], "cookies": [] }, "response": { "status": 200, "statusText": "OK", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "application/javascript" }], "cookies": [], "content": { "size": 51230, "mimeType": "application/javascript", "text": "console.log('app ready')" } }, "cache": {}, "timings": { "blocked": 0.5, "dns": 6.3, "connect": 15.7, "ssl": 21.1, "send": 0.4, "wait": 44.8, "receive": 7.2 } },
+      { "startedDateTime": "2026-10-21T10:00:00.500Z", "time": 1580, "request": { "method": "GET", "url": "https://api.example.com/v2/recommendations?limit=20", "httpVersion": "HTTP/2", "headers": [{ "name": "authorization", "value": "Bearer eyJhbGciOiJIUzI1NiJ9.demo-token" }, { "name": "cookie", "value": "session=abc123" }], "queryString": [{ "name": "limit", "value": "20" }], "cookies": [{ "name": "session", "value": "abc123" }] }, "response": { "status": 200, "statusText": "OK", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "application/json" }], "cookies": [], "content": { "size": 18400, "mimeType": "application/json", "text": "{\"items\":[]}" } }, "cache": {}, "timings": { "blocked": 1.1, "dns": 9.4, "connect": 24.6, "ssl": 33.2, "send": 0.5, "wait": 1470.3, "receive": 40.9 } },
+      { "startedDateTime": "2026-10-21T10:00:00.640Z", "time": 640, "request": { "method": "POST", "url": "https://api.example.com/v2/events", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "application/json" }, { "name": "authorization", "value": "Bearer eyJhbGciOiJIUzI1NiJ9.demo-token" }], "queryString": [], "cookies": [], "postData": { "mimeType": "application/json", "text": "{\"event\":\"page_view\"}" } }, "response": { "status": 201, "statusText": "Created", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "application/json" }], "cookies": [], "content": { "size": 42, "mimeType": "application/json", "text": "{\"ok\":true}" } }, "cache": {}, "timings": { "blocked": 0.9, "dns": 0, "connect": 0, "ssl": 0, "send": 0.6, "wait": 601.2, "receive": 37.3 } },
+      { "startedDateTime": "2026-10-21T10:00:00.760Z", "time": 84, "request": { "method": "GET", "url": "http://legacy.example.net/track.gif?id=1", "httpVersion": "HTTP/1.1", "headers": [], "queryString": [{ "name": "id", "value": "1" }], "cookies": [] }, "response": { "status": 301, "statusText": "Moved Permanently", "httpVersion": "HTTP/1.1", "headers": [{ "name": "location", "value": "https://legacy.example.net/track.gif?id=1" }], "cookies": [], "content": { "size": 0, "mimeType": "" } }, "cache": {}, "timings": { "blocked": 0.7, "dns": 5.1, "connect": 11.9, "ssl": 0, "send": 0.3, "wait": 58.6, "receive": 7.4 } },
+      { "startedDateTime": "2026-10-21T10:00:00.820Z", "time": 2230, "request": { "method": "GET", "url": "https://api.example.com/v2/user/profile", "httpVersion": "HTTP/2", "headers": [{ "name": "authorization", "value": "Bearer eyJhbGciOiJIUzI1NiJ9.demo-token" }], "queryString": [], "cookies": [] }, "response": { "status": 500, "statusText": "Internal Server Error", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "application/json" }], "cookies": [], "content": { "size": 210, "mimeType": "application/json", "text": "{\"error\":\"internal\"}" } }, "cache": {}, "timings": { "blocked": 1.4, "dns": 0, "connect": 0, "ssl": 0, "send": 0.5, "wait": 2196.2, "receive": 31.9 } },
+      { "startedDateTime": "2026-10-21T10:00:00.900Z", "time": 142, "request": { "method": "GET", "url": "https://example.com/assets/logo.png", "httpVersion": "HTTP/2", "headers": [], "queryString": [], "cookies": [] }, "response": { "status": 404, "statusText": "Not Found", "httpVersion": "HTTP/2", "headers": [], "cookies": [], "content": { "size": 152, "mimeType": "text/html", "text": "<h1>404</h1>" } }, "cache": {}, "timings": { "blocked": 0.6, "dns": 3.9, "connect": 10.4, "ssl": 16.2, "send": 0.3, "wait": 102.5, "receive": 8.1 } },
+      { "startedDateTime": "2026-10-21T10:00:00.960Z", "time": 210, "request": { "method": "GET", "url": "https://example.com/assets/app.css", "httpVersion": "HTTP/2", "headers": [], "queryString": [], "cookies": [] }, "response": { "status": 200, "statusText": "OK", "httpVersion": "HTTP/2", "headers": [{ "name": "content-type", "value": "text/css" }], "cookies": [], "content": { "size": 24010, "mimeType": "text/css", "text": "body{margin:0;font-family:system-ui}" } }, "cache": {}, "timings": { "blocked": 0.8, "dns": 4.2, "connect": 12.1, "ssl": 18.3, "send": 0.3, "wait": 166.1, "receive": 8.2 } }
+    ]
+  }
+};
+
+/* ---------------- wiring ---------------- */
+function initToolbar() {
+  $('#dropTitle').textContent = t('dropTitle');
+  $('#dropSub').textContent = t('dropSub');
+  $('#q').placeholder = t('filterPh');
+  $('#thMethod').textContent = t('thMethod');
+  $('#thStatus').textContent = t('thStatus');
+  $('#thType').textContent = t('thType');
+  $('#thSize').textContent = t('thSize');
+  $('#thTime').textContent = t('thTime');
+  $('#thWf').textContent = t('thWf');
+
+  var sortOpts = { seq: 'sortSeq', time: 'sortTime', status: 'sortStatus', size: 'sortSize' };
+  $('#sort').options[0].textContent = t('sortSeq');
+  $('#sort').options[1].textContent = t('sortTime');
+  $('#sort').options[2].textContent = t('sortStatus');
+  $('#sort').options[3].textContent = t('sortSize');
+  void sortOpts;
+
+  var bar = $('#toolbar');
+  var html = '';
+  html += '<button id="btnSample">' + t('sample') + '</button>';
+  html += '<button id="btnDl">' + t('download') + '</button>';
+  html += '<button id="btnRedact">' + t('redact') + '</button>';
+  html += '<button id="btnClear">' + t('clear') + '</button>';
+  bar.innerHTML = html;
+
+  $('#btnSample').addEventListener('click', function () {
+    sel = -1;
+    parseHar(JSON.stringify(SAMPLE), 'sample.har (' + SAMPLE.log.entries.length + ' entries)');
+  });
+  $('#btnDl').addEventListener('click', function () {
+    if (!ENTRIES.length) return;
+    download('capture.har', JSON.stringify({ log: { version: '1.2', creator: { name: 'GameZipper HAR Viewer', version: '1.0' }, entries: ENTRIES.map(function (e) { return e.raw; }) } }, null, 2));
+  });
+  $('#btnRedact').addEventListener('click', function () {
+    if (!REDACTED) return;
+    download('capture-redacted.har', JSON.stringify(REDACTED, null, 2));
+  });
+  $('#btnClear').addEventListener('click', function () {
+    ENTRIES = []; REDACTED = null; sel = -1; errors = [];
+    $('#stats').innerHTML = '';
+    $('#rows').innerHTML = '';
+    $('#detail').hidden = true;
+    $('#findBox').hidden = true;
+    $('#groupsBox').hidden = true;
+    $('#q').value = '';
+    populateFilters();
+    $('#dropSub').textContent = t('dropSub');
+  });
+
+  var drop = $('#drop');
+  drop.addEventListener('click', function () { $('#file').click(); });
+  drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#file').click(); } });
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function (e) {
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) readFile(f);
+  });
+  $('#file').addEventListener('change', function () {
+    if (this.files && this.files[0]) readFile(this.files[0]);
+    this.value = '';
+  });
+
+  $('#q').addEventListener('input', function () { renderRows(); });
+  $('#fMethod').addEventListener('change', renderRows);
+  $('#fStatus').addEventListener('change', renderRows);
+  $('#sort').addEventListener('change', function () {
+    sortKey = this.value;
+    asc = !(sortKey === 'time' || sortKey === 'size');
+    renderRows();
+  });
+
+  document.querySelectorAll('.hv-tbl th[data-k]').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var k = th.getAttribute('data-k');
+      if (k === 'wf' || k === 'url') return;
+      if (sortKey === k) asc = !asc;
+      else { sortKey = k; asc = (k === 'seq' || k === 'method' || k === 'status'); }
+      renderRows();
+    });
+  });
+
+  $('#rows').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-i]');
+    if (!tr) return;
+    var i = parseInt(tr.getAttribute('data-i'), 10);
+    sel = (sel === i) ? -1 : i;
+    tab = 'overview';
+    renderRows();
+    renderDetail();
+  });
+
+  $('#tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    tab = b.getAttribute('data-tab');
+    renderDetail();
+  });
+}
+
+function readFile(file) {
+  var fr = new FileReader();
+  fr.onload = function () {
+    sel = -1;
+    parseHar(String(fr.result), file.name + ' (' + fmtBytes(file.size) + ')');
+  };
+  fr.onerror = function () { errors = [t('errParse')]; };
+  fr.readAsText(file);
+}
+
+initToolbar();
+renderLegend();
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1', 'step2', 'step3', 'step4'],
+  related: [
+    { icon: '🔑', href: '/dev/jwt-debugger.html', name: 'JWT Debugger' },
+    { icon: '📡', href: '/dev/api-tester.html', name: 'API Tester' },
+    { icon: '🌐', href: '/network/http-headers-checker.html', name: 'HTTP Headers Checker' },
+    { icon: '📜', href: '/dev/http-status-code-lookup.html', name: 'HTTP Status Codes' },
+    { icon: '🧪', href: '/dev/cors-tester.html', name: 'CORS Tester' }
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
