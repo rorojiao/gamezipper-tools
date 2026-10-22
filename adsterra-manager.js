@@ -97,10 +97,16 @@
   };
 
   // ── BI endpoint (same-origin, fallback if gzTrack missing) ──
-  var BI_EP = (function () {
-    try { return new URL('https://vessel-refine-servers-arbitrary.trycloudflare.com/api/collect', location.origin).toString(); }
-    catch (e) { return 'https://vessel-refine-servers-arbitrary.trycloudflare.com/api/collect'; }
-  })();
+  var DEAD_EP = 'https://vessel-refine-servers-arbitrary.trycloudflare.com/api/collect';
+  // R980 (2026-10-23): that hardcoded host stopped resolving (curl exit 6 = NXDOMAIN),
+  // so both direct-beacon channels silently dropped every adsterra event.
+  // Resolve lazily from window.__GZ_COLLECT_EP (published by gz-analytics.js and
+  // rotated by the watchdog) instead, exactly like gamezipper.com's biDirectEP().
+  function biDirectEP() {
+    try { if (window.__GZ_COLLECT_EP) return window.__GZ_COLLECT_EP; } catch (e) {}
+    return DEAD_EP;
+  }
+  var BI_EP = biDirectEP();
 
   // ── Hardened track() — v5.17.2: dual-channel (BI batch + fire-and-forget)
   //     1) gzAnalytics.sendAd → gz-analytics.js batch buffer → trycloudflare tunnel → BI
@@ -108,13 +114,13 @@
   //     2) Direct sendBeacon to trycloudflare BI endpoint (fire-and-forget,
   //        bypasses 30s batch window, guaranteed delivery on init events)
   //     3) gzTrack fallback (legacy public/t.js)
-  //     4) sendBeacon('https://vessel-refine-servers-arbitrary.trycloudflare.com/api/collect') last-resort (self-hosted setups)
+  //     4) sendBeacon(biDirectEP()) last-resort -- R980: lazy, rotation-proof
   //
   // v5.17.2 update: trycloudflare EP embedded directly so init events
   // (script_loaded + cdn_health) ALWAYS reach BI even on fresh load,
   // not just after 30s batch window. Synchronous sendBeacon is fire-and-forget
   // (no response needed, no callback), reliable across navigations.
-  var BI_DIRECT_EP = 'https://vessel-refine-servers-arbitrary.trycloudflare.com/api/collect';
+  var BI_DIRECT_EP = biDirectEP();   // R980: lazy, rotation-proof (was a dead hardcoded host)
 
   function track(type, extra) {
     var payload = Object.assign({ network: 'adsterra', type: type, t: Date.now() }, extra || {});

@@ -84,7 +84,14 @@
   // both died within hours of deployment. tools.gamezipper.com had 0 events
   // 2026-07-12..2026-07-15 (~96h) due to dead tunnel EP. HTTP 204 verified on
   // bi.gamezipper.com/api/collect. Pairs with commit 8039a276d (cache buster bump).
-  window.GZ_COLLECT_ENDPOINT = 'https://vessel-refine-servers-arbitrary.trycloudflare.com/api/collect';
+  // R980 (2026-10-23): the old literal pointed at a trycloudflare host that stopped
+  // resolving (NXDOMAIN), so this last-resort beacon channel dropped silently.
+  // Resolve lazily from window.__GZ_COLLECT_EP (published by gz-analytics.js, rotated
+  // by the watchdog) so this channel survives tunnel rotation like the primary one.
+  window.GZ_COLLECT_ENDPOINT = (function () {
+    try { if (window.__GZ_COLLECT_EP) return window.__GZ_COLLECT_EP; } catch (e) {}
+    return 'https://vessel-refine-servers-arbitrary.trycloudflare.com/api/collect';
+  })();
   // v5.21-p0fix (2026-07-08): All 6 Adsterra zone IDs (30130927/9/30/31/32/33) CDN-dead.
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
@@ -164,7 +171,7 @@
   // is rolled back or hot-reloaded during debugging.
   // 2026-09-16 R696: bumped cache buster to force CDN re-fetch (tools CDN was serving stale
   //   gz-analytics.js?v=tunnel202610181050 with EP=jury-holly, NXDOMAIN).
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=tunnel202610181050";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=r980tools86f42aa";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now

@@ -40,6 +40,11 @@
   //     journalctl -u cloudflared-bi -n 30 --no-pager | grep trycloudflare.com
   // DO NOT switch back to bi.gamezipper.com — that's a 204-stub, not the BI server.
   var EP = 'https://hello-dirt-ages-golf.trycloudflare.com/api/collect';
+  // 2026-10-23: expose the watchdog-rotated endpoint so adsterra-manager.js and
+  // shared/common.js resolve it lazily. Parity with gamezipper.com/gz-analytics.js.
+  // Without this, tools hardcoded a dead trycloudflare host and every fallback
+  // channel beaconed into NXDOMAIN.
+  try { window.__GZ_COLLECT_EP = EP; } catch (e) {}
   var BK = 'gz_ab';   // batch buffer (cleared on flush)
   var AR = 'gz_aa';   // long-term archive (capped at 500 events)
   var T = 30000;
