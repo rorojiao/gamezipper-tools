@@ -269,29 +269,43 @@
     }
   }
 
-  // ── CDN health probe — v5.17 new: BI-visible liveness check for each zone
-  //     Uses Image() — no CORS, no JS execution, just HTTP HEAD-via-GET. Reports
-  //     200/301/403/etc so cron job knows zone health even when load_zone is off.
+  // ── CDN network-reachability probe — v5.17.4 (R987, synced from gamezipper.com)
+  //     History: v5.17 used Image() — but effectivecpmnetwork returns HTML, not an
+  //     image, so onerror fired for EVERY probe and this file emitted a constant
+  //     stream of false 'cdn_blocked'. v5.17.3 moved to fetch({mode:'no-cors'}),
+  //     which fixed the false-red but introduced a false GREEN: an opaque response
+  //     has an unreadable body and status, so it reported 'reachable' for a
+  //     healthy zone, a HTTP 200 policy-block page ("Anonymous Proxy detected.",
+  //     118 bytes), an HTTP 403 revoked key and an HTTP 500 dead origin alike.
+  //
+  //     R987: rename the status to what it actually proves. This is a TRANSPORT
+  //     probe — DNS + TCP + HTTP completed — and nothing more. Real zone health
+  //     is measured server-side by scripts/adsterra_zone_probe.py, which reads
+  //     the body and returns a 4-state verdict.
   function probeCdn(zoneId, url) {
     return new Promise(function (resolve) {
       var done = false;
+      var started = Date.now();
       var timer = setTimeout(function () {
         if (done) return; done = true;
-        resolve({ zone: zoneId, status: 'timeout', ms: 5000 });
+        resolve({ zone: zoneId, status: 'timeout', ms: Date.now() - started });
       }, 5000);
       try {
-        var img = new Image();
-        img.onload = function () { if (done) return; done = true; clearTimeout(timer); resolve({ zone: zoneId, status: 200, ms: 0 }); };
-        img.onerror = function () {
-          if (done) return; done = true; clearTimeout(timer);
-          // onerror doesn't give us HTTP status, but 403 also fires onerror
-          // so we report this as 'cdn_blocked' to distinguish from real 200
-          resolve({ zone: zoneId, status: 'cdn_blocked', ms: 0 });
-        };
-        img.src = url + '?cb=' + Date.now();
+        fetch(url + '?cb=' + Date.now(), { method: 'GET', mode: 'no-cors', cache: 'no-store', redirect: 'follow' })
+          .then(function (r) {
+            if (done) return; done = true; clearTimeout(timer);
+            resolve({
+              zone: zoneId, status: 'transport_ok', ms: Date.now() - started,
+              scope: 'transport_only', authority: 'see scripts/adsterra_zone_probe.py'
+            });
+          })
+          .catch(function (e) {
+            if (done) return; done = true; clearTimeout(timer);
+            resolve({ zone: zoneId, status: 'blocked', ms: Date.now() - started, err: String(e && e.message || e) });
+          });
       } catch (e) {
         if (done) return; done = true; clearTimeout(timer);
-        resolve({ zone: zoneId, status: 'error', err: String(e) });
+        resolve({ zone: zoneId, status: 'error', ms: Date.now() - started, err: String(e) });
       }
     });
   }
@@ -317,11 +331,11 @@
     armPop();
     track('script_loaded', {
       zones: ZONES,
-      v: '5.17.2',
+      v: '5.17.4',
       path: location.pathname,
       readyState: document.readyState
     });
-    track('config_loaded', { v: '5.17.2', popInterval: POP_INTERVAL });
+    track('config_loaded', { v: '5.17.4', popInterval: POP_INTERVAL });
     // Run CDN health probe asynchronously — doesn't block init.
     setTimeout(runCdnHealth, 1500);
   }
@@ -352,6 +366,6 @@
   };
 
   try {
-    console.log('[GZAdsterra] v5.17.2 active — popunder(' + ZONES.popunder + ') + smartlink(' + ZONES.smartlink + ' iframe) + cdn_health probe');
+    console.log('[GZAdsterra] v5.17.4 active — popunder(' + ZONES.popunder + ') + smartlink(' + ZONES.smartlink + ' iframe) + cdn_health probe');
   } catch (e) {}
 })();
