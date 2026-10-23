@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>GeoJSON 查看器与校验工具 - 在线检查 .geojson 文件 | GameZipper 工具箱</title>
+<meta name="description" content="免费 GeoJSON 查看器与 RFC 7946 校验工具。粘贴或拖入 .geojson 文件即可在地图上渲染，发现经纬度颠倒、多边形环未闭合和几何类型错误，并导出 GeoJSON、WKT 或 CSV。文件不会上传。">
+<link rel="canonical" href="https://tools.gamezipper.com/zh/dev/geojson-viewer.html">
+<meta property="og:title" content="GeoJSON 查看器与校验工具 - 在线检查 .geojson 文件 | GameZipper 工具箱">
+<meta property="og:description" content="在浏览器中渲染任意 GeoJSON 文件并按 RFC 7946 校验。检测经纬度颠倒、多边形环未闭合和无效几何类型。导出 GeoJSON、WKT 和 CSV。">
+<meta property="og:url" content="https://tools.gamezipper.com/zh/dev/geojson-viewer.html">
+<meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GeoJSON 查看器与校验工具 - 在线检查 .geojson 文件">
+<meta name="twitter:description" content="在浏览器中渲染 GeoJSON 并按 RFC 7946 校验。检测经纬度颠倒、多边形环未闭合和无效几何类型。免费，无需上传。">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20261001210623R840tools"></script>
+<style>
+.gj-drop{border:2px dashed var(--gz-border,#d5d9e0);border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;background:var(--gz-surface-2,#fafbfc);transition:border-color .15s,background .15s}
+.gj-drop:hover,.gj-drop:focus{border-color:#e94560;background:#fff5f6;outline:none}
+.gj-drop b{display:block;font-size:1.05em;margin-bottom:5px}
+.gj-drop span{font-size:.83em;opacity:.7}
+.gj-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:14px 0}
+.gj-chip{background:var(--gz-surface-2,#f4f6f8);border-radius:9px;padding:10px 12px;text-align:center}
+.gj-chip b{display:block;font-size:1.15em;color:#e94560;word-break:break-word}
+.gj-chip span{font-size:.71em;opacity:.65;text-transform:uppercase;letter-spacing:.4px}
+.gj-map{border:1px solid var(--gz-border,#d5d9e0);border-radius:12px;overflow:hidden;background:#0e1524;margin:14px 0}
+.gj-map svg{display:block;width:100%;height:auto}
+.gj-issues{list-style:none;margin:10px 0 0;padding:0;max-height:330px;overflow:auto;border:1px solid var(--gz-border,#e0e4ea);border-radius:10px}
+.gj-issues li{display:flex;gap:9px;padding:8px 11px;border-bottom:1px solid #eceff2;font-size:.85em;line-height:1.45;align-items:flex-start}
+.gj-issues li:last-child{border-bottom:none}
+.gj-sev{flex:0 0 auto;padding:1px 8px;border-radius:11px;font-size:.73em;font-weight:600;white-space:nowrap;margin-top:1px}
+.gj-err{background:#fde0e2;color:#a31218}
+.gj-warn{background:#fff2d6;color:#8a5a00}
+.gj-info{background:#e3f0fd;color:#0a4d8c}
+.gj-ok{background:#dcf5e4;color:#0a6b34}
+.gj-tbl{width:100%;border-collapse:collapse;font-size:.85em;margin-top:8px}
+.gj-tbl th{text-align:left;padding:7px 9px;background:var(--gz-surface-2,#f4f6f8);font-weight:600;border-bottom:2px solid var(--gz-border,#d5d9e0);font-size:.93em}
+.gj-tbl td{padding:7px 9px;border-bottom:1px solid #e8eaed;vertical-align:top}
+.gj-tbl tr:hover td{background:#fafbfc}
+.gj-tbl code{font-family:monospace;font-size:.92em}
+.gj-scroll{overflow-x:auto}
+.gj-tabs{display:flex;gap:6px;margin:12px 0 8px;flex-wrap:wrap}
+.gj-tab{padding:6px 12px;border:1px solid var(--gz-border,#d5d9e0);border-radius:8px;background:transparent;color:inherit;cursor:pointer;font-size:.84em;font-family:inherit}
+.gj-tab.on{background:#e94560;color:#fff;border-color:#e94560}
+.gj-out{white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:.8em;line-height:1.5;max-height:420px;overflow:auto;background:var(--gz-surface-2,#f4f6f8);border-radius:10px;padding:11px}
+.gj-note{font-size:.82em;opacity:.75;line-height:1.55;margin-top:10px}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"GeoJSON 查看器与校验工具","description":"在浏览器中渲染 GeoJSON 文件并按 RFC 7946 校验，检测经纬度颠倒、多边形环未闭合和无效几何类型。可导出 GeoJSON、WKT 和 CSV。","url":"https://tools.gamezipper.com/zh/dev/geojson-viewer.html","applicationCategory":"DeveloperApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["交互式 SVG 地图预览","RFC 7946 校验","经纬度颠倒检测","多边形环闭合检查","环绕顺序警告","几何类型统计","属性结构分析","导出 GeoJSON、WKT 和 CSV","不上传，100% 隐私"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"为什么我需要一个 GeoJSON 查看器？","acceptedAnswer":{"@type":"Answer","text":"GeoJSON 查看器可以把 .geojson 文件里的几何数据渲染出来，让你直观看到数据实际包含什么。校验工具还会按 RFC 7946 的规则检查文件，从而发现那些让文件看起来正常、实际渲染为空地图或破碎图形的错误。"}},{"@type":"Question","name":"如何判断 GeoJSON 的经纬度是否颠倒了？","acceptedAnswer":{"@type":"Answer","text":"GeoJSON 中每个位置都先存经度、后存纬度。如果坐标顺序写反，纬度值会超出 -90 到 90 的合法范围，而经度仍落在 -180 到 180 之间。本工具会精确标记这种模式，这是 GeoJSON 最常见的错误。"}},{"@type":"Question","name":"什么是未闭合的多边形环？","acceptedAnswer":{"@type":"Answer","text":"RFC 7946 要求多边形环的第一个位置和最后一个位置完全相同，以显式闭合。很多手写或转换生成的文件会漏掉这个重复的末点。校验工具会逐一报告首尾坐标不一致的环，也会报告位置少于 4 个的环。"}},{"@type":"Question","name":"我的 GeoJSON 文件会被上传到服务器吗？","acceptedAnswer":{"@type":"Answer","text":"不会。文件通过 File API 在你的浏览器本地读取，并用原生 JSON 解析器解析。任何数据都不会被传输、存储或记录，因此可以放心检查尚未发布或敏感的地理空间数据。"}},{"@type":"Question","name":"RFC 7946 对多边形环绕顺序有什么要求？","acceptedAnswer":{"@type":"Answer","text":"RFC 7946 采用右手定则：外环应当逆时针，内孔应当顺时针。许多工具仍能正确渲染相反顺序，因此这一点只报告为警告而非错误，但部分空间数据库会直接拒绝违反该规则的文件。"}},{"@type":"Question","name":"我能把 GeoJSON 转换成其他格式吗？","acceptedAnswer":{"@type":"Answer","text":"可以。你可以导出格式化的 GeoJSON、用于粘贴进 SQL 空间查询的 WKT 几何文本，或要素属性的 CSV 表格。所有转换都在浏览器中完成。"}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/geojson-viewer.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/geojson-viewer.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/geojson-viewer.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-ad-slot gz-ad-slot-top" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+  <main class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="gj-drop" id="drop" tabindex="0" role="button">
+      <b id="dropTitle"></b>
+      <span id="dropSub"></span>
+    </div>
+    <input type="file" id="file" accept=".geojson,.json,application/geo+json,application/json" hidden>
+    <label id="lblIn" style="display:block;color:var(--gz-text2,#667085);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 6px"></label>
+    <textarea id="input" spellcheck="false" style="width:100%;min-height:150px;background:rgba(0,0,0,.3);border:1px solid var(--gz-border,#d5d9e0);border-radius:8px;padding:1rem;color:var(--gz-text,#e6e8ee);font-family:'SF Mono',Consolas,Menlo,monospace;font-size:.82rem;resize:vertical;line-height:1.5"></textarea>
+    <div id="report" hidden>
+      <div class="gj-chips" id="chips"></div>
+      <div class="gj-map" id="mapWrap"></div>
+      <ul class="gj-issues" id="issues"></ul>
+      <div class="gj-tabs" id="tabs"></div>
+      <div class="gj-out" id="out"></div>
+      <div class="gj-scroll" id="tblWrap" hidden>
+        <table class="gj-tbl">
+          <thead><tr><th data-i18n="thKey"></th><th data-i18n="thCount"></th><th data-i18n="thTypes"></th></tr></thead>
+          <tbody id="propRows"></tbody>
+        </table>
+      </div>
+      <p class="gj-note" id="note"></p>
+    </div>
+  </main>
+  <aside class="gz-monetag-slot" aria-label="Managed advertising fallback" data-ad-provider="monetag" data-zone-policy="managed-by-shared-common-js" data-zone-status="hub-only-fallback"><ins data-zoneid="11012002" data-ad-format="in-page-push"></ins></aside>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+  <div class="gz-ad-slot gz-ad-slot-bottom" aria-label="Advertisement"><ins class="adsbygoogle gz-explicit-adsense" style="display:block" data-ad-client="ca-pub-8346383990981353" data-ad-slot="1099212472" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'GeoJSON Viewer & Validator',
+    toolDesc: 'Render any .geojson file on a map and validate it against RFC 7946. Catches swapped longitude/latitude, unclosed polygon rings and wrong geometry types - entirely in your browser.',
+    step1: 'Paste GeoJSON into the box below, or drop a .geojson or .json file onto it',
+    step2: 'Read the summary chips: feature count, geometry types, coordinate count and bounding box',
+    step3: 'Check the validation list - errors must be fixed, warnings are usually safe to ignore',
+    step4: 'Use the tabs to export the parsed data as GeoJSON, WKT or a CSV table of feature properties',
+    dropTitle: '🗺️ Drop a .geojson file here',
+    dropSub: 'or click to browse - or paste GeoJSON below. The file is read locally and never uploaded.',
+    lblFeatures: 'Features',
+    lblIn: 'GeoJSON input',
+    lblGeoms: 'Geometry types',
+    lblCoords: 'Coordinates',
+    lblBbox: 'Bounding box',
+    lblRoot: 'Root type',
+    thKey: 'Property key',
+    thCount: 'Features',
+    thTypes: 'Value types',
+    tabGeo: 'GeoJSON',
+    tabCompact: 'Compact',
+    tabWkt: 'WKT',
+    tabCsv: 'CSV',
+    tabProps: 'Properties',
+    copy: 'Copy',
+    copied: 'Copied!',
+    clear: 'Clear',
+    download: 'Download',
+    example: 'Load Example',
+    noIssues: 'No problems found - this file is valid GeoJSON.',
+    errTitle: 'Errors',
+    warnTitle: 'Warnings',
+    infoTitle: 'Notes',
+    note: 'This tool reads GeoJSON only - it does not reproject coordinates. If your data uses a projection other than WGS84 (EPSG:4326), such as UTM or a national grid, convert it to WGS84 first or the map will place the features in the wrong place.',
+    swapMsg: 'Coordinates look swapped: latitude is outside -90 to 90 while longitude is in range. Swap the two values in each position.',
+    outOfRange: 'Coordinate outside the valid range: longitude must be -180 to 180 and latitude -90 to 90.',
+    closedMsg: 'Ring is not closed - the first and last position must be identical.',
+    ringShort: 'Ring has fewer than 4 positions, so it cannot describe a closed polygon.',
+    windingCw: 'Exterior ring is clockwise. RFC 7946 asks for counterclockwise exterior rings (right-hand rule).',
+    windingCcw: 'Interior hole is counterclockwise. RFC 7946 asks for clockwise holes (right-hand rule).',
+    typeMsg: 'Unknown geometry type.',
+    badRoot: 'Root object has no type member, or the type is not FeatureCollection, Feature or a geometry type.',
+    noGeom: 'Missing geometry member.',
+    badCoords: 'Missing coordinates member.',
+    emptyCoords: 'Geometry has no usable coordinates.',
+    noFeatures: 'FeatureCollection has no features array.'
+  },
+  zh: {
+    toolTitle: 'GeoJSON 查看器与校验工具',
+    toolDesc: '在地图上渲染任意 .geojson 文件，并按 RFC 7946 校验。自动发现经纬度颠倒、多边形环未闭合、几何类型错误等问题 - 全部在浏览器本地完成。',
+    step1: '把 GeoJSON 粘贴到下方输入框，或将 .geojson / .json 文件拖到虚线框中',
+    step2: '查看摘要标签：要素数量、几何类型、坐标总数和边界框',
+    step3: '检查校验列表 - 错误必须修复，警告通常可以忽略',
+    step4: '用标签页导出解析结果：GeoJSON、WKT 或要素属性 CSV 表',
+    dropTitle: '🗺️ 把 .geojson 文件拖到这里',
+    dropSub: '或点击选择 - 也可直接粘贴 GeoJSON。文件仅在本地读取，绝不上传。',
+    lblFeatures: '要素数量',
+    lblIn: 'GeoJSON 输入',
+    lblGeoms: '几何类型',
+    lblCoords: '坐标数量',
+    lblBbox: '边界框',
+    lblRoot: '根类型',
+    thKey: '属性键',
+    thCount: '要素数',
+    thTypes: '值类型',
+    tabGeo: 'GeoJSON',
+    tabCompact: '紧凑格式',
+    tabWkt: 'WKT',
+    tabCsv: 'CSV',
+    tabProps: '属性表',
+    copy: '复制',
+    copied: '已复制！',
+    clear: '清空',
+    download: '下载',
+    example: '加载示例',
+    noIssues: '未发现问题 - 这是有效的 GeoJSON。',
+    errTitle: '错误',
+    warnTitle: '警告',
+    infoTitle: '提示',
+    note: '本工具只读取 GeoJSON，不做坐标重投影。如果你的数据使用 WGS84（EPSG:4326）以外的投影（如 UTM 或国家网格），请先转换为 WGS84，否则地图上的位置会出错。',
+    swapMsg: '坐标疑似颠倒：纬度超出 -90 到 90 范围，而经度在合法范围内。请交换每个坐标位置中的两个值。',
+    outOfRange: '坐标超出合法范围：经度须在 -180 到 180，纬度须在 -90 到 90。',
+    closedMsg: '环未闭合 - 第一个位置和最后一个位置必须完全相同。',
+    ringShort: '环的位置少于 4 个，无法构成闭合多边形。',
+    windingCw: '外环为顺时针。RFC 7946 要求外环逆时针（右手定则）。',
+    windingCcw: '内孔为逆时针。RFC 7946 要求内孔顺时针（右手定则）。',
+    typeMsg: '未知几何类型。',
+    badRoot: '根对象缺少 type 字段，或类型不是 FeatureCollection、Feature 或几何类型。',
+    noGeom: '缺少 geometry 字段。',
+    badCoords: '缺少 coordinates 字段。',
+    emptyCoords: '几何没有可用坐标。',
+    noFeatures: 'FeatureCollection 没有 features 数组。'
+  }
+});
+
+const { $, copyText, t } = GZ;
+const GEOM_TYPES = ['Point','MultiPoint','LineString','MultiLineString','Polygon','MultiPolygon','GeometryCollection'];
+const GEO_TYPES = ['FeatureCollection','Feature'].concat(GEOM_TYPES);
+const COLORS = ['#4ecdc4','#e94560','#ffd93d','#6bcB77','#a55eea','#ff9f43','#45aaf2','#f368e0'];
+
+function isNum(n){ return typeof n === 'number' && isFinite(n); }
+function samePos(a,b){
+  if(!Array.isArray(a)||!Array.isArray(b)||a.length!==b.length) return false;
+  for(let i=0;i<a.length;i++) if(a[i]!==b[i]) return false;
+  return true;
+}
+function flattenPositions(arr,out){
+  if(!Array.isArray(arr)||arr.length===0) return;
+  if(isNum(arr[0])){ if(isNum(arr[0])&&isNum(arr[1])) out.push(arr); return; }
+  for(var i=0;i<arr.length;i++) flattenPositions(arr[i],out);
+}
+function signedArea(ring){
+  var s=0;
+  for(var i=0;i<ring.length-1;i++){ s += (ring[i][0]*ring[i+1][1] - ring[i+1][0]*ring[i][1]); }
+  return s/2;
+}
+function featuresOf(root){
+  if(!root||typeof root!=='object') return [];
+  if(root.type==='FeatureCollection') return Array.isArray(root.features)?root.features:[];
+  if(root.type==='Feature') return [root];
+  return [{type:'Feature',geometry:root,properties:{}}];
+}
+function ringsOf(coords){
+  // Polygon -> [[ring],[ring]]; MultiPolygon -> [[[ring]]]
+  var out=[];
+  if(!Array.isArray(coords)) return out;
+  for(var i=0;i<coords.length;i++){
+    var c=coords[i];
+    if(Array.isArray(c)&&Array.isArray(c[0])&&Array.isArray(c[0][0])) out.push(c);
+    else if(Array.isArray(c)&&Array.isArray(c[0])) out.push([c]);
+  }
+  return out;
+}
+function checkGeometry(g,label,res){
+  if(!g||typeof g!=='object'){ res.errors.push(label+': '+t('noGeom')); return; }
+  if(g.type==='GeometryCollection'){
+    if(!Array.isArray(g.geometries)){ res.errors.push(label+': '+t('badCoords')); return; }
+    res.types['GeometryCollection']=(res.types['GeometryCollection']||0)+1;
+    for(var i=0;i<g.geometries.length;i++) checkGeometry(g.geometries[i],label+' > geometries['+i+']',res);
+    return;
+  }
+  if(GEOM_TYPES.indexOf(g.type)<0){ res.errors.push(label+': '+t('typeMsg')+' ('+String(g.type)+')'); return; }
+  res.types[g.type]=(res.types[g.type]||0)+1;
+  if(!('coordinates' in g)){ res.errors.push(label+': '+t('badCoords')); return; }
+  var pos=[]; flattenPositions(g.coordinates,pos);
+  if(!pos.length){ res.errors.push(label+': '+t('emptyCoords')); return; }
+  res.coordCount += pos.length;
+  var swapped=0, oor=0;
+  for(var i=0;i<pos.length;i++){
+    var lon=pos[i][0], lat=pos[i][1];
+    if(Math.abs(lat)>90){
+      if(Math.abs(lon)<=90) swapped++; else oor++;
+    } else if(Math.abs(lon)>180) oor++;
+  }
+  if(swapped) res.errors.push(label+': '+t('swapMsg')+' ('+swapped+' position(s))');
+  if(oor) res.errors.push(label+': '+t('outOfRange')+' ('+oor+' position(s))');
+  if(g.type==='Polygon'||g.type==='MultiPolygon'){
+    var polys = g.type==='Polygon' ? [g.coordinates] : g.coordinates;
+    for(var p=0;p<polys.length;p++){
+      var rings=polys[p];
+      if(!Array.isArray(rings)) continue;
+      for(var ri=0;ri<rings.length;ri++){
+        var ring=rings[ri];
+        var rlabel=label+' > '+(g.type==='Polygon'?'ring':'polygon['+p+'] ring')+ri;
+        if(!Array.isArray(ring)||ring.length<4){ res.errors.push(rlabel+': '+t('ringShort')); }
+        if(Array.isArray(ring)&&ring.length>0&&!samePos(ring[0],ring[ring.length-1])) res.errors.push(rlabel+': '+t('closedMsg'));
+        var area=signedArea(ring);
+        if(ri===0){ if(area<0) res.warnings.push(rlabel+': '+t('windingCw')); }
+        else { if(area>0) res.warnings.push(rlabel+': '+t('windingCcw')); }
+      }
+    }
+  }
+}
+function validate(root){
+  var res={errors:[],warnings:[],infos:[],types:{},coordCount:0,bbox:null,features:[],props:{}};
+  if(!root||typeof root!=='object'){ res.errors.push(t('badRoot')); return res; }
+  if(!root.type||GEO_TYPES.indexOf(root.type)<0){ res.errors.push(t('badRoot')); return res; }
+  res.rootType=root.type;
+  if(root.type==='FeatureCollection'&&!Array.isArray(root.features)){ res.errors.push(t('noFeatures')); return res; }
+  var feats=featuresOf(root);
+  res.features=feats;
+  var minLon=Infinity,minLat=Infinity,maxLon=-Infinity,maxLat=-Infinity;
+  for(var i=0;i<feats.length;i++){
+    var f=feats[i];
+    var label='Feature['+i+']';
+    if(!f||typeof f!=='object'){ res.errors.push(label+': '+t('badRoot')); continue; }
+    if(f.properties!==undefined&&f.properties!==null&&typeof f.properties!=='object') res.errors.push(label+': properties must be an object or null.');
+    checkGeometry(f.geometry,label,res);
+    var pos=[]; if(f.geometry&&f.geometry.type!=='GeometryCollection') flattenPositions(f.geometry.coordinates,pos);
+    for(var j=0;j<pos.length;j++){
+      var lon=pos[j][0],lat=pos[j][1];
+      if(lon<minLon)minLon=lon; if(lon>maxLon)maxLon=lon;
+      if(lat<minLat)minLat=lat; if(lat>maxLat)maxLat=lat;
+    }
+    var props=f.properties||{};
+    for(var k in props){
+      if(!Object.prototype.hasOwnProperty.call(props,k)) continue;
+      var v=props[k];
+      var tv=v===null?'null':Array.isArray(v)?'array':typeof v;
+      if(!res.props[k]) res.props[k]={count:0,types:{}};
+      res.props[k].count++; res.props[k].types[tv]=(res.props[k].types[tv]||0)+1;
+    }
+  }
+  if(minLon!==Infinity) res.bbox=[minLon,minLat,maxLon,maxLat];
+  if(res.errors.length===0&&res.warnings.length===0) res.infos.push(t('noIssues'));
+  return res;
+}
+function renderMap(root,res){
+  var W=760,H=460,PAD=26;
+  if(!res.bbox){ document.getElementById('mapWrap').innerHTML='<div style="padding:34px;text-align:center;opacity:.7;font-size:.9em">'+t('emptyCoords')+'</div>'; return; }
+  var minLon=res.bbox[0],minLat=res.bbox[1],maxLon=res.bbox[2],maxLat=res.bbox[3];
+  var spanLon=(maxLon-minLon)||1, spanLat=(maxLat-minLat)||1;
+  function px(lon){ return PAD + (lon-minLon)/spanLon*(W-2*PAD); }
+  function py(lat){ return H-PAD - (lat-minLat)/spanLat*(H-2*PAD); }
+  function pts(a){ var s=''; for(var i=0;i<a.length;i++){ s+=(i?' L':'M')+px(a[i][0]).toFixed(2)+' '+py(a[i][1]).toFixed(2); } return s; }
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" role="img">';
+  svg+='<rect width="'+W+'" height="'+H+'" fill="#0e1524"/>';
+  for(var gx=0;gx<=4;gx++){ var X=px(minLon+spanLon*gx/4); svg+='<line x1="'+X.toFixed(1)+'" y1="'+PAD+'" x2="'+X.toFixed(1)+'" y2="'+(H-PAD)+'" stroke="#1d2942" stroke-width="1"/>'; }
+  for(var gy=0;gy<=4;gy++){ var Y=py(minLat+spanLat*gy/4); svg+='<line x1="'+PAD+'" y1="'+Y.toFixed(1)+'" x2="'+(W-PAD)+'" y2="'+Y.toFixed(1)+'" stroke="#1d2942" stroke-width="1"/>'; }
+  var ci=0;
+  var feats=res.features;
+  for(var i=0;i<feats.length;i++){
+    var g=feats[i]&&feats[i].geometry; if(!g) continue;
+    var col=COLORS[(ci++)%COLORS.length];
+    function draw(gg){
+      if(!gg||!gg.coordinates) return;
+      var c=gg.coordinates;
+      if(gg.type==='Point') svg+='<circle cx="'+px(c[0]).toFixed(2)+'" cy="'+py(c[1]).toFixed(2)+'" r="4.5" fill="'+col+'" stroke="#0e1524" stroke-width="1"/>';
+      else if(gg.type==='MultiPoint'){ for(var a=0;a<c.length;a++) svg+='<circle cx="'+px(c[a][0]).toFixed(2)+'" cy="'+py(c[a][1]).toFixed(2)+'" r="4.5" fill="'+col+'" stroke="#0e1524" stroke-width="1"/>'; }
+      else if(gg.type==='LineString') svg+='<path d="'+pts(c)+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linejoin="round"/>';
+      else if(gg.type==='MultiLineString'){ for(var b=0;b<c.length;b++) svg+='<path d="'+pts(c[b])+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linejoin="round"/>'; }
+      else if(gg.type==='Polygon'||gg.type==='MultiPolygon'){
+        var polys = gg.type==='Polygon' ? [c] : c;
+        for(var p=0;p<polys.length;p++){
+          var d='';
+          for(var r=0;r<polys[p].length;r++){ var ring=polys[p][r]; d += pts(ring)+' Z '; }
+          svg+='<path d="'+d.trim()+'" fill="'+col+'" fill-opacity="0.32" fill-rule="evenodd" stroke="'+col+'" stroke-width="1.8" stroke-linejoin="round"/>';
+        }
+      }
+    }
+    if(g.type==='GeometryCollection'&&Array.isArray(g.geometries)){ for(var m=0;m<g.geometries.length;m++) draw(g.geometries[m]); }
+    else draw(g);
+  }
+  svg+='<text x="'+(PAD+4)+'" y="'+(H-PAD+18)+'" fill="#7c8aa8" font-size="12" font-family="monospace">'+minLon.toFixed(4)+', '+minLat.toFixed(4)+'  \u2192  '+maxLon.toFixed(4)+', '+maxLat.toFixed(4)+'</text>';
+  svg+='</svg>';
+  document.getElementById('mapWrap').innerHTML=svg;
+}
+function toWKT(g){
+  if(!g) return '';
+  var c=g.coordinates;
+  function p(a){ return a[0]+' '+a[1]; }
+  function list(a){ var o=[]; for(var i=0;i<a.length;i++) o.push(p(a[i])); return o.join(', '); }
+  switch(g.type){
+    case 'Point': return 'POINT ('+p(c)+')';
+    case 'MultiPoint': return 'MULTIPOINT ('+list(c)+')';
+    case 'LineString': return 'LINESTRING ('+list(c)+')';
+    case 'MultiLineString': var o=[]; for(var i=0;i<c.length;i++) o.push('('+list(c[i])+')'); return 'MULTILINESTRING ('+o.join(', ')+')';
+    case 'Polygon': var r=[]; for(var j=0;j<c.length;j++) r.push('('+list(c[j])+')'); return 'POLYGON ('+r.join(', ')+')';
+    case 'MultiPolygon': var m=[]; for(var k=0;k<c.length;k++){ var rr=[]; for(var l=0;l<c[k].length;l++) rr.push('('+list(c[k][l])+')'); m.push('('+rr.join(', ')+')'); } return 'MULTIPOLYGON ('+m.join(', ')+')';
+    case 'GeometryCollection': var g2=[]; for(var n=0;n<c.length;n++) g2.push(toWKT(c[n])); return 'GEOMETRYCOLLECTION ('+g2.join(', ')+')';
+    default: return '';
+  }
+}
+function csvCell(v){
+  if(v===null||v===undefined) return '';
+  var s = (typeof v==='object') ? JSON.stringify(v) : String(v);
+  if(/[",\n\r]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+function buildCSV(res){
+  var feats=res.features, keys=[];
+  for(var i=0;i<feats.length;i++){
+    var p=(feats[i]&&feats[i].properties)||{};
+    for(var k in p){ if(!Object.prototype.hasOwnProperty.call(p,k)) continue; if(keys.indexOf(k)<0) keys.push(k); }
+  }
+  var lines=['geometry_type,'+keys.map(csvCell).join(',')];
+  for(var j=0;j<feats.length;j++){
+    var f=feats[j]||{}, pr=f.properties||{};
+    var gt=f.geometry&&f.geometry.type?f.geometry.type:'null';
+    var row=[csvCell(gt)];
+    for(var m=0;m<keys.length;m++) row.push(csvCell(pr[keys[m]]));
+    lines.push(row.join(','));
+  }
+  return lines.join('\n');
+}
+var state={root:null,res:null,tab:'geo'};
+function setTab(name){
+  state.tab=name;
+  var tabs=document.querySelectorAll('#tabs .gj-tab');
+  for(var i=0;i<tabs.length;i++) tabs[i].className='gj-tab'+(tabs[i].getAttribute('data-tab')===name?' on':'');
+  var out=$('#out'), tbl=$('#tblWrap');
+  if(name==='props'){ out.hidden=true; tbl.hidden=false; }
+  else { out.hidden=false; tbl.hidden=true; out.textContent=exportText(name); }
+}
+function exportText(name){
+  if(!state.root) return '';
+  if(name==='geo') return JSON.stringify(state.root,null,2);
+  if(name==='compact') return JSON.stringify(state.root);
+  if(name==='wkt'){
+    var feats=state.res.features, o=[];
+    for(var i=0;i<feats.length;i++){ var g=feats[i]&&feats[i].geometry; if(!g) continue; if(g.type==='GeometryCollection'){ for(var j=0;j<g.geometries.length;j++) o.push(toWKT(g.geometries[j])); } else o.push(toWKT(g)); }
+    return o.join('\n');
+  }
+  if(name==='csv') return buildCSV(state.res);
+  return '';
+}
+function renderProps(res){
+  var rows=document.getElementById('propRows'), html='';
+  var keys=Object.keys(res.props);
+  if(!keys.length){ rows.innerHTML='<tr><td colspan="3" style="opacity:.7">—</td></tr>'; return; }
+  for(var i=0;i<keys.length;i++){
+    var p=res.props[keys[i]];
+    var types=Object.keys(p.types).map(function(k){ return k+' ('+p.types[k]+')'; }).join(', ');
+    html+='<tr><td><code>'+String(keys[i]).replace(/[&<>]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; })+'</code></td><td>'+p.count+'</td><td>'+types+'</td></tr>';
+  }
+  rows.innerHTML=html;
+}
+function show(root){
+  var res=validate(root);
+  state.root=root; state.res=res;
+  var chips=$('#chips'), html='';
+  var typeList=Object.keys(res.types).map(function(k){ return k+' ('+res.types[k]+')'; }).join(', ')||'—';
+  var bbox=res.bbox?res.bbox.map(function(v){ return v.toFixed(3); }).join(', '):'—';
+  var items=[[t('lblRoot'),res.rootType||'—'],[t('lblFeatures'),String(res.features.length)],[t('lblCoords'),String(res.coordCount)],[t('lblBbox'),bbox]];
+  for(var i=0;i<items.length;i++){
+    html+='<div class="gj-chip"><b>'+String(items[i][1]).replace(/[&<>]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; })+'</b><span>'+items[i][0]+'</span></div>';
+  }
+  html+='<div class="gj-chip"><b style="font-size:.86em;line-height:1.4">'+(typeList.replace(/[&<>]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }))+'</b><span>'+t('lblGeoms')+'</span></div>';
+  chips.innerHTML=html;
+  var issues=$('#issues');
+  var lis='';
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  for(var e=0;e<res.errors.length;e++) lis+='<li><span class="gj-sev gj-err">'+t('errTitle')+'</span><span>'+esc(res.errors[e])+'</span></li>';
+  for(var w=0;w<res.warnings.length;w++) lis+='<li><span class="gj-sev gj-warn">'+t('warnTitle')+'</span><span>'+esc(res.warnings[w])+'</span></li>';
+  for(var n=0;n<res.infos.length;n++) lis+='<li><span class="gj-sev gj-ok">'+t('infoTitle')+'</span><span>'+esc(res.infos[n])+'</span></li>';
+  issues.innerHTML=lis;
+  renderMap(root,res);
+  renderProps(res);
+  $('#report').hidden=false;
+  $('#note').textContent=t('note');
+  setTab(state.tab);
+}
+function parseAndShow(text){
+  var raw=(text||'').trim();
+  if(!raw){ $('#report').hidden=true; state.root=null; state.res=null; return; }
+  try{ show(JSON.parse(raw)); }
+  catch(e){ $('#report').hidden=true; state.root=null; state.res=null; GZ.showToast('JSON: '+e.message); }
+}
+function loadExample(){
+  var ex={type:'FeatureCollection',features:[
+    {type:'Feature',properties:{name:'Ferry Building',city:'San Francisco'},geometry:{type:'Point',coordinates:[-122.3937,37.7955]}},
+    {type:'Feature',properties:{name:'Golden Gate Park',type:'park'},geometry:{type:'Polygon',coordinates:[[[-122.5107,37.7694],[-122.4536,37.7694],[-122.4536,37.8078],[-122.5107,37.8078],[-122.5107,37.7694]]]}},
+    {type:'Feature',properties:{name:'Market St line',type:'route'},geometry:{type:'LineString',coordinates:[[-122.4194,37.7920],[-122.4120,37.7879],[-122.4050,37.7840]]}}
+  ]};
+  $('#input').value=JSON.stringify(ex,null,2);
+  parseAndShow($('#input').value);
+}
+var drop=$('#drop'), fileInput=$('#file');
+drop.addEventListener('click',function(){ fileInput.click(); });
+drop.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fileInput.click(); } });
+fileInput.addEventListener('change',function(){
+  var f=fileInput.files&&fileInput.files[0]; if(!f) return;
+  var fr=new FileReader();
+  fr.onload=function(){ $('#input').value=fr.result; parseAndShow(fr.result); };
+  fr.readAsText(f);
+});
+['dragenter','dragover'].forEach(function(ev){ drop.addEventListener(ev,function(e){ e.preventDefault(); e.stopPropagation(); }); });
+drop.addEventListener('drop',function(e){
+  e.preventDefault(); e.stopPropagation();
+  var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(!f) return;
+  var fr=new FileReader();
+  fr.onload=function(){ $('#input').value=fr.result; parseAndShow(fr.result); };
+  fr.readAsText(f);
+});
+$('#input').addEventListener('input',function(){ parseAndShow(this.value); });
+$('#toolbar').innerHTML='<button class="gz-btn gz-btn-secondary" onclick="loadExample()">'+t('example')+'</button><button class="gz-btn" onclick="copyText($(\'#out\').textContent)">'+t('copy')+'</button><button class="gz-btn gz-btn-secondary" id="dlBtn">'+t('download')+'</button><button class="gz-btn gz-btn-secondary" onclick="$(\'#input\').value=\'\';parseAndShow(\'\')">'+t('clear')+'</button>';
+$('#dlBtn').addEventListener('click',function(){
+  if(!state.root){ GZ.showToast(t('emptyCoords')); return; }
+  var name=state.tab==='geo'?'data.geojson':state.tab==='compact'?'data.min.geojson':state.tab==='wkt'?'data.wkt':'data.csv';
+  var mime=state.tab==='wkt'?'text/plain':state.tab==='csv'?'text/csv':'application/geo+json';
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([exportText(state.tab)],{type:mime}));
+  a.download=name; a.click(); URL.revokeObjectURL(a.href);
+});
+var TABS=[['geo',t('tabGeo')],['compact',t('tabCompact')],['wkt',t('tabWkt')],['csv',t('tabCsv')],['props',t('tabProps')]];
+var tabHtml='';
+for(var ti=0;ti<TABS.length;ti++) tabHtml+='<button class="gj-tab'+(ti===0?' on':'')+'" data-tab="'+TABS[ti][0]+'">'+TABS[ti][1]+'</button>';
+$('#tabs').innerHTML=tabHtml;
+$('#tabs').addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('.gj-tab'):null; if(!b) return;
+  setTab(b.getAttribute('data-tab'));
+});
+$('#dropTitle').textContent=t('dropTitle');
+$('#dropSub').textContent=t('dropSub');
+$('#lblIn').textContent=t('lblIn');
+var i18nKeys=['thKey','thCount','thTypes'];
+for(var ii=0;ii<i18nKeys.length;ii++){ var el=document.querySelector('[data-i18n="'+i18nKeys[ii]+'"]'); if(el) el.textContent=t(i18nKeys[ii]); }
+GZ.renderToolPage({
+  category:'dev',
+  titleKey:'toolTitle',
+  descKey:'toolDesc',
+  howToSteps:['step1','step2','step3','step4'],
+  related:[
+    {icon:'📍',href:'/dev/coordinates-finder.html',name:'GPS Coordinates Finder'},
+    {icon:'📋',href:'/dev/json.html',name:'JSON Formatter'},
+    {icon:'📊',href:'/convert/csv-to-json.html',name:'CSV to JSON'},
+    {icon:'🌐',href:'/dev/api-tester.html',name:'API Tester'}
+  ]
+});
+loadExample();
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
