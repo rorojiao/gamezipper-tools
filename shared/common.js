@@ -402,7 +402,10 @@ const GZ = (function(){
     //   attached). vid/sid are simple inline localStorage/sessionStorage getters
     //   — kept tiny to avoid duplicating gz-analytics.js's uuid generator.
     try {
-      var payload = Object.assign({ t: type, ts: Date.now() }, data || {});
+      // R1002 (2026-10-27): same root cause as emitStaticFill() above —
+      // gzAnalytics.sendAd() only injects `t`, so `type` must be in the payload
+      // for BI's json_extract(meta,'$.type') slices to see these events.
+      var payload = Object.assign({ type: type, t: type, ts: Date.now() }, data || {});
       if (window.gzAnalytics && typeof window.gzAnalytics.sendAd === 'function') {
         window.gzAnalytics.sendAd(type, payload);
       } else if (window.GZ_COLLECT_ENDPOINT && navigator.sendBeacon) {
@@ -553,6 +556,20 @@ const GZ = (function(){
       var client = ins.getAttribute('data-ad-client') || 'unknown';
       var source = (client !== 'unknown') ? 'manual' : 'auto_ads';
       var payload = {
+        // R1002 (2026-10-27): `type` MUST be in the payload, not just the
+        // gzAnalytics.sendAd() first argument. gz-analytics.js sendAd() does
+        // ps('gz_ad_event', Object.assign({ t: type }, data || {})) -> it only
+        // sets `t`; `type` comes solely from `data`. Every BI query that
+        // slices on json_extract(meta,'$.type') therefore DROPPED all tools-site
+        // static_banner_fill events (86 rows/14d measured; 18 on 2026-10-26,
+        // visible in the daily facts output as the `adsense||0|18` row).
+        // The game site is unaffected because its trackAdEvent() builds
+        // ev = { type: type, ts: Date.now() } before calling sendAd().
+        // `ts` is also required: the BI de-dup key is
+        // path|type|network|ts|slot|format|zone, and 85/86 of the affected rows
+        // had ts=NULL -> all rows for a path collapsed into one distinct key.
+        type: 'static_banner_fill',
+        ts: Date.now(),
         network: 'adsense',
         position: source,
         slot: slot,
