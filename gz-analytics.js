@@ -39,7 +39,7 @@
   //   var EP after each restart by running:
   //     journalctl -u cloudflared-bi -n 30 --no-pager | grep trycloudflare.com
   // DO NOT switch back to bi.gamezipper.com — that's a 204-stub, not the BI server.
-  var EP = 'https://mission-lots-raw-forecast.trycloudflare.com/api/collect';
+  var EP = 'https://huntington-holder-evening-designing.trycloudflare.com/api/collect';
   // 2026-10-23: expose the watchdog-rotated endpoint so adsterra-manager.js and
   // shared/common.js resolve it lazily. Parity with gamezipper.com/gz-analytics.js.
   // Without this, tools hardcoded a dead trycloudflare host and every fallback
