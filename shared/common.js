@@ -97,7 +97,7 @@
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
   //   zero revenue. Default OFF — opt-in via window.GZ_LOAD_ADSTERRA=true.
   if(window.GZ_LOAD_ADSTERRA===true){
-    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=R1003smartlinkurl';sAd.defer=true;document.head.appendChild(sAd);
+    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=R1009prefire';sAd.defer=true;document.head.appendChild(sAd);
   } else { try { console.log('[gz-tools] adsterra skipped: CDN dead (set GZ_LOAD_ADSTERRA=true to re-enable)'); } catch(e){} }
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
   // v5.10.1 (2026-06-27): Container AdSense Tier 0 + showContainerAd event completeness.
