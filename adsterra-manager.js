@@ -417,6 +417,6 @@
   };
 
   try {
-    console.log('[GZAdsterra] v5.17.4 active — popunder(' + ZONES.popunder + ') + smartlink(' + ZONES.smartlink + ' iframe) + cdn_health probe');
+    console.log('[GZAdsterra] v5.17.5 active — popunder(' + ZONES.popunder + ') + smartlink(' + ZONES.smartlink + ' iframe) + cdn_health probe');
   } catch (e) {}
 })();
