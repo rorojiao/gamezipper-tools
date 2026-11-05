@@ -251,13 +251,17 @@
     // (the paying placement, eCPM ~$5.7) could never fire on canvas games
     // (/t-rex/: 74 PV / 7d, 0 popunder). 25-min cap unchanged; fills carry
     // trigger=click|key for BI audit.
+    // R1055 (2026-11-05): same fix as gamezipper.com — drop the vestigial
+    // id^='game' / class~='game' exclusions that re-blocked gameplay canvas
+    // clicks after R1035. Keep only UI chrome (BUTTON, btn-*, *overlay*,
+    // menu-btn, ctrl-btn).
     var gameEl = e.target;
     while (gameEl) {
       if (gameEl.tagName === 'BUTTON' ||
-          (gameEl.id && (gameEl.id.indexOf('btn-') === 0 || gameEl.id.indexOf('game') === 0 || gameEl.id.indexOf('overlay') >= 0)) ||
+          (gameEl.id && (gameEl.id.indexOf('btn-') === 0 || gameEl.id.indexOf('overlay') >= 0)) ||
           (gameEl.className && typeof gameEl.className === 'string' &&
            (gameEl.className.indexOf('menu-btn') >= 0 || gameEl.className.indexOf('overlay') >= 0 ||
-            gameEl.className.indexOf('ctrl-btn') >= 0 || gameEl.className.indexOf('game') >= 0))) {
+            gameEl.className.indexOf('ctrl-btn') >= 0))) {
         return;
       }
       gameEl = gameEl.parentElement;
