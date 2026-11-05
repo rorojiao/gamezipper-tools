@@ -378,9 +378,10 @@
     }, true);
   })();
 
-  /* Dead Click Detection: user clicks but no navigation/event fires within 1s
+  /* Dead Click Detection: user clicks but no visual feedback / state change within 1s
      — signals non-interactive element that LOOKS clickable (UX confusion)     */
   (function(){
+    // Snapshot of element state before click; if no state change after 1.5s → dead
     document.addEventListener('click', function(e){
       var t = e.target;
       var tag = t.tagName;
@@ -389,14 +390,39 @@
         var lookClickable = t.getAttribute('role') === 'button'
           || t.onclick
           || (t.style && t.style.cursor === 'pointer')
-          || (t.className && /click|card|btn|tile|thumb/i.test(t.className.toString()));
+          || (t.className && /click|card|btn|tile|thumb|seg/i.test(t.className.toString()));
         if (lookClickable) {
           var clickedAt = Date.now();
           var sel = (t.tagName || '?') + '.' + (t.className||'').toString().slice(0,40);
-          // After 1.5s, check if URL changed (no nav = dead click)
+          // Snapshot element class/aria-expanded/style to detect any visual change
+          var snapClass = t.className.toString();
+          var snapAria = t.getAttribute('aria-expanded') || '';
+          var snapInline = t.getAttribute('style') || '';
+          // After 1.5s, check if any state changed (= onclick worked = NOT dead)
           setTimeout(function(){
             if (location.pathname === P && Date.now() - clickedAt >= 1400) {
-              ps('dead_click', { u: P, sel: sel });
+              var nowClass = t.className.toString();
+              var nowAria = t.getAttribute('aria-expanded') || '';
+              var nowInline = t.getAttribute('style') || '';
+              var stateChanged = (snapClass !== nowClass) || (snapAria !== nowAria) || (snapInline !== nowInline);
+              /* R1056 (2026-11-05): rapid re-click ack-overlap false positive.
+                 When a re-click lands while a PREVIOUS click's transient ack class
+                 is still on the element, the capture-phase snapshot already contains
+                 that ack. classList.add is idempotent + hold timers re-arm, so the
+                 same class is present at the 1.5s check → snap==now → reported dead
+                 although the user watched the element visibly react <1.7s ago.
+                 Observed sel strings carrying a live ack: kakuro DIV.ctrl-btn
+                 gz-pressed (4, 11-05), 8-ball DIV.tutorial-card tut-press (8,
+                 11-05, local repro reproduces 1/5 rapid clicks), kakuro
+                 DIV.tier-btn tier-clicked0 (7, 11-04), word-conn gz-dead-btn.
+                 Fix lives HERE (not per-page ack rotation) because every R381-family
+                 page is exposed. Guard is token-scoped to the transient-feedback
+                 class family shipped by rounds R381-R1053; persistent state classes
+                 (active/selected/open) are NOT exempted. */
+              var _gzAckLive = /(?:^|\s)[\w-]*(?:pressed|press|tapped|clicked|ack|rej|shake|bump)[\w-]*(?:\s|$)/i;
+              if (!stateChanged && !_gzAckLive.test(snapClass)) {
+                ps('dead_click', { u: P, sel: sel });
+              }
             }
           }, 1500);
         }
