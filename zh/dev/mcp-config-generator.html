@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<title>MCP 配置生成器 - Claude Desktop / Cursor / VS Code mcp.json 在线生成 | GameZipper 工具箱</title>
+  <meta name="description" content="为 Claude Desktop、Claude Code、Cursor、VS Code 和 Windsurf 在线生成正确的 MCP 服务器配置 JSON：本地命令或远程 URL、环境变量、多服务器，并附配置文件位置。免费、纯浏览器运行、无需注册。">
+  <link rel="canonical" href="https://tools.gamezipper.com/zh/dev/mcp-config-generator.html">
+  <meta property="og:title" content="MCP 配置生成器 - Claude Desktop / Cursor / VS Code mcp.json | GameZipper 工具箱">
+  <meta property="og:description" content="在线生成 Claude Desktop、Claude Code、Cursor、VS Code、Windsurf 的 MCP 配置 JSON，支持 stdio 与远程 URL、环境变量、多服务器。">
+  <meta property="og:url" content="https://tools.gamezipper.com/zh/dev/mcp-config-generator.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="MCP 配置生成器 - Claude Desktop / Cursor / VS Code mcp.json | GameZipper 工具箱">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20261001210623R840tools"></script>
+<style>
+.client-switch{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.client-switch button{flex:1;min-width:110px}
+.client-switch button.off{opacity:.5}
+#file-hint{font-size:.85em;padding:8px 10px;background:var(--glass2);border-radius:8px;margin:8px 0;font-family:monospace}
+.srv-card{border:1px solid var(--border,rgba(255,255,255,.15));border-radius:10px;padding:12px;margin:10px 0;background:var(--glass2)}
+.srv-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.srv-card label{display:block;font-size:.8em;opacity:.8;margin-bottom:2px}
+.srv-card input,.srv-card textarea{width:100%;font-family:monospace;font-size:.9em}
+.srv-card textarea{min-height:52px}
+.srv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.srv-head b{font-size:.95em}
+.tr-toggle{display:flex;gap:6px;margin-bottom:8px}
+.tr-toggle button{padding:4px 12px;font-size:.85em}
+.tr-toggle button.off{opacity:.45}
+#out-area{white-space:pre-wrap;font-family:monospace;font-size:.9em;padding:10px;background:var(--glass2);border-radius:8px;min-height:120px;overflow:auto}
+#err{color:#f66;font-size:.85em;margin:4px 0}
+@media(max-width:640px){.srv-row{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "MCP 配置生成器", "description": "为 Claude Desktop、Claude Code、Cursor、VS Code 和 Windsurf 生成 MCP 服务器配置 JSON（mcpServers / servers），支持 stdio 命令、远程 URL、环境变量，并标注各客户端配置文件位置。", "url": "https://tools.gamezipper.com/zh/dev/mcp-config-generator.html", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web Browser", "offers": {"@type": "Offer", "price": "0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "什么是 MCP 配置文件？", "acceptedAnswer": {"@type": "Answer", "text": "MCP 配置文件告诉 AI 客户端（Claude、Cursor、VS Code、Windsurf）如何启动并连接 Model Context Protocol 服务器：每个服务器的名称、启动命令（stdio）或远程 URL，以及 API 密钥等环境变量。Claude Desktop 读取 claude_desktop_config.json；Claude Code 读取 .mcp.json；Cursor 读取 .cursor/mcp.json；VS Code 读取 .vscode/mcp.json；Windsurf 读取 mcp_config.json。"}}, {"@type": "Question", "name": "stdio 和远程 MCP 服务器有什么区别？", "acceptedAnswer": {"@type": "Answer", "text": "stdio 服务器是本机进程：客户端用 npx、uvx 等命令启动它，通过标准输入输出通信。远程服务器已在某个 URL 上运行，客户端通过 HTTP（SSE 或 streamable HTTP）连接。Claude Desktop 的配置文件只支持启动 stdio 服务器；Cursor、VS Code、Claude Code 和 Windsurf 也可直接填写远程 URL。"}}, {"@type": "Question", "name": "为什么我的 MCP 配置 JSON 加载失败？", "acceptedAnswer": {"@type": "Answer", "text": "最常见原因：粘贴出两个 mcpServers 对象而没有合并成一个、多余逗号、用了单引号、顶级字段名写错（VS Code 用 servers，其他客户端用 mcpServers）、Windows 下反斜杠路径问题。本生成器会把所有服务器合并为一个对象并输出严格 JSON，重启后即可加载。"}}, {"@type": "Question", "name": "API 密钥会被上传吗？", "acceptedAnswer": {"@type": "Answer", "text": "不会。生成器完全在浏览器本地运行，你输入的环境变量值只留在页面和你复制的 JSON 中，不上传、不存储。"}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/dev/mcp-config-generator.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/dev/mcp-config-generator.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/dev/mcp-config-generator.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="client-switch" id="clients"></div>
+    <div id="file-hint"></div>
+    <div id="servers"></div>
+    <div class="gz-toolbar" id="tb"></div>
+    <h3 id="lbl-out" style="margin:14px 0 4px"></h3>
+    <pre id="out-area"></pre>
+    <div id="err"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'MCP Config Generator',
+    toolDesc: 'Generate the exact mcp.json / claude_desktop_config.json for Claude Desktop, Claude Code, Cursor, VS Code and Windsurf — stdio or remote URL, env vars, multiple servers, one click to copy.',
+    cDesktop: 'Claude Desktop', cCode: 'Claude Code', cCursor: 'Cursor', cVscode: 'VS Code', cWindsurf: 'Windsurf',
+    fileHint: (f)=>'Config file: '+f,
+    lblName: 'Server name', lblCmd: 'Command', lblArgs: 'Arguments (one per line)', lblEnv: 'Env vars (KEY=VALUE per line)', lblUrl: 'Server URL (remote)',
+    trStdio: 'stdio (local command)', trRemote: 'remote (URL)',
+    addSrv: '+ Add server', delSrv: 'Remove',
+    presets: 'Quick add:',
+    copy: 'Copy JSON', download: 'Download .json', clear: 'Clear all',
+    output: 'Generated config',
+    step1: 'Pick your AI client at the top — Claude Desktop, Claude Code, Cursor, VS Code or Windsurf. The correct top-level key and file location update automatically.',
+    step2: 'Fill in each MCP server: a name, then either a local command with arguments (stdio) or a remote URL. Add API keys in the env field as KEY=VALUE lines.',
+    step3: 'Add more servers with the + Add server button, or use the quick-add presets for popular servers like filesystem, GitHub or Brave Search.',
+    step4: 'Copy the JSON and paste it into the config file shown under the client buttons, then fully restart the app so the servers load.',
+  },
+  zh: {
+    toolTitle: 'MCP 配置生成器',
+    toolDesc: '为 Claude Desktop、Claude Code、Cursor、VS Code 和 Windsurf 生成正确的 mcp.json / claude_desktop_config.json — 支持本地命令或远程 URL、环境变量、多个服务器，一键复制。',
+    cDesktop: 'Claude Desktop', cCode: 'Claude Code', cCursor: 'Cursor', cVscode: 'VS Code', cWindsurf: 'Windsurf',
+    fileHint: (f)=>'配置文件位置：'+f,
+    lblName: '服务器名称', lblCmd: '命令', lblArgs: '参数（每行一个）', lblEnv: '环境变量（每行 KEY=VALUE）', lblUrl: '服务器 URL（远程）',
+    trStdio: 'stdio（本地命令）', trRemote: '远程（URL）',
+    addSrv: '+ 添加服务器', delSrv: '删除',
+    presets: '快速添加：',
+    copy: '复制 JSON', download: '下载 .json', clear: '全部清空',
+    output: '生成的配置',
+    step1: '在顶部选择你的 AI 客户端 — Claude Desktop、Claude Code、Cursor、VS Code 或 Windsurf，顶级字段名和配置文件位置会自动切换。',
+    step2: '填写每个 MCP 服务器：名称 + 本地命令及参数（stdio），或远程 URL；API 密钥写在环境变量栏，每行 KEY=VALUE。',
+    step3: '点击「+ 添加服务器」添加更多服务器，或使用快速添加预设（filesystem、GitHub、Brave Search 等常用服务器）。',
+    step4: '复制 JSON，粘贴到客户端按钮下方显示的配置文件路径中，然后完全退出并重启应用即可加载服务器。',
+  }
+});
+
+const { $, copyText, t } = GZ;
+
+const CLIENTS = {
+  desktop: {key:'mcpServers', file:'claude_desktop_config.json (macOS: ~/Library/Application Support/Claude/, Windows: %APPDATA%\\Claude\\)', remote:false, nameKey:'cDesktop'},
+  code:    {key:'mcpServers', file:'.mcp.json (project) or ~/.claude.json (user scope, via claude mcp add)', remote:true, remoteType:'http', nameKey:'cCode'},
+  cursor:  {key:'mcpServers', file:'.cursor/mcp.json (project) or ~/.cursor/mcp.json (global)', remote:true, remoteType:null, nameKey:'cCursor'},
+  vscode:  {key:'servers',    file:'.vscode/mcp.json (workspace) or user config via "MCP: Open User Configuration"', remote:true, remoteType:'http', nameKey:'cVscode'},
+  windsurf:{key:'mcpServers', file:'~/.codeium/windsurf/mcp_config.json', remote:true, remoteType:'serverUrl', nameKey:'cWindsurf'},
+};
+let client = 'code';
+let servers = [{name:'filesystem', transport:'stdio', command:'npx', args:['-y','@modelcontextprotocol/server-filesystem','/path/to/allowed/dir'], envStr:''}];
+
+const PRESETS = {
+  'github': {transport:'stdio', command:'npx', args:['-y','@modelcontextprotocol/server-github'], envStr:'GITHUB_PERSONAL_ACCESS_TOKEN=ghp_yourtoken'},
+  'brave-search': {transport:'stdio', command:'npx', args:['-y','@modelcontextprotocol/server-brave-search'], envStr:'BRAVE_API_KEY=your_key'},
+  'sqlite': {transport:'stdio', command:'uvx', args:['mcp-server-sqlite','--db-path','/path/to/app.db'], envStr:''},
+  'memory': {transport:'stdio', command:'npx', args:['-y','@modelcontextprotocol/server-memory'], envStr:''},
+};
+
+function renderClients(){
+  $('#clients').innerHTML = Object.entries(CLIENTS).map(([k,c]) =>
+    `<button class="gz-btn${k===client?'':' gz-btn-secondary off'}" onclick="setClient('${k}')">${t(c.nameKey)}</button>`).join('');
+  $('#file-hint').textContent = t('fileHint')(CLIENTS[client].file);
+}
+function setClient(k){ client=k; renderClients(); renderServers(); }
+
+function renderServers(){
+  const c = CLIENTS[client];
+  $('#servers').innerHTML = servers.map((s,i)=>{
+    const remoteOnly = s.transport==='remote';
+    return `<div class="srv-card">
+      <div class="srv-head"><b>#${i+1} — ${s.name||'(unnamed)'}</b><button class="gz-btn gz-btn-secondary" style="padding:3px 10px;font-size:.8em" onclick="delSrv(${i})">${t('delSrv')}</button></div>
+      <div class="tr-toggle">
+        <button class="gz-btn${remoteOnly?' gz-btn-secondary off':''}" onclick="setTr(${i},'stdio')">${t('trStdio')}</button>
+        <button class="gz-btn${remoteOnly?'':' gz-btn-secondary off'}" ${c.remote?'':'disabled style="opacity:.3"'} onclick="setTr(${i},'remote')">${t('trRemote')}</button>
+      </div>
+      <div class="srv-row">
+        <div><label>${t('lblName')}</label><input value="${s.name}" oninput="upd(${i},'name',this.value)"></div>
+        ${remoteOnly
+          ? `<div><label>${t('lblUrl')}</label><input value="${s.url||''}" oninput="upd(${i},'url',this.value)" placeholder="https://…"></div>`
+          : `<div><label>${t('lblCmd')}</label><input value="${s.command}" oninput="upd(${i},'command',this.value)" placeholder="npx"></div>`}
+      </div>
+      ${remoteOnly ? '' : `<div style="margin-bottom:6px"><label>${t('lblArgs')}</label><textarea oninput="updArgs(${i},this.value)">${(s.args||[]).join('\n')}</textarea></div>`}
+      <div><label>${t('lblEnv')}</label><textarea oninput="upd(${i},'envStr',this.value)" placeholder="API_KEY=***">${s.envStr||''}</textarea></div>
+    </div>`;
+  }).join('');
+  const presets = '<div style="margin:8px 0"><span style="font-size:.85em;opacity:.8">'+t('presets')+'</span> '+
+    Object.keys(PRESETS).map(p=>`<button class="gz-btn gz-btn-secondary" style="padding:3px 10px;font-size:.8em;margin:2px" onclick="addPreset('${p}')">${p}</button>`).join('')+'</div>';
+  $('#tb').innerHTML = `<button class="gz-btn" onclick="addSrv()">${t('addSrv')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="copyText($('#out-area').textContent)">${t('copy')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="dl()">${t('download')}</button>
+    <button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>` + presets;
+}
+function upd(i,k,v){ servers[i][k]=v; gen(); }
+function updArgs(i,v){ servers[i].args = v.split('\n').filter(x=>x.trim()!==''); gen(); }
+function setTr(i,tr){ servers[i].transport=tr; renderServers(); gen(); }
+function addSrv(){ servers.push({name:'my-server',transport:'stdio',command:'npx',args:['-y','@example/my-mcp'],envStr:''}); renderServers(); gen(); }
+function addPreset(p){ const s=PRESETS[p]; servers.push({name:p,...s}); renderServers(); gen(); }
+function delSrv(i){ servers.splice(i,1); if(!servers.length) servers=[{name:'my-server',transport:'stdio',command:'',args:[],envStr:''}]; renderServers(); gen(); }
+function clearAll(){ servers=[{name:'my-server',transport:'stdio',command:'',args:[],envStr:''}]; renderServers(); gen(); }
+
+function parseEnv(s){ const o={}; (s||'').split('\n').forEach(l=>{ const m=l.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/); if(m) o[m[1]]=m[2]; }); return o; }
+
+function gen(){
+  const c = CLIENTS[client];
+  const obj = { [c.key]: {} };
+  const errs = [];
+  servers.forEach((s,i)=>{
+    const name = (s.name||'').trim().replace(/\s+/g,'-');
+    if(!name){ errs.push('Server #'+(i+1)+': name is empty'); return; }
+    if(obj[c.key][name]){ errs.push('Duplicate server name: '+name); return; }
+    if(s.transport==='remote'){
+      if(!s.url){ errs.push('Server "'+name+'": remote URL is empty'); return; }
+      if(c.remoteType==='http') obj[c.key][name] = { type:'http', url:s.url };
+      else if(c.remoteType==='serverUrl') obj[c.key][name] = { serverUrl:s.url };
+      else obj[c.key][name] = { url:s.url };
+    } else {
+      if(!s.command){ errs.push('Server "'+name+'": command is empty'); return; }
+      const e = { command:s.command };
+      if(s.args && s.args.length) e.args = s.args;
+      const env = parseEnv(s.envStr);
+      if(Object.keys(env).length) e.env = env;
+      if(client==='vscode') e.type='stdio';
+      obj[c.key][name] = e;
+    }
+  });
+  $('#err').textContent = errs.join(' · ');
+  $('#out-area').textContent = JSON.stringify(obj, null, 2);
+}
+function dl(){
+  const names = {desktop:'claude_desktop_config',code:'.mcp',cursor:'mcp',vscode:'mcp',windsurf:'mcp_config'};
+  const blob = new Blob([$('#out-area').textContent], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = names[client]+'.json'; a.click();
+}
+
+renderClients(); renderServers(); gen();
+
+GZ.renderToolPage({
+  category: 'dev',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'🧩', href:'/dev/json-viewer.html', name:'JSON Viewer'},
+    {icon:'⚙️', href:'/dev/env-generator.html', name:'.env Generator'},
+    {icon:'🔑', href:'/dev/api-key-generator.html', name:'API Key Generator'},
+    {icon:'🐳', href:'/dev/docker-compose-generator.html', name:'Docker Compose Generator'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
