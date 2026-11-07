@@ -435,6 +435,8 @@
   var _initialized = false;
   function init() {
     if (_initialized) return;
+    // R1066-parity (2026-11-07): skip entirely for crawler/bot UAs.
+    if (/bot|crawler|spider|headless|webindexer|lighthouse/i.test(navigator.userAgent || '')) return;
     _initialized = true;
     armPop();
     track('script_loaded', {

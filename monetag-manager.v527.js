@@ -533,6 +533,9 @@
   'use strict';
   if (window.GZMonetagManager) return;
   window.GZMonetagManager = true;
+  // R1066-parity (2026-11-07): crawler/bot UAs must not init ad managers
+  // (meta-webindexer executes page JS; datacenter traffic pollutes ad accounts).
+  if (/bot|crawler|spider|headless|webindexer|lighthouse/i.test(navigator.userAgent || '')) return;
 
   var ADS_ENABLED = (window.GZ_ADS_ENABLED !== undefined) ? window.GZ_ADS_ENABLED : true;
   if (!ADS_ENABLED) return;

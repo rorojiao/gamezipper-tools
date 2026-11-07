@@ -2,7 +2,7 @@
 // Pure caching — Monetag push NOTIFICATIONS DISABLED
 // v3: bypass browser cache for gz-analytics.js so EP rotation propagates immediately
 //     (tunnel rotates every ~5min, but CDN cache + SW cache could hold stale EP for 4h)
-const CACHE='gzt-v3';
+const CACHE='gzt-v4';
 
 self.addEventListener('install',e=>{
   self.skipWaiting();
@@ -21,7 +21,11 @@ self.addEventListener('fetch',e=>{
   // v3: Network-only for gz-analytics.js — bypass SW cache + browser HTTP cache.
   // CDN cache still applies but `?v=` bumping in HTML references busts it on every tunnel rotation.
   // Without this, SW would return stale EP from local cache for the lifetime of the SW.
-  if(url.pathname==='/gz-analytics.js'||url.pathname.startsWith('/gz-analytics.')){
+  if(url.pathname==='/gz-analytics.js'||url.pathname.startsWith('/gz-analytics.')
+     ||url.pathname==='/shared/common.js'||url.pathname.startsWith('/monetag-manager')
+     ||url.pathname.startsWith('/adsterra-manager')){
+    // v4 (R1066-parity 2026-11-07): ad-manager JS must propagate immediately (crawler
+    // guards, zone changes); SW cache-first was holding stale common.js indefinitely.
     e.respondWith(fetch(e.request,{cache:'no-store'}).catch(()=>fetch(e.request)));
     return;
   }

@@ -426,6 +426,10 @@ const GZ = (function(){
     } catch(e) {}
   }
   function tryInjectAfterRelated() {
+    // R1066-parity (2026-11-07): crawler UAs (meta-webindexer et al.) execute page JS
+    // from datacenter IPs. BI 11-07: webindexer alone fired 118 gz_after_related_*
+    // AdSense events before this guard; AdSense account is appeal-pending → skip for bots.
+    if (/bot|crawler|spider|headless|webindexer|lighthouse/i.test(navigator.userAgent || '')) return;
     if (location.pathname.indexOf('/', 1) <= 1) {
       trackAfterRelated('gz_after_related_skip_hub', { path: location.pathname });
       return;
