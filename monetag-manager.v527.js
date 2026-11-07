@@ -536,6 +536,9 @@
   // R1066-parity (2026-11-07): crawler/bot UAs must not init ad managers
   // (meta-webindexer executes page JS; datacenter traffic pollutes ad accounts).
   if (/bot|crawler|spider|headless|webindexer|lighthouse/i.test(navigator.userAgent || '')) return;
+  // R1067 (2026-11-07): fake mobile fingerprints (iPhone UA + Win32 platform)
+  // pass the UA regex — farm traffic, never revenue. See gamezipper.com R1067.
+  if (/iPhone|iPod/.test(navigator.userAgent || '') && !/^(iPhone|iPod)$/.test(navigator.platform || '')) return;
 
   var ADS_ENABLED = (window.GZ_ADS_ENABLED !== undefined) ? window.GZ_ADS_ENABLED : true;
   if (!ADS_ENABLED) return;

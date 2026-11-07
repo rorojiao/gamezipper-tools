@@ -437,6 +437,9 @@
     if (_initialized) return;
     // R1066-parity (2026-11-07): skip entirely for crawler/bot UAs.
     if (/bot|crawler|spider|headless|webindexer|lighthouse/i.test(navigator.userAgent || '')) return;
+    // R1067 (2026-11-07): fake mobile fingerprints (iPhone UA + Win32 platform)
+    // pass the UA regex — farm traffic, never revenue. See gamezipper.com R1067.
+    if (/iPhone|iPod/.test(navigator.userAgent || '') && !/^(iPhone|iPod)$/.test(navigator.platform || '')) return;
     _initialized = true;
     armPop();
     track('script_loaded', {
