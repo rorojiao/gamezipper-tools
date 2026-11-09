@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>EPUB to Text Converter — Extract Text from EPUB eBook Online | GameZipper Tools</title>
+  <meta name="description" content="Extract clean plain text from EPUB eBooks online for free. Chapters in reading order, copy or download as .txt — 100% in your browser, no upload, no signup, no watermark.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/epub-to-text.html">
+  <meta property="og:title" content="EPUB to Text Converter — Free Online eBook Text Extractor | GameZipper Tools">
+  <meta property="og:description" content="Extract clean plain text from EPUB eBooks online for free. Chapters in reading order, copy or download as .txt — 100% in your browser, no upload, no signup, no watermark.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/epub-to-text.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+<meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="EPUB to Text Converter — Free Online eBook Text Extractor | GameZipper Tools">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20261001210623R840tools"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+.eb-drop{border:2px dashed var(--gz-border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:1rem;background:var(--gz-surface)}
+.eb-drop:hover,.eb-drop.dragover{border-color:var(--gz-accent);background:rgba(78,205,196,.08)}
+.eb-drop svg{width:48px;height:48px;margin-bottom:8px;opacity:.6}
+.eb-file{padding:12px 14px;background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.eb-file .ic{font-size:1.5rem}
+.eb-file .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9em}
+.eb-file .sz{color:var(--gz-text-muted);font-size:.8em}
+.eb-stats{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0}
+.eb-stats .stat{background:var(--gz-surface);border:1px solid var(--gz-border);border-radius:10px;padding:10px 16px;min-width:120px}
+.eb-stats .v{font-size:1.3em;font-weight:700;color:var(--gz-accent)}
+.eb-stats .k{font-size:.78em;color:var(--gz-text-muted)}
+#preview{width:100%;height:300px;background:var(--gz-bg);border:1px solid var(--gz-border);color:var(--gz-text);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em;line-height:1.55;resize:vertical;display:none;margin-bottom:1rem}
+#preview.show{display:block}
+</style>
+<script type="application/ld+json">{"@context":"https://***@type":"WebApplication","name":"EPUB to Text Converter","description":"Extract clean plain text from EPUB eBooks online for free. Chapters in reading order, copy or download as .txt — 100% in your browser, no upload, no signup, no watermark.","url":"https://tools.gamezipper.com/convert/epub-to-text.html","applicationCategory":"Utility","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context":"https://***@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert an EPUB to plain text online?","acceptedAnswer":{"@type":"Answer","text":"Drop your .epub file onto the upload zone, then click Extract Text. The tool unpacks the EPUB archive, follows the reading order defined in the book's spine, strips all markup and gives you clean plain text you can copy or download as a .txt file — entirely in your browser."}},{"@type":"Question","name":"Is my eBook data safe during conversion?","acceptedAnswer":{"@type":"Answer","text":"Yes. The EPUB is unpacked and parsed locally with JSZip and the browser's DOM parser. Your book file never leaves your device and nothing is uploaded to any server."}},{"@type":"Question","name":"Does it work with DRM-protected EPUB files?","acceptedAnswer":{"@type":"Answer","text":"No. EPUBs protected with Adobe ADEPT or Apple FairPlay DRM cannot be read by this tool. It works with DRM-free EPUBs, which covers most public-domain and self-published eBooks."}},{"@type":"Question","name":"Is the chapter order and formatting preserved?","acceptedAnswer":{"@type":"Answer","text":"Chapter order is preserved exactly as defined in the EPUB spine. Plain text output keeps headings and paragraph breaks as line breaks; fonts, colors and images are removed because .txt is a plain-text format. If you need a printable layout instead, use our EPUB to PDF converter."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/epub-to-text.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/epub-to-text.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/epub-to-text.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div class="gz-toolbar" id="toolbar"></div>
+    <div class="eb-drop" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <div id="dropText"></div>
+    </div>
+    <input type="file" id="fileInput" accept=".epub,application/epub+zip" hidden>
+    <div id="fileInfo"></div>
+    <div class="eb-stats" id="stats" style="display:none"></div>
+    <textarea id="preview" readonly spellcheck="false"></textarea>
+    <div id="status"></div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'EPUB to Text Converter',
+    toolDesc: 'Extract clean plain text from EPUB eBooks instantly — copy or download as .txt. 100% browser-based, no upload, no signup, no watermark.',
+    dropText: 'Drop your .epub file here or click to browse',
+    convert: 'Extract Text',
+    copy: 'Copy Text',
+    download: 'Download .txt',
+    clear: 'Clear',
+    loading: 'Reading EPUB…',
+    extracting: 'Extracting text…',
+    done: '✓ Text extracted',
+    noFile: 'Please select an EPUB file first.',
+    error: 'Error: ',
+    invalidEpub: 'This file is not a valid EPUB archive.',
+    noText: 'No readable text found — the EPUB may be DRM-protected.',
+    statChapters: 'Chapters',
+    statWords: 'Words',
+    statChars: 'Characters',
+    step1: 'Drop your .epub file onto the upload zone (or click to browse)',
+    step2: 'Click Extract Text — chapters are read in the book\'s own reading order',
+    step3: 'Preview the plain text, check word and character counts',
+    step4: 'Copy to clipboard or download as a .txt file — free, unlimited, no signup',
+  },
+  zh: {
+    toolTitle: 'EPUB 转文本提取工具',
+    toolDesc: '即时从 EPUB 电子书中提取纯文本 — 复制下载为 .txt。100% 浏览器本地处理，无需上传、无需注册、无水印。',
+    dropText: '将 .epub 文件拖到这里，或点击选择',
+    convert: '提取文本',
+    copy: '复制文本',
+    download: '下载 .txt',
+    clear: '清除',
+    loading: '正在读取 EPUB…',
+    extracting: '正在提取文本…',
+    done: '✓ 文本提取完成',
+    noFile: '请先选择一个 EPUB 文件。',
+    error: '错误：',
+    invalidEpub: '此文件不是有效的 EPUB 归档。',
+    noText: '未找到可读文本 — 该 EPUB 可能受 DRM 保护。',
+    statChapters: '章节',
+    statWords: '词数',
+    statChars: '字符数',
+    step1: '将 .epub 文件拖入上传区（或点击选择）',
+    step2: '点击「提取文本」— 按电子书自身的阅读顺序逐章读取',
+    step3: '预览纯文本，查看词数和字符数',
+    step4: '复制到剪贴板或下载为 .txt 文件 — 免费、无限制、无需注册',
+  }
+});
+
+const { $, t } = GZ;
+let selectedFile = null;
+let extracted = '';
+
+const dz = $('#dropZone');
+dz.addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) selectFile(e.target.files[0]);
+  e.target.value = '';
+});
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]);
+});
+$('#dropText').textContent = t('dropText');
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(2) + ' MB';
+}
+
+function selectFile(f) {
+  if (!f.name.toLowerCase().endsWith('.epub') && f.type !== 'application/epub+zip') {
+    GZ.showToast(t('invalidEpub'));
+    return;
+  }
+  selectedFile = f;
+  $('#fileInfo').innerHTML = `<div class="eb-file"><span class="ic">📖</span><span class="nm">${f.name}</span><span class="sz">${fmtSize(f.size)}</span></div>`;
+}
+
+function extractText(body) {
+  let out = '';
+  const BLOCKS = new Set(['p','div','h1','h2','h3','h4','h5','h6','li','ul','ol','blockquote','br','tr','table','section','article','figure','pre','header','footer','aside','nav','dl','dt','dd','hr','body']);
+  (function walk(n) {
+    if (n.nodeType === 3) { out += n.nodeValue.replace(/\s+/g, ' '); return; }
+    if (n.nodeType !== 1) return;
+    const tag = n.tagName.toLowerCase();
+    const block = BLOCKS.has(tag);
+    if (block) out += '\n';
+    if (tag === 'img') { const alt = n.getAttribute('alt'); if (alt) out += alt + ' '; }
+    for (const c of n.childNodes) walk(c);
+    if (block && tag !== 'br' && tag !== 'img') out += '\n';
+  })(body);
+  return out;
+}
+
+function normalizePath(opfDir, href) {
+  const parts = (opfDir + href).split('/');
+  const stack = [];
+  for (const p of parts) {
+    if (p === '.' || p === '') continue;
+    if (p === '..') stack.pop(); else stack.push(p);
+  }
+  return stack.join('/');
+}
+
+async function convertEpubToText() {
+  if (!selectedFile) { GZ.showToast(t('noFile')); return; }
+  $('#status').textContent = t('loading');
+
+  try {
+    const buf = await selectedFile.arrayBuffer();
+    const zip = await JSZip.loadAsync(buf);
+
+    const containerXml = await zip.file('META-INF/container.xml')?.async('string');
+    if (!containerXml) throw new Error(t('invalidEpub'));
+    const opfPath = (containerXml.match(/full-path="([^"]+)"/) || [])[1];
+    if (!opfPath) throw new Error(t('invalidEpub'));
+
+    const opfXml = await zip.file(opfPath)?.async('string');
+    if (!opfXml) throw new Error(t('invalidEpub'));
+    const opfDir = opfPath.includes('/') ? opfPath.replace(/[^/]+$/, '') : '';
+
+    const manifest = {};
+    const itemRe = /<item\b[^>]*\/>/g;
+    let m;
+    while ((m = itemRe.exec(opfXml)) !== null) {
+      const tag = m[0];
+      const id = (tag.match(/id="([^"]+)"/) || [])[1];
+      const href = (tag.match(/href="([^"]+)"/) || [])[1];
+      const mt = (tag.match(/media-type="([^"]+)"/) || [])[1];
+      if (id && href) manifest[id] = { href: decodeURIComponent(href), mediaType: mt || '' };
+    }
+    const spineIds = [];
+    const spineRe = /<itemref\b[^>]*idref="([^"]+)"[^>]*\/?>/g;
+    while ((m = spineRe.exec(opfXml)) !== null) spineIds.push(m[1]);
+    if (!spineIds.length) Object.keys(manifest).forEach(k => { if (/xhtml|\/html/.test(manifest[k].mediaType)) spineIds.push(k); });
+
+    $('#status').textContent = t('extracting');
+    const chapters = [];
+    for (const id of spineIds) {
+      const item = manifest[id];
+      if (!item || !/xhtml|\/html|htm$/.test(item.mediaType + item.href)) continue;
+      const path = normalizePath(opfDir, item.href);
+      const f = zip.file(path) || zip.file(decodeURIComponent(item.href));
+      if (!f) continue;
+      const htmlStr = await f.async('string');
+      const doc = new DOMParser().parseFromString(htmlStr, 'text/html');
+      doc.querySelectorAll('script,style,svg,noscript,head,[role="doc-pagebreak"]').forEach(e => e.remove());
+      const txt = extractText(doc.body)
+        .replace(/[ \t]+/g, ' ')
+        .replace(/ *\n */g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      if (txt) chapters.push(txt);
+    }
+    if (!chapters.length) throw new Error(t('noText'));
+
+    extracted = chapters.join('\n\n\n');
+    const words = (extracted.match(/\S+/g) || []).length;
+    $('#stats').style.display = 'flex';
+    $('#stats').innerHTML =
+      `<div class="stat"><div class="v">${chapters.length}</div><div class="k">${t('statChapters')}</div></div>` +
+      `<div class="stat"><div class="v">${words.toLocaleString()}</div><div class="k">${t('statWords')}</div></div>` +
+      `<div class="stat"><div class="v">${extracted.length.toLocaleString()}</div><div class="k">${t('statChars')}</div></div>`;
+    const pv = $('#preview');
+    pv.value = extracted;
+    pv.classList.add('show');
+    $('#status').innerHTML = `<span style="color:var(--gz-success)">${t('done')}</span>`;
+  } catch (e) {
+    $('#status').innerHTML = `<span style="color:var(--gz-accent)">${t('error')}${e.message}</span>`;
+  }
+}
+
+function copyText() {
+  if (!extracted) return;
+  GZ.copyText ? GZ.copyText(extracted) : navigator.clipboard.writeText(extracted);
+}
+
+function downloadTxt() {
+  if (!extracted) return;
+  const blob = new Blob([extracted], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = selectedFile.name.replace(/\.epub$/i, '') + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearAll() {
+  selectedFile = null;
+  extracted = '';
+  $('#fileInfo').innerHTML = '';
+  $('#status').textContent = '';
+  $('#stats').style.display = 'none';
+  const pv = $('#preview');
+  pv.value = '';
+  pv.classList.remove('show');
+}
+
+$('#toolbar').innerHTML = `<button class="gz-btn" onclick="convertEpubToText()">${t('convert')}</button><button class="gz-btn" onclick="downloadTxt()">${t('download')}</button><button class="gz-btn gz-btn-secondary" onclick="copyText()">${t('copy')}</button><button class="gz-btn gz-btn-secondary" onclick="clearAll()">${t('clear')}</button>`;
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'📖', href:'/convert/epub-reader.html', name:'EPUB Reader'},
+    {icon:'📄', href:'/convert/epub-to-pdf.html', name:'EPUB to PDF'},
+    {icon:'📄', href:'/convert/pdf-to-text.html', name:'PDF to Text'},
+    {icon:'🔊', href:'/text/text-to-speech.html', name:'Text to Speech'},
+  ]
+});
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
