@@ -96,9 +96,20 @@
   //   profitabledisplaynetwork.com/{zoneId}.js returns HTTP 301→google.com. 6d BI:
   //   0 fills / 11 attempts. Adsterra tier was burning +3s page-load per request with
   //   zero revenue. Default OFF — opt-in via window.GZ_LOAD_ADSTERRA=true.
-  if(window.GZ_LOAD_ADSTERRA===true){
-    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=R1055popex';sAd.defer=true;document.head.appendChild(sAd);
-  } else { try { console.log('[gz-tools] adsterra skipped: CDN dead (set GZ_LOAD_ADSTERRA=true to re-enable)'); } catch(e){} }
+  // R1121 (2026-11-09): RE-ENABLED, default ON (opt-out: GZ_LOAD_ADSTERRA=false).
+  //   The July CDN-dead state was the hand-copied profitabledisplaynetwork embed.
+  //   The current manager uses API-authority URLs (R1003: smartlink araplhn.org
+  //   direct_url; popunder effectivecpmnetwork zdq0x5zp) that bill daily on
+  //   gamezipper.com per the official per-placement API (R1044/R1066). The tools
+  //   copy of adsterra-manager.js is the synced R1055 build with R1067 bot
+  //   guards, but this gate kept it UNLOADED ever since — analytics.db shows
+  //   tools.gamezipper.com has NEVER emitted a single network=adsterra event.
+  //   Adsterra popunder+smartlink are now the only paying networks (AdSense
+  //   disapproved, Monetag zone 11012002 dead), so ~250 tools PV/7d served zero
+  //   ads. Token bump: R1121toolson.
+  if(window.GZ_LOAD_ADSTERRA!==false){
+    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=R1121toolson';sAd.defer=true;document.head.appendChild(sAd);
+  } else { try { console.log('[gz-tools] adsterra disabled via GZ_LOAD_ADSTERRA=false'); } catch(e){} }
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
   // v5.10.1 (2026-06-27): Container AdSense Tier 0 + showContainerAd event completeness.
 //   v5.10 had banner AdSense Tier 0; v5.10.1 mirrors to container_ad (tool sub-pages).
