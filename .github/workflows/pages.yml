@@ -30,6 +30,24 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - name: Validate sitemap.xml lastmod coverage (fail-closed gate)
+        run: |
+          python3 - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          root = ET.parse('sitemap.xml').getroot()
+          urls = root.findall('s:url', ns)
+          bad = []
+          for u in urls:
+              lm = u.find('s:lastmod', ns)
+              loc = u.find('s:loc', ns)
+              if lm is None or not (lm.text or '').strip():
+                  bad.append(loc.text if loc is not None else '<no loc>')
+          print(f'sitemap.xml: {len(urls)} URLs, {len(bad)} missing lastmod')
+          for b in bad:
+              print('  MISSING lastmod:', b)
+          sys.exit(1 if bad else 0)
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
