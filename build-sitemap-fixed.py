@@ -29,7 +29,7 @@ urls = []
 if os.path.exists('index.html'):
     urls.append(('/index.html', '1.0', 'weekly', today))
 
-# 2. Root-level non-index HTML files (priority 0.8)
+# 2. Root-level non-index HTML files (priority 0.8) + zh/ mirror (0.6)
 for f in sorted(glob.glob('*.html')):
     base = os.path.basename(f)
     if base == 'index.html' or base == '404.html':
@@ -40,20 +40,42 @@ for f in sorted(glob.glob('*.html')):
     # Skip sitemap.xml, README, etc. - only HTML goes here
     rel = f'/{base}'
     urls.append((rel, '0.8', 'monthly', today))
+    # R-GEO-1112: root-level zh mirror (e.g. zh/ics-generator.html)
+    if os.path.exists(f'zh/{base}'):
+        urls.append((f'/zh/{base}', '0.6', 'monthly', today))
+
+# R-GEO-1112: zh homepage
+if os.path.exists('zh/index.html'):
+    urls.append(('/zh/index.html', '0.7', 'monthly', today))
 
 # 3. All subdirectory HTML files (priority 0.8) + zh/ mirror (priority 0.6)
+# R-GEO-1112: recursive walk so nested pages (calc/<name>/index.html -> /calc/<name>/)
+# are not silently dropped by the flat glob.
 for d in DIRS:
     if not os.path.isdir(d):
         continue
-    for f in sorted(glob.glob(f'{d}/*.html')):
+    found = []
+    for root, dirs, files in os.walk(d):
+        for f in files:
+            if f.endswith('.html'):
+                found.append(os.path.join(root, f))
+    for f in sorted(found):
         base = os.path.basename(f)
         if base == 'index.html':
-            continue
-        rel = f'/{f}'
+            if os.path.dirname(f) == d:
+                rel = f'/{d}/index.html'      # category landing page
+            else:
+                rel = '/' + os.path.dirname(f) + '/'  # nested tool page -> dir URL
+        else:
+            rel = f'/{f}'
         urls.append((rel, '0.8', 'monthly', today))
         # zh mirror if exists
-        zh_rel = f'/zh/{f}'
-        if os.path.exists(f'zh/{f}'):
+        zh_src = f'zh/{f}'
+        if base == 'index.html':
+            zh_rel = f'/zh/{d}/index.html' if os.path.dirname(f) == d else '/zh/' + os.path.dirname(f) + '/'
+        else:
+            zh_rel = f'/zh/{f}'
+        if os.path.exists(zh_src):
             urls.append((zh_rel, '0.6', 'monthly', today))
 
 # Write sitemap
