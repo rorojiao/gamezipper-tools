@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vocal Remover & Karaoke Maker Online — Free, No Upload | GameZipper Tools</title>
+  <meta name="description" content="Remove vocals from a song online and make a karaoke track for free. Center-channel phase cancellation runs 100% in your browser — no upload, no signup, no watermark. Download as WAV instantly.">
+  <link rel="canonical" href="https://tools.gamezipper.com/convert/vocal-remover.html">
+  <meta property="og:title" content="Vocal Remover & Karaoke Maker Online — Free, No Upload">
+  <meta property="og:description" content="Remove vocals from a song online and make a karaoke track for free. Runs 100% in your browser — no upload, no signup, no watermark.">
+  <meta property="og:url" content="https://tools.gamezipper.com/convert/vocal-remover.html">
+  <meta property="og:image" content="https://tools.gamezipper.com/shared/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Vocal Remover & Karaoke Maker Online — Free, No Upload">
+  <meta name="twitter:description" content="Remove vocals from a song online and make a karaoke track for free. Runs 100% in your browser — no upload, no signup, no watermark.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared/style.css">
+<script src="/shared/i18n.js"></script>
+<script src="/shared/common.js?v=20261001210623R840tools"></script>
+<style>
+#drop{border:2px dashed var(--gz-border,#444);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border-color .2s}
+#drop.over{border-color:var(--gz-accent,#e94560)}
+#waveIn,#waveOut{width:100%;height:70px;background:rgba(0,0,0,.25);border-radius:6px;margin:6px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+audio{width:100%;margin:6px 0}
+#status{margin-top:8px;font-size:.9em}
+.stat{font-size:.85em;opacity:.75}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Vocal Remover & Karaoke Maker","description":"Remove vocals from a song online and make a karaoke track for free. Runs 100% in your browser — no upload, no signup, no watermark.","url":"https://tools.gamezipper.com/convert/vocal-remover.html","applicationCategory":"MultimediaApplication","operatingSystem":"Web Browser","offers":{"@type":"Offer","price":"0"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does an online vocal remover work?", "acceptedAnswer": {"@type": "Answer", "text": "This tool uses stereo phase cancellation: most songs mix the lead vocal to the center, so the identical part of the left and right channels (the vocals) is subtracted when the two channels are differenced. The remaining instrumental becomes a karaoke track, computed entirely in your browser."}}, {"@type": "Question", "name": "Is it safe to process my music files online?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Your audio never leaves your device — decoding, vocal removal and WAV encoding all happen locally in your browser via the Web Audio API. There is no upload, no server storage and no signup."}}, {"@type": "Question", "name": "Why can my song still sound a bit like the singer?", "acceptedAnswer": {"@type": "Answer", "text": "Phase cancellation removes sound that is identical and centered in both stereo channels. Backing vocals, reverb on the voice, or recordings mixed off-center (and mono files) survive cancellation. Best results come from stereo songs with a center-panned lead vocal."}}, {"@type": "Question", "name": "What audio formats can I use?", "acceptedAnswer": {"@type": "Answer", "text": "You can load any audio format your browser can decode — typically MP3, WAV, OGG and often M4A/AAC. The karaoke output is exported as uncompressed WAV, which you can play anywhere or trim with an audio editor."}}]}</script>
+<link rel="alternate" hreflang="en" href="https://tools.gamezipper.com/convert/vocal-remover.html">
+<link rel="alternate" hreflang="zh" href="https://tools.gamezipper.com/zh/convert/vocal-remover.html">
+<link rel="alternate" hreflang="x-default" href="https://tools.gamezipper.com/convert/vocal-remover.html">
+</head>
+<body>
+<div class="gz-container">
+  <div class="gz-tool-header">
+    <h1 id="title"></h1>
+    <p class="desc" id="desc"></p>
+  </div>
+  <div class="gz-tool-area">
+    <div id="drop"><div style="font-size:2em">🎤</div><div id="dropText"></div><div class="stat" id="dropHint"></div><input type="file" id="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac,.aac" hidden></div>
+    <div id="work" hidden>
+      <div class="stat" id="srcInfo"></div>
+      <canvas id="waveIn"></canvas>
+      <div class="row">
+        <button class="gz-btn" id="btnGo"></button>
+        <button class="gz-btn gz-btn-secondary" id="btnAgain"></button>
+      </div>
+      <canvas id="waveOut"></canvas>
+      <audio id="player" controls></audio>
+      <div class="row"><a class="gz-btn" id="btnDl" hidden download></a><span class="stat" id="outInfo"></span></div>
+      <div id="status"></div>
+    </div>
+  </div>
+  <div class="gz-howto"><h2></h2><ol></ol></div>
+  <div class="gz-related"><h2></h2><div class="gz-related-grid"></div></div>
+</div>
+<script>
+GZI18n.register({
+  en: {
+    toolTitle: 'Vocal Remover & Karaoke Maker',
+    toolDesc: 'Strip the lead vocals from any song and get an instant karaoke backing track — stereo phase cancellation, 100% in your browser. No upload, no signup.',
+    dropText: 'Drop an audio file here or click to choose',
+    dropHint: 'MP3, WAV, OGG, M4A — max 40 MB, processed locally',
+    btnGo: 'Remove Vocals',
+    btnAgain: 'Choose Another File',
+    btnDl: '⬇ Download Karaoke WAV',
+    statusDecoding: 'Decoding audio…',
+    statusReady: 'Ready. Click “Remove Vocals” to generate the karaoke track.',
+    statusWorking: 'Removing vocals…',
+    statusDone: '✓ Karaoke track ready — preview above, then download as WAV.',
+    errTooBig: 'File is larger than 40 MB. Please use a shorter or smaller file.',
+    errDecode: 'Could not decode this file. Try MP3 or WAV format.',
+    errMono: 'This file is mono (single channel). Vocal removal needs a stereo recording.',
+    srcInfo: 'Source',
+    outInfo: 'Output',
+    step1: 'Drop an MP3/WAV/OGG song onto the page (it never leaves your device)',
+    step2: 'Click Remove Vocals — the centered lead vocal is subtracted via stereo phase cancellation',
+    step3: 'Preview the instrumental karaoke track in the player',
+    step4: 'Download it as a WAV file, ready for karaoke apps or video editing',
+  },
+  zh: {
+    toolTitle: '人声去除工具（在线伴奏制作）',
+    toolDesc: '一键去除歌曲中的主唱人声，立即得到卡拉OK伴奏 — 立体声相位抵消，100% 浏览器本地处理。无需上传、无需注册。',
+    dropText: '拖入音频文件，或点击选择',
+    dropHint: '支持 MP3、WAV、OGG、M4A — 最大 40 MB，本地处理',
+    btnGo: '去除人声',
+    btnAgain: '换一个文件',
+    btnDl: '⬇ 下载伴奏 WAV',
+    statusDecoding: '正在解码音频…',
+    statusReady: '就绪。点击「去除人声」生成卡拉OK伴奏。',
+    statusWorking: '正在去除人声…',
+    statusDone: '✓ 伴奏已生成 — 可在上方试听，并下载为 WAV。',
+    errTooBig: '文件超过 40 MB，请使用更短或更小的文件。',
+    errDecode: '无法解码该文件，请改用 MP3 或 WAV 格式。',
+    errMono: '该文件是单声道，去人声需要立体声录音。',
+    srcInfo: '源文件',
+    outInfo: '输出',
+    step1: '把 MP3/WAV/OGG 歌曲拖入页面（文件不会离开你的设备）',
+    step2: '点击「去除人声」— 通过立体声相位抵消减去居中的人声',
+    step3: '在播放器中试听生成的伴奏',
+    step4: '下载为 WAV 文件，可直接用于卡拉OK或视频剪辑',
+  }
+});
+
+const { $, t } = GZ;
+let srcBuf = null, outBlob = null;
+
+function fmtDur(s){ const m=Math.floor(s/60), r=Math.round(s%60); return `${m}:${String(r).padStart(2,'0')}`; }
+function setStatus(msg,color){ $('#status').innerHTML = `<span style="color:${color||'inherit'}">${msg}</span>`; }
+
+function drawWave(canvas, data){
+  const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio||1);
+  const h = canvas.height = 70 * (window.devicePixelRatio||1);
+  const ctx = canvas.getContext('2d'); if(!ctx) return;
+  ctx.clearRect(0,0,w,h); ctx.fillStyle = '#e94560';
+  const step = Math.max(1, Math.floor(data.length / w));
+  for(let x=0;x<w;x++){
+    let peak=0; const off=x*step;
+    for(let i=0;i<step;i++){ const v=Math.abs(data[off+i]||0); if(v>peak)peak=v; }
+    const bar=Math.max(1, peak*h*0.9);
+    ctx.fillRect(x, (h-bar)/2, 1, bar);
+  }
+}
+
+function loadFile(f){
+  if(!f) return;
+  if(f.size > 40*1024*1024){ setStatus(t('errTooBig'),'var(--gz-accent)'); return; }
+  $('#work').hidden = false;
+  setStatus(t('statusDecoding'));
+  srcBuf = null; outBlob = null; $('#btnDl').hidden = true; $('#player').src='';
+  const fr = new FileReader();
+  fr.onload = () => {
+    const actx = new (window.AudioContext||window.webkitAudioContext)();
+    actx.decodeAudioData(fr.result).then(buf => {
+      srcBuf = buf;
+      $('#srcInfo').textContent = `${t('srcInfo')}: ${f.name} · ${buf.numberOfChannels}ch · ${buf.sampleRate} Hz · ${fmtDur(buf.duration)}`;
+      drawWave($('#waveIn'), buf.getChannelData(0));
+      setStatus(t('statusReady'),'var(--gz-success)');
+      actx.close();
+    }).catch(() => { setStatus(t('errDecode'),'var(--gz-accent)'); actx.close(); });
+  };
+  fr.onerror = () => setStatus(t('errDecode'),'var(--gz-accent)');
+  fr.readAsArrayBuffer(f);
+}
+
+function removeVocals(){
+  if(!srcBuf) return;
+  if(srcBuf.numberOfChannels < 2){ setStatus(t('errMono'),'var(--gz-accent)'); return; }
+  setStatus(t('statusWorking'));
+  setTimeout(() => {
+    try {
+      const L = srcBuf.getChannelData(0), R = srcBuf.getChannelData(1);
+      const n = srcBuf.length;
+      const out = srcBuf.getChannelData(0).slice();
+      let peak = 0;
+      for(let i=0;i<n;i++){ const v = L[i]-R[i]; out[i]=v; const a=v<0?-v:v; if(a>peak)peak=a; }
+      const gain = peak > 1 ? 0.95/peak : (peak > 0 ? 1 : 0);
+      if(gain !== 1) for(let i=0;i<n;i++) out[i] *= gain;
+      drawWave($('#waveOut'), out);
+      const wav = encodeWav(out, srcBuf.sampleRate);
+      outBlob = new Blob([wav], {type:'audio/wav'});
+      const url = URL.createObjectURL(outBlob);
+      $('#player').src = url;
+      $('#btnDl').href = url;
+      $('#btnDl').download = 'karaoke-instrumental.wav';
+      $('#btnDl').hidden = false;
+      $('#outInfo').textContent = `${t('outInfo')}: WAV · ${(outBlob.size/1048576).toFixed(1)} MB`;
+      setStatus(t('statusDone'),'var(--gz-success)');
+    } catch(e) { setStatus(String(e && e.message || e),'var(--gz-accent)'); }
+  }, 30);
+}
+
+function encodeWav(samples, sampleRate){
+  const n = samples.length;
+  const buf = new ArrayBuffer(44 + n*2);
+  const dv = new DataView(buf);
+  const ws = (o,s) => { for(let i=0;i<s.length;i++) dv.setUint8(o+i, s.charCodeAt(i)); };
+  ws(0,'RIFF'); dv.setUint32(4, 36+n*2, true); ws(8,'WAVE'); ws(12,'fmt ');
+  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,sampleRate,true); dv.setUint32(28,sampleRate*2,true);
+  dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+  ws(36,'data'); dv.setUint32(40,n*2,true);
+  let o = 44;
+  for(let i=0;i<n;i++){ let s=samples[i]; s = s<-1?-1:(s>1?1:s); dv.setInt16(o, s<0?s*0x8000:s*0x7FFF, true); o+=2; }
+  return buf;
+}
+
+$('#drop').addEventListener('click', () => $('#file').click());
+$('#file').addEventListener('change', e => loadFile(e.target.files[0]));
+$('#drop').addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('over'); });
+$('#drop').addEventListener('dragleave', () => $('#drop').classList.remove('over'));
+$('#drop').addEventListener('drop', e => { e.preventDefault(); $('#drop').classList.remove('over'); loadFile(e.dataTransfer.files[0]); });
+$('#btnGo').addEventListener('click', removeVocals);
+$('#btnAgain').addEventListener('click', () => $('#file').click());
+
+GZ.renderToolPage({
+  category: 'convert',
+  titleKey: 'toolTitle',
+  descKey: 'toolDesc',
+  howToSteps: ['step1','step2','step3','step4'],
+  related: [
+    {icon:'✂️', href:'/convert/audio-trimmer.html', name:'Audio Trimmer'},
+    {icon:'🔊', href:'/convert/audio-converter.html', name:'Audio Converter'},
+    {icon:'🎚️', href:'/convert/audio-volume.html', name:'Audio Volume Changer'},
+    {icon:'🎵', href:'/convert/video-to-audio.html', name:'Video to Audio'},
+  ]
+});
+function refreshLabels(){
+  $('#dropText').textContent = t('dropText');
+  $('#dropHint').textContent = t('dropHint');
+  $('#btnGo').textContent = t('btnGo');
+  $('#btnAgain').textContent = t('btnAgain');
+  $('#btnDl').textContent = t('btnDl');
+}
+refreshLabels();
+</script>
+<script src="/tools-result-rec.js?v=R449-flat" defer></script>
+</body>
+</html>
