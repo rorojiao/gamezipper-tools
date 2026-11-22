@@ -108,7 +108,7 @@
   //   disapproved, Monetag zone 11012002 dead), so ~250 tools PV/7d served zero
   //   ads. Token bump: R1121toolson.
   if(window.GZ_LOAD_ADSTERRA!==false){
-    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=R1121toolson';sAd.defer=true;document.head.appendChild(sAd);
+    var sAd=document.createElement('script');sAd.src='/adsterra-manager.js?v=20261122R1194popcommit';sAd.defer=true;document.head.appendChild(sAd);
   } else { try { console.log('[gz-tools] adsterra disabled via GZ_LOAD_ADSTERRA=false'); } catch(e){} }
   // v5.9.1 (2026-06-27): bump cache to invalidate v5.9 zone-backoff curve. Old
   // v5.10.1 (2026-06-27): Container AdSense Tier 0 + showContainerAd event completeness.

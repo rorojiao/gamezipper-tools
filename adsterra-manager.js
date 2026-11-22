@@ -1,5 +1,9 @@
 /**
- * GameZipper Adsterra Ad Manager v5.17.5 (2026-08-25)
+ * GameZipper Adsterra Ad Manager v5.17.8 (2026-11-22)
+ *   R1194 (2026-11-22): popunder cooldown commits only on window.open
+ *   SUCCESS (R1010 pattern); mobile UA gets a sessionStorage kill-switch after
+ *   the first popup_blocked (those browsers never serve it). Mirrors
+ *   gamezipper.com R1194.
  *   R1035 (2026-11-02): popunder now arms on canvas clicks + gameplay
  *   keydown (was impossible on canvas games; popunder is the paying
  *   placement). 25-min cap unchanged; fills carry trigger=click|key.
@@ -198,6 +202,7 @@
 
   // ── Popunder ──
   var POP_KEY = 'gz_adst_pop_ts';
+  var POP_SESS_BLOCK_KEY = 'gz_adst_pop_blocked'; // R1194: per-tab-session kill after a mobile block
   var POP_INTERVAL = 25 * 60 * 1000; // 25min cooldown
   var _bc = null;
   try { _bc = new BroadcastChannel('gz_adst_popunder'); } catch (e) {}
@@ -206,6 +211,7 @@
 
   function canShowPop() {
     try {
+      if (sessionStorage.getItem(POP_SESS_BLOCK_KEY)) return false; // R1194
       var ts = localStorage.getItem(POP_KEY);
       if (ts && Date.now() - parseInt(ts, 10) < POP_INTERVAL) return false;
     } catch (e) {}
@@ -217,17 +223,26 @@
       track('pop_skipped', { zone: ZONES.popunder, reason: 'cooldown' });
       return;
     }
-    try { localStorage.setItem(POP_KEY, String(Date.now())); } catch (e) {}
-    if (_bc) try { _bc.postMessage(Date.now()); } catch (e) {}
-
+    // R1194: do NOT commit the 25-min slot before window.open — a
+    // popup-blocked attempt books nothing but used to burn the sitewide
+    // slot (same R1010 lesson the smartlink cooldown already fixed).
     var w = null;
     try { w = window.open(POPUNDER_URL, '_blank'); } catch (e) {}
     if (w) {
+      try { localStorage.setItem(POP_KEY, String(Date.now())); } catch (e) {}
+      if (_bc) try { _bc.postMessage(Date.now()); } catch (e) {}
       try { w.blur(); } catch (e) {}
       try { window.focus(); } catch (e) {}
       track('fill', { zone: ZONES.popunder, format: 'popunder', trigger: trigger || 'click' });
     } else {
       track('no_fill', { zone: ZONES.popunder, format: 'popunder', reason: 'popup_blocked', trigger: trigger || 'click' });
+      // R1194: mobile Safari/WebView/Telegram-in-app block window.open from
+      // every gesture shape — they can NEVER serve the popunder this session.
+      // Kill the arm for the whole tab-session (one logged block per session,
+      // zero slot damage). Desktop keeps the next-page retry.
+      if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '')) {
+        try { sessionStorage.setItem(POP_SESS_BLOCK_KEY, '1'); } catch (e) {}
+      }
     }
   }
 
@@ -444,11 +459,11 @@
     armPop();
     track('script_loaded', {
       zones: ZONES,
-      v: '5.17.5',
+      v: '5.17.8',
       path: location.pathname,
       readyState: document.readyState
     });
-    track('config_loaded', { v: '5.17.5', popInterval: POP_INTERVAL });
+    track('config_loaded', { v: '5.17.8', popInterval: POP_INTERVAL });
     // Run CDN health probe asynchronously — doesn't block init.
     setTimeout(runCdnHealth, 1500);
   }
