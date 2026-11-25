@@ -2,7 +2,7 @@
 """Create /zh/ mirror for dual-URL bilingual SEO."""
 import os, re, shutil
 
-BASE = '/home/junze/gamezipper-tools'
+BASE = '/home/msdn/gamezipper-tools'
 DOMAIN = 'https://tools.gamezipper.com'
 DIRS = ['text','dev','color','image','css-tools','convert','fortune','calc','seo','social','fun']
 
@@ -65,16 +65,23 @@ def process_file(src, dst):
         f'<link rel="alternate" hreflang="zh" href="{DOMAIN}{rel_path}">\n'
         f'<link rel="alternate" hreflang="x-default" href="{DOMAIN}{en_path}">'
     )
-    # Remove existing hreflang
-    html = re.sub(r'<link\s+rel="alternate"\s+hreflang="[^"]*"[^>]*>\n?', '', html)
-    # Insert before </head>
-    html = html.replace('</head>', hreflang_block + '\n</head>')
+    # Remove existing hreflang — ONLY in <head> (JS string literals in tool
+    # descs may contain hreflang examples; do not touch them). R435 fix.
+    head_end = html.find('</head>')
+    head, tail = html[:head_end], html[head_end:]
+    head = re.sub(r'<link\s+rel="alternate"\s+hreflang="[^"]*"[^>]*>\n?', '', head)
+    html = head + tail
+    # Insert before the real </head> (the last one before <body; tool descs
+    # contain literal '</head>' inside JS strings — R435 root cause).
+    i = html.rfind('</head>', 0, html.find('<body'))
+    html = html[:i] + hreflang_block + '\n' + html[i:]
     
     # Inject zh language preference before i18n register
     # Add localStorage override to force zh
     inject = "<script>localStorage.setItem('gz-lang','zh');</script>"
     if inject not in html:
-        html = html.replace('</head>', inject + '\n</head>')
+        i = html.rfind('</head>', 0, html.find('<body'))
+        html = html[:i] + inject + '\n' + html[i:]
     
     # Fix schema.org URL
     html = re.sub(
