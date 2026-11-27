@@ -68,6 +68,11 @@
   try { SID = sessionStorage.getItem(SID_KEY) || ''; } catch(e) {}
   if (!SID) { SID = Math.random().toString(36).slice(2, 12); try { sessionStorage.setItem(SID_KEY, SID); } catch(e) {} }
   var UA = (N && N.userAgent) || '';
+  // R1219 (2026-11-27): crawler UA gate — parity with gamezipper.com R1215. FB
+  // meta-webindexer/meta-externalagent execute page JS and their UA lacks 'bot',
+  // so BI queries' NOT LIKE '%bot%' misses them. tools-side measured 418 events/24h
+  // (2026-11-27, all site=tools.gamezipper.com). Drop at ps() choke point.
+  var _crawlerUA = /(meta-webindexer|meta-externalagent|googleother|bingpreview|yandexbot|bytespider|petalbot|ahrefsbot|semrushbot|dotbot|barkruptbot)/i.test(UA);
   var DEVICE = /Mobi|Android|iPhone|iPad|iPod/i.test(UA) ? 'Mobile'
               : /Tablet|iPad/i.test(UA) ? 'Tablet' : 'Desktop';
   var SCREEN = (window.innerWidth || 0) + 'x' + (window.innerHeight || 0);
@@ -99,6 +104,7 @@
     };
   }
   function ps(n, d) {
+    if (_crawlerUA) return;  // R1219 crawler drop (HeadlessChrome kept: synthetic monitors use it)
     var b = gB();
     var ev = base();
     ev.e = n; ev.d = d || {}; ev.t = Date.now();

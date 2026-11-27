@@ -182,7 +182,7 @@
   // is rolled back or hot-reloaded during debugging.
   // 2026-09-16 R696: bumped cache buster to force CDN re-fetch (tools CDN was serving stale
   //   gz-analytics.js?v=tunnel202610181050 with EP=jury-holly, NXDOMAIN).
-  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=r980tools86f42aa";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
+  var s5=document.createElement("script");s5.src="/gz-analytics.js?v=20261127R1219ua";s5.defer=true;s5.fetchPriority='low';s5.crossOrigin='anonymous';document.head.appendChild(s5);
   // t.js removed (2026-06-14): bi.gamezipper.com/t.js endpoint serves Metabase HTML
   // (the BI subdomain points to a Metabase dashboard, not the FastAPI analytics
   // server which is only reachable via the cloudflared tunnel). vid/sid is now
