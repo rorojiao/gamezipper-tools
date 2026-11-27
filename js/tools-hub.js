@@ -7,7 +7,7 @@
 
 
 const lang = GZI18n.getLang();
-const DISPLAY_TOOL_COUNT = '2,540+';
+const DISPLAY_TOOL_COUNT = '2,544+';
 const { t } = GZ;
 
 // Add social category fallback if not in shared definitions
